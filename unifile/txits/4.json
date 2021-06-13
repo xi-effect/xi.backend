@@ -1,0 +1,69 @@
+{
+  "type": "TXIT",
+  "version": "0.1.2",
+  "pages": [
+    {
+      "type": "",
+      "entries": [
+        {
+          "type": "text",
+          "content": [
+            {
+              "text": [
+                {
+                  "type": "formatted",
+                  "text": "mountain #1",
+                  "size": 24,
+                  "bold": true,
+                  "italic": true,
+                  "offset": "subscript"
+                },
+                {
+                  "type": "formatted",
+                  "text": "hole #1",
+                  "offset": "subscript",
+                  "underline": {
+                    "color": {
+                      "red": 0,
+                      "green": 0,
+                      "blue": 0
+                    },
+                    "shape": "dotted"
+                  }
+                },
+                {
+                  "type": "formatted",
+                  "text": "mountain #2",
+                  "offset": "subscript",
+                  "crossline": {
+                    "color": {
+                      "red": 0,
+                      "green": 0,
+                      "blue": 0
+                    },
+                    "shape": "double"
+                  },
+                  "overline": {
+                    "color": {
+                      "red": 0,
+                      "green": 0,
+                      "blue": 0
+                    },
+                    "shape": "wavy"
+                  }
+                },
+                {
+                  "type": "formatted",
+                  "text": "hole #2",
+                  "size": 10,
+                  "italic": true,
+                  "offset": "subscript"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

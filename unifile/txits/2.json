@@ -1,0 +1,39 @@
+{
+  "type": "TXIT",
+  "version": "0.1.2",
+  "pages": [
+    {
+      "type": "",
+      "entries": [
+        {
+          "type": "text",
+          "content": [
+            {
+              "text": [
+                {
+                  "type": "formatted",
+                  "text": "Big Text",
+                  "size": 24,
+                  "bold": true,
+                  "italic": true
+                },
+                {
+                  "type": "formatted",
+                  "text": "small text under",
+                  "offset": "subscript",
+                  "underline": {
+                    "color": {
+                      "red": 0,
+                      "green": 0,
+                      "blue": 0
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
