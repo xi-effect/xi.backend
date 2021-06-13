@@ -7,17 +7,17 @@ from flask_restful.reqparse import RequestParser
 
 class GithubWebhook(Resource):  # /update/
     parser: RequestParser = RequestParser()
-    parser.add_argument("id", int)
-    parser.add_argument("type", str)
-    parser.add_argument("actor", dict)
-    parser.add_argument("repo", dict)
-    parser.add_argument("payload", dict)
+    parser.add_argument("commits", list)
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
-    @argument_parser(parser, ("X-GitHub-Event", "event_type"))
-    def post(self, event_type: str):
-        if event_type == "PushEvent":
-            pass
-        elif event_type == "ReleaseEvent":
-            pass
-        send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification!")
+    @argument_parser(parser, ("X-GitHub-Event", "event_type"), "commits")
+    def post(self, event_type: str, commits: list):
+        if event_type == "push":
+            version: str = commits[0]["message"]
+            send_discord_message(WebhookURLs.STATUS, f"New API version {version} uploaded!")
+        elif event_type == "release":
+            send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
+                                                     f"Releases are not supported yet!")
+        else:
+            send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
+                                                     f"No action was applied.")
