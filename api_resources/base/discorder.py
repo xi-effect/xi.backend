@@ -16,6 +16,7 @@ class WebhookURLs(Enum):
     STATUS = "843500826223312936/9ZcT7YinTBn4g0hdwPL_ca-YszwRUYrNrLhVEPjDrZQw_lMWHeo7l5LNtl6rq4LAUhgv"
     ERRORS = "843536959624445984/-V9-tEd9Af2mz-0L18YQqlabtK4rJatCSs0YS0XUFh-Tl-s49e2DG1Jg0z3wG2Soo0Op"
     WEIRDO = "843431829931556864/XY-k_4IOZ9NVatCuPEYB8OU6_DPSfUBP_lvGROf55g8GTM6TbDarcvLIJiz5KvGOZZZD"
+    GITHUB = "853684564277592076/4aJk50o9-_XcRCD4dxOrh01NsAWQdCS20Q6_Akozwaw5x1gTBAPFahwiKiesjQUH1J8_"
 
 
 def send_discord_message(webhook_url: WebhookURLs, message: str) -> Response:
