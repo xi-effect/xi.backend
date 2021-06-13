@@ -1,35 +1,35 @@
 from enum import Enum
-from json import loads
 from random import randint
 from os.path import exists
 from flask_cors import CORS
 from math import ceil, sqrt
-from os import urandom, path
 from traceback import format_tb
 from pickle import dumps, loads
-from requests import Response, post
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
+from os import path, urandom, environ
+from github import Repository, Github
 from flask_restful import Api, Resource
+from requests import Response, get, post
 from googleapiclient.discovery import build
-from subprocess import call, TimeoutExpired
+from subprocess import TimeoutExpired, call
 from google.auth.exceptions import RefreshError
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_restful.reqparse import RequestParser
 from google.oauth2.credentials import Credentials
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, datetime, timezone
 from flask_sqlalchemy import BaseQuery, SQLAlchemy
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
-from itsdangerous import BadSignature as BS, URLSafeSerializer as USS
-from typing import List, Dict, Union, IO, Set, Any, Callable, Tuple, Type, Optional
-from flask import send_file, redirect, Flask, request, jsonify, Response, send_from_directory
-from flask_jwt_extended import unset_jwt_cookies, jwt_required, set_access_cookies, JWTManager,\
-    create_access_token, get_jwt, get_jwt_identity
+from itsdangerous import URLSafeSerializer as USS, BadSignature as BS
+from typing import Dict, Union, Type, Set, Tuple, Optional, List, Any, Callable, IO
+from flask import Response, jsonify, request, send_file, redirect, Flask, send_from_directory
+from flask_jwt_extended import get_jwt_identity, unset_jwt_cookies, JWTManager,\
+    create_access_token, get_jwt, set_access_cookies, jwt_required
 
 
 versions: Dict[str, str] = {
-    "API": "0.7.6",  # relates to everything in api_resources package
+    "API": "0.7.6c",  # relates to everything in api_resources package
     "DBK": "0.6.3",  # relates to everything in database package
     "CAT": "0.3.5",  # relates to /cat/.../ resources
     "OCT": "0.2.8",  # relates to side thing (olympiad checker)
@@ -151,7 +151,8 @@ def update_available() -> bool:
 
 
 def update() -> None:
-    pass
+    github = Github(github_token)
+    repo: Repository = github.get_repo(376582002)
 
 
 def on_restart():
@@ -1123,6 +1124,42 @@ def send_discord_message(webhook_url: WebhookURLs, message: str) -> Response:
     return post(f"https://discord.com/api/webhooks/{webhook_url.value}", json={"content": message})
 
 
+headers: dict = {"Authorization": f"Token {environ['$API_TOKEN']}"}
+base_url: str = "https://www.pythonanywhere.com/api/v0/user/qwert45hi"
+
+main_domain: str = "xieffect.ru"
+dev_domain: str = "qwert45hi.pythonanywhere.com"
+
+
+def execute_in_console(line: str, console_id: int = None) -> bool:
+    if console_id is None:
+        console_id = get(base_url + "/consoles/", headers=headers).json()[0]["id"]
+    response: Response = post(base_url + f"/consoles/{console_id}/send_input/",
+                              json={"input": f"{line}\n"}, headers=headers)
+    return response.status_code == 200
+
+
+def execute_script_in_console(script_name: str, console_id: int = None) -> bool:
+    return execute_in_console("python " + script_name, console_id)
+
+
+def webapp_action(action: str, domain_name: str = dev_domain) -> bool:
+    response: Response = post(base_url + f"/webapps/{domain_name}/{action}/", headers=headers)
+    return 200 <= response.status_code <= 299
+
+
+def enable_webapp(domain_name: str = dev_domain) -> bool:
+    return webapp_action("enable", domain_name)
+
+
+def disable_webapp(domain_name: str = dev_domain) -> bool:
+    return webapp_action("disable", domain_name)
+
+
+def reload_webapp(domain_name: str = dev_domain) -> bool:
+    return webapp_action("reload", domain_name)
+
+
 email_folder: str = "emails/"
 scopes: List[str] = ["https://mail.google.com/"]
 
@@ -1782,18 +1819,22 @@ class UpdateRequest(Resource):  # /oct/update/
 pass  # api for creating remotely
 
 
+github_token: str = ""
+
+
 class GithubWebhook(Resource):  # /update/
     parser: RequestParser = RequestParser()
-    parser.add_argument("commits", str)
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
-    @argument_parser(parser, ("X-GitHub-Event", "event_type"), "commits")
-    def post(self, event_type: str, commits: str):
+    @argument_parser(parser, ("X-GitHub-Event", "event_type"))
+    def post(self, event_type: str):
         if event_type == "push":
-            version = loads(commits)["message"]
-            send_discord_message(WebhookURLs.STATUS, f"New API version {version} uploaded!")
+            send_discord_message(WebhookURLs.GITHUB, f"Got a push notification.\n"
+                                                     f"Starting auto-update")
+            execute_in_console("python updater.py")
+            disable_webapp()
         elif event_type == "release":
-            send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
+            send_discord_message(WebhookURLs.GITHUB, f"Got a release notification.\n"
                                                      f"Releases are not supported yet!")
         else:
             send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"

@@ -9,7 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 # Version control:
 versions: Dict[str, str] = {
-    "API": "0.7.6",  # relates to everything in api_resources package
+    "API": "0.7.6c",  # relates to everything in api_resources package
     "DBK": "0.6.3",  # relates to everything in database package
     "CAT": "0.3.5",  # relates to /cat/.../ resources
     "OCT": "0.2.8",  # relates to side thing (olympiad checker)

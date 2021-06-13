@@ -17,7 +17,7 @@ file_queue: Dict[str, List[str]] = {
         "outside": ["tester"]
     },
     "api_resources": {
-        "base": ["parsers", "checkers", "discorder", "emailer"],
+        "base": ["parsers", "checkers", "discorder", "anywherer", "emailer"],
         "education": ["authorship", "courses", "education",
                       "publishing", "wip_files"],
         "outside": ["applications", "basic", "olympiada", "updater"],
