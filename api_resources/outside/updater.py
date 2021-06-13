@@ -7,7 +7,7 @@ from flask_restful.reqparse import RequestParser
 
 class GithubWebhook(Resource):  # /update/
     parser: RequestParser = RequestParser()
-    parser.add_argument("payload", list)
+    parser.add_argument("payload", dict)
     parser.add_argument("commits", list)
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
