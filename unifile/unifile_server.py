@@ -9,22 +9,22 @@ from pickle import dumps, loads
 from requests import post, Response
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
-from flask_restful import Resource, Api
+from flask_restful import Api, Resource
 from googleapiclient.discovery import build
 from subprocess import TimeoutExpired, call
 from google.auth.exceptions import RefreshError
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_restful.reqparse import RequestParser
 from google.oauth2.credentials import Credentials
-from datetime import datetime, timedelta, timezone
-from flask_sqlalchemy import SQLAlchemy, BaseQuery
+from datetime import timedelta, timezone, datetime
+from flask_sqlalchemy import BaseQuery, SQLAlchemy
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from itsdangerous import BadSignature as BS, URLSafeSerializer as USS
-from typing import Any, Type, List, Dict, Union, IO, Set, Callable, Tuple, Optional
-from flask import Flask, request, redirect, Response, jsonify, send_file, send_from_directory
-from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, JWTManager,\
-    set_access_cookies, unset_jwt_cookies, jwt_required
+from typing import Dict, IO, Callable, Set, Type, Any, Union, Optional, Tuple, List
+from flask import send_from_directory, Response, jsonify, send_file, Flask, request, redirect
+from flask_jwt_extended import JWTManager, get_jwt_identity, set_access_cookies, get_jwt,\
+    jwt_required, unset_jwt_cookies, create_access_token
 
 
 versions: Dict[str, str] = {
@@ -1783,20 +1783,20 @@ pass  # api for creating remotely
 
 class GithubWebhook(Resource):  # /update/
     parser: RequestParser = RequestParser()
-    parser.add_argument("id", int)
-    parser.add_argument("type", str)
-    parser.add_argument("actor", dict)
-    parser.add_argument("repo", dict)
-    parser.add_argument("payload", dict)
+    parser.add_argument("commits", list)
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
-    @argument_parser(parser, ("X-GitHub-Event", "event_type"))
-    def post(self, event_type: str):
-        if event_type == "PushEvent":
-            pass
-        elif event_type == "ReleaseEvent":
-            pass
-        send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification!")
+    @argument_parser(parser, ("X-GitHub-Event", "event_type"), "commits")
+    def post(self, event_type: str, commits: list):
+        if event_type == "push":
+            version: str = commits[0]["message"]
+            send_discord_message(WebhookURLs.STATUS, f"New API version {version} uploaded!")
+        elif event_type == "release":
+            send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
+                                                     f"Releases are not supported yet!")
+        else:
+            send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
+                                                     f"No action was applied.")
 
 
 class EmailSender(Resource):
