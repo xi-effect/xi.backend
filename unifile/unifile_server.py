@@ -2,29 +2,29 @@ from enum import Enum
 from random import randint
 from os.path import exists
 from flask_cors import CORS
-from math import ceil, sqrt
-from os import urandom, path
+from math import sqrt, ceil
+from os import path, urandom
 from traceback import format_tb
-from pickle import loads, dumps
+from pickle import dumps, loads
 from requests import post, Response
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
-from flask_restful import Api, Resource
+from flask_restful import Resource, Api
 from googleapiclient.discovery import build
-from subprocess import call, TimeoutExpired
+from subprocess import TimeoutExpired, call
 from google.auth.exceptions import RefreshError
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_restful.reqparse import RequestParser
 from google.oauth2.credentials import Credentials
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from flask_sqlalchemy import SQLAlchemy, BaseQuery
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
-from itsdangerous import URLSafeSerializer as USS, BadSignature as BS
-from typing import Union, Type, List, Callable, Optional, IO, Any, Dict, Tuple, Set
-from flask import send_from_directory, Flask, request, send_file, jsonify, redirect, Response
-from flask_jwt_extended import get_jwt, get_jwt_identity, JWTManager, unset_jwt_cookies,\
-    set_access_cookies, jwt_required, create_access_token
+from itsdangerous import BadSignature as BS, URLSafeSerializer as USS
+from typing import Any, Type, List, Dict, Union, IO, Set, Callable, Tuple, Optional
+from flask import Flask, request, redirect, Response, jsonify, send_file, send_from_directory
+from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, JWTManager,\
+    set_access_cookies, unset_jwt_cookies, jwt_required
 
 
 versions: Dict[str, str] = {
@@ -1791,7 +1791,7 @@ class GithubWebhook(Resource):  # /update/
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
     @argument_parser(parser, ("X-GitHub-Event", "event_type"))
-    def post(self, event_type: str, payload: dict):
+    def post(self, event_type: str):
         if event_type == "PushEvent":
             pass
         elif event_type == "ReleaseEvent":
