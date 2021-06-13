@@ -3,28 +3,28 @@ from random import randint
 from os.path import exists
 from flask_cors import CORS
 from math import ceil, sqrt
-from os import urandom, path
+from os import path, urandom
 from traceback import format_tb
-from pickle import dumps, loads
-from requests import Response, post
+from pickle import loads, dumps
+from requests import post, Response
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
-from flask_restful import Resource, Api
+from flask_restful import Api, Resource
 from googleapiclient.discovery import build
 from subprocess import call, TimeoutExpired
 from google.auth.exceptions import RefreshError
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_restful.reqparse import RequestParser
 from google.oauth2.credentials import Credentials
-from datetime import datetime, timezone, timedelta
-from flask_sqlalchemy import BaseQuery, SQLAlchemy
+from datetime import datetime, timedelta, timezone
+from flask_sqlalchemy import SQLAlchemy, BaseQuery
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from itsdangerous import BadSignature as BS, URLSafeSerializer as USS
-from typing import Callable, Type, Union, Tuple, IO, Any, List, Optional, Set, Dict
-from flask import Flask, request, redirect, send_file, Response, jsonify, send_from_directory
-from flask_jwt_extended import jwt_required, create_access_token, get_jwt, set_access_cookies,\
-    get_jwt_identity, JWTManager, unset_jwt_cookies
+from typing import Optional, Set, Type, Tuple, Union, Dict, Any, List, Callable, IO
+from flask import request, jsonify, Flask, send_file, Response, redirect, send_from_directory
+from flask_jwt_extended import set_access_cookies, get_jwt_identity, unset_jwt_cookies,\
+    JWTManager, create_access_token, get_jwt, jwt_required
 
 
 versions: Dict[str, str] = {
@@ -1783,14 +1783,14 @@ pass  # api for creating remotely
 
 class GithubWebhook(Resource):  # /update/
     parser: RequestParser = RequestParser()
-    parser.add_argument("payload", dict)
-    parser.add_argument("commits", list)
+    parser.add_argument("commits", dict)
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
     @argument_parser(parser, ("X-GitHub-Event", "event_type"), "payload", "commits")
-    def post(self, event_type: str, commits: list, payload: dict):
+    def post(self, event_type: str, commits: dict):
         if event_type == "push":
-            send_discord_message(WebhookURLs.GITHUB, f"e{commits}\n{payload}")
+            version: str = commits["message"]
+            send_discord_message(WebhookURLs.STATUS, f"New API version {version} uploaded!")
         elif event_type == "release":
             send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
                                                      f"Releases are not supported yet!")
