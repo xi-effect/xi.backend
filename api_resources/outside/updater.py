@@ -13,9 +13,6 @@ class GithubWebhook(Resource):  # /update/
     @argument_parser(parser, ("X-GitHub-Event", "event_type"), "commits")
     def post(self, event_type: str, commits: dict):
         if event_type == "push":
-
-            version: str = commits["message"]
-            send_discord_message(WebhookURLs.STATUS, f"New API version {version} uploaded!")
         elif event_type == "release":
             send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
                                                      f"Releases are not supported yet!")
