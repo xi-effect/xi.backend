@@ -2,10 +2,10 @@ from enum import Enum
 from random import randint
 from os.path import exists
 from flask_cors import CORS
-from math import sqrt, ceil
+from math import ceil, sqrt
 from os import urandom, path
 from traceback import format_tb
-from pickle import loads, dumps
+from pickle import dumps, loads
 from requests import Response, post
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
@@ -16,15 +16,15 @@ from google.auth.exceptions import RefreshError
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_restful.reqparse import RequestParser
 from google.oauth2.credentials import Credentials
-from datetime import timedelta, timezone, datetime
+from datetime import timezone, datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy, BaseQuery
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from itsdangerous import BadSignature as BS, URLSafeSerializer as USS
-from typing import Set, Any, Tuple, List, Type, Dict, Callable, Union, IO, Optional
-from flask import Flask, request, send_from_directory, send_file, redirect, Response, jsonify
-from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required, create_access_token,\
-    unset_jwt_cookies, get_jwt, set_access_cookies
+from typing import Callable, Any, Union, Set, IO, Optional, Dict, Tuple, List, Type
+from flask import send_file, send_from_directory, request, Flask, Response, redirect, jsonify
+from flask_jwt_extended import jwt_required, set_access_cookies, create_access_token, get_jwt,\
+    JWTManager, get_jwt_identity, unset_jwt_cookies
 
 
 versions: Dict[str, str] = {
@@ -1781,6 +1781,23 @@ class UpdateRequest(Resource):  # /oct/update/
 pass  # api for creating remotely
 
 
+class GithubWebhook(Resource):  # /update/
+    parser: RequestParser = RequestParser()
+    parser.add_argument("id", int)
+    parser.add_argument("type", str)
+    parser.add_argument("actor", dict)
+    parser.add_argument("repo", dict)
+    parser.add_argument("payload", dict)
+
+    @argument_parser(parser, ("type", "event_type"))
+    def post(self, event_type: str):
+        if event_type == "PushEvent":
+            pass
+        elif event_type == "ReleaseEvent":
+            pass
+        send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification!")
+
+
 class EmailSender(Resource):
     def post(self, email: str):
         user: User = User.find_by_email_address(email)
@@ -1986,6 +2003,7 @@ api.add_resource(ReviewIndex, "/cat/reviews/<int:submission_id>/")
 api.add_resource(Publisher, "/cat/publications/")
 api.add_resource(PageGetter, "/pages/<int:page_id>/")
 api.add_resource(Version, "/<app_name>/version/")
+api.add_resource(GithubWebhook, "/update/")
 api.add_resource(UpdateRequest, "/oct/update/")
 api.add_resource(SubmitTask, "/tasks/<task_name>/attempts/new/")
 api.add_resource(GetTaskSummary, "/tasks/<task_name>/attempts/all/")
