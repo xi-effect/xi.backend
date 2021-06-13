@@ -14,6 +14,7 @@ from api_resources.education.education import ShowAll  # test
 from api_resources.outside.applications import Version
 from api_resources.outside.basic import HelloWorld, ServerMessenger
 from api_resources.outside.olympiada import GetTaskSummary, SubmitTask, UpdateRequest
+from api_resources.outside.updater import GithubWebhook
 
 from api_resources.users.confirmer import EmailSender, EmailConfirm
 from api_resources.users.reglog import UserLogin, UserRegistration, UserLogout
