@@ -2,29 +2,29 @@ from enum import Enum
 from random import randint
 from os.path import exists
 from flask_cors import CORS
-from math import ceil, sqrt
+from math import sqrt, ceil
 from os import path, urandom
 from traceback import format_tb
-from pickle import loads, dumps
-from requests import post, Response
+from pickle import dumps, loads
+from requests import Response, post
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
-from flask_restful import Api, Resource
+from flask_restful import Resource, Api
 from googleapiclient.discovery import build
-from subprocess import call, TimeoutExpired
+from subprocess import TimeoutExpired, call
 from google.auth.exceptions import RefreshError
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_restful.reqparse import RequestParser
 from google.oauth2.credentials import Credentials
-from datetime import datetime, timedelta, timezone
+from datetime import timezone, timedelta, datetime
 from flask_sqlalchemy import SQLAlchemy, BaseQuery
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from itsdangerous import BadSignature as BS, URLSafeSerializer as USS
-from typing import Optional, Set, Type, Tuple, Union, Dict, Any, List, Callable, IO
-from flask import request, jsonify, Flask, send_file, Response, redirect, send_from_directory
-from flask_jwt_extended import set_access_cookies, get_jwt_identity, unset_jwt_cookies,\
-    JWTManager, create_access_token, get_jwt, jwt_required
+from typing import Union, Type, IO, List, Set, Tuple, Any, Dict, Callable, Optional
+from flask import Response, jsonify, redirect, Flask, request, send_file, send_from_directory
+from flask_jwt_extended import set_access_cookies, JWTManager, get_jwt, create_access_token,\
+    unset_jwt_cookies, jwt_required, get_jwt_identity
 
 
 versions: Dict[str, str] = {
@@ -1786,7 +1786,7 @@ class GithubWebhook(Resource):  # /update/
     parser.add_argument("commits", dict)
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
-    @argument_parser(parser, ("X-GitHub-Event", "event_type"), "payload", "commits")
+    @argument_parser(parser, ("X-GitHub-Event", "event_type"), "commits")
     def post(self, event_type: str, commits: dict):
         if event_type == "push":
             version: str = commits["message"]

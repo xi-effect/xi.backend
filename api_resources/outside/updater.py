@@ -10,7 +10,7 @@ class GithubWebhook(Resource):  # /update/
     parser.add_argument("commits", dict)
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
-    @argument_parser(parser, ("X-GitHub-Event", "event_type"), "payload", "commits")
+    @argument_parser(parser, ("X-GitHub-Event", "event_type"), "commits")
     def post(self, event_type: str, commits: dict):
         if event_type == "push":
             version: str = commits["message"]
