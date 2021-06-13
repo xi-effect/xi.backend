@@ -5,26 +5,26 @@ from flask_cors import CORS
 from math import sqrt, ceil
 from os import urandom, path
 from traceback import format_tb
-from pickle import dumps, loads
-from requests import post, Response
+from pickle import loads, dumps
+from requests import Response, post
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
-from flask_restful import Resource, Api
+from flask_restful import Api, Resource
 from googleapiclient.discovery import build
 from subprocess import TimeoutExpired, call
 from google.auth.exceptions import RefreshError
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_restful.reqparse import RequestParser
 from google.oauth2.credentials import Credentials
-from datetime import timezone, timedelta, datetime
-from flask_sqlalchemy import BaseQuery, SQLAlchemy
+from datetime import datetime, timedelta, timezone
+from flask_sqlalchemy import SQLAlchemy, BaseQuery
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
-from itsdangerous import URLSafeSerializer as USS, BadSignature as BS
-from typing import Tuple, Union, Optional, IO, List, Set, Dict, Type, Any, Callable
-from flask import redirect, Response, send_from_directory, request, send_file, Flask, jsonify
-from flask_jwt_extended import create_access_token, unset_jwt_cookies, get_jwt, JWTManager,\
-    get_jwt_identity, jwt_required, set_access_cookies
+from itsdangerous import BadSignature as BS, URLSafeSerializer as USS
+from typing import IO, Set, Dict, List, Callable, Optional, Union, Any, Tuple, Type
+from flask import send_from_directory, send_file, Response, request, jsonify, redirect, Flask
+from flask_jwt_extended import get_jwt, JWTManager, create_access_token, get_jwt_identity,\
+    unset_jwt_cookies, set_access_cookies, jwt_required
 
 
 versions: Dict[str, str] = {
@@ -1790,8 +1790,8 @@ class GithubWebhook(Resource):  # /update/
     @argument_parser(parser, ("X-GitHub-Event", "event_type"), "payload", "commits")
     def post(self, event_type: str, commits: list, payload: dict):
         if event_type == "push":
-            version: str = commits[0]["message"]
             send_discord_message(WebhookURLs.WEIRDO, f"{repr(commits)}\n{repr(payload)}")
+            version: str = commits[0]["message"]
             send_discord_message(WebhookURLs.STATUS, f"New API version {version} uploaded!")
         elif event_type == "release":
             send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
