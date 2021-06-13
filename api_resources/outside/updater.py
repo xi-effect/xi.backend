@@ -14,7 +14,7 @@ class GithubWebhook(Resource):  # /update/
     parser.add_argument("payload", dict)
 
     @argument_parser(parser, ("type", "event_type"))
-    def post(self, event_type: str):
+    def post(self, event_type: str, payload: dict):
         if event_type == "PushEvent":
             pass
         elif event_type == "ReleaseEvent":
