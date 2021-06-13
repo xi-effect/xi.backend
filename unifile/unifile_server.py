@@ -3,10 +3,10 @@ from random import randint
 from os.path import exists
 from flask_cors import CORS
 from math import sqrt, ceil
-from os import path, urandom
+from os import urandom, path
 from traceback import format_tb
-from pickle import dumps, loads
-from requests import post, Response
+from pickle import loads, dumps
+from requests import Response, post
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
 from flask_restful import Resource, Api
@@ -16,18 +16,19 @@ from google.auth.exceptions import RefreshError
 from passlib.hash import pbkdf2_sha256 as sha256
 from flask_restful.reqparse import RequestParser
 from google.oauth2.credentials import Credentials
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta, timezone, datetime
 from flask_sqlalchemy import SQLAlchemy, BaseQuery
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
-from itsdangerous import URLSafeSerializer as USS, BadSignature as BS
-from typing import Optional, Set, Dict, Any, IO, Type, List, Callable, Tuple, Union
-from flask import request, send_from_directory, send_file, Response, jsonify, Flask, redirect
-from flask_jwt_extended import get_jwt_identity, unset_jwt_cookies, create_access_token, \
-    set_access_cookies, jwt_required, JWTManager, get_jwt
+from itsdangerous import BadSignature as BS, URLSafeSerializer as USS
+from typing import Set, Any, Tuple, List, Type, Dict, Callable, Union, IO, Optional
+from flask import Flask, request, send_from_directory, send_file, redirect, Response, jsonify
+from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required, create_access_token,\
+    unset_jwt_cookies, get_jwt, set_access_cookies
+
 
 versions: Dict[str, str] = {
-    "API": "0.7.5i",  # relates to everything in api_resources package
+    "API": "0.7.6",  # relates to everything in api_resources package
     "DBK": "0.6.3",  # relates to everything in database package
     "CAT": "0.3.5",  # relates to /cat/.../ resources
     "OCT": "0.2.8",  # relates to side thing (olympiad checker)
@@ -51,12 +52,14 @@ app.config["JWT_SECRET_KEY"] = urandom(randint(32, 64))
 
 app.config["MAIL_USERNAME"] = "xieffect.edu@gmail.com"
 
+
 CORS(app, supports_credentials=True)  # , resources={r"/*": {"origins": "https://xieffect.vercel.app"}})
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db: SQLAlchemy = SQLAlchemy(app)
+
 
 api: Api = Api(app)
 jwt: JWTManager = JWTManager(app)
@@ -517,16 +520,16 @@ class CATSubmission(db.Model, Identifiable):
 
     @classmethod
     def find_by_author(cls, author_id: int, offset: int, limit: int):
-        return cls.query \
-            .filter_by(author_id=author_id) \
-            .order_by(CATSubmission.date) \
+        return cls.query\
+            .filter_by(author_id=author_id)\
+            .order_by(CATSubmission.date)\
             .offset(offset).limit(limit).all()
 
     @classmethod
     def list_unreviewed(cls, offset: int, limit: int):
-        return cls.query \
-            .filter_by(status=ModerationStatus.POSTED.value) \
-            .order_by(CATSubmission.date) \
+        return cls.query\
+            .filter_by(status=ModerationStatus.POSTED.value)\
+            .order_by(CATSubmission.date)\
             .offset(offset).limit(limit).all()
 
     def to_author_json(self) -> dict:
@@ -1112,6 +1115,7 @@ class WebhookURLs(Enum):
     STATUS = "843500826223312936/9ZcT7YinTBn4g0hdwPL_ca-YszwRUYrNrLhVEPjDrZQw_lMWHeo7l5LNtl6rq4LAUhgv"
     ERRORS = "843536959624445984/-V9-tEd9Af2mz-0L18YQqlabtK4rJatCSs0YS0XUFh-Tl-s49e2DG1Jg0z3wG2Soo0Op"
     WEIRDO = "843431829931556864/XY-k_4IOZ9NVatCuPEYB8OU6_DPSfUBP_lvGROf55g8GTM6TbDarcvLIJiz5KvGOZZZD"
+    GITHUB = "853684564277592076/4aJk50o9-_XcRCD4dxOrh01NsAWQdCS20Q6_Akozwaw5x1gTBAPFahwiKiesjQUH1J8_"
 
 
 def send_discord_message(webhook_url: WebhookURLs, message: str) -> Response:
@@ -1192,6 +1196,7 @@ def parse_code(code: str, code_type: str) -> Optional[str]:
         return serializers[code_type].loads(code, salt=salt)
     except BS:
         return None
+
 
     send_generated_email("qwert45hi@yandex.ru", "confirm", "registration-email.html")
 
@@ -1440,7 +1445,7 @@ class CourseLister(Resource):  # [POST] /courses/
             user.update_filters(user_filters)
 
         result: List[Course] = Course.get_course_list(
-            filters, search, user_filters, start, finish - start)
+            filters, search, user_filters, start, finish-start)
 
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
@@ -1749,8 +1754,8 @@ class SubmitTask(Resource):  # POST (JWT) /tasks/<task_name>/attempts/new/
                 break
 
         send_discord_message(WebhookURLs.WEIRDO, f"Hey, {user.email} just send in a task submission!\n"
-                                                 f"Task: {task_name}, code: {ResultCodes(code).name}, "
-                                                 f"points: {points}, failed after: {failed}")
+                                         f"Task: {task_name}, code: {ResultCodes(code).name}, "
+                                         f"points: {points}, failed after: {failed}")
 
         return UserSubmissions.create_next(user.id, task_name, code, points, failed).to_json()
 
@@ -1980,6 +1985,7 @@ api.add_resource(SubmissionReader, "/cat/submissions/<int:submission_id>/")
 api.add_resource(ReviewIndex, "/cat/reviews/<int:submission_id>/")
 api.add_resource(Publisher, "/cat/publications/")
 api.add_resource(PageGetter, "/pages/<int:page_id>/")
+api.add_resource(Version, "/<app_name>/version/")
 api.add_resource(UpdateRequest, "/oct/update/")
 api.add_resource(SubmitTask, "/tasks/<task_name>/attempts/new/")
 api.add_resource(GetTaskSummary, "/tasks/<task_name>/attempts/all/")
