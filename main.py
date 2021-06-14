@@ -1,4 +1,5 @@
 from os import urandom
+from json import load
 from random import randint
 from typing import Dict
 from datetime import timedelta
@@ -8,13 +9,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
 # Version control:
-versions: Dict[str, str] = {
-    "API": "0.7.6c",  # relates to everything in api_resources package
-    "DBK": "0.6.3",  # relates to everything in database package
-    "CAT": "0.3.5",  # relates to /cat/.../ resources
-    "OCT": "0.2.8",  # relates to side thing (olympiad checker)
-    "XiE": "-",  # relates to XiE webapp version (out of this project)
-}
+versions: Dict[str, str] = load(open("files/versions.json"))
 
 app: Flask = Flask(__name__)
 
