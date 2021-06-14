@@ -21,8 +21,8 @@ scopes: List[str] = ["https://mail.google.com/"]
 
 class EmailSender:
     def __init__(self):
-        self.credentials = Credentials.from_authorized_user_file("token.json", scopes) \
-            if path.exists("token.json") else None
+        self.credentials = Credentials.from_authorized_user_file("files/token.json", scopes) \
+            if path.exists("files/token.json") else None
         self.service = None
         self.rebuild_service()
         self.sender = app.config["MAIL_USERNAME"]
@@ -32,9 +32,9 @@ class EmailSender:
             if self.credentials and self.credentials.expired and self.credentials.refresh_token:
                 self.credentials.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", scopes)
+                flow = InstalledAppFlow.from_client_secrets_file("files/credentials.json", scopes)
                 self.credentials = flow.run_local_server(port=0)
-            with open("token.json", "w") as token:
+            with open("files/token.json", "w") as token:
                 send_discord_message(WebhookURLs.WEIRDO, "Google API token has been re-written!")
                 token.write(self.credentials.to_json())
 
