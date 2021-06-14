@@ -7,7 +7,7 @@ from github import Github, Repository
 from github.ContentFile import ContentFile
 from requests import post
 
-excluded: List[str] = ["README.md", ".gitignore", ""]
+excluded: List[str] = ["README.md", ".gitignore"]
 
 github_token: str = "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"
 domain_name: str = "qwert45hi.pythonanywhere.com"
