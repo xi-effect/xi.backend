@@ -1,7 +1,7 @@
 from requests import get, post, Response
 from os import environ
 
-headers: dict = {"Authorization": f"Token {environ['$API_TOKEN']}"}
+headers: dict = {"Authorization": f"Token {environ['API_TOKEN']}"}
 base_url: str = "https://www.pythonanywhere.com/api/v0/user/qwert45hi"
 
 main_domain: str = "xieffect.ru"
