@@ -15,7 +15,7 @@ from api_resources.base.discorder import send_discord_message, WebhookURLs
 
 from main import app
 
-email_folder: str = "emails/"
+email_folder: str = "files/emails/"
 scopes: List[str] = ["https://mail.google.com/"]
 
 
