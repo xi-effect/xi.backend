@@ -7,7 +7,7 @@ from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_restful import Api
 
 from api_resources import *
-from webhooks.discorder import send_discord_message, WebhookURLs
+from webhooks import send_discord_message, WebhookURLs
 from database import Course, AuthorTeam, Author, Filters, TestPoint, User  # test
 from database import TokenBlockList
 from main import app
