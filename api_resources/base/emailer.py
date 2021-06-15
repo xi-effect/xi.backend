@@ -11,7 +11,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from itsdangerous import URLSafeSerializer as USS, BadSignature as BS
 
-from api_resources.base.discorder import send_discord_message, WebhookURLs
+from webhooks import send_discord_message, WebhookURLs
 
 from main import app
 
@@ -35,7 +35,7 @@ class EmailSender:
                 flow = InstalledAppFlow.from_client_secrets_file("files/credentials.json", scopes)
                 self.credentials = flow.run_local_server(port=0)
             with open("files/token.json", "w") as token:
-                send_discord_message(WebhookURLs.WEIRDO, "Google API token has been re-written!")
+                send_discord_message(WebhookURLs.NOTIF, "Google API token has been re-written!")
                 token.write(self.credentials.to_json())
 
         self.service = build("gmail", "v1", credentials=self.credentials)

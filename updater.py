@@ -31,10 +31,10 @@ if __name__ == "__main__":
                 f.write(content.decoded_content)
             print(content.path)
 
+    post(f"https://www.pythonanywhere.com/api/v0/user/qwert45hi/webapps/{domain_name}/enable/",
+         headers=headers)
+
     version: str = load(open("files/versions.json"))["API"]
     post(f"https://discord.com/api/webhooks/843500826223312936/"
          f"9ZcT7YinTBn4g0hdwPL_ca-YszwRUYrNrLhVEPjDrZQw_lMWHeo7l5LNtl6rq4LAUhgv",
          json={"content": f"New API version {version} uploaded.\nRestarting the server."})
-
-    post(f"https://www.pythonanywhere.com/api/v0/user/qwert45hi/webapps/{domain_name}/enable/",
-         headers=headers)

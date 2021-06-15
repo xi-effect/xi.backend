@@ -6,29 +6,29 @@ from flask import request, send_file
 from flask_restful import Resource
 
 from api_resources.base.checkers import jwt_authorizer
-from api_resources.base.discorder import send_discord_message, WebhookURLs
+from webhooks import send_discord_message, WebhookURLs
 from database import User, TestPoint, UserSubmissions, ResultCodes
 
 
 def check_one(inp: str, out: str) -> ResultCodes:
-    fin: IO = open("oct/input", "wb")
+    fin: IO = open("files/oct/input", "wb")
     fin.write(inp.encode("utf-8"))
-    fout: IO = open("oct/output", "wb")
-    ferr: IO = open("oct/error", "wb")
+    fout: IO = open("files/oct/output", "wb")
+    ferr: IO = open("files/oct/error", "wb")
 
     try:
-        call(["python3", "oct/submission.py"], stdin=fin, stdout=fout, stderr=ferr, timeout=1)
+        call(["python3", "files/oct/submission.py"], stdin=fin, stdout=fout, stderr=ferr, timeout=1)
     except TimeoutExpired:
         return ResultCodes.TimeLimitExceeded
 
-    if path.exists("oct/error") and path.getsize("oct/error"):
+    if path.exists("files/oct/error") and path.getsize("files/oct/error"):
         return ResultCodes.RuntimeError
-    if not path.exists("oct/output"):
+    if not path.exists("files/oct/output"):
         return ResultCodes.WrongAnswer
 
     map(lambda x: x.close(), [fin, fout, ferr])
 
-    with open("oct/output", "rb") as f:
+    with open("files/oct/output", "rb") as f:
         result: str = f.read().decode("utf-8")
     return ResultCodes.Accepted if result.split() == out.split() else ResultCodes.WrongAnswer
 
@@ -42,7 +42,7 @@ class SubmitTask(Resource):  # POST (JWT) /tasks/<task_name>/attempts/new/
         if not TestPoint.find_by_task(task_name):
             return {"a": "Task doesn't exist"}
 
-        with open("oct/submission.py", "wb") as f:
+        with open("files/oct/submission.py", "wb") as f:
             f.write(request.data)
 
         test: TestPoint
@@ -59,8 +59,8 @@ class SubmitTask(Resource):  # POST (JWT) /tasks/<task_name>/attempts/new/
                 break
 
         send_discord_message(WebhookURLs.WEIRDO, f"Hey, {user.email} just send in a task submission!\n"
-                                         f"Task: {task_name}, code: {ResultCodes(code).name}, "
-                                         f"points: {points}, failed after: {failed}")
+                                                 f"Task: {task_name}, code: {ResultCodes(code).name}, "
+                                                 f"points: {points}, failed after: {failed}")
 
         return UserSubmissions.create_next(user.id, task_name, code, points, failed).to_json()
 

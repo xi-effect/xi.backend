@@ -6,9 +6,9 @@ from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from api_resources.base.checkers import jwt_authorizer, database_searcher, argument_parser, lister
-from api_resources.base.discorder import send_discord_message, WebhookURLs
 from api_resources.base.parsers import counter_parser
 from database import Filters, User, Course
+from webhooks import send_discord_message, WebhookURLs
 
 
 class FilterGetter(Resource):  # [GET] /filters/
