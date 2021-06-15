@@ -5,3 +5,4 @@ ngrok.exe
 .idea
 updater.py
 test.py
+/wsgi.py

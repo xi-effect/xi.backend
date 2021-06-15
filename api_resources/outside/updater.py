@@ -1,6 +1,5 @@
 from api_resources.base.checkers import argument_parser
-from api_resources.base.discorder import send_discord_message, WebhookURLs
-from api_resources.base.anywherer import execute_in_console, disable_webapp
+from webhooks import send_discord_message, WebhookURLs, execute_in_console, disable_webapp
 
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
