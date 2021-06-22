@@ -28,15 +28,7 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=72)
 app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
 app.config["JWT_SECRET_KEY"] = urandom(randint(32, 64))
 
-# # Mail config:
-# app.config["MAIL_SERVER"] = "smtp.gmail.com"
-# app.config["MAIL_PORT"] = 587
-# app.config["MAIL_USE_TLS"] = True
 app.config["MAIL_USERNAME"] = "xieffect.edu@gmail.com"
-# app.config["MAIL_PASSWORD"] = "6848048Igor"
-# app.config["MAIL_DEFAULT_SENDER"] = "xieffect.edu@gmail.com"
-
-# mail: Mail = Mail(app)
 
 # CORS config:
 CORS(app, supports_credentials=True)  # , resources={r"/*": {"origins": "https://xieffect.vercel.app"}})
