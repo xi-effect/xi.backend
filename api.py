@@ -80,22 +80,22 @@ def on_any_exception(error: Exception):
 
 @jwt.expired_token_loader
 def expired_token_callback(*_):
-    return {"a": "expired token"}
+    return {"a": "expired token"}, 401
 
 
 @jwt.token_verification_failed_loader
 def verification_failed_callback(*_):
-    return {"a": f"token verification failed"}
+    return {"a": f"token verification failed"}, 401
 
 
 @jwt.invalid_token_loader
 def invalid_token_callback(callback):
-    return {"a": f"invalid token: {callback}"}
+    return {"a": f"invalid token: {callback}"}, 422
 
 
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):
-    return {"a": f"unauthorized: {callback}"}
+    return {"a": f"unauthorized: {callback}"}, 401
 
 
 # Adding basic resources:
