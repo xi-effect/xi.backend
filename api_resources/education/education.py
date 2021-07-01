@@ -32,7 +32,7 @@ class CourseLister(Resource):  # [POST] /courses/
     parser.add_argument("search", required=False)
     parser.add_argument("sort", required=False)
 
-    @lister(User, 12, "user", argument_parser(parser, "counter", "filters", "search", "sort"))
+    @lister(12, argument_parser=argument_parser(parser, "counter", "filters", "search", "sort"))
     def post(self, user: User, start: int, finish: int, search: str,
              filters: Dict[str, List[str]], sort: str):
         user_filters: Filters = user.get_filters()
@@ -68,7 +68,7 @@ class CourseLister(Resource):  # [POST] /courses/
 
 
 class HiddenCourseLister(Resource):
-    @lister(User, -12, "user")
+    @lister(-12)
     def post(self, user: User, start: int, finish: int) -> list:
         user_filters: Filters = user.get_filters()
 

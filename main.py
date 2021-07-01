@@ -28,6 +28,7 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=72)
 app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
 app.config["JWT_SECRET_KEY"] = urandom(randint(32, 64))
 
+app.config["USE_X_SENDFILE"] = True  # ???
 app.config["MAIL_USERNAME"] = "xieffect.edu@gmail.com"
 
 # CORS config:
@@ -35,7 +36,9 @@ CORS(app, supports_credentials=True)  # , resources={r"/*": {"origins": "https:/
 
 # Database config:
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database/app.db"
+# "mysql+mysqldb://qwert45hi:7b[-2duvd44sgoi1=pwfpji0i@qwert45hi.mysql.pythonanywhere-services.com/development"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_POOL_RECYCLE"] = 280
 # app.config[""] =
 
 db: SQLAlchemy = SQLAlchemy(app)
