@@ -66,18 +66,21 @@ themes: Dict[str, str] = {
 }
 salt: str = app.config["SECURITY_PASSWORD_SALT"]
 
+sender: Optional[EmailSender] = None
 try:
-    sender: EmailSender = EmailSender()
+    sender = EmailSender()
 except RefreshError as error:
     send_discord_message(WebhookURLs.ERRORS, "Google API token refresh failed again!")
 
 
 def send_email(receiver: str, code: str, filename: str, theme: str):
-    return sender.send(sender.generate_email(receiver, code, filename, theme))
+    if sender is not None:
+        return sender.send(sender.generate_email(receiver, code, filename, theme))
 
 
 def send_generated_email(receiver: str, code_type: str, filename: str):
-    return sender.send(sender.generate_code_email(receiver, code_type, filename, themes[code_type]))
+    if sender is not None:
+        return sender.send(sender.generate_code_email(receiver, code_type, filename, themes[code_type]))
 
 
 def generate_code(payload: str, code_type: str) -> str:

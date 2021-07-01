@@ -25,7 +25,7 @@ class Submitter(Resource):  # [POST] /cat/submissions/
 
 
 class SubmissionLister(Resource):  # [POST] /cat/submissions/owned/
-    @lister(Author, 24, "author")
+    @lister(24, jwt_authorizer(Author, "author"))
     def post(self, author: Author, start: int, finish: int) -> list:
         submission: CATSubmission
         result: list = list()
@@ -39,7 +39,7 @@ class SubmissionIndexer(Resource):  # [POST] /cat/submissions/index/
     parser.add_argument("type", type=int, required=False)
     parser.add_argument("tags", required=True)
 
-    @lister(Moderator, 24, None, argument_parser(parser, "counter", ("type", "submission_type"), "tags"))
+    @lister(24, jwt_authorizer(Moderator, None), argument_parser(parser, "counter", ("type", "submission_type"), "tags"))
     def post(self, start: int, finish: int, submission_type: int, tags: str):
         submission: CATSubmission
         result: list = list()
