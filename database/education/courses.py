@@ -174,8 +174,34 @@ class Course(db.Model, Identifiable):  # same name courses are allowed
         return cls.query.filter_by(id=entry_id).first()
 
     @classmethod
-    def get_course_list(cls, filters: Dict[str, List[str]], search: str,
-                        user_filters: Filters, offset: int, limit: int) -> list:
+    def get_course_list(cls, filters: Dict[str, str], user_filters: Filters,
+                        offset: int, limit: int) -> list:
+        query: BaseQuery = cls.query
+        query = query.filter(Course.id.notin_(user_filters.hidden_courses))
+
+        if filters is not None:
+            keys: List[str] = list(filters.keys())
+            if "global" in keys:
+                global_filter: str = filters["global"]
+                if global_filter == "pinned":
+                    query = query.filter(Course.id.in_(user_filters.pinned_courses))
+                elif global_filter == "starred":
+                    query = query.filter(Course.id.in_(user_filters.starred_courses))
+                elif global_filter == "started":
+                    query = query.filter(Course.id.in_(user_filters.started_courses))
+
+            if "difficulty" in keys:
+                query = query.filter_by(difficulty=filters["difficulty"])
+            if "category" in keys:
+                query = query.filter(category=filters["category"])
+            if "theme" in keys:
+                query = query.filter(theme=filters["theme"])
+
+        return query.offset(offset).limit(limit).all()
+
+    @classmethod
+    def get_advanced_course_list(cls, filters: Dict[str, List[str]], search: str,
+                                 user_filters: Filters, offset: int, limit: int) -> list:
         query: BaseQuery = cls.query
 
         query = query.filter(Course.id.notin_(user_filters.hidden_courses))

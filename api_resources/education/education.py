@@ -29,12 +29,10 @@ COURSES_PER_REQUEST: int = 12
 class CourseLister(Resource):  # [POST] /courses/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("filters", type=dict, required=False)
-    parser.add_argument("search", required=False)
     parser.add_argument("sort", required=False)
 
-    @lister(12, argument_parser=argument_parser(parser, "counter", "filters", "search", "sort"))
-    def post(self, user: User, start: int, finish: int, search: str,
-             filters: Dict[str, List[str]], sort: str):
+    @lister(12, argument_parser=argument_parser(parser, "counter", "filters", "sort"))
+    def post(self, user: User, start: int, finish: int, filters: Dict[str, str], sort: str):
         user_filters: Filters = user.get_filters()
 
         try:
@@ -49,13 +47,12 @@ class CourseLister(Resource):  # [POST] /courses/
             if "global" in filters.keys():
                 if "owned" in filters["global"]:  # TEMPORARY
                     return redirect("/cat/courses/owned/", 307)
-                user_filters.update_binds(filters["global"])
+                user_filters.update_bind(filters["global"])
             else:
                 user_filters.update_binds(list())
             user.update_filters(user_filters)
 
-        result: List[Course] = Course.get_course_list(
-            filters, search, user_filters, start, finish-start)
+        result: List[Course] = Course.get_course_list(filters, user_filters, start, finish-start)
 
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
