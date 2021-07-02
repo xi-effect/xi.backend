@@ -164,6 +164,7 @@ api.add_resource(PageGetter, "/pages/<int:page_id>/")
 # Adding application resource(s):
 api.add_resource(Version, "/<app_name>/version/")
 api.add_resource(GithubWebhook, "/update/")
+api.add_resource(GithubDocumentsWebhook, "/update-docs/")
 
 # Adding side-thing resources:
 api.add_resource(UpdateRequest, "/oct/update/")
