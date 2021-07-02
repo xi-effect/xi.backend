@@ -24,3 +24,13 @@ class GithubWebhook(Resource):  # /update/
         else:
             send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
                                                      f"No action was applied.")
+
+
+class GithubDocumentsWebhook(Resource):  # /update/
+    parser: RequestParser = RequestParser()
+    parser.add_argument("X-GitHub-Event", str, location="headers")
+
+    @argument_parser(parser, ("X-GitHub-Event", "event_type"))
+    def post(self, event_type: str):
+        if event_type == "push":
+            send_discord_message(WebhookURLs.GITHUB, "Documentation has been updated")
