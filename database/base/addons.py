@@ -52,6 +52,9 @@ class Filters:
         self.started_courses.append(code)
         self.visit_datetimes.append(datetime.utcnow())
 
+    def update_bind(self, new_bind: str) -> None:
+        self.binds = list(new_bind)
+
     def update_binds(self, new_binds: List[str]) -> None:
         self.binds = new_binds
 
