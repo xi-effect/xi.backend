@@ -22,3 +22,8 @@ class WebhookURLs(Enum):
 
 def send_message(webhook_url: WebhookURLs, message: str) -> Response:
     return post(f"https://discord.com/api/webhooks/{webhook_url.value}", json={"content": message})
+
+
+def send_long_message(webhook_url: WebhookURLs, message: str, title: str = None) -> Response:
+    return post(f"https://discord.com/api/webhooks/{webhook_url.value}",
+                json={"content": title, "embeds": [{"description": message}]})
