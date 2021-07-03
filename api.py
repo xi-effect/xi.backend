@@ -7,7 +7,7 @@ from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_restful import Api
 
 from api_resources import *
-from webhooks import send_discord_message, WebhookURLs
+from webhooks import send_discord_message, send_long_discord_message, WebhookURLs
 from database import Course, AuthorTeam, Author, TestPoint, User, CourseSession  # test
 from database import TokenBlockList
 from main import app
@@ -74,8 +74,8 @@ def on_any_exception(error: Exception):
                  f"Error: {repr(error)}\n" + "".join(format_tb(error.__traceback__)[6:])
     response = send_discord_message(WebhookURLs.ERRORS, f"A server error appeared!\n```{error_text}```")
     if response.status_code < 200 or response.status_code > 299:
-        send_discord_message(WebhookURLs.ERRORS,
-                             f"Failed to report an error:\n```json\n{response.json()}```")
+        send_long_discord_message(WebhookURLs.ERRORS, error_text,
+                                  f"Failed to report an error:\n```json\n{response.json()}```")
     return {"a": error_text}, 500
 
 
