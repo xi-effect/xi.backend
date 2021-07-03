@@ -6,3 +6,5 @@ ngrok.exe
 updater.py
 test.py
 /wsgi.py
+/database/app.db
+.gitignore

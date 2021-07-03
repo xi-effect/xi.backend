@@ -8,7 +8,7 @@ from flask_restful import Api
 
 from api_resources import *
 from webhooks import send_discord_message, WebhookURLs
-from database import Course, AuthorTeam, Author, Filters, TestPoint, User  # test
+from database import Course, AuthorTeam, Author, TestPoint, User, CourseSession  # test
 from database import TokenBlockList
 from main import app
 from main import db
@@ -35,7 +35,6 @@ def create_tables():
                     "0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe")
 
     test_user: User = User.find_by_email_address("test@test.test")
-    test_user.update_filters(Filters.test_filters())
 
     author = Author.find_by_id(test_user.id)
     if not author:
@@ -49,6 +48,8 @@ def create_tables():
         db.session.add(author)
         db.session.add(team)
         db.session.commit()
+
+    CourseSession.find_or_create(test_user.id, 0)
 
 
 @jwt.token_in_blocklist_loader
@@ -182,3 +183,5 @@ if __name__ == "__main__":  # test only
 # curl -v --cookie -X
 # curl -H "Content-Type: application/json" http://localhost:5000/settings/
 # -X POST -v -d "{\"changed\": {\"username\": \"new\"}}"
+# curl "https://qwert45hi.pythonanywhere.com/auth/?email=test@test.test&password=0a989ebc4a77b56a6e2bb7b19d995d185ce440
+# 90c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454" -X POST -v

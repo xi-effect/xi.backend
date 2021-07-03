@@ -7,14 +7,14 @@ from flask_restful.reqparse import RequestParser
 
 from api_resources.base.checkers import jwt_authorizer, database_searcher, argument_parser, lister
 from api_resources.base.parsers import counter_parser
-from database import Filters, User, Course
+from database import User, Course, CourseSession
 from webhooks import send_discord_message, WebhookURLs
 
 
 class FilterGetter(Resource):  # [GET] /filters/
     @jwt_authorizer(User)
     def get(self, user: User):
-        return user.get_filter_binds()
+        return user.get_filter_bind()
 
 
 class SortType(str, Enum):
@@ -33,8 +33,6 @@ class CourseLister(Resource):  # [POST] /courses/
 
     @lister(12, argument_parser=argument_parser(parser, "counter", "filters", "sort"))
     def post(self, user: User, start: int, finish: int, filters: Dict[str, str], sort: str):
-        user_filters: Filters = user.get_filters()
-
         try:
             if sort is None:
                 sort: SortType = SortType.POPULARITY
@@ -47,30 +45,28 @@ class CourseLister(Resource):  # [POST] /courses/
             if "global" in filters.keys():
                 if "owned" in filters["global"]:  # TEMPORARY
                     return redirect("/cat/courses/owned/", 307)
-                user_filters.update_bind(filters["global"])
+                user.set_filter_bind(filters["global"])
             else:
-                user_filters.update_binds(list())
-            user.update_filters(user_filters)
+                user.set_filter_bind()
+        user_id: int = user.id
 
-        result: List[Course] = Course.get_course_list(filters, user_filters, start, finish-start)
+        result: List[Course] = Course.get_course_list(filters, user_id, start, finish-start)
 
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
         elif sort == SortType.VISIT_DATE:
-            result.sort(key=lambda x: (user_filters.get_visit_date(x.id), x.popularity), reverse=True)
+            result.sort(key=lambda x: (CourseSession.find_visit_date(user_id, x.id), x.popularity), reverse=True)
         elif sort == SortType.CREATION_DATE:
-            result.sort(key=lambda x: x.creation_date.timestamp(), reverse=True)
+            result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
 
-        return list(map(lambda x: x.to_json(user_filters), result))
+        return list(map(lambda x: x.to_json(user_id), result))
 
 
 class HiddenCourseLister(Resource):
     @lister(-12)
     def post(self, user: User, start: int, finish: int) -> list:
-        user_filters: Filters = user.get_filters()
-
         result = list()
-        for course_id in user_filters.hidden_courses[finish:start if start != 0 else None]:
+        for course_id in CourseSession.filter_ids_by_user(user.id, start, finish-start, hidden=True):
             course: Course = Course.find_by_id(course_id)
             result.append(course.to_short_json())
         return result
@@ -84,22 +80,8 @@ class CoursePreferences(Resource):  # [POST] /courses/<int:course_id>/preference
     @database_searcher(Course, "course_id", check_only=True)
     @argument_parser(parser, ("a", "operation"))
     def post(self, course_id: int, user: User, operation: str):
-        filters: Filters = user.get_filters()
-
-        if operation == "hide":
-            filters.hide_course(course_id)
-        elif operation == "show":
-            filters.unhide_course(course_id)
-        elif operation == "star":
-            filters.star_course(course_id)
-        elif operation == "unstar":
-            filters.unstar_course(course_id)
-        elif operation == "pin":
-            filters.pin_course(course_id)
-        elif operation == "unpin":
-            filters.unpin_course(course_id)
-        user.update_filters(filters)
-
+        course: CourseSession = CourseSession.find_or_create(user.id, course_id)
+        course.change_preference(operation)
         return {"a": True}
 
 
@@ -123,7 +105,5 @@ class CourseReporter(Resource):
 class ShowAll(Resource):  # test
     @jwt_authorizer(User)
     def get(self, user: User):
-        filters: Filters = user.get_filters()
-        filters.hidden_courses = list()
-        user.update_filters(filters)
+        CourseSession.change_by_user(user.id, "show")
         return {"a": True}
