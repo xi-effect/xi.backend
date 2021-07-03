@@ -74,8 +74,8 @@ def on_any_exception(error: Exception):
                  f"Error: {repr(error)}\n" + "".join(format_tb(error.__traceback__)[6:])
     response = send_discord_message(WebhookURLs.ERRORS, f"A server error appeared!\n```{error_text}```")
     if response.status_code < 200 or response.status_code > 299:
-        send_long_discord_message(WebhookURLs.ERRORS, error_text,
-                                  f"Failed to report an error:\n```json\n{response.json()}```")
+        send_discord_message(WebhookURLs.ERRORS, f"Failed to report an error:\n```json\n{response.json()}```")
+        send_long_discord_message(WebhookURLs.ERRORS, error_text, "Error content")
     return {"a": error_text}, 500
 
 

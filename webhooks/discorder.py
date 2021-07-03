@@ -1,6 +1,7 @@
 from enum import Enum
 
 from requests import post, Response
+from discord_webhook import DiscordWebhook
 
 """
 https://discordapp.com/developers/docs/resources/webhook#execute-webhook
@@ -25,5 +26,6 @@ def send_message(webhook_url: WebhookURLs, message: str) -> Response:
 
 
 def send_long_message(webhook_url: WebhookURLs, message: str, title: str = None) -> Response:
-    return post(f"https://discord.com/api/webhooks/{webhook_url.value}",
-                json={"content": title, "embeds": [{"description": message}]})
+    webhook = DiscordWebhook(url=webhook_url.value)
+    webhook.add_file(file=message, filename=title)
+    return webhook.execute()
