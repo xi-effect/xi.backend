@@ -1,11 +1,9 @@
-from pickle import dumps, loads
-from typing import Dict, Union, List
+from typing import Dict, Union
 
 from passlib.hash import pbkdf2_sha256 as sha256
 
-from database.base.addons import Filters
 from database.base.basic import UserRole
-from database.education.courses import CourseSession
+from database.education.sessions import CourseSession
 from database.users.special import Moderator
 from main import db
 
@@ -53,8 +51,7 @@ class User(db.Model, UserRole):
     patronymic = db.Column(db.String(100), nullable=True)
 
     # Education data:
-    filters = db.Column(db.PickleType, nullable=False)  # Filters
-    course_sessions = db.Column(db.PickleType, nullable=False)  # Dict[int, CourseSession]
+    filter_bind = db.Column(db.String(10), nullable=True)
 
     @classmethod
     def find_by_id(cls, entry_id: int):
@@ -68,8 +65,7 @@ class User(db.Model, UserRole):
     def create(cls, email: str, username: str, password: str):
         if cls.find_by_email_address(email):
             return None
-        new_user = cls(email=email, password=cls.generate_hash(password), username=username,
-                       filters=dumps(Filters()), course_sessions=dumps(dict()))
+        new_user = cls(email=email, password=cls.generate_hash(password), username=username)
         db.session.add(new_user)
         db.session.commit()
         return new_user
@@ -118,31 +114,12 @@ class User(db.Model, UserRole):
             "dark-theme": self.dark_theme, "language": self.language
         }
 
-    def get_filters(self) -> Filters:
-        return loads(self.filters)
+    def get_filter_bind(self) -> str:
+        return self.filter_bind
 
-    def update_filters(self, filters: Filters) -> None:
-        self.filters = dumps(filters)
+    def set_filter_bind(self, bind: str = None) -> None:
+        self.filter_bind = bind
         db.session.commit()
-
-    def get_filter_binds(self) -> List[str]:
-        return self.get_filters().get_binds()
 
     def get_course_relation(self, course_id: int) -> Dict[str, bool]:
-        return self.get_filters().get_course_relation(course_id)
-
-    def get_course_sessions(self) -> Dict[int, CourseSession]:
-        return loads(self.course_sessions)
-
-    def update_course_sessions(self, data: Dict[int, CourseSession]) -> None:
-        self.course_sessions = dumps(data)
-        db.session.commit()
-
-    def get_course_session(self, course_id) -> CourseSession:
-        return loads(self.course_sessions[course_id])
-
-    def update_course_session(self, course_id: int, session: CourseSession) -> None:
-        sessions: Dict[int, CourseSession] = self.get_course_sessions()
-        sessions[course_id] = session
-        self.course_sessions = dumps(sessions)
-        db.session.commit()
+        return CourseSession.find_json(self.id, course_id)

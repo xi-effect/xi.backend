@@ -2,17 +2,16 @@ from flask import redirect
 from flask_restful import Resource
 
 from api_resources.base.checkers import jwt_authorizer, database_searcher
-from database import Course, User, Session, Filters
+from database import Course, User, Session
 
 
 class CourseMapper(Resource):
     @jwt_authorizer(User)
     @database_searcher(Course, "course_id", "course")
-    def get(self, user: User = None, course: Course = None):
-        filters: Filters = user.get_filters()
+    def get(self, user: User, course: Course):
         session_id: int = Session.create(user.id, course.id)
 
-        result = course.to_json(filters)
+        result: dict = user.get_course_relation(course.id)
         result.update({
             "session": session_id,
             "description": "Крутое описание курса!",
