@@ -131,6 +131,9 @@ class CourseSession(db.Model):
             self.note_change()
         db.session.commit()
 
+    def set_module_progress(self, module_id: int, progress: int):
+        pass
+
 
 class Session(db.Model, Identifiable):  # try keeping in memory
     __tablename__ = "sessions"
@@ -158,16 +161,8 @@ class Session(db.Model, Identifiable):  # try keeping in memory
     def collect(self):
         if self.point_id is None:
             return
-        """
-        user: User = User.find_by_id(self.user_id)
-        session: CourseOldSession = user.get_course_session(self.course_id)
-
-        if self.point_id == -1:
-            session.complete_module(self.course_id, self.module_id)
-        else:
-            session.started_modules[self.module_id] = self.point_id
-
-        user.update_course_session(self.course_id, session)"""
+        course_session: CourseSession = CourseSession.find_or_create(self.user_id, self.course_id)
+        course_session.set_module_progress(self.module_id, self.point_id)
 
     def open_course(self, course_id: int):
         self.collect()  # collecting previous data
