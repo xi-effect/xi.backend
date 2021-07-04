@@ -86,7 +86,7 @@ class Course(db.Model, Identifiable):  # same name courses are allowed
     def test():
         Course.__create(0, "Математика ЕГЭ", "", 4, "math", "une", "enthusiast",
                         2000, datetime(2020, 10, 22, 10, 30, 3))
-        Course.__create(1, "стория ЕГЭ", "", 4, "history", "une", "enthusiast",
+        Course.__create(1, "История ЕГЭ", "", 4, "history", "une", "enthusiast",
                         1100, datetime(2021, 1, 2, 22, 30, 33))
         Course.__create(2, "Арифметика", "", 4, "math", "middle-school", "newbie",
                         100, datetime(2012, 10, 12, 15, 57, 2))
@@ -122,9 +122,9 @@ class Course(db.Model, Identifiable):  # same name courses are allowed
                         700, datetime(2019, 7, 22, 22, 11, 40))
         Course.__create(18, "Физика: термодинамика", "", 4, "physics", "main-school", "review",
                         4200, datetime(2012, 7, 22, 2, 10, 54))
-        Course.__create(19, "стория России", "", 4, "history", "hobby", "review",
+        Course.__create(19, "История России", "", 4, "history", "hobby", "review",
                         270, datetime(2019, 7, 22, 22, 10, 24))
-        Course.__create(20, "нформатика 7 класс", "", 4, "informatics", "middle-school", "amateur",
+        Course.__create(20, "Информатика 7 класс", "", 4, "informatics", "middle-school", "amateur",
                         2000, datetime(2019, 7, 22, 22, 10, 12))
         Course.__create(21, "Литература Европы XX века", "", 4, "literature", "hobby", "review",
                         2000, datetime(2019, 5, 13, 1, 1, 54))
