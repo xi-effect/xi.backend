@@ -14,7 +14,7 @@ from webhooks import send_discord_message, WebhookURLs
 class FilterGetter(Resource):  # [GET] /filters/
     @jwt_authorizer(User)
     def get(self, user: User):
-        return user.get_filter_bind()
+        return {"a": user.get_filter_bind()}
 
 
 class SortType(str, Enum):
