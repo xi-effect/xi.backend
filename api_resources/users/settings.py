@@ -11,7 +11,7 @@ from api_resources.base.emailer import send_generated_email
 class Avatar(Resource):
     @jwt_authorizer(User)
     def get(self, user: User):
-        return send_from_directory("avatars", f"{user.id}.png")
+        return send_from_directory(r"../../files/avatars", f"{user.id}.png")
 
     @jwt_authorizer(User)
     def post(self, user: User):
