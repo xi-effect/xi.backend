@@ -15,7 +15,7 @@ class Avatar(Resource):
 
     @jwt_authorizer(User)
     def post(self, user: User):
-        with open(f"avatars/{user.id}.png", "wb") as f:
+        with open(f"../../files/avatars/{user.id}.png", "wb") as f:
             f.write(request.data)
         return {"a": True}
 
