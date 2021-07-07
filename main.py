@@ -28,7 +28,7 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=72)
 app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
 app.config["JWT_SECRET_KEY"] = urandom(randint(32, 64))
 
-app.config["USE_X_SENDFILE"] = True  # ???
+# app.config["USE_X_SENDFILE"] = True  # breaks avatar sending
 app.config["MAIL_USERNAME"] = "xieffect.edu@gmail.com"
 
 # CORS config:
