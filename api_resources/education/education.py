@@ -7,7 +7,7 @@ from flask_restful.reqparse import RequestParser
 
 from api_resources.base.checkers import jwt_authorizer, database_searcher, argument_parser, lister
 from api_resources.base.parsers import counter_parser
-from database import User, Course, CourseSession
+from database import User, Course, CourseFilterSession
 from webhooks import send_discord_message, WebhookURLs
 
 
@@ -55,7 +55,7 @@ class CourseLister(Resource):  # [POST] /courses/
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
         elif sort == SortType.VISIT_DATE:
-            result.sort(key=lambda x: (CourseSession.find_visit_date(user_id, x.id), x.popularity), reverse=True)
+            result.sort(key=lambda x: (CourseFilterSession.find_visit_date(user_id, x.id), x.popularity), reverse=True)
         elif sort == SortType.CREATION_DATE:
             result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
 
@@ -66,7 +66,7 @@ class HiddenCourseLister(Resource):
     @lister(-12)
     def post(self, user: User, start: int, finish: int) -> list:
         result = list()
-        for course_id in CourseSession.filter_ids_by_user(user.id, start, finish-start, hidden=True):
+        for course_id in CourseFilterSession.filter_ids_by_user(user.id, start, finish - start, hidden=True):
             course: Course = Course.find_by_id(course_id)
             result.append(course.to_short_json())
         return result
@@ -80,7 +80,7 @@ class CoursePreferences(Resource):  # [POST] /courses/<int:course_id>/preference
     @database_searcher(Course, "course_id", check_only=True)
     @argument_parser(parser, ("a", "operation"))
     def post(self, course_id: int, user: User, operation: str):
-        course: CourseSession = CourseSession.find_or_create(user.id, course_id)
+        course: CourseFilterSession = CourseFilterSession.find_or_create(user.id, course_id)
         course.change_preference(operation)
         return {"a": True}
 
@@ -105,5 +105,5 @@ class CourseReporter(Resource):
 class ShowAll(Resource):  # test
     @jwt_authorizer(User)
     def get(self, user: User):
-        CourseSession.change_by_user(user.id, "show")
+        CourseFilterSession.change_by_user(user.id, "show")
         return {"a": True}
