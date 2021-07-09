@@ -1,13 +1,12 @@
 from enum import Enum
 from typing import List, Dict
 
-from flask import redirect
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from api_resources.base.checkers import jwt_authorizer, database_searcher, argument_parser, lister
 from api_resources.base.parsers import counter_parser
-from database import User, Course, CourseFilterSession
+from database import User, Module, ModuleFilterSession
 from webhooks import send_discord_message, WebhookURLs
 
 
@@ -41,21 +40,18 @@ class CourseLister(Resource):  # [POST] /courses/
         except ValueError:
             return {"a": f"Sorting '{sort}' is not supported"}, 406
 
-        if filters is not None:
-            if "global" in filters.keys():
-                if "owned" in filters["global"]:  # TEMPORARY
-                    return redirect("/cat/courses/owned/", 307)
-                user.set_filter_bind(filters["global"])
-            else:
-                user.set_filter_bind()
+        if filters is not None and "global" in filters.keys():
+            user.set_filter_bind(filters["global"])
+        else:
+            user.set_filter_bind()
         user_id: int = user.id
 
-        result: List[Course] = Course.get_course_list(filters, user_id, start, finish-start)
+        result: List[Module] = Module.get_course_list(filters, user_id, start, finish-start)
 
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
         elif sort == SortType.VISIT_DATE:
-            result.sort(key=lambda x: (CourseFilterSession.find_visit_date(user_id, x.id), x.popularity), reverse=True)
+            result.sort(key=lambda x: (ModuleFilterSession.find_visit_date(user_id, x.id), x.popularity), reverse=True)
         elif sort == SortType.CREATION_DATE:
             result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
 
@@ -66,9 +62,9 @@ class HiddenCourseLister(Resource):
     @lister(-12)
     def post(self, user: User, start: int, finish: int) -> list:
         result = list()
-        for course_id in CourseFilterSession.filter_ids_by_user(user.id, start, finish - start, hidden=True):
-            course: Course = Course.find_by_id(course_id)
-            result.append(course.to_short_json())
+        for module_id in ModuleFilterSession.filter_ids_by_user(user.id, start, finish - start, hidden=True):
+            module: Module = Module.find_by_id(module_id)
+            result.append(module.to_short_json())
         return result
 
 
@@ -77,11 +73,11 @@ class CoursePreferences(Resource):  # [POST] /courses/<int:course_id>/preference
     parser.add_argument("a", required=True)
 
     @jwt_authorizer(User)
-    @database_searcher(Course, "course_id", check_only=True)
+    @database_searcher(Module, "module_id", check_only=True)
     @argument_parser(parser, ("a", "operation"))
-    def post(self, course_id: int, user: User, operation: str):
-        course: CourseFilterSession = CourseFilterSession.find_or_create(user.id, course_id)
-        course.change_preference(operation)
+    def post(self, module_id: int, user: User, operation: str):
+        module: ModuleFilterSession = ModuleFilterSession.find_or_create(user.id, module_id)
+        module.change_preference(operation)
         return {"a": True}
 
 
@@ -91,12 +87,12 @@ class CourseReporter(Resource):
     parser.add_argument("message", required=False)
 
     @jwt_authorizer(User, None)
-    @database_searcher(Course, "course_id", "course")
+    @database_searcher(Module, "course_id", "course")
     @argument_parser(parser, "reason", "message")
-    def post(self, course: Course, reason: str, message: str):
+    def post(self, module: Module, reason: str, message: str):
         send_discord_message(
             WebhookURLs.COMPLAINER,
-            f"Появилась новая жалоба на курс #{course.id} ({course.name})\n"
+            f"Появилась новая жалоба на курс #{module.id} ({module.name})\n"
             f"Причина: {reason}" + f"\nСообщение: {message}" if message is not None else ""
         )
         return {"a": True}
@@ -105,5 +101,5 @@ class CourseReporter(Resource):
 class ShowAll(Resource):  # test
     @jwt_authorizer(User)
     def get(self, user: User):
-        CourseFilterSession.change_by_user(user.id, "show")
+        ModuleFilterSession.change_by_user(user.id, "show")
         return {"a": True}
