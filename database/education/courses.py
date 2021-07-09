@@ -6,7 +6,7 @@ from typing import Dict, List, Set
 from flask_sqlalchemy import BaseQuery
 
 from database.base.basic import Identifiable
-from database.education.sessions import CourseSession
+from database.education.sessions import CourseFilterSession
 from main import db
 
 
@@ -46,7 +46,7 @@ class Point(db.Model):
             pass
 
 
-class Module(db.Model):
+class Module(db.Model, Identifiable):
     __tablename__ = "modules"
 
     course_id = db.Column(db.Integer, primary_key=True)
@@ -81,7 +81,7 @@ class Module(db.Model):
         return loads(self.parents).issubset(completed_modules)
 
 
-class Course(db.Model, Identifiable):  # same name courses are allowed
+class Course(db.Model, Identifiable):  # same name courses are allowed  # development suspended
     @staticmethod
     def test():
         Course.__create(0, "Математика ЕГЭ", "", 4, "math", "une", "enthusiast",
@@ -176,18 +176,18 @@ class Course(db.Model, Identifiable):  # same name courses are allowed
     @classmethod
     def get_course_list(cls, filters: Dict[str, str], user_id: int, offset: int, limit: int) -> list:
         query: BaseQuery = cls.query
-        query = query.filter(Course.id.notin_(CourseSession.filter_ids_by_user(user_id, hidden=True)))
+        query = query.filter(Course.id.notin_(CourseFilterSession.filter_ids_by_user(user_id, hidden=True)))
 
         if filters is not None:
             keys: List[str] = list(filters.keys())
             if "global" in keys:
                 global_filter: str = filters["global"]
                 if global_filter == "pinned":
-                    query = query.filter(Course.id.in_(CourseSession.filter_ids_by_user(user_id, pinned=True)))
+                    query = query.filter(Course.id.in_(CourseFilterSession.filter_ids_by_user(user_id, pinned=True)))
                 elif global_filter == "starred":
-                    query = query.filter(Course.id.in_(CourseSession.filter_ids_by_user(user_id, starred=True)))
+                    query = query.filter(Course.id.in_(CourseFilterSession.filter_ids_by_user(user_id, starred=True)))
                 elif global_filter == "started":
-                    query = query.filter(Course.id.in_(CourseSession.filter_ids_by_user(user_id, started=True)))
+                    query = query.filter(Course.id.in_(CourseFilterSession.filter_ids_by_user(user_id, started=True)))
 
             if "difficulty" in keys:
                 query = query.filter_by(difficulty=filters["difficulty"])
@@ -202,17 +202,17 @@ class Course(db.Model, Identifiable):  # same name courses are allowed
     def get_advanced_course_list(cls, filters: Dict[str, List[str]], search: str,
                                  user_id: int, offset: int, limit: int) -> list:
         query: BaseQuery = cls.query
-        query = query.filter(CourseSession.filter_ids_by_user(user_id, hidden=True))
+        query = query.filter(CourseFilterSession.filter_ids_by_user(user_id, hidden=True))
 
         if filters is not None:
             if "global" in filters.keys():
                 global_filters = filters["global"]
                 if "pinned" in global_filters:
-                    query = query.filter(CourseSession.filter_ids_by_user(user_id, pinned=True))
+                    query = query.filter(CourseFilterSession.filter_ids_by_user(user_id, pinned=True))
                 if "starred" in global_filters:
-                    query = query.filter(CourseSession.filter_ids_by_user(user_id, starred=True))
+                    query = query.filter(CourseFilterSession.filter_ids_by_user(user_id, starred=True))
                 if "started" in global_filters:
-                    query = query.filter(CourseSession.filter_ids_by_user(user_id, started=True))
+                    query = query.filter(CourseFilterSession.filter_ids_by_user(user_id, started=True))
 
             if "difficulty" in filters.keys() and len(filters["difficulty"]):
                 query = query.filter(Course.difficulty.in_(filters["difficulty"]))
@@ -239,6 +239,6 @@ class Course(db.Model, Identifiable):  # same name courses are allowed
     def to_json(self, user_id: int = None) -> dict:
         result: dict = self.to_short_json()
         if user_id is not None:
-            result.update(CourseSession.find_json(user_id, self.id))
+            result.update(CourseFilterSession.find_json(user_id, self.id))
         result.update({"category": self.category, "theme": self.theme, "difficulty": self.difficulty})
         return result

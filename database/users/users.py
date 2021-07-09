@@ -3,7 +3,7 @@ from typing import Dict, Union
 from passlib.hash import pbkdf2_sha256 as sha256
 
 from database.base.basic import UserRole
-from database.education.sessions import CourseSession
+from database.education.sessions import CourseFilterSession
 from database.users.special import Moderator
 from main import db
 
@@ -122,4 +122,4 @@ class User(db.Model, UserRole):
         db.session.commit()
 
     def get_course_relation(self, course_id: int) -> Dict[str, bool]:
-        return CourseSession.find_json(self.id, course_id)
+        return CourseFilterSession.find_json(self.id, course_id)

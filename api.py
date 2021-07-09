@@ -8,7 +8,7 @@ from flask_restful import Api
 
 from api_resources import *
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
-from database import Course, AuthorTeam, Author, TestPoint, User, CourseSession  # test
+from database import Course, AuthorTeam, Author, TestPoint, User, CourseFilterSession  # test
 from database import TokenBlockList
 from main import app
 from main import db
@@ -49,7 +49,7 @@ def create_tables():
         db.session.add(team)
         db.session.commit()
 
-    CourseSession.find_or_create(test_user.id, 0)
+    CourseFilterSession.find_or_create(test_user.id, 0)
 
 
 @jwt.token_in_blocklist_loader

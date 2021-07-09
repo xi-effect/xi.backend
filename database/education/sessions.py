@@ -1,3 +1,4 @@
+from pickle import dumps
 from typing import Optional, Dict, List
 from datetime import datetime
 
@@ -7,33 +8,30 @@ from database.base.basic import Identifiable
 from main import db
 
 
-class ModuleSession(db.Model):
-    __tablename__ = "module_sessions"
+class BaseCourseSession(db.Model):
+    __abstract__ = True
 
     user_id = db.Column(db.Integer, primary_key=True)  # MB replace with relationship
     course_id = db.Column(db.Integer, primary_key=True)  # MB replace with relationship
-    module_id = db.Column(db.Integer, primary_key=True)
-    points = db.Column(db.Integer, nullable=False, default=0)
 
     @classmethod
-    def create(cls, user_id: int, course_id: int, module_id: int):
-        if cls.find_by_id(user_id, course_id, module_id) is not None:
-            return None
-        new_entry = cls(user_id, course_id, module_id)
-        db.session.add(new_entry)
-        db.session.commit()
-        return new_entry
+    def create(cls, user_id: int, course_id: int):
+        raise NotImplementedError
 
     @classmethod
-    def find_by_id(cls, user_id: int, course_id: int, module_id: int):
-        return cls.query.filter_by(user_id=user_id, course_id=course_id, module_id=module_id).first()
+    def find_by_ids(cls, user_id: int, course_id: int):
+        return cls.query.filter_by(user_id=user_id, course_id=course_id).first()
+
+    @classmethod
+    def find_or_create(cls, user_id: int, course_id: int):
+        entry = cls.find_by_ids(user_id, course_id)
+        if entry is None:
+            return cls.create(user_id, course_id)
+        return entry
 
 
-class CourseSession(db.Model):
-    __tablename__ = "course_sessions"
-
-    user_id = db.Column(db.Integer, primary_key=True)  # MB replace with relationship
-    course_id = db.Column(db.Integer, primary_key=True)  # MB replace with relationship
+class CourseFilterSession(BaseCourseSession):
+    __tablename__ = "course_filter_sessions"
 
     started = db.Column(db.Boolean, nullable=False, default=False)
     starred = db.Column(db.Boolean, nullable=False, default=False)
@@ -42,7 +40,7 @@ class CourseSession(db.Model):
 
     points = db.Column(db.Integer, nullable=False, default=0)
     last_visited = db.Column(db.DateTime, nullable=True)  # None for not visited
-    last_changed = db.Column(db.Float, nullable=False)
+    last_changed = db.Column(db.Float, nullable=True)
 
     @classmethod
     def create(cls, user_id: int, course_id: int):
@@ -52,13 +50,6 @@ class CourseSession(db.Model):
         db.session.add(new_entry)
         db.session.commit()
         return new_entry
-
-    @classmethod
-    def find_or_create(cls, user_id: int, course_id: int):
-        entry = cls.query.filter_by(user_id=user_id, course_id=course_id).first()
-        if entry is None:
-            return cls.create(user_id, course_id)
-        return entry
 
     @classmethod
     def find_json(cls, user_id: int, course_id: int) -> Dict[str, bool]:
@@ -75,13 +66,9 @@ class CourseSession(db.Model):
         return entry.get_visit_date()
 
     @classmethod
-    def find_by_ids(cls, user_id: int, course_id: int):
-        return cls.query.filter_by(user_id=user_id, course_id=course_id).first()
-
-    @classmethod
     def filter_ids_by_user(cls, user_id: int, offset: int = None, limit: int = None, **params) -> List[int]:
         query: BaseQuery = cls.query.filter_by(user_id=user_id, **params)
-        query = query.order_by(CourseSession.last_changed)
+        query = query.order_by(cls.last_changed)
 
         if offset is not None:
             query = query.offset(offset)
@@ -92,7 +79,7 @@ class CourseSession(db.Model):
 
     @classmethod
     def change_by_user(cls, user_id: int, operation: str, **params):
-        course_session: CourseSession
+        course_session: cls
         for course_session in cls.query.filter_by(user_id=user_id, **params).all():
             course_session.change_preference(operation)
 
@@ -131,56 +118,91 @@ class CourseSession(db.Model):
             self.note_change()
         db.session.commit()
 
-    def set_module_progress(self, module_id: int, progress: int):
+
+class CourseMapSession(BaseCourseSession):
+    __tablename__ = "course_map_sessions"
+
+    completed_modules = db.Column(db.PickleType, nullable=False)  # Set[int] - ids
+    available_modules = db.Column(db.PickleType, nullable=False)  # Set[int] - ids
+
+    @classmethod
+    def create(cls, user_id: int, course_id: int):
+        if cls.find_by_ids(user_id, course_id) is not None:
+            return None
+        new_entry = cls(user_id=user_id, course_id=course_id,
+                        complete_modules=dumps(set()), available_modules=dumps(set()))
+        db.session.add(new_entry)
+        db.session.commit()
+        return new_entry
+
+    @classmethod
+    def complete_module(cls, user_id: int, course_id: int, module_id: int):
+        entry: cls = cls.find_or_create(user_id, course_id)
+        pass
+
+    def get_map(self):
         pass
 
 
-class Session(db.Model, Identifiable):  # try keeping in memory
-    __tablename__ = "sessions"
+class BaseModuleSession(db.Model, Identifiable):
+    __abstract__ = True
     not_found_text = "Session not found"
 
     id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, nullable=False)
-    module_id = db.Column(db.Integer, nullable=True)  # None outside any modules
-    point_id = db.Column(db.Integer, nullable=True)  # None for non-standard modules
-
-    test = db.Column(db.PickleType, nullable=True)  # None outside any test-modules
-    user_id = db.Column(db.String, nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)  # MB replace with relationship
+    course_id = db.Column(db.Integer, nullable=False)  # MB replace with relationship
+    module_id = db.Column(db.Integer, nullable=False)
 
     @classmethod
-    def create(cls, user_id: int, course_id: int) -> Optional[int]:
-        new_session = cls(user_id=user_id, course_id=course_id)
-        db.session.add(new_session)
-        db.session.commit()
-        return new_session.id
+    def create(cls, user_id: int, course_id: int, module_id: int):
+        raise NotImplementedError
 
     @classmethod
     def find_by_id(cls, entry_id: int):
         return cls.query.filter_by(id=entry_id).first()
 
-    def collect(self):
-        if self.point_id is None:
-            return
-        course_session: CourseSession = CourseSession.find_or_create(self.user_id, self.course_id)
-        course_session.set_module_progress(self.module_id, self.point_id)
+    @classmethod
+    def find_by_ids(cls, user_id: int, course_id: int, module_id: int):
+        return cls.query.filter_by(user_id=user_id, course_id=course_id, module_id=module_id).first()
 
-    def open_course(self, course_id: int):
-        self.collect()  # collecting previous data
-        self.course_id = course_id
-        self.module_id = None
-        self.point_id = None
-        self.test = None
+
+class StandardModuleSession(BaseModuleSession, Identifiable):
+    __tablename__ = "standard_module_sessions"
+    progress = db.Column(db.Integer, nullable=False, default=0)
+
+    @classmethod
+    def create(cls, user_id: int, course_id: int, module_id: int, progress: int = 0):
+        if cls.find_by_ids(user_id, course_id, module_id) is not None:
+            return None
+        new_entry = cls(user_id=user_id, course_id=course_id, module_id=module_id, progress=progress)
+        db.session.add(new_entry)
         db.session.commit()
+        return new_entry
 
-    def open_module(self, module_id: int):
-        self.collect()  # collecting previous data
-        self.module_id = module_id
-        self.point_id = None
-        self.test = None
+    @classmethod
+    def find_or_create_with_progress(cls, user_id: int, course_id: int, module_id: int, progress: int):
+        entry: cls = cls.find_by_ids(user_id, course_id, module_id)
+        if entry is None:
+            entry = cls.create(user_id, course_id, module_id, progress)
+        else:
+            entry.progress = progress
+            db.session.commit()
+        return entry
 
-        pass  # CHECK FOR TEST AND START IT IF NEEDED
+    @classmethod
+    def set_progress_by_ids(cls, user_id: int, course_id: int, module_id: int, progress: int):
+        if progress != -1:  # module is not completed
+            cls.find_or_create_with_progress(user_id, course_id, module_id, progress)
+            return True  # control CMS completed_modules!
 
-        db.session.commit()
+        entry: cls = cls.find_by_ids(user_id, course_id, module_id)
+        if entry is not None:
+            db.session.delete(entry)
+            db.session.commit()
+        return False
+
+    # def set_progress(self):
+        # pass
 
     def next_page_id(self) -> int:
         self.point_id += 1
@@ -193,3 +215,8 @@ class Session(db.Model, Identifiable):  # try keeping in memory
         #     return Point.find_by_ids(self.course_id, self.module_id, self.point_id).execute()
         # else:
         #     return Point.find_by_ids(self.course_id, self.module_id, point_id).execute()
+
+
+class TestModuleSession(BaseModuleSession, Identifiable):
+    pass  # keeps test instance (one to many) in keeper.py
+    # collects the results
