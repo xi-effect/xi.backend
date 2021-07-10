@@ -1,7 +1,7 @@
 from database.base.basic import UserRole, Identifiable
 
-from database.education.courses import Module, ModuleTypes
-from database.education.sessions import ModuleFilterSession, StandardModuleSession
+from database.education.courses import Module, ModuleType
+from database.education.sessions import ModuleFilterSession, StandardModuleSession, TestModuleSession
 from database.education.moderation import CATSubmission
 
 from database.file_system.keeper import CATFile, CATCourse, Page
