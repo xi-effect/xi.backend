@@ -8,7 +8,7 @@ from flask_restful import Api
 
 from api_resources import *
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
-from database import Course, AuthorTeam, Author, TestPoint, User, CourseFilterSession  # test
+from database import TestPoint, User  # test
 from database import TokenBlockList
 from main import app
 from main import db
@@ -23,7 +23,6 @@ jwt: JWTManager = JWTManager(app)
 def create_tables():
     db.create_all()
 
-    Course.test()
     TestPoint.test()
 
     if User.find_by_email_address("test@test.test") is None:
@@ -33,23 +32,6 @@ def create_tables():
     if User.find_by_email_address("admin@admin.admin") is None:
         User.create("admin@admin.admin", "admin", "2b003f13e43546e8b416a9ff3c40bc4ba694d" +
                     "0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe")
-
-    test_user: User = User.find_by_email_address("test@test.test")
-
-    author = Author.find_by_id(test_user.id)
-    if not author:
-        print(1)
-        author = Author.create(test_user.id)
-        team = AuthorTeam.create("The TEST")
-        team.courses.append(Course.find_by_id(3))
-        team.courses.append(Course.find_by_id(12))
-        team.courses.append(Course.find_by_id(13))
-        author.teams.append(team)
-        db.session.add(author)
-        db.session.add(team)
-        db.session.commit()
-
-    CourseFilterSession.find_or_create(test_user.id, 0)
 
 
 @jwt.token_in_blocklist_loader
@@ -137,13 +119,15 @@ api.add_resource(CoursePreferences, "/courses/<int:course_id>/preference/")
 api.add_resource(CourseReporter, "/courses/<int:course_id>/report/")
 
 # Adding in-course resources:
-api.add_resource(CourseMapper, "/courses/<int:course_id>/map/")
-api.add_resource(SessionCourseMapper, "/sessions/<int:session_id>/map/")
-api.add_resource(ModuleOpener, "/sessions/<int:session_id>/modules/<int:module_id>/")
-api.add_resource(Progresser, "/sessions/<int:session_id>/next/")
-api.add_resource(Navigator, "/sessions/<int:session_id>/points/<int:point_id>/")
-api.add_resource(ContentsGetter, "/sessions/<int:session_id>/contents/")
-api.add_resource(TestChecker, "/sessions/<int:session_id>/submit/")
+api.add_resource(ModuleOpener, "/modules/<int:module_id>/")
+api.add_resource(StandardProgresser, "/sessions/<int:session_id>/")
+api.add_resource(PracticeGenerator, "/module/<int:module_id>/next/")
+api.add_resource(TheoryContentsGetter, "/module/<int:module_id>/contents/")
+api.add_resource(TheoryNavigator, "/module/<int:module_id>/points/<int:point_id>/")
+api.add_resource(TestContentsGetter, "/tests/<int:test_id>/contents/")
+api.add_resource(TestNavigator, "/tests/<int:test_id>/tasks/<int:task_id>/")
+api.add_resource(TestReplySaver, "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
+api.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
 
 # Adding authorship resources:
 api.add_resource(TeamLister, "/cat/teams/")

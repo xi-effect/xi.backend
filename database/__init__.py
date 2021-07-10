@@ -1,6 +1,6 @@
 from database.base.basic import UserRole, Identifiable
 
-from database.education.courses import Module, ModuleType
+from database.education.courses import Module, ModuleType, Point
 from database.education.sessions import ModuleFilterSession, StandardModuleSession, TestModuleSession
 from database.education.moderation import CATSubmission
 

@@ -19,13 +19,13 @@ class ModuleFilterSession(db.Model):
     hidden = db.Column(db.Boolean, nullable=False, default=False)
 
     last_visited = db.Column(db.DateTime, nullable=True)  # None for not visited
-    last_changed = db.Column(db.Float, nullable=True)
+    last_changed = db.Column(db.DateTime, nullable=True)
 
     @classmethod
     def create(cls, user_id: int, module_id: int):
         if cls.find_by_ids(user_id, module_id) is not None:
             return None
-        new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow().timestamp())
+        new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())
         db.session.add(new_entry)
         db.session.commit()
         return new_entry
@@ -69,12 +69,12 @@ class ModuleFilterSession(db.Model):
         return list(map(lambda x: x.course_id, query.all()))
 
     @classmethod
-    def change_preference_by_user(cls, user_id: int, operation: str, **params):
+    def change_preference_by_user(cls, user_id: int, operation: str, **params) -> None:
         filter_session: cls
         for filter_session in cls.query.filter_by(user_id=user_id, **params).all():
             filter_session.change_preference(operation)
 
-    def is_valuable(self):
+    def is_valuable(self) -> bool:
         return self.hidden or self.pinned or self.starred or self.started
 
     def to_json(self) -> Dict[str, bool]:
@@ -86,8 +86,12 @@ class ModuleFilterSession(db.Model):
     def get_visit_date(self) -> float:
         return self.last_visited.timestamp() if self.last_visited is not None else -1
 
-    def note_change(self):
-        self.last_changed = datetime.utcnow().timestamp()
+    def visit_now(self) -> None:
+        self.last_visited = datetime.utcnow()
+        self.note_change()
+
+    def note_change(self) -> None:
+        self.last_changed = datetime.utcnow()
         db.session.commit()
 
     def change_preference(self, operation: str) -> None:
@@ -130,6 +134,13 @@ class BaseModuleSession(db.Model, Identifiable):
     def find_by_ids(cls, user_id: int, module_id: int):
         return cls.query.filter_by(user_id=user_id, module_id=module_id).first()
 
+    @classmethod
+    def find_or_create(cls, user_id: int, module_id: int):
+        entry = cls.find_by_ids(user_id, module_id)
+        if entry is None:
+            return cls.create(user_id, module_id)
+        return entry
+
 
 class StandardModuleSession(BaseModuleSession):
     __tablename__ = "standard_module_sessions"
@@ -158,13 +169,12 @@ class StandardModuleSession(BaseModuleSession):
     def set_progress_by_ids(cls, user_id: int, module_id: int, progress: int):
         if progress != -1:  # module is not completed
             cls.find_or_create_with_progress(user_id, module_id, progress)
-            return True  # control CMS completed_modules!
+            return
 
         entry: cls = cls.find_by_ids(user_id, module_id)
         if entry is not None:
             db.session.delete(entry)
             db.session.commit()
-        return False
 
     # def set_progress(self):
         # pass
@@ -184,4 +194,16 @@ class StandardModuleSession(BaseModuleSession):
 
 class TestModuleSession(BaseModuleSession):
     pass  # keeps test instance (one to many) in keeper.py
-    # collects the results
+
+    @classmethod
+    def create(cls, user_id: int, module_id: int):
+        pass
+
+    def get_task(self, task_id: int) -> dict:
+        pass
+
+    def set_reply(self, task_id: int, reply):
+        pass
+
+    def collect_results(self) -> dict:
+        pass  # delete the session!

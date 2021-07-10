@@ -34,6 +34,11 @@ class Point(db.Model):
         return cls.query.filter_by(module_id=module_id, point_id=point_id).first()
 
     @classmethod
+    def find_and_execute(cls, module_id: int, point_id: int) -> int:
+        entry: cls = cls.find_by_ids(module_id, point_id)
+        return entry.execute()
+
+    @classmethod
     def get_module_points(cls, module_id: int):
         return cls.query.filter_by(module_id=module_id).all()
 
@@ -45,7 +50,7 @@ class Point(db.Model):
             pass
 
 
-class ModuleTypes(Enum):
+class ModuleType(Enum):
     STANDARD = 0
     PRACTICE_BLOCK = 1
     THEORY_BLOCK = 2
@@ -72,10 +77,11 @@ class Module(db.Model, Identifiable):
     creation_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     # Author-related
-    # ???
+    author = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False,
+                       default=0)
 
     @classmethod
-    def __create(cls, module_type: ModuleTypes, name: str, length: int):
+    def __create(cls, module_type: ModuleType, name: str, length: int):
         new_module = cls(type=module_type.value, name=name, length=length)
         db.session.add(new_module)
         db.session.commit()
@@ -111,6 +117,9 @@ class Module(db.Model, Identifiable):
                 query = query.filter_by(theme=filters["theme"])
 
         return query.offset(offset).limit(limit).all()
+
+    def get_any_point(self) -> Point:
+        return Point.find_by_ids(self.id, randint(1, self.length))
 
     def to_short_json(self) -> dict:
         pass
