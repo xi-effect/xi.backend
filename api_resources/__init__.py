@@ -1,8 +1,8 @@
 from .education.interaction import ModuleOpener, StandardProgresser, PracticeGenerator
 from .education.interaction import TheoryContentsGetter, TheoryNavigator, PageGetter
 from .education.interaction import TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector
-from .education.education import FilterGetter, CourseLister, HiddenCourseLister
-from .education.education import CoursePreferences, CourseReporter
+from .education.education import FilterGetter, ModuleLister, HiddenModuleLister
+from .education.education import ModulePreferences, ModuleReporter
 from .education.authorship import TeamLister, OwnedCourseLister
 from .education.authorship import OwnedPageLister, ReusablePageLister
 from .education.publishing import Submitter, SubmissionLister, SubmissionIndexer

@@ -113,10 +113,10 @@ api.add_resource(PasswordChanger, "/password-change/")
 
 # Adding education (outside courses) resources:
 api.add_resource(FilterGetter, "/filters/")
-api.add_resource(CourseLister, "/courses/")
-api.add_resource(HiddenCourseLister, "/courses/hidden/")
-api.add_resource(CoursePreferences, "/courses/<int:course_id>/preference/")
-api.add_resource(CourseReporter, "/courses/<int:course_id>/report/")
+api.add_resource(ModuleLister, "/courses/")
+api.add_resource(HiddenModuleLister, "/courses/hidden/")
+api.add_resource(ModulePreferences, "/courses/<int:course_id>/preference/")
+api.add_resource(ModuleReporter, "/courses/<int:course_id>/report/")
 
 # Adding in-course resources:
 api.add_resource(ModuleOpener, "/modules/<int:module_id>/")
