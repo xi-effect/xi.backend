@@ -25,7 +25,7 @@ class SortType(str, Enum):
 COURSES_PER_REQUEST: int = 12
 
 
-class CourseLister(Resource):  # [POST] /courses/
+class ModuleLister(Resource):  # [POST] /courses/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("filters", type=dict, required=False)
     parser.add_argument("sort", required=False)
@@ -46,7 +46,7 @@ class CourseLister(Resource):  # [POST] /courses/
             user.set_filter_bind()
         user_id: int = user.id
 
-        result: List[Module] = Module.get_course_list(filters, user_id, start, finish-start)
+        result: List[Module] = Module.get_module_list(filters, user_id, start, finish-start)
 
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
@@ -58,7 +58,7 @@ class CourseLister(Resource):  # [POST] /courses/
         return list(map(lambda x: x.to_json(user_id), result))
 
 
-class HiddenCourseLister(Resource):
+class HiddenModuleLister(Resource):
     @lister(-12)
     def post(self, user: User, start: int, finish: int) -> list:
         result = list()
@@ -68,7 +68,7 @@ class HiddenCourseLister(Resource):
         return result
 
 
-class CoursePreferences(Resource):  # [POST] /courses/<int:course_id>/preference/
+class ModulePreferences(Resource):  # [POST] /courses/<int:course_id>/preference/
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True)
 
@@ -81,7 +81,7 @@ class CoursePreferences(Resource):  # [POST] /courses/<int:course_id>/preference
         return {"a": True}
 
 
-class CourseReporter(Resource):
+class ModuleReporter(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("reason", required=True)
     parser.add_argument("message", required=False)
@@ -92,7 +92,7 @@ class CourseReporter(Resource):
     def post(self, module: Module, reason: str, message: str):
         send_discord_message(
             WebhookURLs.COMPLAINER,
-            f"Появилась новая жалоба на курс #{module.id} ({module.name})\n"
+            f"Появилась новая жалоба на модуль #{module.id} ({module.name})\n"
             f"Причина: {reason}" + f"\nСообщение: {message}" if message is not None else ""
         )
         return {"a": True}
