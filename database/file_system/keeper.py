@@ -22,7 +22,7 @@ class CATFile(db.Model, Identifiable):
 
     id = db.Column(db.Integer, primary_key=True)
     owner = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False,
-                      default="")  # test-only
+                      default=0)  # test-only
     location = db.Column(db.Integer, nullable=True)
 
     @classmethod
@@ -38,16 +38,6 @@ class CATFile(db.Model, Identifiable):
 
     def to_json(self) -> str:
         raise NotImplementedError
-
-
-class CATCourse(CATFile):
-    __tablename__ = "cat-courses"
-
-    owner_team = db.Column(db.Integer, db.ForeignKey("author-teams.id"), nullable=False,
-                           default=0)  # test-only
-
-    def to_json(self) -> str:
-        pass
 
 
 class Page(CATFile):
