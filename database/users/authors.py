@@ -21,8 +21,8 @@ class Author(db.Model, UserRole):
     def find_by_id(cls, entry_id: int):
         return cls.query.filter_by(id=entry_id).first()
 
-    def get_teams(self, start: int = 0, finish: int = None) -> list:
-        return list(map(lambda x: x.to_json(), self.teams[start:finish]))
+    def get_owned_modules(self, start: int = 0, finish: int = None) -> list:
+        pass
 
     def get_wip_courses(self, start: int = 0, finish: int = None) -> list:
         pass
