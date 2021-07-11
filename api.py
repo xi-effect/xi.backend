@@ -129,12 +129,6 @@ api.add_resource(TestNavigator, "/tests/<int:test_id>/tasks/<int:task_id>/")
 api.add_resource(TestReplySaver, "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
 api.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
 
-# Adding authorship resources:
-api.add_resource(TeamLister, "/cat/teams/")
-api.add_resource(OwnedCourseLister, "/cat/courses/owned/")
-api.add_resource(OwnedPageLister, "/cat/pages/owned/")
-api.add_resource(ReusablePageLister, "/cat/pages/reusable/")
-
 # Adding publishing resources:
 api.add_resource(Submitter, "/cat/submissions/")
 api.add_resource(SubmissionLister, "/cat/submissions/owned/")
