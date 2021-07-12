@@ -8,7 +8,7 @@ from base.checkers import jwt_authorizer, database_searcher, argument_parser, li
 from base.parsers import counter_parser
 from elements import Module
 from sessions import ModuleFilterSession
-from users.users import User
+from users import User
 from webhooks import send_discord_message, WebhookURLs
 
 

@@ -5,7 +5,7 @@ from flask_restful.reqparse import RequestParser
 from base.checkers import jwt_authorizer, argument_parser
 from base.parsers import password_parser
 from database import User
-from api_resources.users.emailer import send_generated_email
+from emailer import send_generated_email
 
 
 class Avatar(Resource):

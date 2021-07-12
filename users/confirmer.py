@@ -2,7 +2,7 @@ from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from base.checkers import argument_parser
-from api_resources.users.emailer import send_generated_email, parse_code
+from emailer import send_generated_email, parse_code
 from database import User
 
 

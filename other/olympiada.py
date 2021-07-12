@@ -7,7 +7,7 @@ from flask_restful import Resource
 
 from base.checkers import jwt_authorizer
 from webhooks import send_discord_message, WebhookURLs
-from users.users import User
+from users import User
 from test_keeper import TestPoint, UserSubmissions, ResultCodes
 
 
