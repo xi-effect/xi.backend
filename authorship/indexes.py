@@ -1,7 +1,7 @@
 from flask_restful import Resource
 
 from base.checkers import jwt_authorizer, lister
-from database import Author
+from user_roles import Author
 
 
 class OwnedModuleLister(Resource):  # [POST] /cat/modules/owned/
