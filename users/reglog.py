@@ -5,9 +5,9 @@ from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from database import TokenBlockList, User
-from api_resources.base.emailer import send_generated_email, parse_code
-from api_resources.base.parsers import password_parser
-from api_resources.base.checkers import argument_parser
+from api_resources.users.emailer import send_generated_email, parse_code
+from base.parsers import password_parser
+from base.checkers import argument_parser
 
 
 class UserRegistration(Resource):

@@ -1,7 +1,7 @@
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from api_resources.base.checkers import jwt_authorizer, argument_parser
+from base.checkers import jwt_authorizer, argument_parser
 from database import User
 from main import versions
 

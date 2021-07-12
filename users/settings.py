@@ -2,10 +2,10 @@ from flask import request, send_from_directory
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from api_resources.base.checkers import jwt_authorizer, argument_parser
-from api_resources.base.parsers import password_parser
+from base.checkers import jwt_authorizer, argument_parser
+from base.parsers import password_parser
 from database import User
-from api_resources.base.emailer import send_generated_email
+from api_resources.users.emailer import send_generated_email
 
 
 class Avatar(Resource):

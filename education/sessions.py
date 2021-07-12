@@ -3,7 +3,7 @@ from datetime import datetime
 
 from flask_sqlalchemy import BaseQuery
 
-from database.base.basic import Identifiable
+from base.basic import Identifiable
 from main import db
 
 
