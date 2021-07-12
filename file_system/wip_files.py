@@ -5,7 +5,8 @@ from flask import request, send_file
 from flask_restful import Resource
 
 from base.checkers import jwt_authorizer, lister
-from database import Author, CATFile, CATCourse, Page
+from keeper import CATFile, Page
+from authorship.user_roles import Author
 
 
 def file_getter(function):
@@ -13,7 +14,7 @@ def file_getter(function):
     def get_file_or_type(file_type: str, author: Author, *args, **kwargs):
         result: Type[CATFile]
         if file_type == "courses":
-            result = CATCourse
+            result = None
         elif file_type == "pages":
             result = Page
         else:
