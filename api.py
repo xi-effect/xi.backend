@@ -6,12 +6,26 @@ from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity
 from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_restful import Api
 
-from api_resources import *
+from authorship import (Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
+                        ReviewIndex, Publisher)
+from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
+                       StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
+                       TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
+                       FilterGetter, ShowAll, ModuleOpener, PageGetter)
+# from file_system import (FileLister, FileProcessor, FileCreator)
+from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
+from outside import (HelloWorld, ServerMessenger, GithubWebhook, GithubDocumentsWebhook)
+from users import (UserRegistration, UserLogin, UserLogout, PasswordResetSender, PasswordReseter,
+                   Avatar, Settings, MainSettings, EmailChanger, PasswordChanger,
+                   EmailSender, EmailConfirm)
+
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
-from database import TestPoint, User  # test
-from database import TokenBlockList
+from users import TokenBlockList
 from main import app
 from main import db
+
+from users import User  # test
+from other.test_keeper import TestPoint  # test
 
 # Initializing modules
 api: Api = Api(app)
