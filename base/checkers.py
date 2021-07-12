@@ -4,7 +4,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful.reqparse import RequestParser
 
 from database import User, UserRole, Identifiable
-from api_resources.base.parsers import counter_parser
+from base.parsers import counter_parser
 
 
 def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user"):

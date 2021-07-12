@@ -2,8 +2,8 @@ from typing import Dict, Union
 
 from passlib.hash import pbkdf2_sha256 as sha256
 
-from database.base.basic import UserRole
-from database.users.special import Moderator
+from base.basic import UserRole
+from authorship.special import Moderator
 from main import db
 
 

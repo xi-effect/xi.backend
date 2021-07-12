@@ -5,7 +5,7 @@ from typing import IO
 from flask import request, send_file
 from flask_restful import Resource
 
-from api_resources.base.checkers import jwt_authorizer
+from base.checkers import jwt_authorizer
 from webhooks import send_discord_message, WebhookURLs
 from database import User, TestPoint, UserSubmissions, ResultCodes
 
