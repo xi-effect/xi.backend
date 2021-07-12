@@ -3,8 +3,30 @@ from typing import Type, Optional, Union, Tuple, Callable, Any
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful.reqparse import RequestParser
 
-from database import User, UserRole, Identifiable
-from base.parsers import counter_parser
+from users import User
+from parsers import counter_parser
+
+
+class Identifiable:
+    not_found_text: str = ""
+
+    def __init__(self, **kwargs):
+        pass
+
+    @classmethod
+    def find_by_id(cls, entry_id: int):
+        raise NotImplementedError
+
+
+class UserRole:
+    not_found_text: str = ""
+
+    def __init__(self, **kwargs):
+        pass
+
+    @classmethod
+    def find_by_id(cls, entry_id: int):
+        raise NotImplementedError
 
 
 def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user"):

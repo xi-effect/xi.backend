@@ -1,6 +1,6 @@
 from flask_restful import Resource
 
-from base.checkers import jwt_authorizer, lister
+from componets.checkers import jwt_authorizer, lister
 from user_roles import Author
 
 

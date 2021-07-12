@@ -1,8 +1,8 @@
 from enum import Enum
 
 from main import db
-from base.basic import Identifiable
-from authorship.user_roles import Author
+from componets import Identifiable
+from authorship import Author
 
 
 class Locations(Enum):

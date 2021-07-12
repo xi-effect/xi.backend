@@ -4,7 +4,7 @@ from typing import Type, List
 from flask import request, send_file
 from flask_restful import Resource
 
-from base.checkers import jwt_authorizer, lister
+from componets import jwt_authorizer, lister
 from keeper import CATFile, Page
 from authorship.user_roles import Author
 
