@@ -5,3 +5,4 @@ ngrok.exe
 test.py
 /wsgi.py
 /database/app.db
+/updater.py

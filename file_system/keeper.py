@@ -2,7 +2,7 @@ from enum import Enum
 
 from main import db
 from base.basic import Identifiable
-from authorship.authors import Author  # , AuthorTeam
+from authorship.user_roles import Author  # , AuthorTeam
 
 
 class Locations(Enum):

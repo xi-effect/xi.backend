@@ -4,7 +4,8 @@ from flask_restful.reqparse import RequestParser
 
 from base.checkers import jwt_authorizer, database_searcher, argument_parser, lister
 from base.parsers import counter_parser
-from database import Author, CATSubmission, Moderator
+from user_roles import Author, Moderator
+from submissions import CATSubmission
 
 
 class Submitter(Resource):  # [POST] /cat/submissions/
