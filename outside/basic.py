@@ -2,7 +2,7 @@ from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from base.checkers import jwt_authorizer, argument_parser
-from users.users import User
+from users import User
 from main import versions
 
 

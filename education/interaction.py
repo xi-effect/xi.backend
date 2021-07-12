@@ -4,7 +4,7 @@ from flask_restful import Resource
 from base.checkers import database_searcher, jwt_authorizer
 from elements import Module, ModuleType, Point
 from sessions import ModuleFilterSession, StandardModuleSession as SMS, TestModuleSession as TMS
-from users.users import User
+from users import User
 
 
 def redirected_to_pages(func):
