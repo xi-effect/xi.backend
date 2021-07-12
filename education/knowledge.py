@@ -6,7 +6,9 @@ from flask_restful.reqparse import RequestParser
 
 from base.checkers import jwt_authorizer, database_searcher, argument_parser, lister
 from base.parsers import counter_parser
-from database import User, Module, ModuleFilterSession
+from elements import Module
+from sessions import ModuleFilterSession
+from users.users import User
 from webhooks import send_discord_message, WebhookURLs
 
 
@@ -46,7 +48,7 @@ class ModuleLister(Resource):  # [POST] /courses/
             user.set_filter_bind()
         user_id: int = user.id
 
-        result: List[Module] = Module.get_module_list(filters, user_id, start, finish-start)
+        result: List[Module] = Module.get_module_list(filters, user_id, start, finish - start)
 
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
