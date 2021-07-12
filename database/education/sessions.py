@@ -66,7 +66,7 @@ class ModuleFilterSession(db.Model):
         if limit is not None:
             query = query.limit(limit)
 
-        return list(map(lambda x: x.course_id, query.all()))
+        return [x.course_id for x in query.all()]
 
     @classmethod
     def change_preference_by_user(cls, user_id: int, operation: str, **params) -> None:

@@ -122,11 +122,12 @@ class Module(db.Model, Identifiable):
         return Point.find_by_ids(self.id, randint(1, self.length))
 
     def to_short_json(self) -> dict:
-        pass
+        return {"id": self.id, "name": self.name, "author": self.author}
 
     def to_json(self, user_id: int = None) -> dict:
         result: dict = self.to_short_json()
         if user_id is not None:
-            result.update()
-        result.update()
+            result.update(ModuleFilterSession.find_json(user_id, self.id))
+        result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
+                       "type": ModuleType(self.type).name.lower().replace("_", "-")})
         return result
