@@ -6,8 +6,8 @@ from typing import Dict, List
 
 from flask_sqlalchemy import BaseQuery
 
-from base.basic import Identifiable
-from database.education.sessions import ModuleFilterSession
+from componets import Identifiable
+from sessions import ModuleFilterSession
 from main import db
 
 

@@ -7,7 +7,7 @@ from typing import Set
 
 from flask_sqlalchemy import BaseQuery
 
-from base.basic import Identifiable
+from componets.basic import Identifiable
 from main import db
 
 

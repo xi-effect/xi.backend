@@ -1,5 +1,5 @@
 from main import db
-from base.basic import UserRole
+from componets.basic import UserRole
 
 
 class Author(db.Model, UserRole):

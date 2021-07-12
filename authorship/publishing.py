@@ -2,8 +2,8 @@ from flask import request, send_from_directory
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from base.checkers import jwt_authorizer, database_searcher, argument_parser, lister
-from base.parsers import counter_parser
+from componets.checkers import jwt_authorizer, database_searcher, argument_parser, lister
+from componets.parsers import counter_parser
 from user_roles import Author, Moderator
 from submissions import CATSubmission
 
