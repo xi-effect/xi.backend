@@ -2,8 +2,8 @@ from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from componets import argument_parser
-from emailer import send_generated_email, parse_code
-from database import User
+from users.database import User
+from users.emailer import send_generated_email, parse_code
 
 
 class EmailSender(Resource):

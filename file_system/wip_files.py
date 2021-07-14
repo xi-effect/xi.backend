@@ -4,9 +4,9 @@ from typing import Type
 from flask import request, send_file
 from flask_restful import Resource
 
-from componets import jwt_authorizer, lister
-from keeper import CATFile, WIPModule, Page
 from authorship import Author
+from componets import jwt_authorizer, lister
+from file_system.keeper import CATFile, WIPModule, Page
 
 
 def file_getter(function):

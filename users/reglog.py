@@ -4,9 +4,9 @@ from flask_jwt_extended import get_jwt, jwt_required, unset_jwt_cookies
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from database import TokenBlockList, User
-from emailer import send_generated_email, parse_code
 from componets import password_parser, argument_parser
+from users.database import TokenBlockList, User
+from users.emailer import send_generated_email, parse_code
 
 
 class UserRegistration(Resource):

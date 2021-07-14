@@ -3,8 +3,8 @@ from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from componets import jwt_authorizer, argument_parser, password_parser
-from database import User
-from emailer import send_generated_email
+from users.database import User
+from users.emailer import send_generated_email
 
 
 class Avatar(Resource):
