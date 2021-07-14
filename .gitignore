@@ -6,3 +6,4 @@ test.py
 /wsgi.py
 /database/app.db
 /updater.py
+/app.db

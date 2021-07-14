@@ -1,14 +1,15 @@
 from datetime import datetime
 from enum import Enum
-# from typing import Set
-
 # from flask_sqlalchemy import BaseQuery
 from typing import Set
 
 from flask_sqlalchemy import BaseQuery
 
-from componets.basic import Identifiable
+from componets import Identifiable
 from main import db
+
+
+# from typing import Set
 
 
 class ModerationStatus(Enum):
@@ -58,16 +59,16 @@ class CATSubmission(db.Model, Identifiable):
 
     @classmethod
     def find_by_author(cls, author_id: int, offset: int, limit: int):
-        return cls.query\
-            .filter_by(author_id=author_id)\
-            .order_by(CATSubmission.date)\
+        return cls.query \
+            .filter_by(author_id=author_id) \
+            .order_by(CATSubmission.date) \
             .offset(offset).limit(limit).all()
 
     @classmethod
     def list_unreviewed(cls, offset: int, limit: int):
-        return cls.query\
-            .filter_by(status=ModerationStatus.POSTED.value)\
-            .order_by(CATSubmission.date)\
+        return cls.query \
+            .filter_by(status=ModerationStatus.POSTED.value) \
+            .order_by(CATSubmission.date) \
             .offset(offset).limit(limit).all()
 
     def to_author_json(self) -> dict:

@@ -1,7 +1,7 @@
 from flask_restful import Resource
 
-from componets.checkers import jwt_authorizer, lister
-from user_roles import Author
+from authorship.user_roles import Author
+from componets import jwt_authorizer, lister
 
 
 class OwnedModuleLister(Resource):  # [POST] /cat/modules/owned/

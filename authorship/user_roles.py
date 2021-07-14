@@ -1,5 +1,5 @@
+from componets import UserRole
 from main import db
-from componets.basic import UserRole
 
 
 class Author(db.Model, UserRole):
@@ -8,7 +8,7 @@ class Author(db.Model, UserRole):
 
     id = db.Column(db.Integer, primary_key=True)
     modules = db.relationship("Module", backref="authors")
-    pages = db.relationship("Page", backref="authors")
+    # pages = db.relationship("Page", backref="authors")
 
     @classmethod
     def create(cls, user_id: int):

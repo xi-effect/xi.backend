@@ -35,7 +35,7 @@ app.config["MAIL_USERNAME"] = "xieffect.edu@gmail.com"
 CORS(app, supports_credentials=True)  # , resources={r"/*": {"origins": "https://xieffect.vercel.app"}})
 
 # Database config:
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database/app.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 # "mysql+mysqldb://qwert45hi:7b[-2duvd44sgoi1=pwfpji0i@qwert45hi.mysql.pythonanywhere-services.com/development"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 280
