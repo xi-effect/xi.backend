@@ -1,20 +1,20 @@
 from os import remove
-from typing import Type, List
+from typing import Type
 
 from flask import request, send_file
 from flask_restful import Resource
 
 from componets import jwt_authorizer, lister
-from keeper import CATFile, Page
-from authorship.user_roles import Author
+from keeper import CATFile, WIPModule, Page
+from authorship import Author
 
 
 def file_getter(function):
     @jwt_authorizer(Author, "author")
     def get_file_or_type(file_type: str, author: Author, *args, **kwargs):
         result: Type[CATFile]
-        if file_type == "courses":
-            result = None
+        if file_type == "modules":
+            result = WIPModule
         elif file_type == "pages":
             result = Page
         else:
@@ -34,8 +34,7 @@ def file_getter(function):
 class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @lister(12, file_getter)
     def post(self, file_type: Type[CATFile], author: Author, start: int, finish: int):
-        file_list: List[file_type] = file_type.find_by_owner(author, start, finish - start)
-        return list(map(lambda x: x.to_json(), file_list))
+        return [x.to_json() for x in file_type.find_by_owner(author, start, finish - start)]
 
 
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/

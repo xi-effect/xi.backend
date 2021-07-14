@@ -17,8 +17,7 @@ class Locations(Enum):
 
 
 class CATFile(db.Model, Identifiable):
-    __tablename__ = "cat-file-system"
-    not_found_text = "File not found"
+    __abstract__ = True
 
     id = db.Column(db.Integer, primary_key=True)
     owner = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False,
@@ -42,10 +41,21 @@ class CATFile(db.Model, Identifiable):
 
 class Page(CATFile):
     __tablename__ = "pages"
+    not_found_text = "Page not found"
 
     tags = db.Column(db.String(100), nullable=False)
     reusable = db.Column(db.Boolean, nullable=False)
     published = db.Column(db.Boolean, nullable=False)
+
+    def to_json(self) -> str:
+        pass
+
+
+class WIPModule(CATFile):
+    __tablename__ = "pages"
+    not_found_text = "Module not found"
+
+    pass
 
     def to_json(self) -> str:
         pass
