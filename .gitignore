@@ -2,8 +2,6 @@ yeet
 .archive
 ngrok.exe
 .idea
-test.py
-/wsgi.py
+/xieffect/wsgi.py
 /database/app.db
-/updater.py
-/app.db
+/xieffect/app.db
