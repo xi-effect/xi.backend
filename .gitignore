@@ -5,3 +5,4 @@ ngrok.exe
 /xieffect/wsgi.py
 /database/app.db
 /xieffect/app.db
+/test/.pytest_cache
