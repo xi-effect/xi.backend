@@ -70,7 +70,8 @@ sender: Optional[EmailSender] = None
 try:
     sender = EmailSender()
 except RefreshError as error:
-    send_discord_message(WebhookURLs.ERRORS, "Google API token refresh failed again!")
+    pass
+    # send_discord_message(WebhookURLs.ERRORS, "Google API token refresh failed again!")
 
 
 def send_email(receiver: str, code: str, filename: str, theme: str):
