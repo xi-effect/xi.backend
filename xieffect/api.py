@@ -96,28 +96,28 @@ def unauthorized_callback(callback):
 
 
 # Adding basic resources:
-api.add_resource(HelloWorld, "/", )
-api.add_resource(ServerMessenger, "/status/")
+api.add_resource(HelloWorld,            "/")
+api.add_resource(ServerMessenger,       "/status/")
 
 # Adding email resources:
-api.add_resource(EmailSender, "/email/<email>/")
-api.add_resource(EmailConfirm, "/email-confirm/")
+api.add_resource(EmailSender,           "/email/<email>/")
+api.add_resource(EmailConfirm,          "/email-confirm/")
 
 # Adding sign up/in/out resources:
-api.add_resource(UserRegistration, "/reg/")
-api.add_resource(UserLogin, "/auth/")
-api.add_resource(UserLogout, "/logout/")
+api.add_resource(UserRegistration,      "/reg/")
+api.add_resource(UserLogin,             "/auth/")
+api.add_resource(UserLogout,            "/logout/")
 
 # Adding password resetting resources:
-api.add_resource(PasswordResetSender, "/password-reset/<email>/")
-api.add_resource(PasswordReseter, "/password-reset/confirm/")
+api.add_resource(PasswordResetSender,   "/password-reset/<email>/")
+api.add_resource(PasswordReseter,       "/password-reset/confirm/")
 
 # Adding settings resources:
-api.add_resource(Avatar, "/avatar/")
-api.add_resource(Settings, "/settings/")
-api.add_resource(MainSettings, "/settings/main/")
-api.add_resource(EmailChanger, "/email-change/")
-api.add_resource(PasswordChanger, "/password-change/")
+api.add_resource(Avatar,                "/avatar/")
+api.add_resource(Settings,              "/settings/")
+api.add_resource(MainSettings,          "/settings/main/")
+api.add_resource(EmailChanger,          "/email-change/")
+api.add_resource(PasswordChanger,       "/password-change/")
 
 # Adding student's main_page resources:
 # api.add_resource(SchoolIntegration, "/school/")
@@ -126,46 +126,46 @@ api.add_resource(PasswordChanger, "/password-change/")
 # api.add_resource(Notif, "/notif/<int:notification_id>/")
 
 # Adding education (outside courses) resources:
-api.add_resource(FilterGetter, "/filters/")
-api.add_resource(ModuleLister, "/courses/")
-api.add_resource(HiddenModuleLister, "/courses/hidden/")
-api.add_resource(ModulePreferences, "/courses/<int:course_id>/preference/")
-api.add_resource(ModuleReporter, "/courses/<int:course_id>/report/")
+api.add_resource(FilterGetter,          "/filters/")
+api.add_resource(ModuleLister,          "/modules/", "/courses/")
+api.add_resource(HiddenModuleLister,    "/modules/hidden/", "/courses/hidden/")
+api.add_resource(ModulePreferences,     "/modules/<int:module_id>/preference/", "/courses/<int:module_id>/preference/")
+api.add_resource(ModuleReporter,        "/modules/<int:module_id>/report/", "/courses/<int:module_id>/report/")
 
 # Adding in-course resources:
-api.add_resource(ModuleOpener, "/modules/<int:module_id>/")
-api.add_resource(StandardProgresser, "/sessions/<int:session_id>/")
-api.add_resource(PracticeGenerator, "/module/<int:module_id>/next/")
-api.add_resource(TheoryContentsGetter, "/module/<int:module_id>/contents/")
-api.add_resource(TheoryNavigator, "/module/<int:module_id>/points/<int:point_id>/")
-api.add_resource(TestContentsGetter, "/tests/<int:test_id>/contents/")
-api.add_resource(TestNavigator, "/tests/<int:test_id>/tasks/<int:task_id>/")
-api.add_resource(TestReplySaver, "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
-api.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
+api.add_resource(ModuleOpener,          "/modules/<int:module_id>/")
+api.add_resource(StandardProgresser,    "/sessions/<int:session_id>/")
+api.add_resource(PracticeGenerator,     "/modules/<int:module_id>/next/")
+api.add_resource(TheoryContentsGetter,  "/modules/<int:module_id>/contents/")
+api.add_resource(TheoryNavigator,       "/modules/<int:module_id>/points/<int:point_id>/")
+api.add_resource(TestContentsGetter,    "/tests/<int:test_id>/contents/")
+api.add_resource(TestNavigator,         "/tests/<int:test_id>/tasks/<int:task_id>/")
+api.add_resource(TestReplySaver,        "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
+api.add_resource(TestResultCollector,   "/tests/<int:test_id>/results/")
 
 # Adding publishing resources:
-api.add_resource(Submitter, "/cat/submissions/")
-api.add_resource(SubmissionLister, "/cat/submissions/owned/")
-api.add_resource(SubmissionIndexer, "/cat/submissions/index/")
-api.add_resource(SubmissionReader, "/cat/submissions/<int:submission_id>/")
-api.add_resource(ReviewIndex, "/cat/reviews/<int:submission_id>/")
-api.add_resource(Publisher, "/cat/publications/")
+api.add_resource(Submitter,             "/cat/submissions/")
+api.add_resource(SubmissionLister,      "/cat/submissions/owned/")
+api.add_resource(SubmissionIndexer,     "/cat/submissions/index/")
+api.add_resource(SubmissionReader,      "/cat/submissions/<int:submission_id>/")
+api.add_resource(ReviewIndex,           "/cat/reviews/<int:submission_id>/")
+api.add_resource(Publisher,             "/cat/publications/")
 
 # Adding file resource(s):
-api.add_resource(PageGetter, "/pages/<int:page_id>/")
+api.add_resource(PageGetter,            "/pages/<int:page_id>/")
 
 # Adding application resource(s):
-api.add_resource(Version, "/<app_name>/version/")
-api.add_resource(GithubWebhook, "/update/")
+api.add_resource(Version,               "/<app_name>/version/")
+api.add_resource(GithubWebhook,         "/update/")
 api.add_resource(GithubDocumentsWebhook, "/update-docs/")
 
 # Adding side-thing resources:
-api.add_resource(UpdateRequest, "/oct/update/")
-api.add_resource(SubmitTask, "/tasks/<task_name>/attempts/new/")
-api.add_resource(GetTaskSummary, "/tasks/<task_name>/attempts/all/")
+api.add_resource(UpdateRequest,         "/oct/update/")
+api.add_resource(SubmitTask,            "/tasks/<task_name>/attempts/new/")
+api.add_resource(GetTaskSummary,        "/tasks/<task_name>/attempts/all/")
 
 # Test only:
-api.add_resource(ShowAll, "/test/")
+api.add_resource(ShowAll,               "/test/")
 
 if __name__ == "__main__":  # test only
     app.run(debug=True)
