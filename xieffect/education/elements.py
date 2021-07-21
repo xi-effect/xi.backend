@@ -81,8 +81,10 @@ class Module(db.Model, Identifiable):
                        default=0)
 
     @classmethod
-    def __create(cls, module_type: ModuleType, name: str, length: int):
-        new_module = cls(type=module_type.value, name=name, length=length)
+    def __create(cls, module_type: ModuleType, name: str, length: int,
+                 theme: str, category: str, difficulty: str):
+        new_module = cls(type=module_type.value, name=name, length=length,
+                         theme=theme, category=category, difficulty=difficulty)
         db.session.add(new_module)
         db.session.commit()
         return True
