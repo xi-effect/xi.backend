@@ -119,3 +119,6 @@ class User(db.Model, UserRole):
     def set_filter_bind(self, bind: str = None) -> None:
         self.filter_bind = bind
         db.session.commit()
+
+
+UserRole.default_role = User

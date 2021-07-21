@@ -7,7 +7,7 @@ from typing import Dict, List
 from flask_sqlalchemy import BaseQuery
 
 from componets import Identifiable
-from sessions import ModuleFilterSession
+from education.sessions import ModuleFilterSession
 from main import db
 
 

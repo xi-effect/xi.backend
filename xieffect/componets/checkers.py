@@ -3,8 +3,7 @@ from typing import Type, Optional, Union, Tuple, Callable, Any
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful.reqparse import RequestParser
 
-from users import User
-from parsers import counter_parser
+from componets.parsers import counter_parser
 
 
 class Identifiable:
@@ -20,6 +19,7 @@ class Identifiable:
 
 class UserRole:
     not_found_text: str = ""
+    default_role = None
 
     def __init__(self, **kwargs):
         pass
@@ -35,7 +35,7 @@ def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "use
         def authorizer_inner(*args, **kwargs):
             result: role = role.find_by_id(get_jwt_identity())
             if result is None:
-                return {"a": role.not_found_text}, 401 if role is User else 403
+                return {"a": role.not_found_text}, 401 if role is UserRole.default_role else 403
             else:
                 if result_filed_name is not None:
                     kwargs[result_filed_name] = result
@@ -91,7 +91,7 @@ def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str
     return argument_wrapper
 
 
-def lister(per_request: int, authorizer: Callable[[Callable], Any] = jwt_authorizer(User),
+def lister(per_request: int, authorizer: Callable[[Callable], Any] = jwt_authorizer(UserRole.default_role),
            argument_parser: Callable[[Callable], Any] = argument_parser(counter_parser, "counter")):
     def lister_wrapper(function):
         @authorizer

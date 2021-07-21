@@ -8,7 +8,7 @@ from flask_restful import Resource
 from componets import jwt_authorizer
 from webhooks import send_discord_message, WebhookURLs
 from users import User
-from test_keeper import TestPoint, UserSubmissions, ResultCodes
+from other.test_keeper import TestPoint, UserSubmissions, ResultCodes
 
 
 def check_one(inp: str, out: str) -> ResultCodes:

@@ -5,8 +5,8 @@ from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
-from elements import Module
-from sessions import ModuleFilterSession
+from education.elements import Module
+from education.sessions import ModuleFilterSession
 from users import User
 from webhooks import send_discord_message, WebhookURLs
 

@@ -2,10 +2,9 @@ from flask import request, send_from_directory
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from componets.checkers import jwt_authorizer, database_searcher, argument_parser, lister
-from componets.parsers import counter_parser
-from user_roles import Author, Moderator
-from submissions import CATSubmission
+from authorship.submissions import CATSubmission
+from authorship.user_roles import Author, Moderator
+from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
 
 
 class Submitter(Resource):  # [POST] /cat/submissions/
@@ -40,7 +39,8 @@ class SubmissionIndexer(Resource):  # [POST] /cat/submissions/index/
     parser.add_argument("type", type=int, required=False)
     parser.add_argument("tags", required=True)
 
-    @lister(24, jwt_authorizer(Moderator, None), argument_parser(parser, "counter", ("type", "submission_type"), "tags"))
+    @lister(24, jwt_authorizer(Moderator, None),
+            argument_parser(parser, "counter", ("type", "submission_type"), "tags"))
     def post(self, start: int, finish: int, submission_type: int, tags: str):
         submission: CATSubmission
         result: list = list()
