@@ -32,7 +32,8 @@ def file_getter(function):
 
 
 class FileLister(Resource):  # [POST] /wip/<file_type>/index/
-    @lister(12, file_getter)
+    @file_getter
+    @lister(12)
     def post(self, file_type: Type[CATFile], author: Author, start: int, finish: int):
         return [x.to_json() for x in file_type.find_by_owner(author, start, finish - start)]
 
