@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from pickle import dumps, loads
 from random import randint
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from flask_sqlalchemy import BaseQuery
 
@@ -58,6 +58,57 @@ class ModuleType(Enum):
 
 
 class Module(db.Model, Identifiable):
+    @staticmethod
+    def create_test_bundle():
+        if Module.find_by_id(0):
+            return
+        Module.__create(0, ModuleType.TEST, "Пробник математика ЕГЭ", 4, "math", "une", "enthusiast", 2000,
+                        datetime(2020, 10, 22, 10, 30, 3))
+        Module.__create(1, ModuleType.THEORY_BLOCK, "История: теория для ЕГЭ", 4, "history", "une", "enthusiast", 1100,
+                        datetime(2021, 1, 2, 22, 30, 33))
+        Module.__create(2, ModuleType.STANDARD, "Арифметика", 4, "math", "middle-school", "newbie", 100,
+                        datetime(2012, 10, 12, 15, 57, 2))
+        Module.__create(3, ModuleType.PRACTICE_BLOCK, "100 упражнений по матану", 4, "math", "university", "amateur", 0,
+                        datetime(1999, 3, 14, 6, 10, 5))
+        Module.__create(4, ModuleType.STANDARD, "English ABCs", 4, "languages", "hobby", "review", 2000,
+                        datetime(2019, 7, 22, 22, 10, 45))
+        Module.__create(5, ModuleType.STANDARD, "Веб Дизайн", 4, "informatics", "prof-skills", "enthusiast", 2000,
+                        datetime(2020, 10, 22, 10, 30, 8))
+        Module.__create(6, ModuleType.STANDARD, "Робототехника", 4, "informatics", "clubs", "newbie", 3100,
+                        datetime(2021, 1, 2, 22, 30, 33))
+        Module.__create(7, ModuleType.TEST, "Архитектура XIX века", 4, "arts", "university", "expert", 5,
+                        datetime(2012, 6, 12, 15, 57, 0))
+        Module.__create(8, ModuleType.STANDARD, "Безопасность в интернете", 4, "informatics", "university", "review",
+                        2002, datetime(1999, 3, 14, 6, 10, 5))
+        Module.__create(9, ModuleType.THEORY_BLOCK, "Литература", 4, "literature", "bne", "enthusiast", 300,
+                        datetime(2019, 7, 12, 22, 10, 40))
+        Module.__create(10, ModuleType.THEORY_BLOCK, "Классическая Музыка", 4, "arts", "hobby", "enthusiast", 2000,
+                        datetime(2019, 3, 22, 22, 10, 40))
+        Module.__create(11, ModuleType.STANDARD, "Немецкий язык", 4, "languages", "main-school", "enthusiast", 700,
+                        datetime(2015, 7, 22, 22, 10, 40))
+        Module.__create(12, ModuleType.PRACTICE_BLOCK, "География: контурные карты", 4, "geography", "hobby", "review",
+                        2000, datetime(2019, 7, 22, 22, 1, 40))
+        Module.__create(13, ModuleType.STANDARD, "Геодезия", 4, "geography", "hobby", "review", 2000,
+                        datetime(2016, 7, 22, 2, 52, 40))
+        Module.__create(14, ModuleType.STANDARD, "Океанология", 4, "geography", "hobby", "review", 2000,
+                        datetime(2019, 7, 22, 22, 46, 40))
+        Module.__create(15, ModuleType.TEST, "Ораторское искусство", 4, "arts", "prof-skills", "amateur", 1200,
+                        datetime(2009, 7, 22, 22, 31, 0))
+        Module.__create(16, ModuleType.THEORY_BLOCK, "Социология", 4, "social-science", "university", "review", 2000,
+                        datetime(2012, 6, 12, 15, 57, 0))
+        Module.__create(17, ModuleType.STANDARD, "Классическая философия", 4, "philosophy", "hobby", "review", 700,
+                        datetime(2019, 7, 22, 22, 11, 40))
+        Module.__create(18, ModuleType.STANDARD, "Физика: термодинамика", 4, "physics", "main-school", "review", 4200,
+                        datetime(2012, 7, 22, 2, 10, 54))
+        Module.__create(19, ModuleType.PRACTICE_BLOCK, "История России", 4, "history", "hobby", "review", 270,
+                        datetime(2019, 7, 22, 22, 10, 24))
+        Module.__create(20, ModuleType.STANDARD, "Информатика 7 класс", 4, "informatics", "middle-school", "amateur",
+                        2000, datetime(2019, 7, 22, 22, 10, 12))
+        Module.__create(21, ModuleType.TEST, "Литература Европы XX века", 4, "literature", "hobby", "review", 2000,
+                        datetime(2019, 5, 13, 1, 1, 54))
+        Module.__create(22, ModuleType.PRACTICE_BLOCK, "Python", 4, "informatics", "clubs", "newbie", 1500,
+                        datetime(2019, 7, 22, 22, 10, 32))
+
     __tablename__ = "modules"
     not_found_text = "Module not found"
 
@@ -81,8 +132,13 @@ class Module(db.Model, Identifiable):
                        default=0)
 
     @classmethod
-    def __create(cls, module_type: ModuleType, name: str, length: int):
-        new_module = cls(type=module_type.value, name=name, length=length)
+    def __create(cls, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
+                 category: str, difficulty: str, popularity: int, creation_date: datetime = None):
+        if creation_date is None:
+            creation_date = datetime.utcnow()
+        new_module = cls(id=module_id, type=module_type.value, name=name, length=length,
+                         theme=theme, category=category, difficulty=difficulty,
+                         popularity=popularity, creation_date=creation_date)
         db.session.add(new_module)
         db.session.commit()
         return True
@@ -92,7 +148,7 @@ class Module(db.Model, Identifiable):
         return cls.query.filter_by(id=module_id).first()
 
     @classmethod
-    def get_module_list(cls, filters: Dict[str, str], user_id: int, offset: int, limit: int) -> list:
+    def get_module_list(cls, filters: Optional[Dict[str, str]], user_id: int, offset: int, limit: int) -> list:
         query: BaseQuery = cls.query
         # explore joining queries!
         query = query.filter(cls.id.notin_(ModuleFilterSession.filter_ids_by_user(user_id, hidden=True)))

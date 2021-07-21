@@ -25,6 +25,7 @@ from main import app
 from main import db
 
 from users import User  # test
+from education.elements import Module  # test
 from other.test_keeper import TestPoint  # test
 
 # Initializing modules
@@ -37,6 +38,7 @@ jwt: JWTManager = JWTManager(app)
 def create_tables():
     db.create_all()
 
+    Module.create_test_bundle()
     TestPoint.test()
 
     if User.find_by_email_address("test@test.test") is None:
