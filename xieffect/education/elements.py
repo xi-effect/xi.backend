@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from pickle import dumps, loads
 from random import randint
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from flask_sqlalchemy import BaseQuery
 
@@ -92,7 +92,7 @@ class Module(db.Model, Identifiable):
         return cls.query.filter_by(id=module_id).first()
 
     @classmethod
-    def get_module_list(cls, filters: Dict[str, str], user_id: int, offset: int, limit: int) -> list:
+    def get_module_list(cls, filters: Optional[Dict[str, str]], user_id: int, offset: int, limit: int) -> list:
         query: BaseQuery = cls.query
         # explore joining queries!
         query = query.filter(cls.id.notin_(ModuleFilterSession.filter_ids_by_user(user_id, hidden=True)))
