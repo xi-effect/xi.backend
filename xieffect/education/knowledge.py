@@ -31,7 +31,8 @@ class ModuleLister(Resource):  # [POST] /courses/
     parser.add_argument("filters", type=dict, required=False)
     parser.add_argument("sort", required=False)
 
-    @lister(12, argument_parser=argument_parser(parser, "counter", "filters", "sort"))
+    @jwt_authorizer(User)
+    @lister(12, argument_parser(parser, "counter", "filters", "sort"))
     def post(self, user: User, start: int, finish: int, filters: Dict[str, str], sort: str):
         try:
             if sort is None:
@@ -60,6 +61,7 @@ class ModuleLister(Resource):  # [POST] /courses/
 
 
 class HiddenModuleLister(Resource):
+    @jwt_authorizer(User)
     @lister(-12)
     def post(self, user: User, start: int, finish: int) -> list:
         result = list()
@@ -69,7 +71,7 @@ class HiddenModuleLister(Resource):
         return result
 
 
-class ModulePreferences(Resource):  # [POST] /courses/<int:course_id>/preference/
+class ModulePreferences(Resource):  # [POST] /courses/<int:module_id>/preference/
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True)
 
@@ -88,7 +90,7 @@ class ModuleReporter(Resource):
     parser.add_argument("message", required=False)
 
     @jwt_authorizer(User, None)
-    @database_searcher(Module, "course_id", "course")
+    @database_searcher(Module, "module_id", "module")
     @argument_parser(parser, "reason", "message")
     def post(self, module: Module, reason: str, message: str):
         send_discord_message(

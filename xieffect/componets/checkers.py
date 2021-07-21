@@ -91,10 +91,8 @@ def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str
     return argument_wrapper
 
 
-def lister(per_request: int, authorizer: Callable[[Callable], Any] = jwt_authorizer(UserRole.default_role),
-           argument_parser: Callable[[Callable], Any] = argument_parser(counter_parser, "counter")):
+def lister(per_request: int, argument_parser: Callable[[Callable], Any] = argument_parser(counter_parser, "counter")):
     def lister_wrapper(function):
-        @authorizer
         @argument_parser
         def lister_inner(*args, **kwargs):
             counter: int = kwargs.pop("counter") * per_request
