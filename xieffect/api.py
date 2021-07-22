@@ -5,6 +5,7 @@ from flask import Response, request
 from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity
 from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_restful import Api
+from werkzeug.exceptions import HTTPException
 
 from authorship import (Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
                         ReviewIndex, Publisher)
@@ -64,6 +65,11 @@ def refresh_expiring_jwt(response: Response):
         return response
     except (RuntimeError, KeyError):
         return response
+
+
+@app.errorhandler(HTTPException)
+def on_http_exception(error: HTTPException):
+    return ("Not found", 404) if error.response is None else error.response
 
 
 @app.errorhandler(Exception)
