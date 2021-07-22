@@ -4,7 +4,7 @@ from pytest import fixture, mark
 from flask.testing import FlaskClient
 from flask.wrappers import Response
 
-from xieffect.api import app
+from api import app
 
 
 @fixture

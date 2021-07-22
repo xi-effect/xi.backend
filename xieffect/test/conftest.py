@@ -3,7 +3,7 @@ from typing import Tuple
 from flask.testing import FlaskClient
 from pytest import fixture
 
-from xieffect.api import app, db
+from api import app, db
 from flask.wrappers import Response
 
 
