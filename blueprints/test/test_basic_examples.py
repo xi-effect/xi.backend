@@ -8,7 +8,7 @@ def render_math_equation():
                   {"x": {"type": "randint", "min": -100, "max": 0},
                    "p": {"type": "residue", "$expression": "$x * (-2)"},
                    "q": {"type": "residue", "$expression": "($x) ** 2"}},
-                  "{\"task\": \"Найдите корень уравнения: x**2 + ${p}x + $q\", \"answer\": \"$x\"}")
+                  "{\"task\": \"Найдите корень уравнения: x**2 + ${p}x + $q = 0\", \"answer\": \"$x\"}")
 
 
 def test_math_equation():
