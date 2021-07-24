@@ -6,7 +6,7 @@ from flask_restful import Resource
 
 from authorship import Author
 from componets import jwt_authorizer, lister
-from file_system.keeper import CATFile, WIPModule, Page
+from file_system.keeper import CATFile, WIPModule, Page, Image
 
 
 def file_getter(function):
@@ -17,6 +17,8 @@ def file_getter(function):
             result = WIPModule
         elif file_type == "pages":
             result = Page
+        elif file_type == "images":
+            result = Image
         else:
             return {"a": f"File type '{file_type}' is not supported"}, 406
 

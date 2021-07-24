@@ -59,3 +59,13 @@ class WIPModule(CATFile):
 
     def to_json(self) -> str:
         pass
+
+
+class Image(CATFile):
+    __tablename__ = "images"
+    not_found_text = "Image not found"
+
+    pass
+
+    def to_json(self) -> str:
+        pass
