@@ -20,11 +20,13 @@ def render(version: str, variables: Dict[str, Dict[str, Any]], content: str) -> 
 
     var_data: Dict[str, Any]
     raw_var_output: Dict[str, Any] = {}
+    formatted_var_output: Dict[str, str] = {}
     for var_name, var_data in variables.items():
-        raw_var_output[var_name] = var_types[var_data.pop("type")]\
-            .generate(var_data, raw_var_output)
+        var_output = var_types[var_data.pop("type")].generate(var_data, raw_var_output)
+        raw_var_output[var_name] = var_output[0]
+        formatted_var_output[var_name] = var_output[1]
 
-    return Template(content).substitute(raw_var_output)
+    return Template(content).substitute(formatted_var_output)
 
 
 def _render_json(json_data: dict) -> str:

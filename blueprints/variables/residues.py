@@ -8,5 +8,5 @@ class Residue(Variable):
     globals: Dict[str, Any] = {}
 
     @classmethod
-    def _generate(cls, data: Dict[str, Any]) -> Any:
+    def generate_raw(cls, data: Dict[str, Any]) -> Any:
         return eval(data["expression"], cls.globals)  # can give a SyntaxError
