@@ -1,4 +1,3 @@
-from os import remove
 from typing import Type
 
 from flask import request, send_file
@@ -6,7 +5,7 @@ from flask_restful import Resource
 
 from authorship import Author
 from componets import jwt_authorizer, lister
-from file_system.keeper import CATFile, WIPModule, Page, Image
+from .keeper import CATFile, JSONFile, WIPModule, WIPPage, Image
 
 
 def file_getter(function):
@@ -16,7 +15,7 @@ def file_getter(function):
         if file_type == "modules":
             result = WIPModule
         elif file_type == "pages":
-            result = Page
+            result = WIPPage
         elif file_type == "images":
             result = Image
         else:
@@ -37,7 +36,19 @@ class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter
     @lister(12)
     def post(self, file_type: Type[CATFile], author: Author, start: int, finish: int):
-        return [x.to_json() for x in file_type.find_by_owner(author, start, finish - start)]
+        if WIPModule not in file_type.mro():
+            return {"a": f"File type '{file_type}' is not supported"}, 406
+        return [x.get_metadata() for x in file_type.find_by_owner(author, start, finish - start)]
+
+
+class FileCreator(Resource):  # [POST] /wip/<file_type>/
+    @file_getter
+    def post(self, author: Author, file_type: Type[CATFile]):
+        if isinstance(file_type, JSONFile):
+            file_type.create_from_json(author, request.get_json())
+        else:
+            file_type.create_with_file(author, request.get_data())
+        return {"a": True}
 
 
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
@@ -47,17 +58,13 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
 
     @file_getter
     def put(self, file: CATFile):
-        with open(file.get_link(), "wb") as f:
-            f.write(request.data)
+        if isinstance(file, JSONFile):
+            file.update_json(request.get_json())
+        else:
+            file.update(request.get_data())
         return {"a": True}
 
     @file_getter
     def delete(self, file: CATFile):
-        remove(file.get_link())
+        file.delete()
         return {"a": True}
-
-
-class FileCreator(Resource):  # [POST] /wip/<file_type>/
-    @file_getter
-    def post(self, author: Author, file_type: Type[CATFile]):
-        pass
