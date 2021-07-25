@@ -6,7 +6,7 @@ from users.database import User
 from users.emailer import send_generated_email, parse_code
 
 
-class EmailSender(Resource):
+class EmailSender(Resource):  # [POST] /email/<email>/
     def post(self, email: str):
         user: User = User.find_by_email_address(email)
         if user is None:
@@ -20,7 +20,7 @@ class EmailSender(Resource):
         return {"a": "Success"}
 
 
-class EmailConfirm(Resource):
+class EmailConfirm(Resource):  # [POST] /email-confirm/
     parser: RequestParser = RequestParser()
     parser.add_argument("code", required=True)
 

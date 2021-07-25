@@ -9,7 +9,7 @@ from users.database import TokenBlockList, User
 from users.emailer import send_generated_email, parse_code
 
 
-class UserRegistration(Resource):
+class UserRegistration(Resource):  # [POST] /reg/
     parser = password_parser.copy()
     parser.add_argument("email", required=True)
     parser.add_argument("username", required=True)
@@ -29,7 +29,7 @@ class UserRegistration(Resource):
         # except: return {"a": False}, 500
 
 
-class UserLogin(Resource):
+class UserLogin(Resource):  # [POST] /auth/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="email is required")
 
@@ -49,7 +49,7 @@ class UserLogin(Resource):
             return {"a": "Wrong password"}
 
 
-class UserLogout(Resource):
+class UserLogout(Resource):  # [POST] /logout/
     @jwt_required()
     def post(self):
         response = jsonify({"a": True})
@@ -58,7 +58,7 @@ class UserLogout(Resource):
         return response
 
 
-class PasswordResetSender(Resource):
+class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
     def get(self, email: str):
         if not User.find_by_email_address(email) or email == "admin@admin.admin":
             return {"a": False}
@@ -66,7 +66,7 @@ class PasswordResetSender(Resource):
         return {"a": True}
 
 
-class PasswordReseter(Resource):
+class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True)
 

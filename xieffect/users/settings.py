@@ -7,7 +7,7 @@ from users.database import User
 from users.emailer import send_generated_email
 
 
-class Avatar(Resource):
+class Avatar(Resource):  # [GET|POST] /avatar/
     @jwt_authorizer(User)
     def get(self, user: User):
         return send_from_directory(r"files/avatars", f"{user.id}.png")
@@ -19,7 +19,7 @@ class Avatar(Resource):
         return {"a": True}
 
 
-class Settings(Resource):
+class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
     parser.add_argument("changed", type=dict, location="json", required=True)
 
@@ -34,13 +34,13 @@ class Settings(Resource):
         return {"a": True}
 
 
-class MainSettings(Resource):
+class MainSettings(Resource):  # [GET] /settings/main/
     @jwt_authorizer(User)
     def get(self, user: User):
         return user.get_main_settings()
 
 
-class EmailChanger(Resource):
+class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", required=True)
 
@@ -58,7 +58,7 @@ class EmailChanger(Resource):
         return {"a": "Success"}
 
 
-class PasswordChanger(Resource):
+class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", required=True)
 

@@ -26,7 +26,7 @@ class SortType(str, Enum):
 COURSES_PER_REQUEST: int = 12
 
 
-class ModuleLister(Resource):  # [POST] /courses/
+class ModuleLister(Resource):  # [POST] /modules/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("filters", type=dict, required=False)
     parser.add_argument("sort", required=False)
@@ -60,7 +60,7 @@ class ModuleLister(Resource):  # [POST] /courses/
         return [x.to_json() for x in result]
 
 
-class HiddenModuleLister(Resource):
+class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @jwt_authorizer(User)
     @lister(-12)
     def post(self, user: User, start: int, finish: int) -> list:
@@ -71,7 +71,7 @@ class HiddenModuleLister(Resource):
         return result
 
 
-class ModulePreferences(Resource):  # [POST] /courses/<int:module_id>/preference/
+class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference/
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True)
 
@@ -84,7 +84,7 @@ class ModulePreferences(Resource):  # [POST] /courses/<int:module_id>/preference
         return {"a": True}
 
 
-class ModuleReporter(Resource):
+class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
     parser: RequestParser = RequestParser()
     parser.add_argument("reason", required=True)
     parser.add_argument("message", required=False)

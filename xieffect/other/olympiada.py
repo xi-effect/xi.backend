@@ -34,10 +34,7 @@ def check_one(inp: str, out: str) -> ResultCodes:
     return ResultCodes.Accepted if result.split() == out.split() else ResultCodes.WrongAnswer
 
 
-class SubmitTask(Resource):  # POST (JWT) /tasks/<task_name>/attempts/new/
-    # parser: reqparse.RequestParser = reqparse.RequestParser()
-    # parser.add_argument("", type=FileStorage, location="file_system", required=True)
-
+class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
     @jwt_authorizer(User)
     def post(self, task_name: str, user: User):
         if not TestPoint.find_by_task(task_name):
@@ -66,7 +63,7 @@ class SubmitTask(Resource):  # POST (JWT) /tasks/<task_name>/attempts/new/
         return UserSubmissions.create_next(user.id, task_name, code, points, failed).to_json()
 
 
-class GetTaskSummary(Resource):  # GET (JWT) /tasks/<task_name>/attempts/all/
+class GetTaskSummary(Resource):  # [GET] /tasks/<task_name>/attempts/all/
     @jwt_authorizer(User)
     def get(self, task_name: str, user: User):
         if not TestPoint.find_by_task(task_name):
@@ -79,7 +76,7 @@ class GetTaskSummary(Resource):  # GET (JWT) /tasks/<task_name>/attempts/all/
             return list(map(lambda x: x.to_json(), result))
 
 
-class UpdateRequest(Resource):  # /oct/update/
+class UpdateRequest(Resource):  # [GET] /oct/update/
     def get(self):
         return send_file(r"OlimpCheck.jar")
 
