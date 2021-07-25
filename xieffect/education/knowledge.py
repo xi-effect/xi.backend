@@ -57,7 +57,7 @@ class ModuleLister(Resource):  # [POST] /courses/
         elif sort == SortType.CREATION_DATE:
             result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
 
-        return list(map(lambda x: x.to_json(user_id), result))
+        return [x.to_json() for x in result]
 
 
 class HiddenModuleLister(Resource):
