@@ -29,8 +29,8 @@ class NumericVariable(Variable, ABC):
     @classmethod
     def generate_formatted(cls, data: Dict[str, Any]) -> Tuple[Any, str]:
         if "format" in data.keys():
-            int_format = data["format"]
+            number_format = data["format"]
             raw = cls.generate_raw(data)
-            return raw, f"{raw:{int_format}}"
+            return raw, f"{raw:{number_format}}"
         else:
             return super().generate_formatted(data)
