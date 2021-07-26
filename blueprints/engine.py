@@ -2,7 +2,8 @@ from json import load, loads, dumps
 from typing import Type, Dict, Any
 from string import Template
 
-from variables import Variable, RandomBoolean, RandomInteger, RandomDecimal, RandomArray, RandomList, Residue
+from variables import Variable, RandomBoolean, RandomInteger, RandomDecimal, RandomArray, RandomList
+from variables import Residue, MathResidue, RegexResidue
 
 with open("files/versions.json", "rb") as f:
     current_version: str = load(f)["BPE"]
@@ -14,7 +15,9 @@ var_types: Dict[str, Type[Variable]] = {
     "random-decimal": RandomDecimal,
     "random-array": RandomArray,
     "random-list": RandomList,
-    "residue": Residue
+    "residue": Residue,
+    "math-residue": MathResidue,
+    "regex-residue": RegexResidue
 }
 
 
