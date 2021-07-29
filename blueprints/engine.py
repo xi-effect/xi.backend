@@ -36,7 +36,7 @@ def render(version: str, variables: Dict[str, Dict[str, Any]], content: str) -> 
     return Template(content).substitute(formatted_var_output)
 
 
-def _render_json(json_data: dict) -> str:
+def _render_json(json_data: Dict[str, Any]) -> str:
     json_data["content"] = dumps(json_data["content"], ensure_ascii=False)
     return render(**json_data)
 

@@ -19,4 +19,4 @@ class MathResidue(Residue):
 
 
 class RegexResidue(Residue):
-    globals = {"re": re}
+    globals = {func.__name__: func for func in (re.sub,)}

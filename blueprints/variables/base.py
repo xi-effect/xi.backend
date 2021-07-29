@@ -17,7 +17,7 @@ class Variable:
 
     @classmethod
     def generate(cls, var_data: Dict[str, Any], req_data: Dict[str, Any]) -> Tuple[Any, str]:
-        var_data.update({key: Template(var_data[temp_key]).substitute(req_data)
+        var_data.update({key: Template(var_data.pop(temp_key)).substitute(req_data)
                          for key in cls.templatable_keys
                          if (temp_key := "$" + key) in var_data.keys()})
         return cls.generate_formatted(var_data)

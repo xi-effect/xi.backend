@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "variables": {
     "v1": {
-      "type": "randint",
+      "type": "random-integer",
       "min": 1,
       "max": 100
     },
