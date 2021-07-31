@@ -124,7 +124,7 @@ api.add_resource(PasswordReseter,       "/password-reset/confirm/")
 api.add_resource(Avatar,                "/avatar/")
 api.add_resource(Settings,              "/settings/")
 api.add_resource(MainSettings,          "/settings/main/")
-api.add_resource(RoleSettings,          "/settings/role/")
+api.add_resource(RoleSettings,          "/settings/roles/")
 api.add_resource(EmailChanger,          "/email-change/")
 api.add_resource(PasswordChanger,       "/password-change/")
 
@@ -153,7 +153,7 @@ api.add_resource(TestReplySaver,        "/tests/<int:test_id>/tasks/<int:task_id
 api.add_resource(TestResultCollector,   "/tests/<int:test_id>/results/")
 
 # Adding role control:
-api.add_resource(AuthorInitializer,     "/authors/")
+api.add_resource(AuthorInitializer,     "/authors/permit/")
 
 # Adding publishing resources:
 api.add_resource(Submitter,             "/cat/submissions/")
