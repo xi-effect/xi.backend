@@ -153,7 +153,7 @@ api.add_resource(TestReplySaver,        "/tests/<int:test_id>/tasks/<int:task_id
 api.add_resource(TestResultCollector,   "/tests/<int:test_id>/results/")
 
 # Adding role control:
-api.add_resource(AuthorInitializer,     "/authors/")
+api.add_resource(AuthorInitializer,     "/authors/permit/")
 
 # Adding publishing resources:
 api.add_resource(Submitter,             "/cat/submissions/")

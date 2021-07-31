@@ -5,9 +5,9 @@ from users import User
 from .user_roles import Author
 
 
-class AuthorInitializer(Resource):  # POST /authors/
+class AuthorInitializer(Resource):  # [GET] /authors/permit/
     @jwt_authorizer(User)
-    def post(self, user: User):
+    def get(self, user: User):
         user_id: int = user.id
         author: Author = Author.find_by_id(user_id)
         if author is None:
