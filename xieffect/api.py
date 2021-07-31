@@ -8,7 +8,7 @@ from flask_restful import Api
 from werkzeug.exceptions import HTTPException
 
 from authorship import (Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
-                        ReviewIndex, Publisher)
+                        ReviewIndex, Publisher, AuthorInitializer)
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
@@ -17,7 +17,7 @@ from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModuleP
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubWebhook, GithubDocumentsWebhook)
 from users import (UserRegistration, UserLogin, UserLogout, PasswordResetSender, PasswordReseter,
-                   Avatar, Settings, MainSettings, EmailChanger, PasswordChanger,
+                   Avatar, Settings, MainSettings, RoleSettings, EmailChanger, PasswordChanger,
                    EmailSender, EmailConfirm)
 
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
@@ -124,6 +124,7 @@ api.add_resource(PasswordReseter,       "/password-reset/confirm/")
 api.add_resource(Avatar,                "/avatar/")
 api.add_resource(Settings,              "/settings/")
 api.add_resource(MainSettings,          "/settings/main/")
+api.add_resource(RoleSettings,          "/settings/role/")
 api.add_resource(EmailChanger,          "/email-change/")
 api.add_resource(PasswordChanger,       "/password-change/")
 
@@ -150,6 +151,9 @@ api.add_resource(TestContentsGetter,    "/tests/<int:test_id>/contents/")
 api.add_resource(TestNavigator,         "/tests/<int:test_id>/tasks/<int:task_id>/")
 api.add_resource(TestReplySaver,        "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
 api.add_resource(TestResultCollector,   "/tests/<int:test_id>/results/")
+
+# Adding role control:
+api.add_resource(AuthorInitializer,     "/authors/")
 
 # Adding publishing resources:
 api.add_resource(Submitter,             "/cat/submissions/")

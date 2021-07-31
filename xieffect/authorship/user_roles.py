@@ -7,6 +7,8 @@ class Author(db.Model, UserRole):
     not_found_text = "Author does not exist"
 
     id = db.Column(db.Integer, primary_key=True)
+    banned = db.Column(db.Boolean, nullable=False, default=False)
+
     modules = db.relationship("Module", backref="authors")
     # pages = db.relationship("Page", backref="authors")
 
@@ -18,8 +20,9 @@ class Author(db.Model, UserRole):
         return new_entry
 
     @classmethod
-    def find_by_id(cls, entry_id: int):
-        return cls.query.filter_by(id=entry_id).first()
+    def find_by_id(cls, entry_id: int, include_banned: bool = False):
+        return cls.query.filter_by(id=entry_id).first() if include_banned else \
+            cls.query.filter_by(banned=False, id=entry_id).first()
 
     def get_owned_modules(self, start: int = 0, finish: int = None) -> list:
         pass

@@ -5,7 +5,7 @@ from flask_restful import Resource
 from main import versions
 
 
-class Version(Resource):
+class Version(Resource):  # [GET] /<app_name>/version/
     def get(self, app_name: str):
         if app_name.upper() in versions.keys():
             return {"a": versions[app_name.upper()]}

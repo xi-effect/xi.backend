@@ -5,7 +5,7 @@ from engine import render, render_json_file
 
 def render_math_equation():
     return render("0.0.1",
-                  {"x": {"type": "randint", "min": -100, "max": 0},
+                  {"x": {"type": "random-integer", "min": -100, "max": 0},
                    "p": {"type": "residue", "$expression": "$x * (-2)"},
                    "q": {"type": "residue", "$expression": "($x) ** 2"}},
                   "{\"task\": \"Найдите корень уравнения: x**2 + ${p}x + $q = 0\", \"answer\": \"$x\"}")

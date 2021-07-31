@@ -7,7 +7,7 @@ from flask_restful.reqparse import RequestParser
 github_token: str = ""
 
 
-class GithubWebhook(Resource):  # /update/
+class GithubWebhook(Resource):  # [POST] /update/
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, location="headers")
 
@@ -26,7 +26,7 @@ class GithubWebhook(Resource):  # /update/
                                                      f"No action was applied.")
 
 
-class GithubDocumentsWebhook(Resource):  # /update/
+class GithubDocumentsWebhook(Resource):  # [POST] /update-docs/
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, location="headers")
 

@@ -17,7 +17,7 @@ class Variable:
 
     @classmethod
     def generate(cls, var_data: Dict[str, Any], req_data: Dict[str, Any]) -> Tuple[Any, str]:
-        var_data.update({key: Template(var_data[temp_key]).substitute(req_data)
+        var_data.update({key: Template(var_data.pop(temp_key)).substitute(req_data)
                          for key in cls.templatable_keys
                          if (temp_key := "$" + key) in var_data.keys()})
         return cls.generate_formatted(var_data)
@@ -29,8 +29,8 @@ class NumericVariable(Variable, ABC):
     @classmethod
     def generate_formatted(cls, data: Dict[str, Any]) -> Tuple[Any, str]:
         if "format" in data.keys():
-            int_format = data["format"]
+            number_format = data["format"]
             raw = cls.generate_raw(data)
-            return raw, f"{raw:{int_format}}"
+            return raw, f"{raw:{number_format}}"
         else:
             return super().generate_formatted(data)

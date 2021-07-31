@@ -2,15 +2,22 @@ from json import load, loads, dumps
 from typing import Type, Dict, Any
 from string import Template
 
-from variables import Variable, RandomIntegerVar, Residue
+from variables import Variable, RandomBoolean, RandomInteger, RandomDecimal, RandomArray, RandomList
+from variables import Residue, MathResidue, RegexResidue
 
 with open("files/versions.json", "rb") as f:
     current_version: str = load(f)["BPE"]
 
 var_types: Dict[str, Type[Variable]] = {
     # "undefined": Variable,
-    "randint": RandomIntegerVar,
-    "residue": Residue
+    "random-boolean": RandomBoolean,
+    "random-integer": RandomInteger,
+    "random-decimal": RandomDecimal,
+    "random-array": RandomArray,
+    "random-list": RandomList,
+    "residue": Residue,
+    "math-residue": MathResidue,
+    "regex-residue": RegexResidue
 }
 
 
@@ -29,7 +36,7 @@ def render(version: str, variables: Dict[str, Dict[str, Any]], content: str) -> 
     return Template(content).substitute(formatted_var_output)
 
 
-def _render_json(json_data: dict) -> str:
+def _render_json(json_data: Dict[str, Any]) -> str:
     json_data["content"] = dumps(json_data["content"], ensure_ascii=False)
     return render(**json_data)
 
