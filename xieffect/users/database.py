@@ -3,7 +3,7 @@ from typing import Dict, Union
 from passlib.hash import pbkdf2_sha256 as sha256
 
 from componets import UserRole
-from authorship import Moderator
+from authorship import Moderator, Author
 from main import db
 
 
@@ -102,8 +102,10 @@ class User(db.Model, UserRole):
 
     def get_main_settings(self) -> Dict[str, str]:
         return {
-            "username": self.username, "moderator": Moderator.find_by_id(self.id) is not None,
-            "dark-theme": self.dark_theme, "language": self.language
+            "username": self.username, "dark-theme": self.dark_theme, "language": self.language,
+            "moderator": Moderator.find_by_id(self.id) is not None,
+            "author": "not-yet" if (author := Author.find_by_id(self.id, include_banned=True)
+                                    ) is None else "banned" if author.banned else "current"
         }
 
     def get_settings(self) -> Dict[str, str]:
