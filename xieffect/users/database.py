@@ -100,13 +100,15 @@ class User(db.Model, UserRole):
             self.patronymic = new_values["patronymic"]
         db.session.commit()
 
-    def get_main_settings(self) -> Dict[str, str]:
+    def get_role_settings(self) -> Dict[str, str]:
         return {
-            "username": self.username, "dark-theme": self.dark_theme, "language": self.language,
             "moderator": Moderator.find_by_id(self.id) is not None,
             "author": "not-yet" if (author := Author.find_by_id(self.id, include_banned=True)
                                     ) is None else "banned" if author.banned else "current"
         }
+
+    def get_main_settings(self) -> Dict[str, str]:
+        return {"username": self.username, "dark-theme": self.dark_theme, "language": self.language}
 
     def get_settings(self) -> Dict[str, str]:
         return {

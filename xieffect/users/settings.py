@@ -40,6 +40,12 @@ class MainSettings(Resource):  # [GET] /settings/main/
         return user.get_main_settings()
 
 
+class RoleSettings(Resource):  # [GET] /settings/roles/
+    @jwt_authorizer(User)
+    def get(self, user: User):
+        return user.get_role_settings()
+
+
 class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", required=True)
