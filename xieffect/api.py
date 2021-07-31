@@ -124,7 +124,7 @@ api.add_resource(PasswordReseter,       "/password-reset/confirm/")
 api.add_resource(Avatar,                "/avatar/")
 api.add_resource(Settings,              "/settings/")
 api.add_resource(MainSettings,          "/settings/main/")
-api.add_resource(RoleSettings,          "/settings/role/")
+api.add_resource(RoleSettings,          "/settings/roles/")
 api.add_resource(EmailChanger,          "/email-change/")
 api.add_resource(PasswordChanger,       "/password-change/")
 
