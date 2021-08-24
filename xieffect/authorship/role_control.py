@@ -11,5 +11,5 @@ class AuthorInitializer(Resource):  # [GET] /authors/permit/
         user_id: int = user.id
         author: Author = Author.find_by_id(user_id)
         if author is None:
-            Author.create(user_id)
+            author = Author.create(user_id)
         return {"a": not author.banned}
