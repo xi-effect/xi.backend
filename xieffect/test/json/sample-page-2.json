@@ -1,0 +1,20 @@
+{
+  "id": null,
+  "name": "",
+  "description": "Крутое описание страницы",
+  "public": true,
+  "reusable": true,
+  "theme": "Картофель Ферма Огород ",
+  "type": "new",
+  "components": [
+    {
+      "fontSize": 50,
+      "fontStyle": "cool",
+      "fontWeight": "bold",
+      "label": "Картошка крута",
+      "textAlign": "center",
+      "textDecoration": "underlined",
+      "type": "title"
+    }
+  ]
+}
