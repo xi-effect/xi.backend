@@ -13,7 +13,7 @@ from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModuleP
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
                        FilterGetter, ShowAll, ModuleOpener, PageGetter)
-# from file_system import (FileLister, FileProcessor, FileCreator)
+from file_system import (FileLister, FileProcessor, FileCreator)
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubWebhook, GithubDocumentsWebhook)
 from users import (UserRegistration, UserLogin, UserLogout, PasswordResetSender, PasswordReseter,
@@ -155,6 +155,11 @@ api.add_resource(TestResultCollector,   "/tests/<int:test_id>/results/")
 # Adding role control:
 api.add_resource(AuthorInitializer,     "/authors/permit/")
 
+# Adding work-in-progress resources:
+api.add_resource(FileLister,            "/wip/<file_type>/index/")
+api.add_resource(FileCreator,           "/wip/<file_type>/")
+api.add_resource(FileProcessor,         "/wip/<file_type>/<int:file_id>/")
+
 # Adding publishing resources:
 api.add_resource(Submitter,             "/cat/submissions/")
 api.add_resource(SubmissionLister,      "/cat/submissions/owned/")
@@ -187,5 +192,6 @@ if __name__ == "__main__":  # test only
 # curl -v --cookie -X
 # curl -H "Content-Type: application/json" http://localhost:5000/settings/
 # -X POST -v -d "{\"changed\": {\"username\": \"new\"}}"
-# curl "https://qwert45hi.pythonanywhere.com/auth/?email=test@test.test&password=0a989ebc4a77b56a6e2bb7b19d995d185ce440
-# 90c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454" -X POST -v
+# curl "https://xieffect.pythonanywhere.com/auth/?email=test@test.test&password=0a989ebc4a77b56a6e2bb7b19d995d185ce4409
+# 0c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454" -X POST -v
+# curl "https://xieffect.pythonanywhere.com/" -X POST -v --cookie "access_token_cookie="
