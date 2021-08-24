@@ -1,6 +1,6 @@
 from typing import Type
 
-from flask import request, send_file
+from flask import request, send_file, make_response
 from flask_restful import Resource
 
 from authorship import Author
@@ -10,8 +10,9 @@ from .keeper import CATFile, JSONFile, WIPModule, WIPPage, Image
 
 def file_getter(function):
     @jwt_authorizer(Author, "author")
-    def get_file_or_type(file_type: str, author: Author, *args, **kwargs):
+    def get_file_or_type(*args, **kwargs):
         result: Type[CATFile]
+        file_type: str = kwargs.pop("file_type")
         if file_type == "modules":
             result = WIPModule
         elif file_type == "pages":
@@ -23,7 +24,7 @@ def file_getter(function):
 
         if "file_id" in kwargs.keys():
             file: result = result.find_by_id(kwargs.pop("file_id"))
-            if file.owner.id != author.id:
+            if file.owner != kwargs.pop("author").id:
                 return {"a": "Access denied"}, 403
             return function(file=file, *args, **kwargs)
         else:
@@ -36,7 +37,7 @@ class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter
     @lister(20)
     def post(self, file_type: Type[CATFile], author: Author, start: int, finish: int):
-        if WIPModule not in file_type.mro():
+        if WIPPage not in file_type.mro():
             return {"a": f"File type '{file_type}' is not supported"}, 400
         return [x.get_metadata() for x in file_type.find_by_owner(author, start, finish - start)]
 
@@ -44,17 +45,20 @@ class FileLister(Resource):  # [POST] /wip/<file_type>/index/
 class FileCreator(Resource):  # [POST] /wip/<file_type>/
     @file_getter
     def post(self, author: Author, file_type: Type[CATFile]):
-        if isinstance(file_type, JSONFile):
-            file_type.create_from_json(author, request.get_json())
+        if JSONFile in file_type.mro():
+            result: file_type = file_type.create_from_json(author, request.get_json())
         else:
-            file_type.create_with_file(author, request.get_data())
-        return {"a": True}
+            result: file_type = file_type.create_with_file(author, request.get_data())
+        return {"a": result.id}
 
 
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
     @file_getter
     def get(self, file: CATFile):
-        return send_file(file.get_link())
+        if isinstance(file, JSONFile):
+            return file.get_json()
+        else:
+            return send_file(file.get_bytes(), mimetype=file.get_link().rpartition(".")[2])
 
     @file_getter
     def put(self, file: CATFile):

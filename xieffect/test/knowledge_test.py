@@ -1,39 +1,21 @@
-from typing import Iterator
+from typing import Callable, Iterator
 
-from flask import Response
 from flask.testing import FlaskClient
+from pytest import mark
+
+from xieffect.test.components import check_status_code
 
 
-def module_list(client: FlaskClient, request_json: dict, status_code: int = 200) -> Iterator[list]:
-    counter = 0
-    amount = 12
-    while amount == 12:
-        request_json["counter"] = counter
-        response: Response = client.post("/modules", json=request_json)
-        assert response.status_code == status_code
-
-        response_json = response.get_json()
-        assert isinstance(response_json, list)
-        yield response_json
-
-        amount = len(response_json)
-        assert amount < 13
-
-        counter += 1
-
-    assert counter > 0
+@mark.order(6)
+def test_module_list(list_tester: Callable[[str, dict, int], Iterator[list]]):
+    assert len(list(list_tester("/modules", {}, 12))) > 0
 
 
-def test_module_list(client: FlaskClient):
-    assert len(list(module_list(client, {}))) > 0
-
-
-def test_pinned_modules(client: FlaskClient):
-    response: Response = client.post("/modules/3/preference/", json={"a": "pin"})
-    assert response.status_code == 200
-    assert response.get_json() == {"a": True}
+@mark.order(7)
+def test_pinned_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]]):
+    assert check_status_code(client.post("/modules/3/preference/", json={"a": "pin"})) == {"a": True}
 
     module_ids = []
-    for response_json in module_list(client, {"filters": {"global": "pinned"}}):
+    for response_json in list_tester("/modules", {"filters": {"global": "pinned"}}, 12):
         module_ids.extend([module["id"] for module in response_json])
     assert 3 in module_ids

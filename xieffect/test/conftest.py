@@ -1,10 +1,10 @@
-from typing import Tuple
+from typing import Tuple, Iterator, Callable
 
 from flask.testing import FlaskClient
+from flask.wrappers import Response
 from pytest import fixture
 
 from api import app, db
-from flask.wrappers import Response
 
 
 class RedirectedFlaskClient(FlaskClient):
@@ -35,3 +35,27 @@ def client():
 def database():  # ???
     with app.app_context():
         yield db
+
+
+@fixture()
+def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator[list]]:
+    def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[list]:
+        counter = 0
+        amount = page_size
+        while amount == page_size:
+            request_json["counter"] = counter
+            response: Response = client.post(link, json=request_json)
+            assert response.status_code == status_code, response.get_json()
+
+            response_json = response.get_json()
+            assert isinstance(response_json, list)
+            yield response_json
+
+            amount = len(response_json)
+            assert amount <= page_size
+
+            counter += 1
+
+        assert counter > 0
+
+    return list_tester_inner

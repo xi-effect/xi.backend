@@ -1,8 +1,7 @@
-from abc import ABC
 from enum import Enum
-from json import dump
+from json import dump, load
 from os import remove
-from typing import Dict, Union
+from typing import Dict, Union, BinaryIO
 
 from authorship import Author
 from componets import Identifiable
@@ -15,7 +14,7 @@ class Locations(Enum):
     def to_link(self, file_type: str, file_id: int) -> str:
         result: str = ""
         if self == Locations.SERVER:
-            result = f"/files/tfs/{file_type}/{file_id}/"
+            result = f"files/tfs/{file_type}/{file_id}"
 
         return result
 
@@ -24,18 +23,29 @@ class CATFile(db.Model, Identifiable):
     __abstract__ = True
 
     id = db.Column(db.Integer, primary_key=True)
-    owner = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False,
+    owner = db.Column(db.Integer, nullable=False,  # db.ForeignKey("authors.id"),
                       default=0)  # test-only
     location = db.Column(db.Integer, nullable=False)
 
     @classmethod
+    def _create(cls, owner: Author):
+        return cls(owner=owner.id, location=Locations.SERVER.value)
+
+    def _add_to_db(self):
+        db.session.add(self)
+        db.session.commit()
+
+    @classmethod
     def create(cls, owner: Author):
-        return cls(owner=owner, location=Locations.SERVER)
+        entry: cls = cls.create(owner)
+        entry._add_to_db()
+        return entry
 
     @classmethod
     def create_with_file(cls, owner: Author, data: bytes):
-        entry: cls = cls.create(owner)
+        entry: cls = cls._create(owner)
         entry.update(data)
+        entry._add_to_db()
         return entry
 
     @classmethod
@@ -44,7 +54,7 @@ class CATFile(db.Model, Identifiable):
 
     @classmethod
     def find_by_owner(cls, owner: Author, start: int, limit: int) -> list:
-        return cls.query.filter_by(owner=owner).offset(start).limit(limit).all()
+        return cls.query.filter_by(owner=owner.id).offset(start).limit(limit).all()
 
     def update(self, data: bytes):
         with open(self.get_link(), "wb") as f:
@@ -52,6 +62,9 @@ class CATFile(db.Model, Identifiable):
 
     def get_link(self) -> str:
         return Locations(self.location).to_link(self.__tablename__, self.id)
+
+    def get_byte_stream(self) -> BinaryIO:
+        return open(self.get_link(), "rb")
 
     def delete(self):
         remove(self.get_link())
@@ -64,57 +77,79 @@ class Image(CATFile):
     not_found_text = "Image not found"
 
 
-class JSONFile(CATFile, ABC):
+class JSONFile(CATFile):
     __abstract__ = True
 
     @classmethod
     def create_from_json(cls, owner: Author, json_data: dict):
-        entry: cls = cls.create(owner)
-
-        entry.update_metadata(json_data)
-        db.session.commit()
-
-        with open(entry.get_link(), "wb") as f:
-            dump(json_data, f)
+        entry: cls = cls._create(owner)
+        entry.update_json(json_data)
         return entry
 
-    def update_json(self, json_data: dict):
-        with open(self.get_link(), "wb") as f:
-            dump(json_data, f)
+    def get_link(self) -> str:
+        return super().get_link() + ".json"
 
-        self.update_metadata(json_data)
-        db.session.commit()
+    def update_json(self, json_data: dict) -> None:
+        file_json = self.update_metadata(json_data)
+        self._add_to_db()
 
-    def update_metadata(self, json_data: dict):
+        with open(self.get_link(), "w", encoding="utf8") as f:
+            dump(file_json, f, ensure_ascii=False)
+
+    def update_metadata(self, json_data: dict) -> Union[dict, list, str, int, bool]:
         raise NotImplementedError
 
-    def get_metadata(self) -> str:
+    def get_metadata(self) -> dict:
         raise NotImplementedError
+
+    def get_json(self):
+        result: dict = load(self.get_byte_stream())
+        result.update(self.get_metadata())
+        return result
 
 
 class WIPPage(JSONFile):
-    __tablename__ = "pages"
+    __tablename__ = "wip-pages"
     not_found_text = "Page not found"
 
-    tags = db.Column(db.String(100), nullable=False)
+    type = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    theme = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
     reusable = db.Column(db.Boolean, nullable=False)
-    published = db.Column(db.Boolean, nullable=False)
+    public = db.Column(db.Boolean, nullable=False)
+    published = db.Column(db.Boolean, nullable=False, default=False)
 
-    def update_metadata(self, json_data: dict):
-        pass
+    def update_metadata(self, json_data: dict) -> Union[dict, list, str, int, bool]:
+        self.type = json_data["type"]
+        self.name = json_data["name"]
+        self.theme = json_data["theme"]
+        self.description = json_data["description"]
+        self.reusable = json_data["reusable"]
+        self.public = json_data["public"]
 
-    def get_metadata(self) -> str:
-        pass
+        return json_data["components"]
+
+    def get_metadata(self) -> dict:
+        return {"id": self.id, "type": self.type, "reusable": self.reusable, "public": self.public,
+                "name": self.name, "theme": self.theme, "description": self.description}
+
+    def get_json(self):
+        result: dict = self.get_metadata()
+        result["components"] = load(self.get_byte_stream())
+        return result
 
 
 class WIPModule(JSONFile):
-    __tablename__ = "pages"
+    __tablename__ = "wip-modules"
     not_found_text = "Module not found"
 
     name = db.Column(db.String(100), nullable=False)
 
-    def update_metadata(self, json_data: dict):
-        self.name = json_data["name"]
+    def update_metadata(self, json_data: dict) -> Union[dict, list, str, int, bool]:
+        self.name = json_data.pop("name")
+        return json_data
 
     def get_metadata(self) -> Dict[str, Union[int, str]]:
         return {"id": self.id, "name": self.name}
