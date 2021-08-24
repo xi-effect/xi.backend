@@ -1,8 +1,9 @@
-from typing import Callable, Iterator, Optional
+from typing import Callable, Iterator
+
+from flask.testing import FlaskClient
 from pytest import mark
 
-from flask import Response
-from flask.testing import FlaskClient
+from xieffect.test.components import check_status_code
 
 
 @mark.order(6)
@@ -12,9 +13,7 @@ def test_module_list(client: FlaskClient, list_tester: Callable[[str, dict, int]
 
 @mark.order(7)
 def test_pinned_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]]):
-    response: Response = client.post("/modules/3/preference/", json={"a": "pin"})
-    assert response.status_code == 200
-    assert response.get_json() == {"a": True}
+    assert check_status_code(client.post("/modules/3/preference/", json={"a": "pin"})).get_json() == {"a": True}
 
     module_ids = []
     for response_json in list_tester("/modules", {"filters": {"global": "pinned"}}, 12):
