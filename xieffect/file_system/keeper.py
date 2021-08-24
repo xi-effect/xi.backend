@@ -15,7 +15,7 @@ class Locations(Enum):
     def to_link(self, file_type: str, file_id: int) -> str:
         result: str = ""
         if self == Locations.SERVER:
-            result = f"/files/tfs/{file_type}/{file_id}/"
+            result = f"files/tfs/{file_type}/{file_id}/"
 
         return result
 
