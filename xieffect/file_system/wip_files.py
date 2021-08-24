@@ -37,7 +37,7 @@ class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter
     @lister(20)
     def post(self, file_type: Type[CATFile], author: Author, start: int, finish: int):
-        if WIPModule not in file_type.mro():
+        if WIPPage not in file_type.mro():
             return {"a": f"File type '{file_type}' is not supported"}, 400
         return [x.get_metadata() for x in file_type.find_by_owner(author, start, finish - start)]
 

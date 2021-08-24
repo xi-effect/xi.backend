@@ -54,7 +54,7 @@ class CATFile(db.Model, Identifiable):
 
     @classmethod
     def find_by_owner(cls, owner: Author, start: int, limit: int) -> list:
-        return cls.query.filter_by(owner=owner).offset(start).limit(limit).all()
+        return cls.query.filter_by(owner=owner.id).offset(start).limit(limit).all()
 
     def update(self, data: bytes):
         with open(self.get_link(), "wb") as f:
