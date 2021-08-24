@@ -1,0 +1,20 @@
+{
+  "id": null,
+  "name": "",
+  "description": "",
+  "public": false,
+  "reusable": false,
+  "theme": "",
+  "type": "",
+  "components": [
+    {
+      "fontSize": 30,
+      "fontStyle": "normal",
+      "fontWeight": "normal",
+      "label": "текст",
+      "textAlign": "left",
+      "textDecoration": "none",
+      "type": "text"
+    }
+  ]
+}
