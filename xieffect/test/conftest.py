@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Iterator, Callable
 
 from flask.testing import FlaskClient
 from pytest import fixture
@@ -35,3 +35,27 @@ def client():
 def database():  # ???
     with app.app_context():
         yield db
+
+
+@fixture()
+def list_tester(client: FlaskClient) -> Callable[[str, dict, int], Iterator[list]]:
+    def list_tester_inner(request_link: str, request_json: dict, status_code: int = 200) -> Iterator[list]:
+        counter = 0
+        amount = 12
+        while amount == 12:
+            request_json["counter"] = counter
+            response: Response = client.post(request_link, json=request_json)
+            assert response.status_code == status_code
+
+            response_json = response.get_json()
+            assert isinstance(response_json, list)
+            yield response_json
+
+            amount = len(response_json)
+            assert amount < 13
+
+            counter += 1
+
+        assert counter > 0
+
+    return list_tester_inner
