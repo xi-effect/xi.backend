@@ -19,6 +19,10 @@ class Locations(Enum):
         return result
 
 
+class WIPStatus(Enum):
+    WIP = 0
+
+
 class CATFile(db.Model, Identifiable):
     __abstract__ = True
 
@@ -31,7 +35,7 @@ class CATFile(db.Model, Identifiable):
 
     @classmethod
     def _create(cls, owner: Author):
-        return cls(owner=owner.id, location=Locations.SERVER.value)
+        return cls(owner=owner.id, location=Locations.SERVER.value, status=WIPStatus.WIP.value)
 
     def _add_to_db(self):
         db.session.add(self)
