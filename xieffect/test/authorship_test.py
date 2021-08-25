@@ -15,7 +15,7 @@ def check_deleting_ids(client: FlaskClient, list_tester: Callable[[str, dict, in
         if delete_all or content_id in ids:
             check_status_code(client.delete(f"/wip/{wip_type}s/{content_id}"))
 
-    assert len([data for page in list_tester(f"/wip/{wip_type}s/index", {}, 20) for data in page]) == 0
+    assert not delete_all or len([d for page in list_tester(f"/wip/{wip_type}s/index", {}, 20) for d in page]) == 0
 
 
 def check_creating(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]], wip_type: str):
@@ -45,9 +45,9 @@ def check_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], I
     check_deleting_ids(client, list_tester, wip_type, [content_id])
 
 
-# @mark.order(10)
-# def test_delete_all_wip_pages(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]]):
-#     check_deleting_ids(client, list_tester, "page")
+@mark.order(10)
+def test_delete_all_wip_pages(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]]):
+    check_deleting_ids(client, list_tester, "page")
 # https://discord.com/channels/706806130348785715/843536940083314728/880041704651108432
 
 
