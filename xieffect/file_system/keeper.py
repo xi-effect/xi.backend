@@ -8,34 +8,24 @@ from componets import Identifiable
 from main import db
 
 
-class Locations(Enum):
-    SERVER = 0
-
-    def to_link(self, file_type: str, file_id: int) -> str:
-        result: str = ""
-        if self == Locations.SERVER:
-            result = f"files/tfs/{file_type}/{file_id}"
-
-        return result
-
-
 class WIPStatus(Enum):
     WIP = 0
 
 
 class CATFile(db.Model, Identifiable):
     __abstract__ = True
+    mimetype: str = ""
+    directory: str = "files/tfs/other/"
 
     id = db.Column(db.Integer, primary_key=True)
     owner = db.Column(db.Integer, nullable=False,  # db.ForeignKey("authors.id"),
                       default=0)  # test-only
 
-    location = db.Column(db.Integer, nullable=False)
     status = db.Column(db.Integer, nullable=False)
 
     @classmethod
     def _create(cls, owner: Author):
-        return cls(owner=owner.id, location=Locations.SERVER.value, status=WIPStatus.WIP.value)
+        return cls(owner=owner.id, status=WIPStatus.WIP.value)
 
     def _add_to_db(self):
         db.session.add(self)
@@ -66,9 +56,6 @@ class CATFile(db.Model, Identifiable):
         with open(self.get_link(), "wb") as f:
             f.write(data)
 
-    def get_link(self) -> str:
-        return Locations(self.location).to_link(self.__tablename__, self.id)
-
     def delete(self):
         remove(self.get_link())
         db.session.delete(self)
@@ -77,15 +64,13 @@ class CATFile(db.Model, Identifiable):
 
 class JSONFile(CATFile):
     __abstract__ = True
+    mimetype: str = "json"
 
     @classmethod
     def create_from_json(cls, owner: Author, json_data: dict):
         entry: cls = cls._create(owner)
         entry.update_json(json_data)
         return entry
-
-    def get_link(self) -> str:
-        return super().get_link() + ".json"
 
     def update_json(self, json_data: dict) -> None:
         self.update_metadata(json_data)
@@ -105,6 +90,7 @@ class JSONFile(CATFile):
 class WIPPage(JSONFile):
     __tablename__ = "wip-pages"
     not_found_text = "Page not found"
+    directory: str = "files/tfs/wip-pages/"
 
     type = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(100), nullable=False)
@@ -131,6 +117,7 @@ class WIPPage(JSONFile):
 class WIPModule(JSONFile):
     __tablename__ = "wip-modules"
     not_found_text = "Module not found"
+    directory: str = "files/tfs/wip-modules/"
 
     name = db.Column(db.String(100), nullable=False)
 
