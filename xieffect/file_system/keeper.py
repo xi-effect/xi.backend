@@ -71,11 +71,6 @@ class CATFile(db.Model, Identifiable):
         db.session.commit()
 
 
-class Image(CATFile):
-    __tablename__ = "images"
-    not_found_text = "Image not found"
-
-
 class JSONFile(CATFile):
     __abstract__ = True
 
