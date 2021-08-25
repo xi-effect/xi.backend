@@ -52,6 +52,9 @@ class CATFile(db.Model, Identifiable):
     def find_by_owner(cls, owner: Author, start: int, limit: int) -> list:
         return cls.query.filter_by(owner=owner.id).offset(start).limit(limit).all()
 
+    def get_link(self) -> str:
+        return f"{self.directory}/{self.id}" + f".{self.mimetype}" if self.mimetype != "" else ""
+
     def update(self, data: bytes):
         with open(self.get_link(), "wb") as f:
             f.write(data)
@@ -92,26 +95,21 @@ class WIPPage(JSONFile):
     not_found_text = "Page not found"
     directory: str = "files/tfs/wip-pages/"
 
-    type = db.Column(db.Integer, nullable=False)
+    kind = db.Column(db.Integer, nullable=False)
+
     name = db.Column(db.String(100), nullable=False)
     theme = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
 
-    reusable = db.Column(db.Boolean, nullable=False)
-    public = db.Column(db.Boolean, nullable=False)
-    published = db.Column(db.Boolean, nullable=False, default=False)
-
     def update_metadata(self, json_data: dict) -> None:
-        self.type = json_data["type"]
+        self.kind = json_data["kind"]
         self.name = json_data["name"]
         self.theme = json_data["theme"]
         self.description = json_data["description"]
-        self.reusable = json_data["reusable"]
-        self.public = json_data["public"]
 
     def get_metadata(self) -> dict:
-        return {"id": self.id, "type": self.type, "reusable": self.reusable, "public": self.public,
-                "name": self.name, "theme": self.theme, "description": self.description}
+        return {"id": self.id, "kind": self.kind, "name": self.name,
+                "theme": self.theme, "description": self.description}
 
 
 class WIPModule(JSONFile):

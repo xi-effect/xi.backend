@@ -5,7 +5,7 @@
   "public": true,
   "reusable": true,
   "theme": "Картофель Ферма Огород ",
-  "type": "new",
+  "kind": "practice",
   "components": [
     {
       "fontSize": 50,
