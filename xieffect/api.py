@@ -13,7 +13,7 @@ from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModuleP
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
                        FilterGetter, ShowAll, ModuleOpener, PageGetter)
-from file_system import (FileLister, FileProcessor, FileCreator)
+from file_system import (FileLister, FileProcessor, FileCreator, OwnedPagesLister)
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubWebhook, GithubDocumentsWebhook)
 from users import (UserRegistration, UserLogin, UserLogout, PasswordResetSender, PasswordReseter,
@@ -164,6 +164,9 @@ api.add_resource(AuthorInitializer,     "/authors/permit/")
 api.add_resource(FileLister,            "/wip/<file_type>/index/")
 api.add_resource(FileCreator,           "/wip/<file_type>/")
 api.add_resource(FileProcessor,         "/wip/<file_type>/<int:file_id>/")
+
+# Adding author studio resource(s):
+api.add_resource(OwnedPagesLister,      "/pages/owned/")
 
 # Adding publishing resources:
 api.add_resource(Submitter,             "/cat/submissions/")

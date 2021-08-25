@@ -11,11 +11,11 @@ def check_deleting_ids(client: FlaskClient, list_tester: Callable[[str, dict, in
                        wip_type: str, ids: Optional[List[int]] = None):
     delete_all = ids is None
 
-    for content_id in [c["id"] for page in list_tester(f"/wip/{wip_type}s/index", {}, 20) for c in page]:
+    for content_id in [c["id"] for page in list_tester(f"/{wip_type}s/owned", {}, 20) for c in page]:
         if delete_all or content_id in ids:
             check_status_code(client.delete(f"/wip/{wip_type}s/{content_id}"))
 
-    assert not delete_all or len([d for page in list_tester(f"/wip/{wip_type}s/index", {}, 20) for d in page]) == 0
+    assert not delete_all or len([d for page in list_tester(f"/{wip_type}s/owned", {}, 20) for d in page]) == 0
 
 
 def check_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]], wip_type: str):
@@ -23,7 +23,7 @@ def check_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], I
         content: dict = load(f)
 
     assert (content_id := check_status_code(client.post(f"/wip/{wip_type}s", json=content)).get("id", None))
-    assert any(content_id == data["id"] for page in list_tester(f"/wip/{wip_type}s/index", {}, 20) for data in page)
+    assert any(content_id == data["id"] for page in list_tester(f"/{wip_type}s/owned", {}, 20) for data in page)
 
     content["id"] = content_id
     assert check_status_code(client.get(f"/wip/{wip_type}s/{content_id}", json=content)) == content
