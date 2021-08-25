@@ -1,6 +1,6 @@
 from typing import Type
 
-from flask import request, send_file, make_response
+from flask import request, send_file
 from flask_restful import Resource
 
 from authorship import Author
@@ -55,10 +55,7 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
     @file_getter
     def get(self, file: CATFile):
-        if isinstance(file, JSONFile):
-            return file.get_json()
-        else:
-            return send_file(file.get_bytes(), mimetype=file.get_link().rpartition(".")[2])
+        return send_file(file.get_link())
 
     @file_getter
     def put(self, file: CATFile):

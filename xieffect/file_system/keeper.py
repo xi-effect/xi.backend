@@ -1,7 +1,7 @@
 from enum import Enum
-from json import dump, load
+from json import dump
 from os import remove
-from typing import Dict, Union, BinaryIO
+from typing import Dict, Union
 
 from authorship import Author
 from componets import Identifiable
@@ -25,7 +25,9 @@ class CATFile(db.Model, Identifiable):
     id = db.Column(db.Integer, primary_key=True)
     owner = db.Column(db.Integer, nullable=False,  # db.ForeignKey("authors.id"),
                       default=0)  # test-only
+
     location = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.Integer, nullable=False)
 
     @classmethod
     def _create(cls, owner: Author):
@@ -63,9 +65,6 @@ class CATFile(db.Model, Identifiable):
     def get_link(self) -> str:
         return Locations(self.location).to_link(self.__tablename__, self.id)
 
-    def get_byte_stream(self) -> BinaryIO:
-        return open(self.get_link(), "rb")
-
     def delete(self):
         remove(self.get_link())
         db.session.delete(self)
@@ -90,22 +89,17 @@ class JSONFile(CATFile):
         return super().get_link() + ".json"
 
     def update_json(self, json_data: dict) -> None:
-        file_json = self.update_metadata(json_data)
+        self.update_metadata(json_data)
         self._add_to_db()
 
         with open(self.get_link(), "w", encoding="utf8") as f:
-            dump(file_json, f, ensure_ascii=False)
+            dump(json_data, f, ensure_ascii=False)
 
-    def update_metadata(self, json_data: dict) -> Union[dict, list, str, int, bool]:
+    def update_metadata(self, json_data: dict) -> None:
         raise NotImplementedError
 
     def get_metadata(self) -> dict:
         raise NotImplementedError
-
-    def get_json(self):
-        result: dict = load(self.get_byte_stream())
-        result.update(self.get_metadata())
-        return result
 
 
 class WIPPage(JSONFile):
@@ -121,7 +115,7 @@ class WIPPage(JSONFile):
     public = db.Column(db.Boolean, nullable=False)
     published = db.Column(db.Boolean, nullable=False, default=False)
 
-    def update_metadata(self, json_data: dict) -> Union[dict, list, str, int, bool]:
+    def update_metadata(self, json_data: dict) -> None:
         self.type = json_data["type"]
         self.name = json_data["name"]
         self.theme = json_data["theme"]
@@ -129,16 +123,9 @@ class WIPPage(JSONFile):
         self.reusable = json_data["reusable"]
         self.public = json_data["public"]
 
-        return json_data["components"]
-
     def get_metadata(self) -> dict:
         return {"id": self.id, "type": self.type, "reusable": self.reusable, "public": self.public,
                 "name": self.name, "theme": self.theme, "description": self.description}
-
-    def get_json(self):
-        result: dict = self.get_metadata()
-        result["components"] = load(self.get_byte_stream())
-        return result
 
 
 class WIPModule(JSONFile):
@@ -147,9 +134,8 @@ class WIPModule(JSONFile):
 
     name = db.Column(db.String(100), nullable=False)
 
-    def update_metadata(self, json_data: dict) -> Union[dict, list, str, int, bool]:
+    def update_metadata(self, json_data: dict) -> None:
         self.name = json_data.pop("name")
-        return json_data
 
     def get_metadata(self) -> Dict[str, Union[int, str]]:
         return {"id": self.id, "name": self.name}
