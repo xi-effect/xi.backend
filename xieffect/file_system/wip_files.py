@@ -49,7 +49,7 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
             result: file_type = file_type.create_from_json(author, request.get_json())
         else:
             result: file_type = file_type.create_with_file(author, request.get_data())
-        return {"a": result.id}
+        return {"id": result.id}
 
 
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
