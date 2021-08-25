@@ -5,7 +5,7 @@
   "public": false,
   "reusable": false,
   "theme": "",
-  "type": "",
+  "kind": "task",
   "components": [
     {
       "fontSize": 30,

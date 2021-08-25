@@ -1,8 +1,8 @@
-from flask import redirect
+from flask import redirect, send_from_directory
 from flask_restful import Resource
 
 from componets import database_searcher, jwt_authorizer
-from education.elements import Module, ModuleType, Point
+from education.elements import Module, ModuleType, Point, Page
 from education.sessions import ModuleFilterSession, StandardModuleSession as SMS, TestModuleSession as TMS
 from users import User
 
@@ -94,6 +94,6 @@ class TestResultCollector(Resource):  # GET /tests/<int:test_id>/results/
 
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
     @jwt_authorizer(User, None)
-    # @database_searcher(, "page_id", "page")
-    def get(self, page):
-        pass
+    @database_searcher(Page, "page_id", "page")
+    def get(self, page: Page):
+        return send_from_directory(Page.directory, page.id + ".json")

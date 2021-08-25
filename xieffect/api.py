@@ -194,6 +194,7 @@ if __name__ == "__main__":  # test only
     # app.run(debug=True, ssl_context="adhoc")
 
 # CURL:
+# remove-item alias:\curl
 # curl -v --cookie -X
 # curl -H "Content-Type: application/json" http://localhost:5000/settings/
 # -X POST -v -d "{\"changed\": {\"username\": \"new\"}}"

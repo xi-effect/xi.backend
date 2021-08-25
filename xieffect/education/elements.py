@@ -1,14 +1,66 @@
 from datetime import datetime
 from enum import Enum
+from json import dump
 from pickle import dumps, loads
 from random import randint
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from flask_sqlalchemy import BaseQuery
 
 from componets import Identifiable
 from education.sessions import ModuleFilterSession
 from main import db
+
+
+class Page(db.Model, Identifiable):
+    __tablename__ = "pages"
+    not_found_text = "Page not found"
+    directory = "files/tfs/cat-pages/"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    kind = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    theme = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+    reusable = db.Column(db.Boolean, nullable=False)
+    public = db.Column(db.Boolean, nullable=False)
+    blueprint = db.Column(db.Boolean, nullable=False)
+
+    suspended = db.Column(db.Boolean, nullable=False, default=False)
+    views = db.Column(db.Integer, nullable=True)
+
+    @classmethod
+    def _create(cls, json_data: Dict[str, Union[str, int, bool, list]]):
+        entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
+                                                            "reusable", "public", "blueprint")})
+        db.session.add(entry)
+        db.session.commit()
+
+        with open(cls.directory + entry.id + ".json", "w", encoding="utf8") as f:
+            dump(json_data["components"], f, ensure_ascii=False)
+        return entry
+
+    @classmethod
+    def find_by_id(cls, entry_id: int):
+        return cls.query.filter_by(id=entry_id).first()
+
+    @classmethod
+    def create(cls, json_data: Dict[str, Union[str, int, bool, list]]):
+        if cls.find_by_id(json_data["id"]):
+            return None
+        return cls.create(json_data)
+
+    @classmethod
+    def create_or_update(cls, json_data: Dict[str, Union[str, int, bool, list]]):
+        entry: cls
+        if (entry := cls.find_by_id(json_data["id"])) is None:
+            return cls._create(json_data)
+        else:  # redo... maybe...
+            db.session.delete(entry)
+            db.session.commit()
+            cls._create(json_data)
 
 
 class Point(db.Model):
