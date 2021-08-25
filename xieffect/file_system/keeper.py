@@ -91,6 +91,7 @@ class JSONFile(CATFile):
         self.update_metadata(json_data)
         self._add_to_db()
 
+        json_data["id"] = self.id
         with open(self.get_link(), "w", encoding="utf8") as f:
             dump(json_data, f, ensure_ascii=False)
 
