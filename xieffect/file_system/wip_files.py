@@ -53,7 +53,7 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
     @file_getter
     def get(self, file: CATFile):
-        return send_file(file.get_link())
+        return send_file("../" + file.get_link())
 
     @file_getter
     def put(self, file: CATFile):
