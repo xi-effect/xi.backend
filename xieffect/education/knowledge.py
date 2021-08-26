@@ -100,11 +100,11 @@ class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
 
 
 class PageLister(Resource):  # POST /pages/
-    parser: RequestParser = RequestParser()
+    parser: RequestParser = counter_parser.copy()
     parser.add_argument("search", required=False)
 
     @jwt_authorizer(User, None)
-    @lister(50, argument_parser(parser, "search"))
+    @lister(50, argument_parser(parser, "search", "counter"))
     def post(self, search: Optional[str], start: int, finish: int) -> list:
         return Page.search(search, start, finish)
 

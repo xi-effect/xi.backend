@@ -69,7 +69,7 @@ class Page(db.Model, Identifiable):
 
     @classmethod
     def search(cls, search: Optional[str], start: int, finish: int) -> list:
-        pass
+        return []  # temp
 
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description, "theme": self.theme,
