@@ -1,7 +1,7 @@
 {
   "id": 1,
   "name": "Первая страница ",
-  "description": "Описание первой страницы",
+  "description": "Описание первой страницы test",
   "theme": "Тематика ",
   "kind": "practice",
   "components": [

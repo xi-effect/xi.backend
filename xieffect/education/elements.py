@@ -9,17 +9,18 @@ from flask_sqlalchemy import BaseQuery
 
 from componets import Identifiable
 from education.sessions import ModuleFilterSession
-from main import db, index_service
+from main import db, whooshee
 
 
+@whooshee.register_model("name", "theme", "description")
 class Page(db.Model, Identifiable):
     @staticmethod
     def create_test_bundle():
-        with open("files/tfs/test/1.json", "rb") as f:
-            Page.create(load(f))
+        for i in range(1, 4):
+            with open(f"files/tfs/test/{i}.json", "rb") as f:
+                Page.create(load(f))
 
     __tablename__ = "pages"
-    __searchable__ = ["name", "theme", "description"]
     not_found_text = "Page not found"
     directory = "files/tfs/cat-pages/"
 
@@ -70,14 +71,12 @@ class Page(db.Model, Identifiable):
 
     @classmethod
     def search(cls, search: Optional[str], start: int, limit: int) -> list:
-        return cls.search_query(search).offset(start).limit(limit)  # redo with pagination!!!
+        query: BaseQuery = cls.query if search is None else cls.query.whooshee_search(search)
+        return query.offset(start).limit(limit).all()  # redo with pagination!!!
 
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description, "theme": self.theme,
                 "kind": "practice", "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public}
-
-
-index_service.register_class(Page)
 
 
 class Point(db.Model):

@@ -30,9 +30,9 @@ def test_page_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/pages", {}, 50))) > 0
 
 
-# @mark.order(403)
-# def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[list]]):
-#     assert len(list(list_tester("/pages", {"search": "test"}, 50))) > 0
+@mark.order(403)
+def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[list]]):
+    assert len(list(list_tester("/pages", {"search": "Описание test"}, 50))) > 0
 
 
 @mark.order(406)
