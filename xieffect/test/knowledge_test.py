@@ -19,6 +19,11 @@ def test_pinned_modules(client: FlaskClient, list_tester: Callable[[str, dict, i
     module_ids = [module["id"] for module in list_tester("/modules", {"filters": {"global": "pinned"}}, 12)]
     assert 3 in module_ids
 
+    assert check_status_code(client.post("/modules/3/preference/", json={"a": "unpin"})) == {"a": True}
+
+    module_ids = [module["id"] for module in list_tester("/modules", {"filters": {"global": "pinned"}}, 12)]
+    assert 3 not in module_ids
+
 
 @mark.order(402)
 def test_page_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
