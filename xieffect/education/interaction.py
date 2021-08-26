@@ -103,4 +103,4 @@ class PageComponentsGetter(Resource):  # GET /pages/<int:page_id>/components/
     @jwt_authorizer(User, None)
     @database_searcher(Page, "page_id", "page")
     def get(self, page: Page):
-        return send_from_directory(Page.directory, page.id + ".json")
+        return send_from_directory(Page.directory, str(page.id) + ".json")
