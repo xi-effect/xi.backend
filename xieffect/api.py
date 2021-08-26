@@ -12,7 +12,7 @@ from authorship import (Submitter, SubmissionLister, SubmissionIndexer, Submissi
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
-                       FilterGetter, ShowAll, ModuleOpener, PageGetter)
+                       FilterGetter, ShowAll, ModuleOpener, PageMetadataGetter, PageComponentsGetter)
 from file_system import (FileLister, FileProcessor, FileCreator, OwnedPagesLister)
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubWebhook, GithubDocumentsWebhook)
@@ -26,7 +26,7 @@ from main import app
 from main import db
 
 from users import User  # test
-from education.elements import Module  # test
+from education.elements import Module, Page  # test
 from authorship import Author
 from other.test_keeper import TestPoint  # test
 
@@ -41,6 +41,7 @@ def create_tables():
     db.create_all()
 
     Module.create_test_bundle()
+    Page.create_test_bundle()
     TestPoint.test()
 
     test_user: User
@@ -177,7 +178,8 @@ api.add_resource(ReviewIndex,           "/cat/reviews/<int:submission_id>/")
 api.add_resource(Publisher,             "/cat/publications/")
 
 # Adding file resource(s):
-api.add_resource(PageGetter,            "/pages/<int:page_id>/")
+api.add_resource(PageMetadataGetter,    "/pages/<int:page_id>/")
+api.add_resource(PageComponentsGetter,  "/pages/<int:page_id>/components/")
 
 # Adding application resource(s):
 api.add_resource(Version,               "/<app_name>/version/")

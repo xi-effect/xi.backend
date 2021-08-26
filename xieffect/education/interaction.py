@@ -92,7 +92,14 @@ class TestResultCollector(Resource):  # GET /tests/<int:test_id>/results/
         return test.collect_results()
 
 
-class PageGetter(Resource):  # GET /pages/<int:page_id>/
+class PageMetadataGetter(Resource):  # GET /pages/<int:page_id>/
+    @jwt_authorizer(User, None)
+    @database_searcher(Page, "page_id", "page")
+    def get(self, page: Page):  # add some access checks
+        return page.to_json()
+
+
+class PageComponentsGetter(Resource):  # GET /pages/<int:page_id>/components/
     @jwt_authorizer(User, None)
     @database_searcher(Page, "page_id", "page")
     def get(self, page: Page):
