@@ -22,8 +22,18 @@ def test_pinned_modules(client: FlaskClient, list_tester: Callable[[str, dict, i
     assert 3 in module_ids
 
 
+@mark.order(402)
+def test_page_list(list_tester: Callable[[str, dict, int], Iterator[list]]):
+    assert len(list(list_tester("/pages", {}, 50))) > 0
+
+
+# @mark.order(403)
+# def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[list]]):
+#     assert len(list(list_tester("/pages", {"search": "test"}, 50))) > 0
+
+
 @mark.order(406)
-def test_module_list(client: FlaskClient):
+def test_getting_pages(client: FlaskClient):
     page_json: dict = check_status_code(client.get("/pages/1"))
     page_json["components"] = check_status_code(client.get("/pages/1/components"))
 
