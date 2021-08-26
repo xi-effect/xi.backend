@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
@@ -101,11 +101,11 @@ class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
 
 class PageLister(Resource):  # POST /pages/
     parser: RequestParser = RequestParser()
-    parser.add_argument("search", required=True)
+    parser.add_argument("search", required=False)
 
     @jwt_authorizer(User, None)
     @lister(50, argument_parser(parser, "search"))
-    def post(self, search: str, start: int, finish: int) -> list:
+    def post(self, search: Optional[str], start: int, finish: int) -> list:
         return Page.search(search, start, finish)
 
 

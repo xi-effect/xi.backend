@@ -68,7 +68,7 @@ class Page(db.Model, Identifiable):
             cls._create(json_data)
 
     @classmethod
-    def search(cls, search: str, start: int, finish: int) -> list:
+    def search(cls, search: Optional[str], start: int, finish: int) -> list:
         pass
 
     def to_json(self):
