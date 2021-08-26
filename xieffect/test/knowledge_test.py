@@ -1,3 +1,4 @@
+from json import load
 from typing import Callable, Iterator
 
 from flask.testing import FlaskClient
@@ -6,12 +7,12 @@ from pytest import mark
 from xieffect.test.components import check_status_code
 
 
-@mark.order(6)
+@mark.order(400)
 def test_module_list(list_tester: Callable[[str, dict, int], Iterator[list]]):
     assert len(list(list_tester("/modules", {}, 12))) > 0
 
 
-@mark.order(7)
+@mark.order(401)
 def test_pinned_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]]):
     assert check_status_code(client.post("/modules/3/preference/", json={"a": "pin"})) == {"a": True}
 

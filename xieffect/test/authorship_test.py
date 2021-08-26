@@ -38,12 +38,12 @@ def check_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], I
     check_deleting_ids(client, list_tester, wip_type, [content_id])
 
 
-@mark.order(10)
+@mark.order(200)
 def test_delete_all_wip_pages(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]]):
     check_deleting_ids(client, list_tester, "page")
 # https://discord.com/channels/706806130348785715/843536940083314728/880041704651108432
 
 
-@mark.order(11)
+@mark.order(201)
 def test_wip_page_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[list]]):
     check_editing(client, list_tester, "page")
