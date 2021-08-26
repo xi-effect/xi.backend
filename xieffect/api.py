@@ -10,9 +10,10 @@ from werkzeug.exceptions import HTTPException
 from authorship import (Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
                         ReviewIndex, Publisher, AuthorInitializer)
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
+                       PageLister, PageReporter, PageMetadataGetter, PageComponentsGetter,
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
-                       FilterGetter, ShowAll, ModuleOpener, PageMetadataGetter, PageComponentsGetter)
+                       FilterGetter, ShowAll, ModuleOpener)
 from file_system import (FileLister, FileProcessor, FileCreator, OwnedPagesLister)
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubWebhook, GithubDocumentsWebhook)
@@ -140,14 +141,20 @@ api.add_resource(PasswordChanger,       "/password-change/")
 # api.add_resource(Tasks, "/tasks/<int:task_id>/")
 # api.add_resource(Notif, "/notif/<int:notification_id>/")
 
-# Adding education (outside courses) resources:
+# Adding module resources:
 api.add_resource(FilterGetter,          "/filters/")
 api.add_resource(ModuleLister,          "/modules/", "/courses/")
 api.add_resource(HiddenModuleLister,    "/modules/hidden/", "/courses/hidden/")
 api.add_resource(ModulePreferences,     "/modules/<int:module_id>/preference/", "/courses/<int:module_id>/preference/")
 api.add_resource(ModuleReporter,        "/modules/<int:module_id>/report/", "/courses/<int:module_id>/report/")
 
-# Adding in-course resources:
+# Adding page resources:
+api.add_resource(PageLister,            "/pages/")
+api.add_resource(PageReporter,          "/pages/<int:page_id>/report/")
+api.add_resource(PageMetadataGetter,    "/pages/<int:page_id>/")
+api.add_resource(PageComponentsGetter,  "/pages/<int:page_id>/components/")
+
+# Adding in-module resources:
 api.add_resource(ModuleOpener,          "/modules/<int:module_id>/")
 api.add_resource(StandardProgresser,    "/sessions/<int:session_id>/")
 api.add_resource(PracticeGenerator,     "/modules/<int:module_id>/next/")
@@ -176,10 +183,6 @@ api.add_resource(SubmissionIndexer,     "/cat/submissions/index/")
 api.add_resource(SubmissionReader,      "/cat/submissions/<int:submission_id>/")
 api.add_resource(ReviewIndex,           "/cat/reviews/<int:submission_id>/")
 api.add_resource(Publisher,             "/cat/publications/")
-
-# Adding file resource(s):
-api.add_resource(PageMetadataGetter,    "/pages/<int:page_id>/")
-api.add_resource(PageComponentsGetter,  "/pages/<int:page_id>/components/")
 
 # Adding application resource(s):
 api.add_resource(Version,               "/<app_name>/version/")

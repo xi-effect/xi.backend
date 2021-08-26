@@ -67,6 +67,10 @@ class Page(db.Model, Identifiable):
             db.session.commit()
             cls._create(json_data)
 
+    @classmethod
+    def search(cls, search: Optional[str], start: int, finish: int) -> list:
+        return []  # temp
+
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description, "theme": self.theme,
                 "kind": "practice", "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public}

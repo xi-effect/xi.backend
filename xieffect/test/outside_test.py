@@ -14,12 +14,12 @@ def base_client():
         yield client
 
 
-@mark.order(1)
+@mark.order(0)
 def test_startup(base_client: FlaskClient):
     assert check_status_code(base_client.get("/")) == {"hello": "word"}
 
 
-@mark.order(2)
+@mark.order(1)
 def test_login(base_client: FlaskClient):
     response: Response = check_status_code(base_client.post("/auth", follow_redirects=True, data={
         "email": "test@test.test",
