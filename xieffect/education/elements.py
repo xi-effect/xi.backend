@@ -69,8 +69,8 @@ class Page(db.Model, Identifiable):
             cls._create(json_data)
 
     @classmethod
-    def search(cls, search: Optional[str], start: int, finish: int) -> list:
-        return []  # temp
+    def search(cls, search: Optional[str], start: int, limit: int) -> list:
+        return cls.search_query(search).offset(start).limit(limit)  # redo with pagination!!!
 
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description, "theme": self.theme,
