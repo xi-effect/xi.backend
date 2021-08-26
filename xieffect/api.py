@@ -177,7 +177,9 @@ api.add_resource(SubmissionReader,      "/cat/submissions/<int:submission_id>/")
 api.add_resource(ReviewIndex,           "/cat/reviews/<int:submission_id>/")
 api.add_resource(Publisher,             "/cat/publications/")
 
-# Adding file resource(s):
+# Adding page resources:
+api.add_resource(PageMetadataGetter,    "/pages/")
+api.add_resource(PageMetadataGetter,    "/pages/<int:page_id>/report/")
 api.add_resource(PageMetadataGetter,    "/pages/<int:page_id>/")
 api.add_resource(PageComponentsGetter,  "/pages/<int:page_id>/components/")
 
