@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from json import dump
+from json import dump, load
 from pickle import dumps, loads
 from random import randint
 from typing import Dict, List, Optional, Union
@@ -13,6 +13,11 @@ from main import db
 
 
 class Page(db.Model, Identifiable):
+    @staticmethod
+    def create_test_bundle():
+        with open("files/tfs/test/1.json", "rb") as f:
+            Page.create(load(f))
+
     __tablename__ = "pages"
     not_found_text = "Page not found"
     directory = "files/tfs/cat-pages/"
@@ -38,7 +43,7 @@ class Page(db.Model, Identifiable):
         db.session.add(entry)
         db.session.commit()
 
-        with open(cls.directory + entry.id + ".json", "w", encoding="utf8") as f:
+        with open(cls.directory + str(entry.id) + ".json", "w", encoding="utf8") as f:
             dump(json_data["components"], f, ensure_ascii=False)
         return entry
 
@@ -50,7 +55,7 @@ class Page(db.Model, Identifiable):
     def create(cls, json_data: Dict[str, Union[str, int, bool, list]]):
         if cls.find_by_id(json_data["id"]):
             return None
-        return cls.create(json_data)
+        return cls._create(json_data)
 
     @classmethod
     def create_or_update(cls, json_data: Dict[str, Union[str, int, bool, list]]):

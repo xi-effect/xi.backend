@@ -1,6 +1,7 @@
-from .knowledge import ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences
-from .knowledge import FilterGetter, ShowAll
+from .knowledge import FilterGetter, ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences
+from .knowledge import PageLister, PageReporter
+from .knowledge import ShowAll
 
 from .interaction import ModuleOpener, StandardProgresser, PracticeGenerator, TheoryNavigator
-from .interaction import TheoryContentsGetter, TestContentsGetter, TestNavigator
-from .interaction import TestResultCollector, TestReplySaver, PageGetter
+from .interaction import TheoryContentsGetter, TestContentsGetter, TestNavigator, TestResultCollector, TestReplySaver
+from .interaction import PageMetadataGetter, PageComponentsGetter

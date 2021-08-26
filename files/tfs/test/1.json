@@ -1,0 +1,66 @@
+{
+  "id": 1,
+  "name": "Первая страница ",
+  "description": "Описание первой страницы",
+  "theme": "Тематика ",
+  "kind": "practice",
+  "components": [
+    {
+      "type": "text",
+      "fontSize": 30,
+      "textAlign": "left",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "label": "текст"
+    },
+    {
+      "type": "h",
+      "fontSize": 30,
+      "textAlign": "left",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "label": "заголовок"
+    },
+    {
+      "type": "h",
+      "fontSize": 30,
+      "textAlign": "left",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "label": "заголовок"
+    },
+    {
+      "type": "text",
+      "fontSize": 30,
+      "textAlign": "left",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "label": "текст"
+    },
+    {
+      "type": "text",
+      "fontSize": 30,
+      "textAlign": "left",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "label": "текст"
+    },
+    {
+      "type": "text",
+      "fontSize": 30,
+      "textAlign": "left",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "label": "текст"
+    }
+  ],
+  "blueprint": false,
+  "reusable": true,
+  "public": true
+}

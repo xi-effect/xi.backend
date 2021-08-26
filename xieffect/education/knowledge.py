@@ -101,6 +101,14 @@ class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
         return {"a": True}
 
 
+class PageLister(Resource):
+    pass
+
+
+class PageReporter(Resource):
+    pass
+
+
 class ShowAll(Resource):  # test
     @jwt_authorizer(User)
     def get(self, user: User):

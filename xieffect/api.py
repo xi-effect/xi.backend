@@ -12,8 +12,8 @@ from authorship import (Submitter, SubmissionLister, SubmissionIndexer, Submissi
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
-                       FilterGetter, ShowAll, ModuleOpener, PageGetter)
-from file_system import (FileLister, FileProcessor, FileCreator)
+                       FilterGetter, ShowAll, ModuleOpener, PageMetadataGetter, PageComponentsGetter)
+from file_system import (FileLister, FileProcessor, FileCreator, OwnedPagesLister)
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubWebhook, GithubDocumentsWebhook)
 from users import (UserRegistration, UserLogin, UserLogout, PasswordResetSender, PasswordReseter,
@@ -26,7 +26,7 @@ from main import app
 from main import db
 
 from users import User  # test
-from education.elements import Module  # test
+from education.elements import Module, Page  # test
 from authorship import Author
 from other.test_keeper import TestPoint  # test
 
@@ -41,6 +41,7 @@ def create_tables():
     db.create_all()
 
     Module.create_test_bundle()
+    Page.create_test_bundle()
     TestPoint.test()
 
     test_user: User
@@ -82,9 +83,9 @@ def on_any_exception(error: Exception):
     error_text: str = f"Requested URL: {request.path}\nError: {repr(error)}" + \
                       "".join(format_tb(error.__traceback__)[6:])
 
-    response = send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\n```{error_text}```")
+    response = send_file_discord_message(WebhookURLs.ERRORS, error_text, "error_contents.txt", "Server error appeared!")
     if response.status_code < 200 or response.status_code > 299:
-        send_file_discord_message(WebhookURLs.ERRORS, error_text, "error_contents.txt", "Server error appeared!")
+        send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
     return {"a": error_text}, 500
 
 
@@ -165,6 +166,9 @@ api.add_resource(FileLister,            "/wip/<file_type>/index/")
 api.add_resource(FileCreator,           "/wip/<file_type>/")
 api.add_resource(FileProcessor,         "/wip/<file_type>/<int:file_id>/")
 
+# Adding author studio resource(s):
+api.add_resource(OwnedPagesLister,      "/pages/owned/")
+
 # Adding publishing resources:
 api.add_resource(Submitter,             "/cat/submissions/")
 api.add_resource(SubmissionLister,      "/cat/submissions/owned/")
@@ -174,7 +178,8 @@ api.add_resource(ReviewIndex,           "/cat/reviews/<int:submission_id>/")
 api.add_resource(Publisher,             "/cat/publications/")
 
 # Adding file resource(s):
-api.add_resource(PageGetter,            "/pages/<int:page_id>/")
+api.add_resource(PageMetadataGetter,    "/pages/<int:page_id>/")
+api.add_resource(PageComponentsGetter,  "/pages/<int:page_id>/components/")
 
 # Adding application resource(s):
 api.add_resource(Version,               "/<app_name>/version/")
