@@ -80,10 +80,10 @@ def on_http_exception(error: HTTPException):
 
 @app.errorhandler(Exception)
 def on_any_exception(error: Exception):
-    error_text: str = f"Requested URL: {request.path}\nError: {repr(error)}" + \
+    error_text: str = f"Requested URL: {request.path}\nError: {repr(error)}\n" + \
                       "".join(format_tb(error.__traceback__)[6:])
 
-    response = send_file_discord_message(WebhookURLs.ERRORS, error_text, "error_contents.txt", "Server error appeared!")
+    response = send_file_discord_message(WebhookURLs.ERRORS, error_text, "error_message.txt", "Server error appeared!")
     if response.status_code < 200 or response.status_code > 299:
         send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
     return {"a": error_text}, 500
