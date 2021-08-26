@@ -6,3 +6,4 @@ ngrok.exe
 /database/app.db
 /xieffect/app.db
 /xieffect/test/.pytest_cache
+/files/temp/*

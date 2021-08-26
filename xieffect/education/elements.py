@@ -9,7 +9,7 @@ from flask_sqlalchemy import BaseQuery
 
 from componets import Identifiable
 from education.sessions import ModuleFilterSession
-from main import db
+from main import db, index_service
 
 
 class Page(db.Model, Identifiable):
@@ -19,6 +19,7 @@ class Page(db.Model, Identifiable):
             Page.create(load(f))
 
     __tablename__ = "pages"
+    __searchable__ = ["name", "theme", "description"]
     not_found_text = "Page not found"
     directory = "files/tfs/cat-pages/"
 
@@ -74,6 +75,9 @@ class Page(db.Model, Identifiable):
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description, "theme": self.theme,
                 "kind": "practice", "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public}
+
+
+index_service.register_class(Page)
 
 
 class Point(db.Model):
