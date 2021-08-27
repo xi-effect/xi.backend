@@ -7,6 +7,7 @@ from datetime import timedelta
 from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_whooshee import Whooshee
 
 # Version control:
 versions: Dict[str, str] = load(open("files/versions.json"))
@@ -41,4 +42,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 280
 # app.config[""] =
 
+app.config["WHOOSHEE_MIN_STRING_LEN"] = 0
+app.config["WHOOSHEE_ENABLE_INDEXING"] = True
+app.config["WHOOSHEE_DIR"] = "files/temp/whooshee"
+
+whooshee = Whooshee(app)
 db: SQLAlchemy = SQLAlchemy(app)

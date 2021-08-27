@@ -1,9 +1,9 @@
 {
-  "id": 1,
-  "name": "Первая страница ",
-  "description": "Описание первой страницы test",
-  "theme": "Тематика ",
-  "kind": "practice",
+  "id": 3,
+  "name": "234567809786543781292131241341234123",
+  "description": null,
+  "theme": "Контурные карты Караганды 1673 года",
+  "kind": "task",
   "components": [
     {
       "type": "text",

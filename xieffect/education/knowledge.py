@@ -106,7 +106,7 @@ class PageLister(Resource):  # POST /pages/
     @jwt_authorizer(User, None)
     @lister(50, argument_parser(parser, "search", "counter"))
     def post(self, search: Optional[str], start: int, finish: int) -> list:
-        return Page.search(search, start, finish)
+        return [page.to_json() for page in Page.search(search, start, finish - start)]
 
 
 class PageReporter(Resource):  # POST /pages/<int:page_id>/report/

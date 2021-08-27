@@ -9,14 +9,26 @@ from flask_sqlalchemy import BaseQuery
 
 from componets import Identifiable
 from education.sessions import ModuleFilterSession
-from main import db
+from main import db, whooshee
 
 
+class PageKind(Enum):
+    THEORY = 0
+    PRACTICE = 1
+    TASK = 2
+
+    @classmethod
+    def from_string(cls, string):
+        return cls.__members__[string.upper()]
+
+
+@whooshee.register_model("name", "theme", "description")
 class Page(db.Model, Identifiable):
     @staticmethod
     def create_test_bundle():
-        with open("files/tfs/test/1.json", "rb") as f:
-            Page.create(load(f))
+        for i in range(1, 4):
+            with open(f"files/tfs/test/{i}.json", "rb") as f:
+                Page.create(load(f))
 
     __tablename__ = "pages"
     not_found_text = "Page not found"
@@ -38,6 +50,7 @@ class Page(db.Model, Identifiable):
 
     @classmethod
     def _create(cls, json_data: Dict[str, Union[str, int, bool, list]]):
+        json_data["kind"] = PageKind.from_string(json_data["kind"]).value
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
         db.session.add(entry)
@@ -68,12 +81,14 @@ class Page(db.Model, Identifiable):
             cls._create(json_data)
 
     @classmethod
-    def search(cls, search: Optional[str], start: int, finish: int) -> list:
-        return []  # temp
+    def search(cls, search: Optional[str], start: int, limit: int) -> list:
+        query: BaseQuery = cls.query if search is None else cls.query.whooshee_search(search)
+        return query.offset(start).limit(limit).all()  # redo with pagination!!!
 
     def to_json(self):
-        return {"id": self.id, "name": self.name, "description": self.description, "theme": self.theme,
-                "kind": "practice", "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public}
+        return {"id": self.id, "name": self.name, "description": self.description,
+                "theme": self.theme, "kind": PageKind(self.kind).name.lower(),
+                "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public}
 
 
 class Point(db.Model):

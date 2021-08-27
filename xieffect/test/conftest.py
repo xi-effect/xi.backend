@@ -38,8 +38,8 @@ def database():  # ???
 
 
 @fixture()
-def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator[list]]:
-    def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[list]:
+def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator[dict]]:
+    def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
         counter = 0
         amount = page_size
         while amount == page_size:
@@ -49,7 +49,8 @@ def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator
 
             response_json = response.get_json()
             assert isinstance(response_json, list)
-            yield response_json
+            for content in response_json:
+                yield content
 
             amount = len(response_json)
             assert amount <= page_size
