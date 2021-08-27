@@ -7,13 +7,13 @@ from flask_restful import Api
 from werkzeug.exceptions import HTTPException
 
 from authorship import (Author, Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
-                        ReviewIndex, Publisher, AuthorInitializer)
+                        ReviewIndex, Publisher, AuthorInitializer, OwnedPagesLister)
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        PageLister, PageReporter, PageMetadataGetter, PageComponentsGetter,
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
                        FilterGetter, ShowAll, ModuleOpener)
-from file_system import (FileLister, FileProcessor, FileCreator, OwnedPagesLister)
+from file_system import (FileLister, FileProcessor, FileCreator)
 from main import app, db
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
