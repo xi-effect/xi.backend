@@ -2,31 +2,24 @@ from datetime import datetime, timedelta, timezone
 from traceback import format_tb
 
 from flask import Response, request
-from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity
-from flask_jwt_extended import create_access_token, set_access_cookies
+from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
 from flask_restful import Api
 from werkzeug.exceptions import HTTPException
 
-from authorship import Author
-from authorship import (Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
+from authorship import (Author, Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
                         ReviewIndex, Publisher, AuthorInitializer)
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        PageLister, PageReporter, PageMetadataGetter, PageComponentsGetter,
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
                        FilterGetter, ShowAll, ModuleOpener)
-from education.elements import Module, Page  # test
 from file_system import (FileLister, FileProcessor, FileCreator, OwnedPagesLister)
-from main import app, whooshee
-from main import db
+from main import app, db
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
-from other.test_keeper import TestPoint  # test
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
-from users import TokenBlockList
-from users import User  # test
-from users import (UserRegistration, UserLogin, UserLogout, PasswordResetSender, PasswordReseter,
-                   Avatar, Settings, MainSettings, RoleSettings, EmailChanger, PasswordChanger,
-                   EmailSender, EmailConfirm)
+from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
+                   PasswordReseter, Avatar, Settings, MainSettings, RoleSettings, EmailChanger,
+                   PasswordChanger, EmailSender, EmailConfirm)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
@@ -38,7 +31,12 @@ jwt: JWTManager = JWTManager(app)
 @app.before_first_request
 def create_tables():
     db.create_all()
+    # from main import whooshee
     # whooshee.reindex()
+
+    from education.elements import Module, Page
+    from other.test_keeper import TestPoint
+    from users import User
 
     Module.create_test_bundle()
     Page.create_test_bundle()
