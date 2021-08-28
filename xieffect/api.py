@@ -9,10 +9,9 @@ from werkzeug.exceptions import HTTPException
 from authorship import (Author, Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
                         ReviewIndex, Publisher, AuthorInitializer, OwnedPagesLister)
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
-                       PageLister, PageReporter, PageMetadataGetter, PageComponentsGetter,
-                       StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
-                       TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
-                       FilterGetter, ShowAll, ModuleOpener)
+                       PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
+                       TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
+                       TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
 from file_system import (FileLister, FileProcessor, FileCreator)
 from main import app, db
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
@@ -150,8 +149,7 @@ api.add_resource(ModuleReporter, "/modules/<int:module_id>/report/", "/courses/<
 # Adding page resources:
 api.add_resource(PageLister, "/pages/")
 api.add_resource(PageReporter, "/pages/<int:page_id>/report/")
-api.add_resource(PageMetadataGetter, "/pages/<int:page_id>/")
-api.add_resource(PageComponentsGetter, "/pages/<int:page_id>/components/")
+api.add_resource(PageGetter, "/pages/<int:page_id>/")
 
 # Adding in-module resources:
 api.add_resource(ModuleOpener, "/modules/<int:module_id>/")

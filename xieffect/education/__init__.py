@@ -4,4 +4,4 @@ from .knowledge import ShowAll
 
 from .interaction import ModuleOpener, StandardProgresser, PracticeGenerator, TheoryNavigator
 from .interaction import TheoryContentsGetter, TestContentsGetter, TestNavigator, TestResultCollector, TestReplySaver
-from .interaction import PageMetadataGetter, PageComponentsGetter
+from .interaction import PageGetter
