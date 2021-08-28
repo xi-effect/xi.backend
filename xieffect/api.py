@@ -19,7 +19,7 @@ from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # Upload
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
 from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
                    PasswordReseter, Avatar, Settings, MainSettings, RoleSettings, EmailChanger,
-                   PasswordChanger, EmailSender, EmailConfirm)
+                   PasswordChanger, EmailSender, EmailConfirm, AvatarViewer)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
@@ -130,6 +130,9 @@ api.add_resource(MainSettings, "/settings/main/")
 api.add_resource(RoleSettings, "/settings/roles/")
 api.add_resource(EmailChanger, "/email-change/")
 api.add_resource(PasswordChanger, "/password-change/")
+
+# Adding profile viewing resource(s):
+api.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 
 # Adding student's main_page resources:
 # api.add_resource(SchoolIntegration, "/school/")
