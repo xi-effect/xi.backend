@@ -100,7 +100,7 @@ class Page(db.Model, Identifiable):
                 "theme": self.theme, "kind": PageKind(self.kind).name.lower(),
                 "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public,
                 "author_id": self.author.id, "author_name": self.author.pseudonym,
-                "views": self.views, "updated": str(self.updated)}
+                "views": self.views, "updated": self.updated.isoformat()}
 
 
 class Point(db.Model):
