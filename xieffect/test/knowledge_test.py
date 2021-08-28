@@ -39,6 +39,8 @@ def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[list]]
 def test_getting_pages(client: FlaskClient):
     page_json: dict = check_status_code(client.get("/pages/1"))
     page_json["components"] = check_status_code(client.get("/pages/1/components"))
+    page_json.pop("author_id")
+    page_json.pop("author_name")
 
     with open("files/tfs/test/1.json", "rb") as f:
         assert page_json == load(f)

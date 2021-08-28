@@ -2,31 +2,24 @@ from datetime import datetime, timedelta, timezone
 from traceback import format_tb
 
 from flask import Response, request
-from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity
-from flask_jwt_extended import create_access_token, set_access_cookies
+from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
 from flask_restful import Api
 from werkzeug.exceptions import HTTPException
 
-from authorship import Author
-from authorship import (Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
-                        ReviewIndex, Publisher, AuthorInitializer)
+from authorship import (Author, Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
+                        ReviewIndex, Publisher, AuthorInitializer, OwnedPagesLister)
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        PageLister, PageReporter, PageMetadataGetter, PageComponentsGetter,
                        StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
                        TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
                        FilterGetter, ShowAll, ModuleOpener)
-from education.elements import Module, Page  # test
-from file_system import (FileLister, FileProcessor, FileCreator, OwnedPagesLister)
-from main import app, whooshee
-from main import db
+from file_system import (FileLister, FileProcessor, FileCreator)
+from main import app, db
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
-from other.test_keeper import TestPoint  # test
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
-from users import TokenBlockList
-from users import User  # test
-from users import (UserRegistration, UserLogin, UserLogout, PasswordResetSender, PasswordReseter,
-                   Avatar, Settings, MainSettings, RoleSettings, EmailChanger, PasswordChanger,
-                   EmailSender, EmailConfirm)
+from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
+                   PasswordReseter, Avatar, Settings, MainSettings, RoleSettings, EmailChanger,
+                   PasswordChanger, EmailSender, EmailConfirm, AvatarViewer)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
@@ -38,19 +31,23 @@ jwt: JWTManager = JWTManager(app)
 @app.before_first_request
 def create_tables():
     db.create_all()
+    # from main import whooshee
     # whooshee.reindex()
 
-    Module.create_test_bundle()
-    Page.create_test_bundle()
-    TestPoint.test()
+    from education.elements import Module, Page
+    from other.test_keeper import TestPoint
+    from users import User
 
     test_user: User
     if (test_user := User.find_by_email_address("test@test.test")) is None:
         send_discord_message(WebhookURLs.STATUS, "Database has been reset")
         test_user = User.create("test@test.test", "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
                                 "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
-    if Author.find_by_id(test_user.id) is None:
-        Author.create(test_user.id)
+    test_author = Author.find_or_create(test_user)
+
+    Module.create_test_bundle()
+    Page.create_test_bundle(test_author)
+    TestPoint.test()
 
     if User.find_by_email_address("admin@admin.admin") is None:
         User.create("admin@admin.admin", "admin", "2b003f13e43546e8b416a9ff3c40bc4ba694d" +
@@ -133,6 +130,9 @@ api.add_resource(MainSettings, "/settings/main/")
 api.add_resource(RoleSettings, "/settings/roles/")
 api.add_resource(EmailChanger, "/email-change/")
 api.add_resource(PasswordChanger, "/password-change/")
+
+# Adding profile viewing resource(s):
+api.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 
 # Adding student's main_page resources:
 # api.add_resource(SchoolIntegration, "/school/")
