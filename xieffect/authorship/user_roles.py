@@ -24,6 +24,12 @@ class Author(db.Model, UserRole):
         return cls.query.filter_by(id=entry_id).first() if include_banned else \
             cls.query.filter_by(banned=False, id=entry_id).first()
 
+    @classmethod
+    def find_or_create(cls, user):  # User class
+        if (author := cls.find_by_id(user.id, True)) is None:
+            author = cls.create(user)
+        return author
+
     def get_owned_modules(self, start: int = 0, finish: int = None) -> list:
         pass
 
