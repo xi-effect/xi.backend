@@ -47,15 +47,17 @@ class Page(db.Model, Identifiable):
     reusable = db.Column(db.Boolean, nullable=False)
     public = db.Column(db.Boolean, nullable=False)
     blueprint = db.Column(db.Boolean, nullable=False)
-
     suspended = db.Column(db.Boolean, nullable=False, default=False)
-    views = db.Column(db.Integer, nullable=True)
+
+    views = db.Column(db.Integer, nullable=False, default=0)
+    updated = db.Column(db.DateTime, nullable=False)
 
     @classmethod
     def _create(cls, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
         json_data["kind"] = PageKind.from_string(json_data["kind"]).value
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
+        entry.updated = datetime.utcnow()
         entry.author = author
         db.session.add(entry)
         db.session.commit()
@@ -89,11 +91,16 @@ class Page(db.Model, Identifiable):
         query: BaseQuery = cls.query if search is None else cls.query.whooshee_search(search)
         return query.offset(start).limit(limit).all()  # redo with pagination!!!
 
+    def view(self):
+        self.views += 1
+        db.session.commit()
+
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description,
                 "theme": self.theme, "kind": PageKind(self.kind).name.lower(),
                 "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public,
-                "author_id": self.author.id, "author_name": self.author.pseudonym}
+                "author_id": self.author.id, "author_name": self.author.pseudonym,
+                "views": self.views, "updated": str(self.updated)}
 
 
 class Point(db.Model):
