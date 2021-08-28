@@ -4,6 +4,7 @@ from flask.testing import FlaskClient
 from flask.wrappers import Response
 from pytest import fixture
 
+from xieffect.test.components import check_status_code
 from api import app, db
 
 
@@ -44,10 +45,8 @@ def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator
         amount = page_size
         while amount == page_size:
             request_json["counter"] = counter
-            response: Response = client.post(link, json=request_json)
-            assert response.status_code == status_code, response.get_json()
+            response_json: dict = check_status_code(client.post(link, json=request_json))
 
-            response_json = response.get_json()
             assert isinstance(response_json, list)
             for content in response_json:
                 yield content
