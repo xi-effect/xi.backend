@@ -12,7 +12,7 @@ from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModuleP
                        PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
                        TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
-from file_system import (FileLister, FileProcessor, FileCreator)
+from file_system import (FileLister, FileProcessor, FileCreator, PagePublisher)
 from main import app, db
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
@@ -169,6 +169,7 @@ api.add_resource(AuthorInitializer, "/authors/permit/")
 api.add_resource(FileLister, "/wip/<file_type>/index/")
 api.add_resource(FileCreator, "/wip/<file_type>/")
 api.add_resource(FileProcessor, "/wip/<file_type>/<int:file_id>/")
+api.add_resource(PagePublisher, "/wip/pages/<int:page_id>/publication/")
 
 # Adding author studio resource(s):
 api.add_resource(OwnedPagesLister, "/pages/owned/")

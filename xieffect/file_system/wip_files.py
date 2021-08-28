@@ -1,10 +1,12 @@
 from typing import Type
+from json import load
 
 from flask import request, send_from_directory
 from flask_restful import Resource
 
 from authorship import Author
-from componets import jwt_authorizer, lister
+from componets import jwt_authorizer, lister, database_searcher
+from education import Page
 from .keeper import CATFile, JSONFile, WIPModule, WIPPage
 
 
@@ -70,3 +72,15 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     def delete(self, file: CATFile):
         file.delete()
         return {"a": True}
+
+
+class PagePublisher(Resource):  # POST /wip/pages/<int:page_id>/publication/
+    @jwt_authorizer(Author, "author")
+    @database_searcher(WIPPage, "page_id", "wip_page")
+    def post(self, author: Author, wip_page: WIPPage):
+        if wip_page.owner != author.id:
+            return {"a": "Access denied"}, 403
+
+        with open(wip_page.get_link()) as f:
+            result: bool = Page.create(load(f), author) is None
+        return {"a": "Page already exists" if result else "Success"}
