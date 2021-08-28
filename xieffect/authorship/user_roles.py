@@ -7,14 +7,14 @@ class Author(db.Model, UserRole):
     not_found_text = "Author does not exist"
 
     id = db.Column(db.Integer, primary_key=True)
+    pseudonym = db.Column(db.String(100), nullable=False)
     banned = db.Column(db.Boolean, nullable=False, default=False)
 
     modules = db.relationship("Module", backref="authors")
-    # pages = db.relationship("Page", backref="authors")
 
     @classmethod
-    def create(cls, user_id: int):
-        new_entry = cls(id=user_id)
+    def create(cls, user):  # User class
+        new_entry = cls(id=user.id, pseudonym=user.username)
         db.session.add(new_entry)
         db.session.commit()
         return new_entry

@@ -38,17 +38,16 @@ def create_tables():
     from other.test_keeper import TestPoint
     from users import User
 
-    Module.create_test_bundle()
-    Page.create_test_bundle()
-    TestPoint.test()
-
     test_user: User
     if (test_user := User.find_by_email_address("test@test.test")) is None:
         send_discord_message(WebhookURLs.STATUS, "Database has been reset")
         test_user = User.create("test@test.test", "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
                                 "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
-    if Author.find_by_id(test_user.id) is None:
-        Author.create(test_user.id)
+    test_author = Author.find_or_create(test_user)
+
+    Module.create_test_bundle()
+    Page.create_test_bundle(test_author)
+    TestPoint.test()
 
     if User.find_by_email_address("admin@admin.admin") is None:
         User.create("admin@admin.admin", "admin", "2b003f13e43546e8b416a9ff3c40bc4ba694d" +

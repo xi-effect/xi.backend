@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Union
 
 from flask_sqlalchemy import BaseQuery
 
+from authorship import Author
 from componets import Identifiable
 from education.sessions import ModuleFilterSession
 from main import db, whooshee
@@ -25,16 +26,18 @@ class PageKind(Enum):
 @whooshee.register_model("name", "theme", "description")
 class Page(db.Model, Identifiable):
     @staticmethod
-    def create_test_bundle():
+    def create_test_bundle(author: Author):
         for i in range(1, 4):
             with open(f"files/tfs/test/{i}.json", "rb") as f:
-                Page.create(load(f))
+                Page.create(load(f), author)
 
     __tablename__ = "pages"
     not_found_text = "Page not found"
     directory = "files/tfs/cat-pages/"
 
     id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False)
+    author = db.relationship("Author")
 
     kind = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(100), nullable=False)
@@ -49,10 +52,11 @@ class Page(db.Model, Identifiable):
     views = db.Column(db.Integer, nullable=True)
 
     @classmethod
-    def _create(cls, json_data: Dict[str, Union[str, int, bool, list]]):
+    def _create(cls, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
         json_data["kind"] = PageKind.from_string(json_data["kind"]).value
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
+        entry.author = author
         db.session.add(entry)
         db.session.commit()
 
@@ -65,20 +69,20 @@ class Page(db.Model, Identifiable):
         return cls.query.filter_by(id=entry_id).first()
 
     @classmethod
-    def create(cls, json_data: Dict[str, Union[str, int, bool, list]]):
+    def create(cls, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
         if cls.find_by_id(json_data["id"]):
             return None
-        return cls._create(json_data)
+        return cls._create(json_data, author)
 
     @classmethod
-    def create_or_update(cls, json_data: Dict[str, Union[str, int, bool, list]]):
+    def create_or_update(cls, json_data: Dict[str, Union[str, int, bool, list]], author: Author = None):
         entry: cls
         if (entry := cls.find_by_id(json_data["id"])) is None:
-            return cls._create(json_data)
+            return cls._create(json_data, author)
         else:  # redo... maybe...
             db.session.delete(entry)
             db.session.commit()
-            cls._create(json_data)
+            cls._create(json_data, author)
 
     @classmethod
     def search(cls, search: Optional[str], start: int, limit: int) -> list:
@@ -88,7 +92,8 @@ class Page(db.Model, Identifiable):
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description,
                 "theme": self.theme, "kind": PageKind(self.kind).name.lower(),
-                "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public}
+                "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public,
+                "author_id": self.author.id, "author_name": self.author.pseudonym}
 
 
 class Point(db.Model):
