@@ -1,7 +1,7 @@
 from typing import Type
 from json import load
 
-from flask import request, send_from_directory
+from flask import request  # , send_from_directory
 from flask_restful import Resource
 
 from authorship import Author
