@@ -5,11 +5,13 @@ from typing import Dict, Union
 
 from authorship import Author
 from componets import Identifiable
+from education import Page
 from main import db
 
 
 class WIPStatus(Enum):
     WIP = 0
+    PUBLISHED = 1
 
 
 class CATFile(db.Model, Identifiable):
@@ -114,8 +116,9 @@ class WIPPage(JSONFile):
         self.description = json_data["description"]
 
     def get_metadata(self) -> dict:
-        return {"id": self.id, "kind": self.kind, "name": self.name,
-                "theme": self.theme, "description": self.description}
+        return {"id": self.id, "kind": self.kind, "name": self.name, "theme": self.theme,
+                "description": self.description, "status": WIPStatus(self.status).name.lower(),
+                "views": page.views if (page := Page.find_by_id(self.id)) is not None else None}
 
 
 class WIPModule(JSONFile):
