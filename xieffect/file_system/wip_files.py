@@ -1,10 +1,12 @@
 from typing import Type
+from json import load
 
 from flask import request, send_from_directory
 from flask_restful import Resource
 
 from authorship import Author
-from componets import jwt_authorizer, lister
+from componets import jwt_authorizer, lister, database_searcher
+from education import Page
 from .keeper import CATFile, JSONFile, WIPModule, WIPPage
 
 
@@ -54,9 +56,15 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 
 
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
-    @file_getter()
-    def get(self, file_type: Type[CATFile], file_id: int):
-        return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
+    @file_getter(type_only=False)
+    def get(self, file: CATFile):
+        with open(file.get_link(), "rb") as f:
+            result = load(f)
+        return result
+
+    # @file_getter()  # PermissionError(13)
+    # def get(self, file_type: Type[CATFile], file_id: int):
+    #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
 
     @file_getter(type_only=False)
     def put(self, file: CATFile):
@@ -70,3 +78,15 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     def delete(self, file: CATFile):
         file.delete()
         return {"a": True}
+
+
+class PagePublisher(Resource):  # POST /wip/pages/<int:page_id>/publication/
+    @jwt_authorizer(Author, "author")
+    @database_searcher(WIPPage, "page_id", "wip_page")
+    def post(self, author: Author, wip_page: WIPPage):
+        if wip_page.owner != author.id:
+            return {"a": "Access denied"}, 403
+
+        with open(wip_page.get_link()) as f:
+            result: bool = Page.create(load(f), author) is None
+        return {"a": "Page already exists" if result else "Success"}

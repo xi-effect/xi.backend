@@ -38,7 +38,6 @@ def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[dict]]
 @mark.order(406)
 def test_getting_pages(client: FlaskClient):
     page_json: dict = check_status_code(client.get("/pages/1"))
-    page_json["components"] = check_status_code(client.get("/pages/1/components"))
     for key in ("author_id", "author_name", "views", "updated"):
         page_json.pop(key)
 
@@ -50,7 +49,7 @@ def test_getting_pages(client: FlaskClient):
 def test_page_view_counter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     page_json: dict = check_status_code(client.post("/pages", json={"counter": 0}))[0]
     page_id, views_before = [page_json[key] for key in ["id", "views"]]
-    check_status_code(client.get(f"/pages/{page_id}/components"), get_json=False)
+    check_status_code(client.get(f"/pages/{page_id}"), get_json=False)
 
     for page_json in list_tester("/pages", {}, 50):
         if page_json["id"] == page_id:

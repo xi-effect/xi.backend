@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from json import dump, load
+from json import dumps as json_dumps, loads as json_loads, load
 from pickle import dumps, loads
 from random import randint
 from typing import Dict, List, Optional, Union
@@ -38,6 +38,7 @@ class Page(db.Model, Identifiable):
     id = db.Column(db.Integer, primary_key=True)
     author_id = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False)
     author = db.relationship("Author")
+    components = db.Column(db.JSON, nullable=False)
 
     kind = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(100), nullable=False)
@@ -57,13 +58,14 @@ class Page(db.Model, Identifiable):
         json_data["kind"] = PageKind.from_string(json_data["kind"]).value
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
+        entry.components = json_dumps(json_data["components"])
         entry.updated = datetime.utcnow()
         entry.author = author
         db.session.add(entry)
         db.session.commit()
 
-        with open(cls.directory + str(entry.id) + ".json", "w", encoding="utf8") as f:
-            dump(json_data["components"], f, ensure_ascii=False)
+        # with open(cls.directory + str(entry.id) + ".json", "w", encoding="utf8") as f:
+        #     dump(json_data["components"], f, ensure_ascii=False)
         return entry
 
     @classmethod
@@ -98,6 +100,7 @@ class Page(db.Model, Identifiable):
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description,
                 "theme": self.theme, "kind": PageKind(self.kind).name.lower(),
+                "components": json_loads(self.components),  # redo?
                 "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public,
                 "author_id": self.author.id, "author_name": self.author.pseudonym,
                 "views": self.views, "updated": self.updated.isoformat()}

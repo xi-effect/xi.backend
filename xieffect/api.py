@@ -9,11 +9,10 @@ from werkzeug.exceptions import HTTPException
 from authorship import (Author, Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
                         ReviewIndex, Publisher, AuthorInitializer, OwnedPagesLister)
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
-                       PageLister, PageReporter, PageMetadataGetter, PageComponentsGetter,
-                       StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter,
-                       TestContentsGetter, TestNavigator, TestReplySaver, TestResultCollector,
-                       FilterGetter, ShowAll, ModuleOpener)
-from file_system import (FileLister, FileProcessor, FileCreator)
+                       PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
+                       TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
+                       TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
+from file_system import (FileLister, FileProcessor, FileCreator, PagePublisher)
 from main import app, db
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
@@ -35,6 +34,7 @@ def create_tables():
     # whooshee.reindex()
 
     from education.elements import Module, Page
+    from file_system.keeper import WIPPage
     from other.test_keeper import TestPoint
     from users import User
 
@@ -47,6 +47,7 @@ def create_tables():
 
     Module.create_test_bundle()
     Page.create_test_bundle(test_author)
+    WIPPage.create_test_bundle(test_author)
     TestPoint.test()
 
     if User.find_by_email_address("admin@admin.admin") is None:
@@ -150,8 +151,7 @@ api.add_resource(ModuleReporter, "/modules/<int:module_id>/report/", "/courses/<
 # Adding page resources:
 api.add_resource(PageLister, "/pages/")
 api.add_resource(PageReporter, "/pages/<int:page_id>/report/")
-api.add_resource(PageMetadataGetter, "/pages/<int:page_id>/")
-api.add_resource(PageComponentsGetter, "/pages/<int:page_id>/components/")
+api.add_resource(PageGetter, "/pages/<int:page_id>/")
 
 # Adding in-module resources:
 api.add_resource(ModuleOpener, "/modules/<int:module_id>/")
@@ -171,6 +171,7 @@ api.add_resource(AuthorInitializer, "/authors/permit/")
 api.add_resource(FileLister, "/wip/<file_type>/index/")
 api.add_resource(FileCreator, "/wip/<file_type>/")
 api.add_resource(FileProcessor, "/wip/<file_type>/<int:file_id>/")
+api.add_resource(PagePublisher, "/wip/pages/<int:page_id>/publication/")
 
 # Adding author studio resource(s):
 api.add_resource(OwnedPagesLister, "/pages/owned/")

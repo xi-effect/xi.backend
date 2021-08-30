@@ -1,1 +1,1 @@
-from .wip_files import FileLister, FileProcessor, FileCreator
+from .wip_files import FileLister, FileProcessor, FileCreator, PagePublisher
