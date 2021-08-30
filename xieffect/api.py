@@ -34,6 +34,7 @@ def create_tables():
     # whooshee.reindex()
 
     from education.elements import Module, Page
+    from file_system.keeper import WIPPage
     from other.test_keeper import TestPoint
     from users import User
 
@@ -46,6 +47,7 @@ def create_tables():
 
     Module.create_test_bundle()
     Page.create_test_bundle(test_author)
+    WIPPage.create_test_bundle(test_author)
     TestPoint.test()
 
     if User.find_by_email_address("admin@admin.admin") is None:

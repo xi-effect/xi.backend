@@ -56,9 +56,15 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 
 
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
-    @file_getter()
-    def get(self, file_type: Type[CATFile], file_id: int):
-        return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
+    @file_getter(type_only=False)
+    def get(self, file: CATFile):
+        with open(file.get_link(), "rb") as f:
+            result = load(f)
+        return result
+
+    # @file_getter()  # PermissionError(13)
+    # def get(self, file_type: Type[CATFile], file_id: int):
+    #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
 
     @file_getter(type_only=False)
     def put(self, file: CATFile):
