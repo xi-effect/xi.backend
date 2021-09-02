@@ -6,8 +6,7 @@ from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_acc
 from flask_restful import Api
 from werkzeug.exceptions import HTTPException
 
-from authorship import (Author, Submitter, SubmissionLister, SubmissionIndexer, SubmissionReader,
-                        ReviewIndex, Publisher, AuthorInitializer, OwnedPagesLister)
+from authorship import (Author, AuthorInitializer, OwnedPagesLister)
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
@@ -144,9 +143,9 @@ api.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 # Adding module resources:
 api.add_resource(FilterGetter, "/filters/")
 api.add_resource(ModuleLister, "/modules/", "/courses/")
-api.add_resource(HiddenModuleLister, "/modules/hidden/", "/courses/hidden/")
-api.add_resource(ModulePreferences, "/modules/<int:module_id>/preference/", "/courses/<int:module_id>/preference/")
-api.add_resource(ModuleReporter, "/modules/<int:module_id>/report/", "/courses/<int:module_id>/report/")
+api.add_resource(HiddenModuleLister, "/modules/hidden/")
+api.add_resource(ModulePreferences, "/modules/<int:module_id>/preference/")
+api.add_resource(ModuleReporter, "/modules/<int:module_id>/report/")
 
 # Adding page resources:
 api.add_resource(PageLister, "/pages/")
@@ -176,13 +175,13 @@ api.add_resource(PagePublisher, "/wip/pages/<int:page_id>/publication/")
 # Adding author studio resource(s):
 api.add_resource(OwnedPagesLister, "/pages/owned/")
 
-# Adding publishing resources:
-api.add_resource(Submitter, "/cat/submissions/")
-api.add_resource(SubmissionLister, "/cat/submissions/owned/")
-api.add_resource(SubmissionIndexer, "/cat/submissions/index/")
-api.add_resource(SubmissionReader, "/cat/submissions/<int:submission_id>/")
-api.add_resource(ReviewIndex, "/cat/reviews/<int:submission_id>/")
-api.add_resource(Publisher, "/cat/publications/")
+# Adding (old) publishing resources:
+# api.add_resource(Submitter, "/cat/submissions/")
+# api.add_resource(SubmissionLister, "/cat/submissions/owned/")
+# api.add_resource(SubmissionIndexer, "/cat/submissions/index/")
+# api.add_resource(SubmissionReader, "/cat/submissions/<int:submission_id>/")
+# api.add_resource(ReviewIndex, "/cat/reviews/<int:submission_id>/")
+# api.add_resource(Publisher, "/cat/publications/")
 
 # Adding application resource(s):
 api.add_resource(Version, "/<app_name>/version/")
