@@ -97,6 +97,10 @@ class Page(db.Model, Identifiable):
         self.views += 1
         db.session.commit()
 
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description,
                 "theme": self.theme, "kind": PageKind(self.kind).name.lower(),
