@@ -1,92 +1,36 @@
-from typing import Type
-from json import load
-
-from flask import request  # , send_from_directory
+from flask import request, send_from_directory
 from flask_restful import Resource
 
+from componets.checkers import jwt_authorizer
+from users import User
 from authorship import Author
-from componets import jwt_authorizer, lister, database_searcher
-from education import Page
-from .keeper import CATFile, JSONFile, WIPModule, WIPPage
+from os import remove
 
 
-def file_getter(type_only: bool = True):
-    def file_getter_wrapper(function):
-        @jwt_authorizer(Author, "author")
-        def get_file_or_type(*args, **kwargs):
-            result: Type[CATFile]
-            file_type: str = kwargs.pop("file_type")
-            if file_type == "modules":
-                result = WIPModule
-            elif file_type == "pages":
-                result = WIPPage
-            else:
-                return {"a": f"File type '{file_type}' is not supported"}, 400
-
-            if "file_id" in kwargs.keys():
-                file: result = result.find_by_id(kwargs["file_id"] if type_only else kwargs.pop("file_id"))
-                if file.owner != kwargs.pop("author").id:
-                    return {"a": "Access denied"}, 403
-                if not type_only:
-                    return function(file=file, *args, **kwargs)
-            return function(file_type=result, *args, **kwargs)
-
-        return get_file_or_type
-
-    return file_getter_wrapper
-
-
-class FileLister(Resource):  # [POST] /wip/<file_type>/index/
-    @file_getter()
-    @lister(20)
-    def post(self, file_type: Type[CATFile], author: Author, start: int, finish: int):
-        if WIPPage not in file_type.mro():
-            return {"a": f"File type '{file_type}' is not supported"}, 400
-        return [x.get_metadata() for x in file_type.find_by_owner(author, start, finish - start)]
-
-
-class FileCreator(Resource):  # [POST] /wip/<file_type>/
-    @file_getter()
-    def post(self, author: Author, file_type: Type[CATFile]):
-        if JSONFile in file_type.mro():
-            result: file_type = file_type.create_from_json(author, request.get_json())
-        else:
-            result: file_type = file_type.create_with_file(author, request.get_data())
-        return {"id": result.id}
-
-
-class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
-    @file_getter(type_only=False)
-    def get(self, file: CATFile):
-        with open(file.get_link(), "rb") as f:
-            result = load(f)
-        return result
-
-    # @file_getter()  # PermissionError(13)
-    # def get(self, file_type: Type[CATFile], file_id: int):
-    #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
-
-    @file_getter(type_only=False)
-    def put(self, file: CATFile):
-        if isinstance(file, JSONFile):
-            file.update_json(request.get_json())
-        else:
-            file.update(request.get_data())
-        return {"a": True}
-
-    @file_getter(type_only=False)
-    def delete(self, file: CATFile):
-        file.delete()
-        return {"a": True}
-
-
-class PagePublisher(Resource):  # POST /wip/pages/<int:page_id>/publication/
+class ImageAdder(Resource):  # POST /wip/images/
     @jwt_authorizer(Author, "author")
-    @database_searcher(WIPPage, "page_id", "wip_page")
-    def post(self, author: Author, wip_page: WIPPage):
-        if wip_page.owner != author.id:
-            return {"a": "Access denied"}, 403
+    def post(self, author: Author):
+        author_id: int = author.id
+        image_id: int = author.get_next_image_id()
+        with open(f"files/images/{author_id}-{image_id}.png", "wb") as f:
+            f.write(request.data)
+        return {"aid": author_id, "iid": image_id}
 
-        with open(wip_page.get_link()) as f:
-            result: bool = Page.create(load(f), author) is None
-        return {"a": "Page already exists" if result else "Success"}
+
+class ImageProcessor(Resource):  # [PUT|DELETE] /wip/images/<int:image_id>/
+    @jwt_authorizer(Author, "author")
+    def put(self, author: Author, image_id: int):
+        with open(f"files/images/{author.id}-{image_id}.png", "wb") as f:
+            f.write(request.data)
+        return {"a": True}
+
+    @jwt_authorizer(Author, "author")
+    def delete(self, author: Author, image_id: int):
+        remove(f"files/images/{author.id}-{image_id}.png")
+        return {"a": True}
+
+
+class ImageViewer(Resource):  # GET /images/<int:image_id>/
+    @jwt_authorizer(User, None)
+    def get(self, image_id: int):
+        return send_from_directory("../files/images/", str(image_id) + ".png")

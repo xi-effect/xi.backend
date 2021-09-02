@@ -11,7 +11,7 @@ from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModuleP
                        PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
                        TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
-from file_system import (FileLister, FileProcessor, FileCreator, PagePublisher)
+from file_system import (FileLister, FileProcessor, FileCreator, ImageAdder, ImageProcessor, ImageViewer, PagePublisher)
 from main import app, db
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
@@ -171,6 +171,11 @@ api.add_resource(FileLister, "/wip/<file_type>/index/")
 api.add_resource(FileCreator, "/wip/<file_type>/")
 api.add_resource(FileProcessor, "/wip/<file_type>/<int:file_id>/")
 api.add_resource(PagePublisher, "/wip/pages/<int:page_id>/publication/")
+
+# Adding image resources:
+api.add_resource(ImageAdder, "/wip/images/")
+api.add_resource(ImageProcessor, "/wip/images/<int:image_id>/")
+api.add_resource(ImageViewer, "/images/<image_id>/")
 
 # Adding author studio resource(s):
 api.add_resource(OwnedPagesLister, "/pages/owned/")

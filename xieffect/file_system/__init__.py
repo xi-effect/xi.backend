@@ -1,1 +1,2 @@
-from .wip_files import FileLister, FileProcessor, FileCreator, PagePublisher
+from .wip_files import ImageAdder, ImageProcessor, ImageViewer
+from .wip_jsons import FileLister, FileProcessor, FileCreator, PagePublisher
