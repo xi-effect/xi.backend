@@ -62,6 +62,8 @@ class CATFile(db.Model, Identifiable):
             f.write(data)
 
     def delete(self):
+        if (page := Page.find_by_id(self.id)) is not None:
+            page.delete()
         remove(self.get_link())
         db.session.delete(self)
         db.session.commit()
