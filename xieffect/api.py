@@ -175,7 +175,7 @@ api.add_resource(PagePublisher, "/wip/pages/<int:page_id>/publication/")
 # Adding image resources:
 api.add_resource(ImageAdder, "/wip/images/")
 api.add_resource(ImageProcessor, "/wip/images/<int:image_id>/")
-api.add_resource(ImageViewer, "/images/<str:image_id>/")
+api.add_resource(ImageViewer, "/images/<image_id>/")
 
 # Adding author studio resource(s):
 api.add_resource(OwnedPagesLister, "/pages/owned/")
