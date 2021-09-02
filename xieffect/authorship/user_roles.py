@@ -9,6 +9,7 @@ class Author(db.Model, UserRole):
     id = db.Column(db.Integer, primary_key=True)
     pseudonym = db.Column(db.String(100), nullable=False)
     banned = db.Column(db.Boolean, nullable=False, default=False)
+    last_image_id = db.Column(db.Integer, nullable=False, default=0)
 
     modules = db.relationship("Module", backref="authors")
 
@@ -30,14 +31,10 @@ class Author(db.Model, UserRole):
             author = cls.create(user)
         return author
 
-    def get_owned_modules(self, start: int = 0, finish: int = None) -> list:
-        pass
-
-    def get_wip_courses(self, start: int = 0, finish: int = None) -> list:
-        pass
-
-    def get_owned_pages(self, start: int = 0, finish: int = None) -> list:
-        pass
+    def get_next_image_id(self):
+        self.last_image_id += 1
+        db.session.commit()
+        return self.last_image_id
 
 
 class Moderator(db.Model, UserRole):
