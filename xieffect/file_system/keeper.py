@@ -17,7 +17,7 @@ class WIPStatus(Enum):
 class CATFile(db.Model, Identifiable):
     __abstract__ = True
     mimetype: str = ""
-    directory: str = "files/tfs/other/"
+    directory: str = "../files/tfs/other/"
 
     id = db.Column(db.Integer, primary_key=True)
     owner = db.Column(db.Integer, nullable=False,  # db.ForeignKey("authors.id"),
@@ -98,12 +98,12 @@ class WIPPage(JSONFile):
     @staticmethod
     def create_test_bundle(author: Author):
         for i in range(1, 4):
-            with open(f"files/tfs/test/{i}.json", "rb") as f:
+            with open(f"../files/tfs/test/{i}.json", "rb") as f:
                 WIPPage.create_from_json(author, load(f))
 
     __tablename__ = "wip-pages"
     not_found_text = "Page not found"
-    directory: str = "files/tfs/wip-pages/"
+    directory: str = "../files/tfs/wip-pages/"
 
     kind = db.Column(db.Integer, nullable=False)
 
@@ -126,7 +126,7 @@ class WIPPage(JSONFile):
 class WIPModule(JSONFile):
     __tablename__ = "wip-modules"
     not_found_text = "Module not found"
-    directory: str = "files/tfs/wip-modules/"
+    directory: str = "../files/tfs/wip-modules/"
 
     name = db.Column(db.String(100), nullable=False)
 

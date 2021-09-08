@@ -8,9 +8,10 @@ from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_whooshee import Whooshee
+from sqlalchemy import MetaData
 
 # Version control:
-versions: Dict[str, str] = load(open("files/versions.json"))
+versions: Dict[str, str] = load(open("../files/versions.json"))
 
 app: Flask = Flask(__name__)
 
@@ -44,7 +45,8 @@ app.config["SQLALCHEMY_POOL_RECYCLE"] = 280
 
 app.config["WHOOSHEE_MIN_STRING_LEN"] = 0
 app.config["WHOOSHEE_ENABLE_INDEXING"] = True
-app.config["WHOOSHEE_DIR"] = "files/temp/whooshee"
+app.config["WHOOSHEE_DIR"] = "../files/temp/whooshee"
 
 whooshee = Whooshee(app)
-db: SQLAlchemy = SQLAlchemy(app)
+db_meta = MetaData()
+db: SQLAlchemy = SQLAlchemy(app, metadata=db_meta)

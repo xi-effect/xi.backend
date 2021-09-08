@@ -28,7 +28,7 @@ class Page(db.Model, Identifiable):
     @staticmethod
     def create_test_bundle(author: Author):
         for i in range(1, 4):
-            with open(f"files/tfs/test/{i}.json", "rb") as f:
+            with open(f"../files/tfs/test/{i}.json", "rb") as f:
                 Page.create(load(f), author)
 
     __tablename__ = "pages"
@@ -223,8 +223,8 @@ class Module(db.Model, Identifiable):
     difficulty = db.Column(db.String(20), nullable=False)
 
     # Sorting:
-    popularity = db.Column(db.Integer, nullable=False, default=100)
-    creation_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    popularity = db.Column(db.Integer, nullable=False, default=1000)
+    creation_date = db.Column(db.DateTime, nullable=False)
 
     # Author-related
     author = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False,

@@ -20,6 +20,9 @@ from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, Pass
                    PasswordChanger, EmailSender, EmailConfirm, AvatarViewer)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
+from main import db_meta  # noqa  # should be the last import!
+
+
 # Initializing modules
 api: Api = Api(app)
 jwt: JWTManager = JWTManager(app)
