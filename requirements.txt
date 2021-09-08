@@ -53,3 +53,5 @@ pytest>=6.2.4
 pytest-order>=1.0.0
 WhooshAlchemy>=0.3.1
 whoosh>=2.7.4
+Mako>=1.1.5
+alembic>=1.7.1
