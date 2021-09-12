@@ -6,7 +6,7 @@ from flask_restful.reqparse import RequestParser
 
 from componets import password_parser, argument_parser
 from users.database import TokenBlockList, User
-from users.emailer import send_generated_email, parse_code
+# from users.emailer import send_generated_email, parse_code
 
 
 class UserRegistration(Resource):  # [POST] /reg/
@@ -20,7 +20,7 @@ class UserRegistration(Resource):  # [POST] /reg/
         if not user:
             return {"a": False}
 
-        send_generated_email(email, "confirm", "registration-email.html")
+        # send_generated_email(email, "confirm", "registration-email.html")
 
         response = jsonify({"a": True})
         set_access_cookies(response, create_access_token(identity=user.id))
@@ -62,7 +62,7 @@ class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
     def get(self, email: str):
         if not User.find_by_email_address(email) or email == "admin@admin.admin":
             return {"a": False}
-        send_generated_email(email, "pass", "password-reset-email.html")
+        # send_generated_email(email, "pass", "password-reset-email.html")
         return {"a": True}
 
 
@@ -72,9 +72,9 @@ class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
 
     @argument_parser(parser, "code", "password")
     def post(self, code: str, password: str):
-        email = parse_code(code, "pass")
-        if email is None:
-            return {"a": "Code error"}
+        # email = parse_code(code, "pass")
+        # if email is None:
+        #     return {"a": "Code error"}
 
         user: User = User.find_by_email_address(email)
         if not user:

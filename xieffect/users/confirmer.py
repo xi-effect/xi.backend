@@ -3,7 +3,7 @@ from flask_restful.reqparse import RequestParser
 
 from componets import argument_parser
 from users.database import User
-from users.emailer import send_generated_email, parse_code
+# from users.emailer import send_generated_email, parse_code
 
 
 class EmailSender(Resource):  # [POST] /email/<email>/
@@ -16,7 +16,7 @@ class EmailSender(Resource):  # [POST] /email/<email>/
         # if timeout
         #     return {"a": "Too fast"}
 
-        send_generated_email(email, "confirm", "registration-email.html")
+        # send_generated_email(email, "confirm", "registration-email.html")
         return {"a": "Success"}
 
 
@@ -26,9 +26,9 @@ class EmailConfirm(Resource):  # [POST] /email-confirm/
 
     @argument_parser(parser, "code")
     def post(self, code: str):
-        email = parse_code(code, "confirm")
-        if email is None:
-            return {"a": "Code error"}
+        # email = parse_code(code, "confirm")
+        # if email is None:
+        #     return {"a": "Code error"}
 
         user: User = User.find_by_email_address(email)
         if user is None:

@@ -4,7 +4,7 @@ from flask_restful.reqparse import RequestParser
 
 from componets import jwt_authorizer, argument_parser, password_parser
 from users.database import User
-from users.emailer import send_generated_email
+# from users.emailer import send_generated_email
 
 
 class Avatar(Resource):  # [GET|POST] /avatar/
@@ -59,7 +59,7 @@ class EmailChanger(Resource):  # [POST] /email-change/
         if User.find_by_email_address(new_email):
             return {"a": "Email in use"}
 
-        send_generated_email(new_email, "confirm", "registration-email.html")
+        # send_generated_email(new_email, "confirm", "registration-email.html")
         user.change_email(new_email)
         return {"a": "Success"}
 
