@@ -25,6 +25,8 @@ def file_getter(type_only: bool = True):
 
             if "file_id" in kwargs.keys():
                 file: result = result.find_by_id(kwargs["file_id"] if type_only else kwargs.pop("file_id"))
+                if file is None:
+                    return {"a": "File not found"}, 404
                 if file.owner != kwargs.pop("author").id:
                     return {"a": "Access denied"}, 403
                 if not type_only:
