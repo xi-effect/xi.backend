@@ -3,10 +3,13 @@ from json import dump, load
 from os import remove
 from typing import Dict, Union
 
+from sqlalchemy import Column
+from sqlalchemy.sql.sqltypes import Integer, String
+
 from authorship import Author
 from componets import Identifiable
 from education import Page
-from main import db
+from main import Base
 
 
 class WIPStatus(Enum):
@@ -14,24 +17,24 @@ class WIPStatus(Enum):
     PUBLISHED = 1
 
 
-class CATFile(db.Model, Identifiable):
+class CATFile(Base, Identifiable):
     __abstract__ = True
     mimetype: str = ""
     directory: str = "../files/tfs/other/"
 
-    id = db.Column(db.Integer, primary_key=True)
-    owner = db.Column(db.Integer, nullable=False,  # db.ForeignKey("authors.id"),
-                      default=0)  # test-only
+    id = Column(Integer, primary_key=True)
+    owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
+                   default=0)  # test-only
 
-    status = db.Column(db.Integer, nullable=False)
+    status = Column(Integer, nullable=False)
 
     @classmethod
     def _create(cls, owner: Author):
         return cls(owner=owner.id, status=WIPStatus.WIP.value)
 
     def _add_to_db(self):
-        db.session.add(self)
-        db.session.commit()
+        session.add(self)
+        session.commit()
 
     @classmethod
     def create(cls, owner: Author):
@@ -65,8 +68,8 @@ class CATFile(db.Model, Identifiable):
         if (page := Page.find_by_id(self.id)) is not None:
             page.delete()
         remove(self.get_link())
-        db.session.delete(self)
-        db.session.commit()
+        session.delete(self)
+        session.commit()
 
 
 class JSONFile(CATFile):
@@ -105,11 +108,11 @@ class WIPPage(JSONFile):
     not_found_text = "Page not found"
     directory: str = "../files/tfs/wip-pages/"
 
-    kind = db.Column(db.Integer, nullable=False)
+    kind = Column(Integer, nullable=False)
 
-    name = db.Column(db.String(100), nullable=False)
-    theme = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    name = Column(String(100), nullable=False)
+    theme = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
 
     def update_metadata(self, json_data: dict) -> None:
         self.kind = json_data["kind"]
@@ -128,7 +131,7 @@ class WIPModule(JSONFile):
     not_found_text = "Module not found"
     directory: str = "../files/tfs/wip-modules/"
 
-    name = db.Column(db.String(100), nullable=False)
+    name = Column(String(100), nullable=False)
 
     def update_metadata(self, json_data: dict) -> None:
         self.name = json_data.pop("name")

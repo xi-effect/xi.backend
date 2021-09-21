@@ -1,17 +1,21 @@
+from sqlalchemy import Column
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean
+
 from componets import UserRole
-from main import db
+from main import Base
 
 
-class Author(db.Model, UserRole):
+class Author(Base, UserRole):
     __tablename__ = "authors"
     not_found_text = "Author does not exist"
 
-    id = db.Column(db.Integer, primary_key=True)
-    pseudonym = db.Column(db.String(100), nullable=False)
-    banned = db.Column(db.Boolean, nullable=False, default=False)
-    last_image_id = db.Column(db.Integer, nullable=False, default=0)
+    id = Column(Integer, primary_key=True)
+    pseudonym = Column(String(100), nullable=False)
+    banned = Column(Boolean, nullable=False, default=False)
+    last_image_id = Column(Integer, nullable=False, default=0)
 
-    modules = db.relationship("Module", backref="authors")
+    modules = relationship("Module", backref="authors")
 
     @classmethod
     def create(cls, user):  # User class
@@ -37,11 +41,11 @@ class Author(db.Model, UserRole):
         return self.last_image_id
 
 
-class Moderator(db.Model, UserRole):
+class Moderator(Base, UserRole):
     __tablename__ = "moderators"
     not_found_text = "Permission denied"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
 
     @classmethod
     def find_by_id(cls, entry_id: int):
@@ -52,6 +56,6 @@ class Moderator(db.Model, UserRole):
         if cls.find_by_id(user_id):
             return False
         new_entry = cls(id=user_id)
-        db.session.add(new_entry)
-        db.session.commit()
+        session.add(new_entry)
+        session.commit()
         return True

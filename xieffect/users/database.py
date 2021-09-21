@@ -1,27 +1,29 @@
 from typing import Dict, Union
 
 from passlib.hash import pbkdf2_sha256 as sha256
+from sqlalchemy import Column
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
-from componets import UserRole
 from authorship import Moderator, Author
-from main import db
+from componets import UserRole
+from main import Base
 
 
-class TokenBlockList(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    jti = db.Column(db.String(36), nullable=False)
+class TokenBlockList(Base):
+    id = Column(Integer, primary_key=True, unique=True)
+    jti = Column(String(36), nullable=False)
 
     @classmethod
     def find_by_jti(cls, jti):
-        return db.session.query(TokenBlockList.id).filter_by(jti=jti).scalar()
+        return session.query(TokenBlockList.id).filter_by(jti=jti).scalar()
 
     @classmethod
     def add_by_jti(cls, jti):
-        db.session.add(TokenBlockList(jti=jti))
-        db.session.commit()
+        session.add(TokenBlockList(jti=jti))
+        session.commit()
 
 
-class User(db.Model, UserRole):
+class User(Base, UserRole):
     __tablename__ = "users"
     not_found_text = "User does not exist"
 
@@ -34,23 +36,23 @@ class User(db.Model, UserRole):
         return sha256.verify(password, hashed)
 
     # Vital:
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(100), nullable=False, unique=True)
-    email_confirmed = db.Column(db.Boolean, nullable=False, default=False)
-    password = db.Column(db.String(100), nullable=False)
+    id = Column(Integer, primary_key=True)
+    email = Column(String(100), nullable=False, unique=True)
+    email_confirmed = Column(Boolean, nullable=False, default=False)
+    password = Column(String(100), nullable=False)
 
     # Settings:
-    username = db.Column(db.String(100), nullable=False)
-    dark_theme = db.Column(db.Boolean, nullable=False, default=True)
-    language = db.Column(db.String(20), nullable=False, default="russian")
+    username = Column(String(100), nullable=False)
+    dark_theme = Column(Boolean, nullable=False, default=True)
+    language = Column(String(20), nullable=False, default="russian")
 
     # Real name:
-    name = db.Column(db.String(100), nullable=True)
-    surname = db.Column(db.String(100), nullable=True)
-    patronymic = db.Column(db.String(100), nullable=True)
+    name = Column(String(100), nullable=True)
+    surname = Column(String(100), nullable=True)
+    patronymic = Column(String(100), nullable=True)
 
     # Education data:
-    filter_bind = db.Column(db.String(10), nullable=True)
+    filter_bind = Column(String(10), nullable=True)
 
     @classmethod
     def find_by_id(cls, entry_id: int):
@@ -65,25 +67,25 @@ class User(db.Model, UserRole):
         if cls.find_by_email_address(email):
             return None
         new_user = cls(email=email, password=cls.generate_hash(password), username=username)
-        db.session.add(new_user)
-        db.session.commit()
+        session.add(new_user)
+        session.commit()
         return new_user
 
     def confirm_email(self):
         self.email_confirmed = True
-        db.session.commit()
+        session.commit()
 
     def change_email(self, new_email: str) -> bool:
         if User.find_by_email_address(new_email):
             return False
         self.email = new_email
         self.email_confirmed = False
-        db.session.commit()
+        session.commit()
         return True
 
     def change_password(self, new_password: str):
         self.password = User.generate_hash(new_password)
-        db.session.commit()
+        session.commit()
 
     def change_settings(self, new_values: Dict[str, Union[str, int, bool]]):
         if "username" in new_values.keys():
@@ -98,7 +100,7 @@ class User(db.Model, UserRole):
             self.surname = new_values["surname"]
         if "patronymic" in new_values.keys():
             self.patronymic = new_values["patronymic"]
-        db.session.commit()
+        session.commit()
 
     def get_role_settings(self) -> Dict[str, str]:
         return {
@@ -122,7 +124,7 @@ class User(db.Model, UserRole):
 
     def set_filter_bind(self, bind: str = None) -> None:
         self.filter_bind = bind
-        db.session.commit()
+        session.commit()
 
 
 UserRole.default_role = User

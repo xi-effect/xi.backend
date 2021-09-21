@@ -5,12 +5,14 @@ from pickle import dumps, loads
 from random import randint
 from typing import Dict, List, Optional, Union
 
-from flask_sqlalchemy import BaseQuery
+from sqlalchemy import Column, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType
 
 from authorship import Author
 from componets import Identifiable
 from education.sessions import ModuleFilterSession
-from main import db, whooshee
+from main import Base, whooshee
 
 
 class PageKind(Enum):
@@ -24,7 +26,7 @@ class PageKind(Enum):
 
 
 @whooshee.register_model("name", "theme", "description")
-class Page(db.Model, Identifiable):
+class Page(Base, Identifiable):
     @staticmethod
     def create_test_bundle(author: Author):
         for i in range(1, 4):
@@ -35,23 +37,23 @@ class Page(db.Model, Identifiable):
     not_found_text = "Page not found"
     directory = "files/tfs/cat-pages/"
 
-    id = db.Column(db.Integer, primary_key=True)
-    author_id = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False)
-    author = db.relationship("Author")
-    components = db.Column(db.JSON, nullable=False)
+    id = Column(Integer, primary_key=True)
+    author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
+    author = relationship("Author")
+    components = Column(JSON, nullable=False)
 
-    kind = db.Column(db.Integer, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    theme = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    kind = Column(Integer, nullable=False)
+    name = Column(String(100), nullable=False)
+    theme = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
 
-    reusable = db.Column(db.Boolean, nullable=False)
-    public = db.Column(db.Boolean, nullable=False)
-    blueprint = db.Column(db.Boolean, nullable=False)
-    suspended = db.Column(db.Boolean, nullable=False, default=False)
+    reusable = Column(Boolean, nullable=False)
+    public = Column(Boolean, nullable=False)
+    blueprint = Column(Boolean, nullable=False)
+    suspended = Column(Boolean, nullable=False, default=False)
 
-    views = db.Column(db.Integer, nullable=False, default=0)
-    updated = db.Column(db.DateTime, nullable=False)
+    views = Column(Integer, nullable=False, default=0)
+    updated = Column(DateTime, nullable=False)
 
     @classmethod
     def _create(cls, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
@@ -61,8 +63,8 @@ class Page(db.Model, Identifiable):
         entry.components = json_dumps(json_data["components"])
         entry.updated = datetime.utcnow()
         entry.author = author
-        db.session.add(entry)
-        db.session.commit()
+        session.add(entry)
+        session.commit()
 
         # with open(cls.directory + str(entry.id) + ".json", "w", encoding="utf8") as f:
         #     dump(json_data["components"], f, ensure_ascii=False)
@@ -84,8 +86,8 @@ class Page(db.Model, Identifiable):
         if (entry := cls.find_by_id(json_data["id"])) is None:
             return cls._create(json_data, author)
         else:  # redo... maybe...
-            db.session.delete(entry)
-            db.session.commit()
+            session.delete(entry)
+            session.commit()
             cls._create(json_data, author)
 
     @classmethod
@@ -95,11 +97,11 @@ class Page(db.Model, Identifiable):
 
     def view(self):
         self.views += 1
-        db.session.commit()
+        session.commit()
 
     def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+        session.delete(self)
+        session.commit()
 
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description,
@@ -110,22 +112,22 @@ class Page(db.Model, Identifiable):
                 "views": self.views, "updated": self.updated.isoformat()}
 
 
-class Point(db.Model):
+class Point(Base):
     __tablename__ = "points"
 
-    module_id = db.Column(db.Integer, primary_key=True)
-    point_id = db.Column(db.Integer, primary_key=True)
+    module_id = Column(Integer, primary_key=True)
+    point_id = Column(Integer, primary_key=True)
 
-    type = db.Column(db.Integer, nullable=False)  # 0 - Theory; 1 - HyperBlueprint
-    data = db.Column(db.PickleType, nullable=False)  # do a relation!
+    type = Column(Integer, nullable=False)  # 0 - Theory; 1 - HyperBlueprint
+    data = Column(PickleType, nullable=False)  # do a relation!
 
     @classmethod
     def __create(cls, module_id: int, point_id: int, point_type: int, data: List[int]):
         if cls.find_by_ids(module_id, point_id):
             return False
         new_point = cls(module_id=module_id, point_id=point_id, type=point_type, data=dumps(data))
-        db.session.add(new_point)
-        db.session.commit()
+        session.add(new_point)
+        session.commit()
         return True
 
     @classmethod
@@ -156,7 +158,7 @@ class ModuleType(Enum):
     TEST = 3
 
 
-class Module(db.Model, Identifiable):
+class Module(Base, Identifiable):
     @staticmethod
     def create_test_bundle():
         if Module.find_by_id(0):
@@ -212,23 +214,23 @@ class Module(db.Model, Identifiable):
     not_found_text = "Module not found"
 
     # Essentials
-    id = db.Column(db.Integer, primary_key=True)
-    length = db.Column(db.Integer, nullable=False)  # the amount of schedule or map points
-    type = db.Column(db.Integer, nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
-    name = db.Column(db.String(100), nullable=False)  # the name for the diagram (course map)
+    id = Column(Integer, primary_key=True)
+    length = Column(Integer, nullable=False)  # the amount of schedule or map points
+    type = Column(Integer, nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
+    name = Column(String(100), nullable=False)  # the name for the diagram (course map)
 
     # Filtering:
-    theme = db.Column(db.String(20), nullable=False)
-    category = db.Column(db.String(20), nullable=False)
-    difficulty = db.Column(db.String(20), nullable=False)
+    theme = Column(String(20), nullable=False)
+    category = Column(String(20), nullable=False)
+    difficulty = Column(String(20), nullable=False)
 
     # Sorting:
-    popularity = db.Column(db.Integer, nullable=False, default=1000)
-    creation_date = db.Column(db.DateTime, nullable=False)
+    popularity = Column(Integer, nullable=False, default=1000)
+    creation_date = Column(DateTime, nullable=False)
 
     # Author-related
-    author = db.Column(db.Integer, db.ForeignKey("authors.id"), nullable=False,
-                       default=0)
+    author = Column(Integer, ForeignKey("authors.id"), nullable=False,
+                    default=0)
 
     @classmethod
     def __create(cls, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
@@ -238,8 +240,8 @@ class Module(db.Model, Identifiable):
         new_module = cls(id=module_id, type=module_type.value, name=name, length=length,
                          theme=theme, category=category, difficulty=difficulty,
                          popularity=popularity, creation_date=creation_date)
-        db.session.add(new_module)
-        db.session.commit()
+        session.add(new_module)
+        session.commit()
         return True
 
     @classmethod

@@ -1,33 +1,34 @@
-from typing import Optional, Dict, List
 from datetime import datetime
+from typing import Optional, Dict, List
 
-from flask_sqlalchemy import BaseQuery
+from sqlalchemy import Column
+from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime
 
 from componets import Identifiable
-from main import db
+from main import Base
 
 
-class ModuleFilterSession(db.Model):
+class ModuleFilterSession(Base):
     not_found_text = "Session not found"
 
-    user_id = db.Column(db.Integer, primary_key=True)  # MB replace with relationship
-    module_id = db.Column(db.Integer, primary_key=True)  # MB replace with relationship
+    user_id = Column(Integer, primary_key=True)  # MB replace with relationship
+    module_id = Column(Integer, primary_key=True)  # MB replace with relationship
 
-    started = db.Column(db.Boolean, nullable=False, default=False)
-    starred = db.Column(db.Boolean, nullable=False, default=False)
-    pinned = db.Column(db.Boolean, nullable=False, default=False)
-    hidden = db.Column(db.Boolean, nullable=False, default=False)
+    started = Column(Boolean, nullable=False, default=False)
+    starred = Column(Boolean, nullable=False, default=False)
+    pinned = Column(Boolean, nullable=False, default=False)
+    hidden = Column(Boolean, nullable=False, default=False)
 
-    last_visited = db.Column(db.DateTime, nullable=True)  # None for not visited
-    last_changed = db.Column(db.DateTime, nullable=True)
+    last_visited = Column(DateTime, nullable=True)  # None for not visited
+    last_changed = Column(DateTime, nullable=True)
 
     @classmethod
     def create(cls, user_id: int, module_id: int):
         if cls.find_by_ids(user_id, module_id) is not None:
             return None
         new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())
-        db.session.add(new_entry)
-        db.session.commit()
+        session.add(new_entry)
+        session.commit()
         return new_entry
 
     @classmethod
@@ -92,7 +93,7 @@ class ModuleFilterSession(db.Model):
 
     def note_change(self) -> None:
         self.last_changed = datetime.utcnow()
-        db.session.commit()
+        session.commit()
 
     def change_preference(self, operation: str) -> None:
         if operation == "hide":
@@ -108,19 +109,19 @@ class ModuleFilterSession(db.Model):
         elif operation == "unpin":
             self.pinned = False
         if not (self.is_valuable()):
-            db.session.delete(self)
+            session.delete(self)
         else:
             self.note_change()
-        db.session.commit()
+        session.commit()
 
 
-class BaseModuleSession(db.Model, Identifiable):
+class BaseModuleSession(Base, Identifiable):
     __abstract__ = True
     not_found_text = "Session not found"
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)  # MB replace with relationship
-    module_id = db.Column(db.Integer, nullable=False)  # MB replace with relationship
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, nullable=False)  # MB replace with relationship
+    module_id = Column(Integer, nullable=False)  # MB replace with relationship
 
     @classmethod
     def create(cls, user_id: int, module_id: int):
@@ -144,15 +145,15 @@ class BaseModuleSession(db.Model, Identifiable):
 
 class StandardModuleSession(BaseModuleSession):
     __tablename__ = "standard_module_sessions"
-    progress = db.Column(db.Integer, nullable=False, default=0)
+    progress = Column(Integer, nullable=False, default=0)
 
     @classmethod
     def create(cls, user_id: int, module_id: int, progress: int = 0):
         if cls.find_by_ids(user_id, module_id) is not None:
             return None
         new_entry = cls(user_id=user_id, module_id=module_id, progress=progress)
-        db.session.add(new_entry)
-        db.session.commit()
+        session.add(new_entry)
+        session.commit()
         return new_entry
 
     @classmethod
@@ -162,7 +163,7 @@ class StandardModuleSession(BaseModuleSession):
             entry = cls.create(user_id, module_id, progress)
         else:
             entry.progress = progress
-            db.session.commit()
+            session.commit()
         return entry
 
     @classmethod
@@ -173,11 +174,11 @@ class StandardModuleSession(BaseModuleSession):
 
         entry: cls = cls.find_by_ids(user_id, module_id)
         if entry is not None:
-            db.session.delete(entry)
-            db.session.commit()
+            session.delete(entry)
+            session.commit()
 
     # def set_progress(self):
-        # pass
+    # pass
 
     def next_page_id(self) -> int:
         self.point_id += 1

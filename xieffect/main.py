@@ -6,9 +6,9 @@ from datetime import timedelta
 
 from flask import Flask
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
 from flask_whooshee import Whooshee
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Version control:
 versions: Dict[str, str] = load(open("../files/versions.json"))
@@ -37,16 +37,14 @@ app.config["MAIL_USERNAME"] = "xieffect.edu@gmail.com"
 CORS(app, supports_credentials=True)  # , resources={r"/*": {"origins": "https://xieffect.vercel.app"}})
 
 # Database config:
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
-# "mysql+mysqldb://qwert45hi:7b[-2duvd44sgoi1=pwfpji0i@qwert45hi.mysql.pythonanywhere-services.com/development"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_POOL_RECYCLE"] = 280
-# app.config[""] =
-
 app.config["WHOOSHEE_MIN_STRING_LEN"] = 0
 app.config["WHOOSHEE_ENABLE_INDEXING"] = True
 app.config["WHOOSHEE_DIR"] = "../files/temp/whooshee"
 
 whooshee = Whooshee(app)
+
 db_meta = MetaData()
-db: SQLAlchemy = SQLAlchemy(app, metadata=db_meta)
+Base = declarative_base(metadata=db_meta)
+engine = create_engine("sqlite:///app.db", pool_recycle=280)
+Session = sessionmaker(bind=engine)
+# "mysql+mysqldb://qwert45hi:7b[-2duvd44sgoi1=pwfpji0i@qwert45hi.mysql.pythonanywhere-services.com/development"

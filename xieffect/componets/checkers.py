@@ -3,6 +3,7 @@ from typing import Type, Optional, Union, Tuple, Callable, Any
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful.reqparse import RequestParser
 
+from main import Session
 from componets.parsers import counter_parser
 
 
@@ -27,6 +28,23 @@ class UserRole:
     @classmethod
     def find_by_id(cls, entry_id: int):
         raise NotImplementedError
+
+
+def with_session(function):
+    def with_session_inner(*args, **kwargs):
+        with Session.begin() as session:
+            kwargs["session"] = session
+            function(*args, **kwargs)
+
+    return with_session_inner
+
+
+def with_auto_session(function):
+    def with_auto_session_inner(*args, **kwargs):
+        with Session.begin() as _:
+            function(*args, **kwargs)
+
+    return with_auto_session_inner
 
 
 def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user"):

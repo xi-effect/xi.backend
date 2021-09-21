@@ -12,15 +12,13 @@ from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModuleP
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
                        TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
 from file_system import (FileLister, FileProcessor, FileCreator, ImageAdder, ImageProcessor, ImageViewer, PagePublisher)
-from main import app, db
+from main import app
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
 from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
                    PasswordReseter, Avatar, Settings, MainSettings, RoleSettings, EmailChanger,
                    PasswordChanger, EmailSender, EmailConfirm, AvatarViewer)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
-
-from main import db_meta  # noqa  # should be the last import!
 
 
 # Initializing modules
@@ -31,7 +29,8 @@ jwt: JWTManager = JWTManager(app)
 # Some request and error handlers:
 @app.before_first_request
 def create_tables():
-    db.create_all()
+    from main import db_meta  # noqa  # should be the last import!
+    db_meta.create_all()
     # from main import whooshee
     # whooshee.reindex()
 

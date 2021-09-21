@@ -1,10 +1,13 @@
 from datetime import datetime
 from enum import Enum
-from random import randint
-from typing import Dict
 from math import sqrt, ceil
+from random import randint
+from typing import Dict, Text
 
-from main import db
+from sqlalchemy import Column
+from sqlalchemy.sql.sqltypes import Integer, String
+
+from main import Base
 
 
 class ResultCodes(Enum):
@@ -15,7 +18,7 @@ class ResultCodes(Enum):
     Accepted = 0
 
 
-class TestPoint(db.Model):
+class TestPoint(Base):
     @staticmethod
     def test():
         TestPoint.create("S1", 0, "4 6", "6", 10)
@@ -55,12 +58,12 @@ class TestPoint(db.Model):
                 num = randint(2, 99999)
                 TestPoint.create("P1", i, str(num), str(div_count(num)), 9)
 
-    task_name = db.Column(db.String(2), primary_key=True)
-    test_id = db.Column(db.Integer, primary_key=True)
+    task_name = Column(String(2), primary_key=True)
+    test_id = Column(Integer, primary_key=True)
 
-    input = db.Column(db.Text, nullable=False)
-    output = db.Column(db.Text, nullable=False)
-    points = db.Column(db.Integer, nullable=False)
+    input = Column(Text, nullable=False)
+    output = Column(Text, nullable=False)
+    points = Column(Integer, nullable=False)
 
     @classmethod
     def find_by_task(cls, task_name: str) -> list:
@@ -75,8 +78,8 @@ class TestPoint(db.Model):
         if cls.find_exact(task_name, test_id):
             return None
         new_test_point = cls(task_name=task_name, test_id=test_id, input=inp, output=out, points=points)
-        db.session.add(new_test_point)
-        db.session.commit()
+        session.add(new_test_point)
+        session.commit()
         return new_test_point
 
     @classmethod
@@ -89,15 +92,15 @@ class TestPoint(db.Model):
         return test_id
 
 
-class UserSubmissions(db.Model):
-    user_id = db.Column(db.String(100), primary_key=True)
-    task_name = db.Column(db.String(2), primary_key=True)
-    id = db.Column(db.Integer, primary_key=True)
+class UserSubmissions(Base):
+    user_id = Column(String(100), primary_key=True)
+    task_name = Column(String(2), primary_key=True)
+    id = Column(Integer, primary_key=True)
 
-    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    code = db.Column(db.Integer, nullable=False)
-    points = db.Column(db.Integer, nullable=False)
-    failed = db.Column(db.Integer, nullable=False)
+    date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    code = Column(Integer, nullable=False)
+    points = Column(Integer, nullable=False)
+    failed = Column(Integer, nullable=False)
 
     @classmethod
     def find_group(cls, user_id: str, task_name: str) -> list:
@@ -113,8 +116,8 @@ class UserSubmissions(db.Model):
             return None
         new_submission = cls(user_id=user_id, task_name=task_name, code=code,
                              id=submission_id, points=points, failed=failed)
-        db.session.add(new_submission)
-        db.session.commit()
+        session.add(new_submission)
+        session.commit()
         return new_submission
 
     @classmethod
