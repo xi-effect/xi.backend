@@ -32,21 +32,17 @@ class CATFile(Base, Identifiable):
     def _create(cls, owner: Author):
         return cls(owner=owner.id, status=WIPStatus.WIP.value)
 
-    def _add_to_db(self, session: Session):
-        session.add(self)
-        session.commit()
-
     @classmethod
     def create(cls, session: Session, owner: Author):
         entry: cls = cls.create(session, owner)
-        entry._add_to_db(session)
+        session.add(entry)
         return entry
 
     @classmethod
     def create_with_file(cls, session: Session, owner: Author, data: bytes):
         entry: cls = cls._create(owner)
         entry.update(data)
-        entry._add_to_db(session)
+        session.add(entry)
         return entry
 
     @classmethod
@@ -66,10 +62,9 @@ class CATFile(Base, Identifiable):
 
     def delete(self, session: Session):
         if (page := Page.find_by_id(session, self.id)) is not None:
-            page.delete()
+            page.delete(session)
         remove(self.get_link())
         session.delete(self)
-        session.commit()
 
 
 class JSONFile(CATFile):

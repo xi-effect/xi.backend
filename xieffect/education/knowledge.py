@@ -61,7 +61,7 @@ class ModuleLister(Resource):  # [POST] /modules/
         elif sort == SortType.CREATION_DATE:
             result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
 
-        return [x.to_json() for x in result]
+        return [x.to_json(session) for x in result]
 
 
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/

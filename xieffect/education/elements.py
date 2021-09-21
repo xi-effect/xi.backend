@@ -64,10 +64,6 @@ class Page(Base, Identifiable):
         entry.updated = datetime.utcnow()
         entry.author = author
         session.add(entry)
-        session.commit()
-
-        # with open(cls.directory + str(entry.id) + ".json", "w", encoding="utf8") as f:
-        #     dump(json_data["components"], f, ensure_ascii=False)
         return entry
 
     @classmethod
@@ -127,7 +123,6 @@ class Point(Base):
             return False
         new_point = cls(module_id=module_id, point_id=point_id, type=point_type, data=dumps(data))
         session.add(new_point)
-        session.commit()
         return True
 
     @classmethod
@@ -241,7 +236,6 @@ class Module(Base, Identifiable):
                          theme=theme, category=category, difficulty=difficulty,
                          popularity=popularity, creation_date=creation_date)
         session.add(new_module)
-        session.commit()
         return True
 
     @classmethod
@@ -282,7 +276,7 @@ class Module(Base, Identifiable):
     def to_short_json(self) -> dict:
         return {"id": self.id, "name": self.name, "author": self.author}
 
-    def to_json(self, user_id: int = None) -> dict:
+    def to_json(self, session: Session, user_id: int = None) -> dict:
         result: dict = self.to_short_json()
         if user_id is not None:
             result.update(ModuleFilterSession.find_json(session, user_id, self.id))

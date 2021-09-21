@@ -1,7 +1,7 @@
 from flask import redirect
 from flask_restful import Resource
 
-from componets import database_searcher, jwt_authorizer, with_session
+from componets import database_searcher, jwt_authorizer, with_session, with_auto_session
 from education.elements import Module, ModuleType, Point, Page
 from education.sessions import ModuleFilterSession, StandardModuleSession as SMS, TestModuleSession as TMS
 from users import User
@@ -34,6 +34,7 @@ class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
 
 
 class StandardProgresser(Resource):  # POST /sessions/<int:session_id>/
+    @with_auto_session
     @redirected_to_pages
     @database_searcher(SMS, "session_id", "session")
     def post(self, session: SMS):
@@ -97,6 +98,7 @@ class TestResultCollector(Resource):  # GET /tests/<int:test_id>/results/
 
 
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
+    @with_auto_session
     @jwt_authorizer(User, None)
     @database_searcher(Page, "page_id", "page")
     def get(self, page: Page):  # add some access checks

@@ -1,13 +1,14 @@
 from flask import request, send_from_directory
 from flask_restful import Resource
 
-from componets.checkers import jwt_authorizer
+from componets.checkers import jwt_authorizer, with_auto_session
 from users import User
 from authorship import Author
 from os import remove
 
 
 class ImageAdder(Resource):  # POST /wip/images/
+    @with_auto_session
     @jwt_authorizer(Author, "author")
     def post(self, author: Author):
         author_id: int = author.id

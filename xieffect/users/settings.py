@@ -2,7 +2,7 @@ from flask import request, send_from_directory
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from componets import jwt_authorizer, argument_parser, password_parser, with_session
+from componets import jwt_authorizer, argument_parser, password_parser, with_session, with_auto_session
 from users.database import User
 # from users.emailer import send_generated_email
 
@@ -27,6 +27,7 @@ class Settings(Resource):  # [GET|POST] /settings/
     def get(self, user: User):
         return user.get_settings()
 
+    @with_auto_session
     @jwt_authorizer(User)
     @argument_parser(parser, "changed")
     def post(self, user: User, changed: dict):
@@ -70,6 +71,7 @@ class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", required=True)
 
+    @with_auto_session
     @jwt_authorizer(User)
     @argument_parser(parser, "password", ("new-password", "new_password"))
     def post(self, user: User, password: str, new_password: str):

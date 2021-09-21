@@ -79,7 +79,6 @@ class TestPoint(Base):
             return None
         new_test_point = cls(task_name=task_name, test_id=test_id, input=inp, output=out, points=points)
         session.add(new_test_point)
-        session.commit()
         return new_test_point
 
     @classmethod
@@ -117,7 +116,6 @@ class UserSubmissions(Base):
         new_submission = cls(user_id=user_id, task_name=task_name, code=code,
                              id=submission_id, points=points, failed=failed)
         session.add(new_submission)
-        session.commit()
         return new_submission
 
     @classmethod

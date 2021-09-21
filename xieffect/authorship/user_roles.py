@@ -21,7 +21,6 @@ class Author(Base, UserRole):
     def create(cls, session: Session, user):  # User class
         new_entry = cls(id=user.id, pseudonym=user.username)
         session.add(new_entry)
-        session.commit()
         return new_entry
 
     @classmethod
@@ -31,7 +30,7 @@ class Author(Base, UserRole):
 
     @classmethod
     def find_or_create(cls, session: Session, user):  # User class
-        if (author := cls.find_by_id(user.id, True)) is None:
+        if (author := cls.find_by_id(session, user.id, True)) is None:
             author = cls.create(session, user)
         return author
 
@@ -56,5 +55,4 @@ class Moderator(Base, UserRole):
             return False
         new_entry = cls(id=user_id)
         session.add(new_entry)
-        session.commit()
         return True

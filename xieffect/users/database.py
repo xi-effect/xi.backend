@@ -20,7 +20,6 @@ class TokenBlockList(Base):
     @classmethod
     def add_by_jti(cls, session: Session, jti):
         session.add(TokenBlockList(jti=jti))
-        session.commit()
 
 
 class User(Base, UserRole):
@@ -68,7 +67,6 @@ class User(Base, UserRole):
             return None
         new_user = cls(email=email, password=cls.generate_hash(password), username=username)
         session.add(new_user)
-        session.commit()
         return new_user
 
     def confirm_email(self):  # auto-commit
@@ -79,7 +77,6 @@ class User(Base, UserRole):
             return False
         self.email = new_email
         self.email_confirmed = False
-        session.commit()
         return True
 
     def change_password(self, new_password: str):  # auto-commit

@@ -28,7 +28,6 @@ class ModuleFilterSession(Base):
             return None
         new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())
         session.add(new_entry)
-        session.commit()
         return new_entry
 
     @classmethod
@@ -111,7 +110,6 @@ class ModuleFilterSession(Base):
             session.delete(self)
         else:
             self.note_change()
-        session.commit()
 
 
 class BaseModuleSession(Base, Identifiable):
@@ -152,7 +150,6 @@ class StandardModuleSession(BaseModuleSession):
             return None
         new_entry = cls(user_id=user_id, module_id=module_id, progress=progress)
         session.add(new_entry)
-        session.commit()
         return new_entry
 
     @classmethod
@@ -162,7 +159,6 @@ class StandardModuleSession(BaseModuleSession):
             entry = cls.create(session, user_id, module_id, progress)
         else:
             entry.progress = progress
-            session.commit()
         return entry
 
     @classmethod
@@ -174,7 +170,6 @@ class StandardModuleSession(BaseModuleSession):
         entry: cls = cls.find_by_ids(session, user_id, module_id)
         if entry is not None:
             session.delete(entry)
-            session.commit()
 
     # def set_progress(self):
     # pass
