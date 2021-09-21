@@ -1,7 +1,7 @@
 from typing import Dict, Union
 
 from passlib.hash import pbkdf2_sha256 as sha256
-from sqlalchemy import Column
+from sqlalchemy import Column, Sequence
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from authorship import Moderator, Author
@@ -10,7 +10,7 @@ from main import Base, Session
 
 
 class TokenBlockList(Base):
-    id = Column(Integer, primary_key=True, unique=True)
+    id = Column(Integer, Sequence('tbl_id_seq'), primary_key=True, unique=True)
     jti = Column(String(36), nullable=False)
 
     @classmethod
@@ -35,7 +35,7 @@ class User(Base, UserRole):
         return sha256.verify(password, hashed)
 
     # Vital:
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
     email = Column(String(100), nullable=False, unique=True)
     email_confirmed = Column(Boolean, nullable=False, default=False)
     password = Column(String(100), nullable=False)

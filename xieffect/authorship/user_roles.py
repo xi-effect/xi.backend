@@ -1,4 +1,4 @@
-from sqlalchemy import Column
+from sqlalchemy import Column, Sequence
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 

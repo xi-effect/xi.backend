@@ -3,7 +3,7 @@ from json import dump, load
 from os import remove
 from typing import Dict, Union
 
-from sqlalchemy import Column
+from sqlalchemy import Column, Sequence
 from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 from authorship import Author
@@ -22,7 +22,7 @@ class CATFile(Base, Identifiable):
     mimetype: str = ""
     directory: str = "../files/tfs/other/"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('cat_file_id_seq'), primary_key=True)
     owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
                    default=0)  # test-only
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, Dict, List
 
-from sqlalchemy import Column
+from sqlalchemy import Column, Sequence
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime
 
 from componets import Identifiable
@@ -116,7 +116,7 @@ class BaseModuleSession(Base, Identifiable):
     __abstract__ = True
     not_found_text = "Session not found"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, Sequence('ms_id_seq'), primary_key=True)
     user_id = Column(Integer, nullable=False)  # MB replace with relationship
     module_id = Column(Integer, nullable=False)  # MB replace with relationship
 
