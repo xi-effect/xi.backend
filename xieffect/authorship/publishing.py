@@ -7,6 +7,9 @@ from authorship.user_roles import Author, Moderator
 from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
 
 
+# DEPRECATED / SUSPENDED
+
+
 class Submitter(Resource):  # [POST] /cat/submissions/
     parser: RequestParser = RequestParser()
     parser.add_argument("type", type=int, required=True)
