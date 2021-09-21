@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Sequence
+from sqlalchemy import Column, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
@@ -25,8 +25,10 @@ class Author(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False):
-        return cls.query.filter_by(id=entry_id).first() if include_banned else \
-            cls.query.filter_by(banned=False, id=entry_id).first()
+        return session.execute(
+            select(cls).where(cls.id == entry_id) if include_banned
+            else select(cls).where(cls.id == entry_id and not cls.banned)
+        ).fetchone()
 
     @classmethod
     def find_or_create(cls, session: Session, user):  # User class
@@ -47,7 +49,7 @@ class Moderator(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return cls.query.filter_by(id=entry_id).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
 
     @classmethod
     def create(cls, session: Session, user_id: int) -> bool:

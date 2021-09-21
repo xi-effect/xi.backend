@@ -1,7 +1,7 @@
 from typing import Dict, Union
 
 from passlib.hash import pbkdf2_sha256 as sha256
-from sqlalchemy import Column, Sequence
+from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from authorship import Moderator, Author
@@ -15,11 +15,11 @@ class TokenBlockList(Base):
 
     @classmethod
     def find_by_jti(cls, session: Session, jti):
-        return cls.query(TokenBlockList.id).filter_by(jti=jti).scalar()
+        return session.execute(select(cls).where(cls.jti == jti)).fetchone()
 
     @classmethod
     def add_by_jti(cls, session: Session, jti):
-        session.add(TokenBlockList(jti=jti))
+        session.add(cls(jti=jti))
 
 
 class User(Base, UserRole):
@@ -55,11 +55,11 @@ class User(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return cls.query.filter_by(id=entry_id).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
 
     @classmethod
     def find_by_email_address(cls, session: Session, email):
-        return cls.query.filter_by(email=email).first()
+        return session.execute(select(cls).where(cls.email == email)).fetchone()
 
     @classmethod
     def create(cls, session: Session, email: str, username: str, password: str):

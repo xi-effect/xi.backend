@@ -3,7 +3,7 @@ from json import dump, load
 from os import remove
 from typing import Dict, Union
 
-from sqlalchemy import Column, Sequence
+from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 from authorship import Author
@@ -47,11 +47,11 @@ class CATFile(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return cls.query.filter_by(id=entry_id).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
 
     @classmethod
     def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list:
-        return cls.query.filter_by(owner=owner.id).offset(start).limit(limit).all()
+        return session.execute(select(cls).where(cls.owner == owner.id).offset(start).limit(limit)).scalars().all()
 
     def get_link(self) -> str:
         return f"{self.directory}/{self.id}" + f".{self.mimetype}" if self.mimetype != "" else ""

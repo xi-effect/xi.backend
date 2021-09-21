@@ -5,7 +5,7 @@ from pickle import dumps, loads
 from random import randint
 from typing import Dict, List, Optional, Union
 
-from sqlalchemy import Column, ForeignKey
+from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType, Text
 
@@ -68,7 +68,7 @@ class Page(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return cls.query.filter_by(id=entry_id).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
 
     @classmethod
     def create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
@@ -90,8 +90,9 @@ class Page(Base, Identifiable):
 
     @classmethod
     def search(cls, session: Session, search: Optional[str], start: int, limit: int) -> list:
-        query: BaseQuery = cls.query if search is None else cls.query.whooshee_search(search)
-        return query.offset(start).limit(limit).all()  # redo with pagination!!!
+        stmt = select(cls)
+        # cls.query if search is None else cls.query.whooshee_search(search)
+        return session.execute(stmt.offset(start).limit(limit)).scalars().all()  # redo with pagination!!!
 
     def view(self):  # auto-commit
         self.views += 1
@@ -127,7 +128,7 @@ class Point(Base):
 
     @classmethod
     def find_by_ids(cls, session: Session, module_id: int, point_id: int):
-        return cls.query.filter_by(module_id=module_id, point_id=point_id).first()
+        return session.execute(select(cls).where(cls.module_id == module_id and cls.point_id == point_id)).fetchone()
 
     @classmethod
     def find_and_execute(cls, session: Session, module_id: int, point_id: int) -> int:
@@ -136,7 +137,7 @@ class Point(Base):
 
     @classmethod
     def get_module_points(cls, session: Session, module_id: int):
-        return cls.query.filter_by(module_id=module_id).all()
+        return session.execute(select(cls).where(cls.module_id == module_id)).scalars().all()
 
     def execute(self) -> int:
         if self.type & 1:  # HyperBlueprint
@@ -240,7 +241,7 @@ class Module(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, module_id: int):
-        return cls.query.filter_by(id=module_id).first()
+        return session.execute(select(cls).where(cls.id == module_id)).fetchone()
 
     @classmethod
     def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]],

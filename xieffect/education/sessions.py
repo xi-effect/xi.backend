@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, Dict, List
 
-from sqlalchemy import Column, Sequence
+from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime
 
 from componets import Identifiable
@@ -32,7 +32,7 @@ class ModuleFilterSession(Base):
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int):
-        return cls.query.filter_by(user_id=user_id, module_id=module_id).first()
+        return session.execute(select(cls).where(cls.user_id == user_id and cls.module_id == module_id)).fetchone()
 
     @classmethod
     def find_or_create(cls, session: Session, user_id: int, module_id: int):  # check if ever used
@@ -57,7 +57,7 @@ class ModuleFilterSession(Base):
 
     @classmethod
     def filter_ids_by_user(cls, session: Session, user_id: int, offset: int = None,
-                           limit: int = None, **params) -> List[int]:
+                           limit: int = None, **params) -> List[int]:  # used only in module search!
         query: BaseQuery = cls.query.filter_by(user_id=user_id, **params)
         query = query.order_by(cls.last_changed)
 
@@ -126,7 +126,7 @@ class BaseModuleSession(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return cls.query.filter_by(id=entry_id).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int):

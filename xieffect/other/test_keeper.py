@@ -4,7 +4,7 @@ from math import sqrt, ceil
 from random import randint
 from typing import Dict, Text
 
-from sqlalchemy import Column
+from sqlalchemy import Column, select
 from sqlalchemy.sql.sqltypes import Integer, String, DateTime
 
 from main import Base, Session
@@ -67,11 +67,11 @@ class TestPoint(Base):
 
     @classmethod
     def find_by_task(cls, session: Session, task_name: str) -> list:
-        return cls.query.filter_by(task_name=task_name).all()
+        return session.execute(select(cls).where(cls.task_name == task_name)).scalars().all()
 
     @classmethod
     def find_exact(cls, session: Session, task_name: str, test_id: int):
-        return cls.query.filter_by(task_name=task_name, test_id=test_id).first()
+        return session.execute(select(cls).where(cls.task_name == task_name and cls.test_id == test_id)).fetchone()
 
     @classmethod
     def create(cls, session: Session, task_name: str, test_id: int, inp: str, out: str, points: int):
@@ -103,11 +103,12 @@ class UserSubmissions(Base):
 
     @classmethod
     def find_group(cls, session: Session, user_id: str, task_name: str) -> list:
-        return cls.query.filter_by(user_id=user_id, task_name=task_name).all()
+        return session.execute(select(cls).where(cls.user_id == user_id and cls.task_name == task_name)).scalars().all()
 
     @classmethod
     def find_exact(cls, session: Session, user_id: str, task_name: str, submission_id: int):
-        return cls.query.filter_by(user_id=user_id, task_name=task_name, id=submission_id).all()
+        return session.execute(select(cls).where(
+            cls.user_id == user_id and cls.task_name == task_name and cls.id == submission_id)).scalars().all()
 
     @classmethod
     def create(cls, session: Session, user_id: str, task_name: str, submission_id: int, code: int, points: int, failed: int):
