@@ -15,6 +15,10 @@ from webhooks import send_discord_message, WebhookURLs
 
 from main import app
 
+
+# DEPRECATED / SUSPENDED
+
+
 email_folder: str = "files/emails/"
 scopes: List[str] = ["https://mail.google.com/"]
 
