@@ -15,7 +15,7 @@ class TokenBlockList(Base):
 
     @classmethod
     def find_by_jti(cls, session: Session, jti):
-        return session.execute(select(cls).where(cls.jti == jti)).fetchone()
+        return session.execute(select(cls).where(cls.jti == jti)).first()
 
     @classmethod
     def add_by_jti(cls, session: Session, jti):
@@ -55,11 +55,11 @@ class User(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
+        return session.execute(select(cls).where(cls.id == entry_id)).first()
 
     @classmethod
     def find_by_email_address(cls, session: Session, email):
-        return session.execute(select(cls).where(cls.email == email)).fetchone()
+        return session.execute(select(cls).where(cls.email == email)).first()
 
     @classmethod
     def create(cls, session: Session, email: str, username: str, password: str):

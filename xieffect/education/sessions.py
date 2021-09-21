@@ -32,7 +32,7 @@ class ModuleFilterSession(Base):
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int):
-        return session.execute(select(cls).where(cls.user_id == user_id and cls.module_id == module_id)).fetchone()
+        return session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)).first()
 
     @classmethod
     def find_or_create(cls, session: Session, user_id: int, module_id: int):  # check if ever used
@@ -126,7 +126,7 @@ class BaseModuleSession(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
+        return session.execute(select(cls).where(cls.id == entry_id)).first()
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int):

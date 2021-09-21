@@ -47,7 +47,7 @@ class CATFile(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
+        return session.execute(select(cls).where(cls.id == entry_id)).first()
 
     @classmethod
     def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list:

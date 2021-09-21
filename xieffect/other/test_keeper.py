@@ -71,7 +71,7 @@ class TestPoint(Base):
 
     @classmethod
     def find_exact(cls, session: Session, task_name: str, test_id: int):
-        return session.execute(select(cls).where(cls.task_name == task_name and cls.test_id == test_id)).fetchone()
+        return session.execute(select(cls).where(cls.task_name == task_name, cls.test_id == test_id)).first()
 
     @classmethod
     def create(cls, session: Session, task_name: str, test_id: int, inp: str, out: str, points: int):
@@ -103,12 +103,12 @@ class UserSubmissions(Base):
 
     @classmethod
     def find_group(cls, session: Session, user_id: str, task_name: str) -> list:
-        return session.execute(select(cls).where(cls.user_id == user_id and cls.task_name == task_name)).scalars().all()
+        return session.execute(select(cls).where(cls.user_id == user_id, cls.task_name == task_name)).scalars().all()
 
     @classmethod
     def find_exact(cls, session: Session, user_id: str, task_name: str, submission_id: int):
         return session.execute(select(cls).where(
-            cls.user_id == user_id and cls.task_name == task_name and cls.id == submission_id)).scalars().all()
+            cls.user_id == user_id, cls.task_name == task_name, cls.id == submission_id)).scalars().all()
 
     @classmethod
     def create(cls, session: Session, user_id: str, task_name: str, submission_id: int, code: int, points: int, failed: int):

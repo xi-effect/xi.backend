@@ -27,8 +27,8 @@ class Author(Base, UserRole):
     def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False):
         return session.execute(
             select(cls).where(cls.id == entry_id) if include_banned
-            else select(cls).where(cls.id == entry_id and not cls.banned)
-        ).fetchone()
+            else select(cls).where(cls.id == entry_id, cls.banned == False)
+        ).first()
 
     @classmethod
     def find_or_create(cls, session: Session, user):  # User class
@@ -49,7 +49,7 @@ class Moderator(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).fetchone()
+        return session.execute(select(cls).where(cls.id == entry_id)).first()
 
     @classmethod
     def create(cls, session: Session, user_id: int) -> bool:
