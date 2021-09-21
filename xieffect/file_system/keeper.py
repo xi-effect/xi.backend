@@ -4,12 +4,12 @@ from os import remove
 from typing import Dict, Union
 
 from sqlalchemy import Column
-from sqlalchemy.sql.sqltypes import Integer, String
+from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 from authorship import Author
 from componets import Identifiable
 from education import Page
-from main import Base
+from main import Base, Session
 
 
 class WIPStatus(Enum):
@@ -32,29 +32,29 @@ class CATFile(Base, Identifiable):
     def _create(cls, owner: Author):
         return cls(owner=owner.id, status=WIPStatus.WIP.value)
 
-    def _add_to_db(self):
+    def _add_to_db(self, session: Session):
         session.add(self)
         session.commit()
 
     @classmethod
-    def create(cls, owner: Author):
-        entry: cls = cls.create(owner)
-        entry._add_to_db()
+    def create(cls, session: Session, owner: Author):
+        entry: cls = cls.create(session, owner)
+        entry._add_to_db(session)
         return entry
 
     @classmethod
-    def create_with_file(cls, owner: Author, data: bytes):
+    def create_with_file(cls, session: Session, owner: Author, data: bytes):
         entry: cls = cls._create(owner)
         entry.update(data)
-        entry._add_to_db()
+        entry._add_to_db(session)
         return entry
 
     @classmethod
-    def find_by_id(cls, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int):
         return cls.query.filter_by(id=entry_id).first()
 
     @classmethod
-    def find_by_owner(cls, owner: Author, start: int, limit: int) -> list:
+    def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list:
         return cls.query.filter_by(owner=owner.id).offset(start).limit(limit).all()
 
     def get_link(self) -> str:
@@ -64,8 +64,8 @@ class CATFile(Base, Identifiable):
         with open(self.get_link(), "wb") as f:
             f.write(data)
 
-    def delete(self):
-        if (page := Page.find_by_id(self.id)) is not None:
+    def delete(self, session: Session):
+        if (page := Page.find_by_id(session, self.id)) is not None:
             page.delete()
         remove(self.get_link())
         session.delete(self)
@@ -77,14 +77,14 @@ class JSONFile(CATFile):
     mimetype: str = "json"
 
     @classmethod
-    def create_from_json(cls, owner: Author, json_data: dict):
+    def create_from_json(cls, session: Session, owner: Author, json_data: dict):
         entry: cls = cls._create(owner)
-        entry.update_json(json_data)
+        entry.update_json(session, json_data)
         return entry
 
-    def update_json(self, json_data: dict) -> None:
+    def update_json(self, session: Session, json_data: dict) -> None:
         self.update_metadata(json_data)
-        self._add_to_db()
+        self._add_to_db(session)
 
         json_data["id"] = self.id
         with open(self.get_link(), "w", encoding="utf8") as f:
@@ -93,16 +93,16 @@ class JSONFile(CATFile):
     def update_metadata(self, json_data: dict) -> None:
         raise NotImplementedError
 
-    def get_metadata(self) -> dict:
+    def get_metadata(self, session: Session) -> dict:
         raise NotImplementedError
 
 
 class WIPPage(JSONFile):
     @staticmethod
-    def create_test_bundle(author: Author):
+    def create_test_bundle(session: Session, author: Author):
         for i in range(1, 4):
             with open(f"../files/tfs/test/{i}.json", "rb") as f:
-                WIPPage.create_from_json(author, load(f))
+                WIPPage.create_from_json(session, author, load(f))
 
     __tablename__ = "wip-pages"
     not_found_text = "Page not found"
@@ -120,10 +120,10 @@ class WIPPage(JSONFile):
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
-    def get_metadata(self) -> dict:
+    def get_metadata(self, session: Session) -> dict:
         return {"id": self.id, "kind": self.kind, "name": self.name, "theme": self.theme,
                 "description": self.description, "status": WIPStatus(self.status).name.lower(),
-                "views": page.views if (page := Page.find_by_id(self.id)) is not None else None}
+                "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
 
 
 class WIPModule(JSONFile):
@@ -136,5 +136,5 @@ class WIPModule(JSONFile):
     def update_metadata(self, json_data: dict) -> None:
         self.name = json_data.pop("name")
 
-    def get_metadata(self) -> Dict[str, Union[int, str]]:
+    def get_metadata(self, session: Session) -> Dict[str, Union[int, str]]:
         return {"id": self.id, "name": self.name}

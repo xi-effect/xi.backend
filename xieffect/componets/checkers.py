@@ -14,7 +14,7 @@ class Identifiable:
         pass
 
     @classmethod
-    def find_by_id(cls, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int):
         raise NotImplementedError
 
 
@@ -26,7 +26,7 @@ class UserRole:
         pass
 
     @classmethod
-    def find_by_id(cls, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int):
         raise NotImplementedError
 
 
@@ -49,9 +49,10 @@ def with_auto_session(function):
 
 def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user"):
     def authorizer_wrapper(function):
+        @with_session
         @jwt_required()
-        def authorizer_inner(*args, **kwargs):
-            result: role = role.find_by_id(get_jwt_identity())
+        def authorizer_inner(session, *args, **kwargs):
+            result: role = role.find_by_id(session, get_jwt_identity())
             if result is None:
                 return {"a": role.not_found_text}, 401 if role is UserRole.default_role else 403
             else:
@@ -69,9 +70,10 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
     def searcher_wrapper(function):
         error_response: tuple = {"a": identifiable.not_found_text}, 404
 
-        def searcher_inner(*args, **kwargs):
+        @with_session
+        def searcher_inner(session, *args, **kwargs):
             target_id: int = kwargs.pop(input_field_name)
-            result: identifiable = identifiable.find_by_id(target_id)
+            result: identifiable = identifiable.find_by_id(session, target_id)
             if result is None:
                 return error_response
             else:
@@ -79,8 +81,9 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
                     kwargs[result_filed_name] = result
                 return function(*args, **kwargs)
 
-        def checker_inner(*args, **kwargs):
-            if identifiable.find_by_id(kwargs[input_field_name]) is None:
+        @with_session
+        def checker_inner(session, *args, **kwargs):
+            if identifiable.find_by_id(session, kwargs[input_field_name]) is None:
                 return error_response
             else:
                 return function(*args, **kwargs)

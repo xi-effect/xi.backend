@@ -7,12 +7,13 @@ from flask_restful import Api
 from werkzeug.exceptions import HTTPException
 
 from authorship import (Author, AuthorInitializer, OwnedPagesLister)
+from componets import with_session
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
                        TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
 from file_system import (FileLister, FileProcessor, FileCreator, ImageAdder, ImageProcessor, ImageViewer, PagePublisher)
-from main import app
+from main import app, Session
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
 from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
@@ -28,7 +29,8 @@ jwt: JWTManager = JWTManager(app)
 
 # Some request and error handlers:
 @app.before_first_request
-def create_tables():
+@with_session
+def create_tables(session: Session):
     from main import db_meta  # noqa  # should be the last import!
     db_meta.create_all()
     # from main import whooshee
@@ -40,25 +42,26 @@ def create_tables():
     from users import User
 
     test_user: User
-    if (test_user := User.find_by_email_address("test@test.test")) is None:
+    if (test_user := User.find_by_email_address(session, "test@test.test")) is None:
         send_discord_message(WebhookURLs.STATUS, "Database has been reset")
-        test_user = User.create("test@test.test", "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
+        test_user = User.create(session, "test@test.test", "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
                                 "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
-    test_author = Author.find_or_create(test_user)
+    test_author = Author.find_or_create(session, test_user)
 
-    Module.create_test_bundle()
-    Page.create_test_bundle(test_author)
-    WIPPage.create_test_bundle(test_author)
-    TestPoint.test()
+    Module.create_test_bundle(session)
+    Page.create_test_bundle(session, test_author)
+    WIPPage.create_test_bundle(session, test_author)
+    TestPoint.test(session)
 
-    if User.find_by_email_address("admin@admin.admin") is None:
-        User.create("admin@admin.admin", "admin", "2b003f13e43546e8b416a9ff3c40bc4ba694d" +
+    if User.find_by_email_address(session, "admin@admin.admin") is None:
+        User.create(session, "admin@admin.admin", "admin", "2b003f13e43546e8b416a9ff3c40bc4ba694d" +
                     "0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe")
 
 
 @jwt.token_in_blocklist_loader
-def check_if_token_revoked(_, jwt_payload):
-    return TokenBlockList.find_by_jti(jwt_payload["jti"]) is not None
+@with_session
+def check_if_token_revoked(_, jwt_payload, session):
+    return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
 
 
 @app.after_request

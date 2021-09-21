@@ -6,7 +6,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from authorship import Moderator, Author
 from componets import UserRole
-from main import Base
+from main import Base, Session
 
 
 class TokenBlockList(Base):
@@ -14,11 +14,11 @@ class TokenBlockList(Base):
     jti = Column(String(36), nullable=False)
 
     @classmethod
-    def find_by_jti(cls, jti):
-        return session.query(TokenBlockList.id).filter_by(jti=jti).scalar()
+    def find_by_jti(cls, session: Session, jti):
+        return cls.query(TokenBlockList.id).filter_by(jti=jti).scalar()
 
     @classmethod
-    def add_by_jti(cls, jti):
+    def add_by_jti(cls, session: Session, jti):
         session.add(TokenBlockList(jti=jti))
         session.commit()
 
@@ -55,39 +55,37 @@ class User(Base, UserRole):
     filter_bind = Column(String(10), nullable=True)
 
     @classmethod
-    def find_by_id(cls, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int):
         return cls.query.filter_by(id=entry_id).first()
 
     @classmethod
-    def find_by_email_address(cls, email):
+    def find_by_email_address(cls, session: Session, email):
         return cls.query.filter_by(email=email).first()
 
     @classmethod
-    def create(cls, email: str, username: str, password: str):
-        if cls.find_by_email_address(email):
+    def create(cls, session: Session, email: str, username: str, password: str):
+        if cls.find_by_email_address(session, email):
             return None
         new_user = cls(email=email, password=cls.generate_hash(password), username=username)
         session.add(new_user)
         session.commit()
         return new_user
 
-    def confirm_email(self):
+    def confirm_email(self):  # auto-commit
         self.email_confirmed = True
-        session.commit()
 
-    def change_email(self, new_email: str) -> bool:
-        if User.find_by_email_address(new_email):
+    def change_email(self, session: Session, new_email: str) -> bool:
+        if User.find_by_email_address(session, new_email):
             return False
         self.email = new_email
         self.email_confirmed = False
         session.commit()
         return True
 
-    def change_password(self, new_password: str):
+    def change_password(self, new_password: str):  # auto-commit
         self.password = User.generate_hash(new_password)
-        session.commit()
 
-    def change_settings(self, new_values: Dict[str, Union[str, int, bool]]):
+    def change_settings(self, new_values: Dict[str, Union[str, int, bool]]):  # auto-commit
         if "username" in new_values.keys():
             self.username = new_values["username"]
         if "dark-theme" in new_values.keys():
@@ -100,12 +98,11 @@ class User(Base, UserRole):
             self.surname = new_values["surname"]
         if "patronymic" in new_values.keys():
             self.patronymic = new_values["patronymic"]
-        session.commit()
 
-    def get_role_settings(self) -> Dict[str, str]:
+    def get_role_settings(self, session: Session) -> Dict[str, str]:
         return {
-            "moderator": Moderator.find_by_id(self.id) is not None,
-            "author": "not-yet" if (author := Author.find_by_id(self.id, include_banned=True)
+            "moderator": Moderator.find_by_id(session, self.id) is not None,
+            "author": "not-yet" if (author := Author.find_by_id(session, self.id, include_banned=True)
                                     ) is None else "banned" if author.banned else "current"
         }
 
@@ -122,9 +119,8 @@ class User(Base, UserRole):
     def get_filter_bind(self) -> str:
         return self.filter_bind
 
-    def set_filter_bind(self, bind: str = None) -> None:
+    def set_filter_bind(self, bind: str = None) -> None:  # auto-commit
         self.filter_bind = bind
-        session.commit()
 
 
 UserRole.default_role = User

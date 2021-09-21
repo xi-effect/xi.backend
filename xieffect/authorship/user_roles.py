@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from componets import UserRole
-from main import Base
+from main import Base, Session
 
 
 class Author(Base, UserRole):
@@ -18,26 +18,25 @@ class Author(Base, UserRole):
     modules = relationship("Module", backref="authors")
 
     @classmethod
-    def create(cls, user):  # User class
+    def create(cls, session: Session, user):  # User class
         new_entry = cls(id=user.id, pseudonym=user.username)
-        db.session.add(new_entry)
-        db.session.commit()
+        session.add(new_entry)
+        session.commit()
         return new_entry
 
     @classmethod
-    def find_by_id(cls, entry_id: int, include_banned: bool = False):
+    def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False):
         return cls.query.filter_by(id=entry_id).first() if include_banned else \
             cls.query.filter_by(banned=False, id=entry_id).first()
 
     @classmethod
-    def find_or_create(cls, user):  # User class
+    def find_or_create(cls, session: Session, user):  # User class
         if (author := cls.find_by_id(user.id, True)) is None:
-            author = cls.create(user)
+            author = cls.create(session, user)
         return author
 
-    def get_next_image_id(self):
+    def get_next_image_id(self):  # auto-commit
         self.last_image_id += 1
-        db.session.commit()
         return self.last_image_id
 
 
@@ -48,12 +47,12 @@ class Moderator(Base, UserRole):
     id = Column(Integer, primary_key=True)
 
     @classmethod
-    def find_by_id(cls, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int):
         return cls.query.filter_by(id=entry_id).first()
 
     @classmethod
-    def create(cls, user_id: int) -> bool:
-        if cls.find_by_id(user_id):
+    def create(cls, session: Session, user_id: int) -> bool:
+        if cls.find_by_id(session, user_id):
             return False
         new_entry = cls(id=user_id)
         session.add(new_entry)
