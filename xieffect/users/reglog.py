@@ -4,7 +4,7 @@ from flask_jwt_extended import get_jwt, jwt_required, unset_jwt_cookies
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from componets import password_parser, argument_parser
+from componets import password_parser, argument_parser, with_session
 from users.database import TokenBlockList, User
 # from users.emailer import send_generated_email, parse_code
 
@@ -14,9 +14,10 @@ class UserRegistration(Resource):  # [POST] /reg/
     parser.add_argument("email", required=True)
     parser.add_argument("username", required=True)
 
+    @with_session
     @argument_parser(parser, "email", "username", "password")
-    def post(self, email: str, username: str, password: str):
-        user: User = User.create(email, username, password)
+    def post(self, session, email: str, username: str, password: str):
+        user: User = User.create(session, email, username, password)
         if not user:
             return {"a": False}
 
@@ -33,11 +34,12 @@ class UserLogin(Resource):  # [POST] /auth/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="email is required")
 
+    @with_session
     @argument_parser(parser, "email", "password")
-    def post(self, email: str, password: str):
+    def post(self, session, email: str, password: str):
         # print(f"Tried to login as '{email}' with password '{password}'")
 
-        user: User = User.find_by_email_address(email)
+        user: User = User.find_by_email_address(session, email)
         if not user:
             return {"a": "User doesn't exist"}
 
@@ -50,17 +52,19 @@ class UserLogin(Resource):  # [POST] /auth/
 
 
 class UserLogout(Resource):  # [POST] /logout/
+    @with_session
     @jwt_required()
-    def post(self):
+    def post(self, session):
         response = jsonify({"a": True})
-        TokenBlockList.add_by_jti(get_jwt()["jti"])
+        TokenBlockList.add_by_jti(session, get_jwt()["jti"])
         unset_jwt_cookies(response)
         return response
 
 
 class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
-    def get(self, email: str):
-        if not User.find_by_email_address(email) or email == "admin@admin.admin":
+    @with_session
+    def get(self, session, email: str):
+        if not User.find_by_email_address(session, email) or email == "admin@admin.admin":
             return {"a": False}
         # send_generated_email(email, "pass", "password-reset-email.html")
         return {"a": True}
@@ -70,13 +74,14 @@ class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True)
 
+    @with_session
     @argument_parser(parser, "code", "password")
-    def post(self, code: str, password: str):
+    def post(self, session, code: str, password: str):
         # email = parse_code(code, "pass")
         # if email is None:
         #     return {"a": "Code error"}
 
-        user: User = User.find_by_email_address(email)
+        user: User = User.find_by_email_address(session, email)
         if not user:
             return {"a": "User doesn't exist"}
 

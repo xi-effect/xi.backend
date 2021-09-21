@@ -2,7 +2,7 @@ from flask import request, send_from_directory
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from componets import jwt_authorizer, argument_parser, password_parser
+from componets import jwt_authorizer, argument_parser, password_parser, with_session
 from users.database import User
 # from users.emailer import send_generated_email
 
@@ -41,26 +41,28 @@ class MainSettings(Resource):  # [GET] /settings/main/
 
 
 class RoleSettings(Resource):  # [GET] /settings/roles/
+    @with_session
     @jwt_authorizer(User)
-    def get(self, user: User):
-        return user.get_role_settings()
+    def get(self, session, user: User):
+        return user.get_role_settings(session)
 
 
 class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", required=True)
 
+    @with_session
     @jwt_authorizer(User)
     @argument_parser(parser, "password", ("new-email", "new_email"))
-    def post(self, user: User, password: str, new_email: str):
+    def post(self, session, user: User, password: str, new_email: str):
         if not User.verify_hash(password, user.password):
             return {"a": "Wrong password"}
 
-        if User.find_by_email_address(new_email):
+        if User.find_by_email_address(session, new_email):
             return {"a": "Email in use"}
 
         # send_generated_email(new_email, "confirm", "registration-email.html")
-        user.change_email(new_email)
+        user.change_email(session, new_email)
         return {"a": "Success"}
 
 

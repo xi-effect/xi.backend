@@ -1,6 +1,6 @@
 from flask_restful import Resource
 
-from componets import lister, jwt_authorizer
+from componets import lister, jwt_authorizer, with_session
 from authorship import Author
 from file_system.keeper import WIPPage  # , WIPModule
 
@@ -15,5 +15,6 @@ class OwnedModulesLister(Resource):  # POST /modules/owned/
 class OwnedPagesLister(Resource):  # POST /pages/owned/
     @jwt_authorizer(Author, "author")
     @lister(50)
-    def post(self, author: Author, start: int, finish: int):
-        return [x.get_metadata() for x in WIPPage.find_by_owner(author, start, finish - start)]
+    @with_session
+    def post(self, session, author: Author, start: int, finish: int):
+        return [x.get_metadata() for x in WIPPage.find_by_owner(session, author, start, finish - start)]

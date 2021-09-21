@@ -4,7 +4,7 @@ from typing import List, Dict, Optional
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
+from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser, with_session
 from education.elements import Module, Page
 from education.sessions import ModuleFilterSession
 from users import User
@@ -33,9 +33,10 @@ class ModuleLister(Resource):  # [POST] /modules/
     parser.add_argument("filters", type=dict, required=False)
     parser.add_argument("sort", required=False)
 
+    @with_session
     @jwt_authorizer(User)
     @lister(12, argument_parser(parser, "counter", "filters", "sort"))
-    def post(self, user: User, start: int, finish: int, filters: Dict[str, str], sort: str):
+    def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], sort: str):
         try:
             if sort is None:
                 sort: SortType = SortType.POPULARITY
@@ -50,12 +51,13 @@ class ModuleLister(Resource):  # [POST] /modules/
             user.set_filter_bind()
         user_id: int = user.id
 
-        result: List[Module] = Module.get_module_list(filters, user_id, start, finish - start)
+        result: List[Module] = Module.get_module_list(session, filters, user_id, start, finish - start)
 
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
         elif sort == SortType.VISIT_DATE:
-            result.sort(key=lambda x: (ModuleFilterSession.find_visit_date(user_id, x.id), x.popularity), reverse=True)
+            result.sort(key=lambda x: (ModuleFilterSession.find_visit_date(session, user_id, x.id),
+                                       x.popularity), reverse=True)
         elif sort == SortType.CREATION_DATE:
             result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
 
@@ -63,12 +65,13 @@ class ModuleLister(Resource):  # [POST] /modules/
 
 
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
+    @with_session
     @jwt_authorizer(User)
     @lister(-12)
-    def post(self, user: User, start: int, finish: int) -> list:
+    def post(self, session, user: User, start: int, finish: int) -> list:
         result = list()
         for module_id in ModuleFilterSession.filter_ids_by_user(user.id, start, finish - start, hidden=True):
-            module: Module = Module.find_by_id(module_id)
+            module: Module = Module.find_by_id(session, module_id)
             result.append(module.to_short_json())
         return result
 
@@ -77,12 +80,13 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True)
 
+    @with_session
     @jwt_authorizer(User)
     @database_searcher(Module, "module_id", check_only=True)
     @argument_parser(parser, ("a", "operation"))
-    def post(self, module_id: int, user: User, operation: str):
-        module: ModuleFilterSession = ModuleFilterSession.find_or_create(user.id, module_id)
-        module.change_preference(operation)
+    def post(self, session, module_id: int, user: User, operation: str):
+        module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
+        module.change_preference(session, operation)
         return {"a": True}
 
 
@@ -103,10 +107,11 @@ class PageLister(Resource):  # POST /pages/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("search", required=False)
 
+    @with_session
     @jwt_authorizer(User, None)
     @lister(50, argument_parser(parser, "search", "counter"))
-    def post(self, search: Optional[str], start: int, finish: int) -> list:
-        return [page.to_json() for page in Page.search(search, start, finish - start)]
+    def post(self, session, search: Optional[str], start: int, finish: int) -> list:
+        return [page.to_json() for page in Page.search(session, search, start, finish - start)]
 
 
 class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
