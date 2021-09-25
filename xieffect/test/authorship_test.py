@@ -7,15 +7,18 @@ from pytest import mark
 from xieffect.test.components import check_status_code
 
 
+PER_REQUEST = 50
+
+
 def check_deleting_ids(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]],
                        wip_type: str, ids: Optional[List[int]] = None):
     delete_all = ids is None
 
-    for content_id in [data["id"] for data in list_tester(f"/{wip_type}s/owned", {}, 20)]:
+    for content_id in [data["id"] for data in list_tester(f"/{wip_type}s/owned", {}, PER_REQUEST)]:
         if delete_all or content_id in ids:
             check_status_code(client.delete(f"/wip/{wip_type}s/{content_id}"))
 
-    assert not delete_all or len([data for data in list_tester(f"/{wip_type}s/owned", {}, 20)]) == 0
+    assert not delete_all or len([data for data in list_tester(f"/{wip_type}s/owned", {}, PER_REQUEST)]) == 0
 
 
 def check_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]], wip_type: str):
@@ -23,7 +26,7 @@ def check_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], I
         content: dict = load(f)
 
     assert (content_id := check_status_code(client.post(f"/wip/{wip_type}s", json=content)).get("id", None))
-    assert any(content_id == data["id"] for data in list_tester(f"/{wip_type}s/owned", {}, 20))
+    assert any(content_id == data["id"] for data in list_tester(f"/{wip_type}s/owned", {}, PER_REQUEST))
 
     content["id"] = content_id
     assert check_status_code(client.get(f"/wip/{wip_type}s/{content_id}", json=content)) == content
