@@ -2,6 +2,7 @@ from typing import Type, Optional, Union, Tuple, Callable, Any
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful.reqparse import RequestParser
+from sqlalchemy.engine import Result
 
 from main import Session
 from componets.parsers import counter_parser
@@ -28,6 +29,12 @@ class UserRole:
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
         raise NotImplementedError
+
+
+def first_or_none(result: Result):
+    if (first := result.first()) is None:
+        return None
+    return first[0]
 
 
 def with_session(function):
