@@ -6,6 +6,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from authorship import Moderator, Author
 from componets import UserRole
+from componets.checkers import first_or_none
 from main import Base, Session
 
 
@@ -17,7 +18,7 @@ class TokenBlockList(Base):
 
     @classmethod
     def find_by_jti(cls, session: Session, jti):
-        return session.execute(select(cls).where(cls.jti == jti)).first()[0]
+        return first_or_none(session.execute(select(cls).where(cls.jti == jti)))
 
     @classmethod
     def add_by_jti(cls, session: Session, jti):
@@ -57,11 +58,11 @@ class User(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).first()[0]
+        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
     def find_by_email_address(cls, session: Session, email):
-        return session.execute(select(cls).where(cls.email == email)).first()[0]
+        return first_or_none(session.execute(select(cls).where(cls.email == email)))
 
     @classmethod
     def create(cls, session: Session, email: str, username: str, password: str):

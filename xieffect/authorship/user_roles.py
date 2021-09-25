@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from componets import UserRole
+from componets.checkers import first_or_none
 from main import Base, Session
 
 
@@ -25,10 +26,10 @@ class Author(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False):
-        return session.execute(
+        return first_or_none(session.execute(
             select(cls).where(cls.id == entry_id) if include_banned
             else select(cls).where(cls.id == entry_id, cls.banned == False)
-        ).first()[0]
+        ))
 
     @classmethod
     def find_or_create(cls, session: Session, user):  # User class
@@ -49,7 +50,7 @@ class Moderator(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).first()[0]
+        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
     def create(cls, session: Session, user_id: int) -> bool:

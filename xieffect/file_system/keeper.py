@@ -8,6 +8,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 from authorship import Author
 from componets import Identifiable
+from componets.checkers import first_or_none
 from education import Page
 from main import Base, Session
 
@@ -47,7 +48,7 @@ class CATFile(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).first()[0]
+        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
     def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list:
@@ -80,6 +81,7 @@ class JSONFile(CATFile):
     def update_json(self, session: Session, json_data: dict) -> None:
         self.update_metadata(json_data)
         session.add(self)
+        session.flush()
 
         json_data["id"] = self.id
         with open(self.get_link(), "w", encoding="utf8") as f:

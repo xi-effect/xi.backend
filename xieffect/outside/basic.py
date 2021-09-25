@@ -13,7 +13,7 @@ class HelloWorld(Resource):
     def get(self):
         return {"hello": "word"}
 
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     @argument_parser(parser, "test")
     def post(self, test: str, user: User):
         print(f"Got {test} in the field 'test', said hello")
