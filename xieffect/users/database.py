@@ -10,12 +10,14 @@ from main import Base, Session
 
 
 class TokenBlockList(Base):
+    __tablename__ = "token_block_list"
+
     id = Column(Integer, Sequence('tbl_id_seq'), primary_key=True, unique=True)
     jti = Column(String(36), nullable=False)
 
     @classmethod
     def find_by_jti(cls, session: Session, jti):
-        return session.execute(select(cls).where(cls.jti == jti)).first()
+        return session.execute(select(cls).where(cls.jti == jti)).first()[0]
 
     @classmethod
     def add_by_jti(cls, session: Session, jti):
@@ -55,11 +57,11 @@ class User(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).first()[0]
 
     @classmethod
     def find_by_email_address(cls, session: Session, email):
-        return session.execute(select(cls).where(cls.email == email)).first()
+        return session.execute(select(cls).where(cls.email == email)).first()[0]
 
     @classmethod
     def create(cls, session: Session, email: str, username: str, password: str):

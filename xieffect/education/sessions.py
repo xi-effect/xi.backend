@@ -9,6 +9,7 @@ from main import Base, Session
 
 
 class ModuleFilterSession(Base):
+    __tablename__ = "module-filter-sessions"
     not_found_text = "Session not found"
 
     user_id = Column(Integer, primary_key=True)  # MB replace with relationship
@@ -32,7 +33,7 @@ class ModuleFilterSession(Base):
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int):
-        return session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)).first()
+        return session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)).first()[0]
 
     @classmethod
     def find_or_create(cls, session: Session, user_id: int, module_id: int):  # check if ever used
@@ -126,11 +127,11 @@ class BaseModuleSession(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).first()[0]
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int):
-        return cls.query.filter_by(user_id=user_id, module_id=module_id).first()
+        return cls.query.filter_by(user_id=user_id, module_id=module_id).first()[0]
 
     @classmethod
     def find_or_create(cls, session: Session, user_id: int, module_id: int):
@@ -188,6 +189,7 @@ class StandardModuleSession(BaseModuleSession):
 
 
 class TestModuleSession(BaseModuleSession):
+    __tablename__ = "test-module-sessions"
     pass  # keeps test instance (one to many) in keeper.py
 
     @classmethod

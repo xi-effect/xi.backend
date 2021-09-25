@@ -68,7 +68,7 @@ class Page(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).first()[0]
 
     @classmethod
     def create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
@@ -128,7 +128,7 @@ class Point(Base):
 
     @classmethod
     def find_by_ids(cls, session: Session, module_id: int, point_id: int):
-        return session.execute(select(cls).where(cls.module_id == module_id, cls.point_id == point_id))..first()
+        return session.execute(select(cls).where(cls.module_id == module_id, cls.point_id == point_id)).first()[0]
 
     @classmethod
     def find_and_execute(cls, session: Session, module_id: int, point_id: int) -> int:
@@ -241,7 +241,7 @@ class Module(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, module_id: int):
-        return session.execute(select(cls).where(cls.id == module_id)).first()
+        return session.execute(select(cls).where(cls.id == module_id)).first()[0]
 
     @classmethod
     def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]],

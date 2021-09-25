@@ -2,10 +2,10 @@ from datetime import datetime
 from enum import Enum
 from math import sqrt, ceil
 from random import randint
-from typing import Dict, Text
+from typing import Dict
 
 from sqlalchemy import Column, select
-from sqlalchemy.sql.sqltypes import Integer, String, DateTime
+from sqlalchemy.sql.sqltypes import Integer, String, DateTime, Text
 
 from main import Base, Session
 
@@ -58,6 +58,8 @@ class TestPoint(Base):
                 num = randint(2, 99999)
                 TestPoint.create(session, "P1", i, str(num), str(div_count(num)), 9)
 
+    __tablename__ = "test-points"
+
     task_name = Column(String(2), primary_key=True)
     test_id = Column(Integer, primary_key=True)
 
@@ -92,6 +94,8 @@ class TestPoint(Base):
 
 
 class UserSubmissions(Base):
+    __tablename__ = "user-submissions"
+
     user_id = Column(String(100), primary_key=True)
     task_name = Column(String(2), primary_key=True)
     id = Column(Integer, primary_key=True)

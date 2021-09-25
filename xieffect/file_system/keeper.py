@@ -47,7 +47,7 @@ class CATFile(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
-        return session.execute(select(cls).where(cls.id == entry_id)).first()
+        return session.execute(select(cls).where(cls.id == entry_id)).first()[0]
 
     @classmethod
     def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list:
@@ -79,7 +79,7 @@ class JSONFile(CATFile):
 
     def update_json(self, session: Session, json_data: dict) -> None:
         self.update_metadata(json_data)
-        self._add_to_db(session)
+        session.add(self)
 
         json_data["id"] = self.id
         with open(self.get_link(), "w", encoding="utf8") as f:
