@@ -19,7 +19,7 @@ def check_deleting_ids(client: FlaskClient, list_tester: Callable[[str, dict, in
 
 
 def check_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]], wip_type: str):
-    with open(f"xieffect/test/json/sample-{wip_type}.json", "rb") as f:
+    with open(f"test/json/sample-{wip_type}.json", "rb") as f:
         content: dict = load(f)
 
     assert (content_id := check_status_code(client.post(f"/wip/{wip_type}s", json=content)).get("id", None))
@@ -28,7 +28,7 @@ def check_editing(client: FlaskClient, list_tester: Callable[[str, dict, int], I
     content["id"] = content_id
     assert check_status_code(client.get(f"/wip/{wip_type}s/{content_id}", json=content)) == content
 
-    with open(f"xieffect/test/json/sample-{wip_type}-2.json", "rb") as f:
+    with open(f"test/json/sample-{wip_type}-2.json", "rb") as f:
         edited_content: dict = load(f)
     assert edited_content != content
     edited_content["id"] = content_id
