@@ -1,8 +1,8 @@
-from os import urandom
+from datetime import timedelta
 from json import load
+from os import urandom
 from random import randint
 from typing import Dict
-from datetime import timedelta
 
 from flask import Flask
 from flask_cors import CORS

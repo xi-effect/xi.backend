@@ -1,5 +1,5 @@
-from typing import Type
 from json import load
+from typing import Type
 
 from flask import request  # , send_from_directory
 from flask_restful import Resource

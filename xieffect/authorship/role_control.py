@@ -1,6 +1,6 @@
 from flask_restful import Resource
 
-from componets import jwt_authorizer, with_session
+from componets import jwt_authorizer
 from users import User
 from .user_roles import Author
 

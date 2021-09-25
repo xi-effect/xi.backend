@@ -1,7 +1,7 @@
 from flask_restful import Resource
 
-from componets import lister, jwt_authorizer, with_session
 from authorship import Author
+from componets import lister, jwt_authorizer
 from file_system.keeper import WIPPage  # , WIPModule
 
 

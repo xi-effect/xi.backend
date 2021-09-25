@@ -115,7 +115,8 @@ class UserSubmissions(Base):
             cls.user_id == user_id, cls.task_name == task_name, cls.id == submission_id)).scalars().all()
 
     @classmethod
-    def create(cls, session: Session, user_id: str, task_name: str, submission_id: int, code: int, points: int, failed: int):
+    def create(cls, session: Session, user_id: str, task_name: str, submission_id: int, code: int, points: int,
+               failed: int):
         if cls.find_exact(session, user_id, task_name, submission_id):
             return None
         new_submission = cls(user_id=user_id, task_name=task_name, code=code,

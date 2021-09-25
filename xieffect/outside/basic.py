@@ -2,8 +2,8 @@ from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from componets import jwt_authorizer, argument_parser
-from users import User
 from main import versions
+from users import User
 
 
 class HelloWorld(Resource):

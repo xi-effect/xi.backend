@@ -4,8 +4,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
-from main import Session
 from componets.parsers import counter_parser
+from main import Session
 
 
 class Identifiable:

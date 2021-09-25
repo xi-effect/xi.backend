@@ -5,10 +5,10 @@ from typing import IO
 from flask import request, send_file
 from flask_restful import Resource
 
-from componets import jwt_authorizer, with_session
-from webhooks import send_discord_message, WebhookURLs
-from users import User
+from componets import jwt_authorizer
 from other.test_keeper import TestPoint, UserSubmissions, ResultCodes
+from users import User
+from webhooks import send_discord_message, WebhookURLs
 
 
 def check_one(inp: str, out: str) -> ResultCodes:

@@ -7,7 +7,7 @@ from education.sessions import ModuleFilterSession, StandardModuleSession as SMS
 from users import User
 
 
-def redirected_to_pages(func):   # session related parts have to be redone!!!!!!!
+def redirected_to_pages(func):  # session related parts have to be redone!!!!!!!
     @jwt_authorizer(User, None)
     def inner_redirected_to_pages(*args, **kwargs):
         return redirect(f"/pages/{func(*args, **kwargs)}/")

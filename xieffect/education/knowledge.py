@@ -4,7 +4,7 @@ from typing import List, Dict, Optional
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
-from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser, with_session
+from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
 from education.elements import Module, Page
 from education.sessions import ModuleFilterSession
 from users import User

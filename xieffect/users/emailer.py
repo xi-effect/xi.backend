@@ -1,20 +1,17 @@
+from base64 import urlsafe_b64encode
+from email.mime.text import MIMEText
 from os import path, urandom
 from random import randint
 from typing import Optional, Dict, List
-from base64 import urlsafe_b64encode
-from email.mime.text import MIMEText
 
 from google.auth.transport.requests import Request
-from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from itsdangerous import URLSafeSerializer as USS, BadSignature as BS
 
-from webhooks import send_discord_message, WebhookURLs
-
 from main import app
-
+from webhooks import send_discord_message, WebhookURLs
 
 # DEPRECATED / SUSPENDED
 
@@ -71,6 +68,8 @@ themes: Dict[str, str] = {
 salt: str = app.config["SECURITY_PASSWORD_SALT"]
 
 sender: Optional[EmailSender] = None
+
+
 # try:
 #     sender = EmailSender()
 # except RefreshError as error:
