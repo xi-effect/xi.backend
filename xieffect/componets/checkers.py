@@ -47,17 +47,20 @@ def with_auto_session(function):
     return with_auto_session_inner
 
 
-def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user"):
+def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user", use_session: bool = True):
     def authorizer_wrapper(function):
-        @with_session
         @jwt_required()
-        def authorizer_inner(session, *args, **kwargs):
+        @with_session
+        def authorizer_inner(*args, **kwargs):
+            session = kwargs["session"]
             result: role = role.find_by_id(session, get_jwt_identity())
             if result is None:
                 return {"a": role.not_found_text}, 401 if role is UserRole.default_role else 403
             else:
                 if result_filed_name is not None:
                     kwargs[result_filed_name] = result
+                if not use_session:
+                    kwargs.pop("session")
                 return function(*args, **kwargs)
 
         return authorizer_inner
@@ -71,7 +74,8 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
         error_response: tuple = {"a": identifiable.not_found_text}, 404
 
         @with_session
-        def searcher_inner(session, *args, **kwargs):
+        def searcher_inner(*args, **kwargs):
+            session = kwargs.pop("session")
             target_id: int = kwargs.pop(input_field_name)
             result: identifiable = identifiable.find_by_id(session, target_id)
             if result is None:

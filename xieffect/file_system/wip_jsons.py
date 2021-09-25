@@ -5,16 +5,16 @@ from flask import request  # , send_from_directory
 from flask_restful import Resource
 
 from authorship import Author
-from componets import jwt_authorizer, lister, database_searcher, with_session
+from componets import jwt_authorizer, lister, database_searcher
 from education import Page
 from .keeper import JSONFile, WIPModule, WIPPage
 
 
-def file_getter(type_only: bool = True):
+def file_getter(type_only: bool = True, use_session: bool = True):
     def file_getter_wrapper(function):
-        @with_session
         @jwt_authorizer(Author, "author")
-        def get_file_or_type(session, *args, **kwargs):
+        def get_file_or_type(*args, **kwargs):
+            session = kwargs.pop("session")
             result: Type[JSONFile]
             file_type: str = kwargs.pop("file_type")
             if file_type == "modules":
@@ -31,8 +31,14 @@ def file_getter(type_only: bool = True):
                 if file.owner != kwargs.pop("author").id:
                     return {"a": "Access denied"}, 403
                 if not type_only:
-                    return function(file=file, session=session, *args, **kwargs)
-            return function(file_type=result, *args, **kwargs)
+                    if use_session:
+                        return function(file=file, session=session, *args, **kwargs)
+                    else:
+                        return function(file=file, *args, **kwargs)
+            if use_session:
+                return function(file_type=result, session=session, *args, **kwargs)
+            else:
+                return function(file_type=result, *args, **kwargs)
 
         return get_file_or_type
 
@@ -57,7 +63,7 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 
 
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
-    @file_getter(type_only=False)
+    @file_getter(type_only=False, use_session=False)
     def get(self, file: JSONFile):
         with open(file.get_link(), "rb") as f:
             result = load(f)

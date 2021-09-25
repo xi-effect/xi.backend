@@ -35,7 +35,6 @@ def check_one(inp: str, out: str) -> ResultCodes:
 
 
 class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
-    @with_session
     @jwt_authorizer(User)
     def post(self, session, task_name: str, user: User):
         if not TestPoint.find_by_task(session, task_name):
@@ -65,7 +64,6 @@ class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
 
 
 class GetTaskSummary(Resource):  # [GET] /tasks/<task_name>/attempts/all/
-    @with_session
     @jwt_authorizer(User)
     def get(self, session, task_name: str, user: User):
         if not TestPoint.find_by_task(session, task_name):

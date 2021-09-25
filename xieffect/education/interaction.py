@@ -7,7 +7,7 @@ from education.sessions import ModuleFilterSession, StandardModuleSession as SMS
 from users import User
 
 
-def redirected_to_pages(func):
+def redirected_to_pages(func):   # session related parts have to be redone!!!!!!!
     @jwt_authorizer(User, None)
     def inner_redirected_to_pages(*args, **kwargs):
         return redirect(f"/pages/{func(*args, **kwargs)}/")
@@ -16,7 +16,6 @@ def redirected_to_pages(func):
 
 
 class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
-    @with_session
     @jwt_authorizer(User)
     @database_searcher(Module, "module_id", "module")
     def get(self, session, user: User, module: Module):
@@ -34,7 +33,7 @@ class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
 
 
 class StandardProgresser(Resource):  # POST /sessions/<int:session_id>/
-    @with_auto_session
+    @with_auto_session  # redo!!
     @redirected_to_pages
     @database_searcher(SMS, "session_id", "session")
     def post(self, session: SMS):
@@ -42,7 +41,6 @@ class StandardProgresser(Resource):  # POST /sessions/<int:session_id>/
 
 
 class PracticeGenerator(Resource):  # GET /module/<int:module_id>/next/
-    @with_session
     @redirected_to_pages
     @database_searcher(Module, "module_id", "module")
     def get(self, session, module: Module):
@@ -50,7 +48,7 @@ class PracticeGenerator(Resource):  # GET /module/<int:module_id>/next/
 
 
 class TheoryContentsGetter(Resource):  # GET /module/<int:module_id>/contents/
-    @jwt_authorizer(User, None)
+    @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Module, "module_id", "module")
     def get(self, module: Module):
         pass  # not done!
@@ -65,21 +63,20 @@ class TheoryNavigator(Resource):  # GET /module/<int:module_id>/points/<int:poin
 
 
 class TestContentsGetter(Resource):  # GET /tests/<int:test_id>/contents/
-    @jwt_authorizer(User, None)
+    @jwt_authorizer(User, None, use_session=False)
     @database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS):
         pass  # not done!
 
 
 class TestNavigator(Resource):  # GET /tests/<int:test_id>/tasks/<int:task_id>/
-    @jwt_authorizer(User, None)
+    @jwt_authorizer(User, None, use_session=False)
     @database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS, task_id: int):
         return test.get_task(task_id)
 
 
 class TestReplySaver(Resource):  # P*T /tests/<int:test_id>/tasks/<int:task_id>/reply/
-    @with_session
     @jwt_authorizer(User, None)
     @database_searcher(TMS, "test_id", "test")
     def post(self, session, test: TMS, task_id: int, reply):
@@ -91,15 +88,14 @@ class TestReplySaver(Resource):  # P*T /tests/<int:test_id>/tasks/<int:task_id>/
 
 
 class TestResultCollector(Resource):  # GET /tests/<int:test_id>/results/
-    @jwt_authorizer(User, None)
+    @jwt_authorizer(User, None, use_session=False)
     @database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS):
         return test.collect_results()
 
 
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
-    @with_auto_session
-    @jwt_authorizer(User, None)
+    @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Page, "page_id", "page")
     def get(self, page: Page):  # add some access checks
         page.view()

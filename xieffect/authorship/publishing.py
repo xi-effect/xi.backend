@@ -15,7 +15,7 @@ class Submitter(Resource):  # [POST] /cat/submissions/
     parser.add_argument("type", type=int, required=True)
     parser.add_argument("tags", required=True)
 
-    @jwt_authorizer(Author, "author")
+    @jwt_authorizer(Author, "author", use_session=False)
     @argument_parser(parser, ("type", "submission_type"), "tags")
     def post(self, author: Author, submission_type: int, tags: str):
         submission: CATSubmission = CATSubmission.create(author.id, submission_type, tags)
@@ -28,7 +28,7 @@ class Submitter(Resource):  # [POST] /cat/submissions/
 
 
 class SubmissionLister(Resource):  # [POST] /cat/submissions/owned/
-    @jwt_authorizer(Author, "author")
+    @jwt_authorizer(Author, "author", use_session=False)
     @lister(24)
     def post(self, author: Author, start: int, finish: int) -> list:
         submission: CATSubmission
@@ -43,7 +43,7 @@ class SubmissionIndexer(Resource):  # [POST] /cat/submissions/index/
     parser.add_argument("type", type=int, required=False)
     parser.add_argument("tags", required=True)
 
-    @jwt_authorizer(Moderator, None)
+    @jwt_authorizer(Moderator, None, use_session=False)
     @lister(24, argument_parser(parser, "counter", ("type", "submission_type"), "tags"))
     def post(self, start: int, finish: int, submission_type: int, tags: str):
         submission: CATSubmission
@@ -57,7 +57,7 @@ class SubmissionIndexer(Resource):  # [POST] /cat/submissions/index/
 
 
 class SubmissionReader(Resource):  # [GET] /cat/submissions/<int:submission_id>/
-    @jwt_authorizer(Moderator, "moderator")
+    @jwt_authorizer(Moderator, "moderator", use_session=False)
     @database_searcher(CATSubmission, "submission_id", "submission")
     def get(self, moderator: Moderator, submission: CATSubmission):
         pass  # check if taken
@@ -71,7 +71,7 @@ class ReviewIndex(Resource):  # [GET|POST] /cat/reviews/<int:submission_id>/
     parser: RequestParser = RequestParser()
     parser.add_argument("published", type=bool, required=True)
 
-    @jwt_authorizer(Author, "author")
+    @jwt_authorizer(Author, "author", use_session=False)
     @database_searcher(CATSubmission, "submission_id", "submission")
     def get(self, author: Author, submission: CATSubmission):
         if submission.author_id != author.id:
@@ -80,7 +80,7 @@ class ReviewIndex(Resource):  # [GET|POST] /cat/reviews/<int:submission_id>/
         return send_from_directory("submissions", f"r{submission.id}.json")
 
     @argument_parser(parser, "published")
-    @jwt_authorizer(Moderator, "moderator")
+    @jwt_authorizer(Moderator, "moderator", use_session=False)
     @database_searcher(CATSubmission, "submission_id", "submission")
     def post(self, moderator: Moderator, submission: CATSubmission, published: bool):
         pass  # check if taken
@@ -92,6 +92,6 @@ class ReviewIndex(Resource):  # [GET|POST] /cat/reviews/<int:submission_id>/
 
 
 class Publisher(Resource):  # [POST] /cat/publications/
-    @jwt_authorizer(Moderator, "moderator")
+    @jwt_authorizer(Moderator, "moderator", use_session=False)
     def post(self, moderator: Moderator):
         pass

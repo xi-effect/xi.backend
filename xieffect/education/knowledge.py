@@ -12,7 +12,7 @@ from webhooks import send_discord_message, WebhookURLs
 
 
 class FilterGetter(Resource):  # [GET] /filters/
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         return {"a": user.get_filter_bind()}
 
@@ -33,7 +33,6 @@ class ModuleLister(Resource):  # [POST] /modules/
     parser.add_argument("filters", type=dict, required=False)
     parser.add_argument("sort", required=False)
 
-    @with_session
     @jwt_authorizer(User)
     @lister(12, argument_parser(parser, "counter", "filters", "sort"))
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], sort: str):
@@ -65,7 +64,6 @@ class ModuleLister(Resource):  # [POST] /modules/
 
 
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
-    @with_session
     @jwt_authorizer(User)
     @lister(-12)
     def post(self, session, user: User, start: int, finish: int) -> list:
@@ -80,7 +78,6 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True)
 
-    @with_session
     @jwt_authorizer(User)
     @database_searcher(Module, "module_id", check_only=True)
     @argument_parser(parser, ("a", "operation"))
@@ -91,7 +88,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
 
 
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
-    @jwt_authorizer(User, None)
+    @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Module, "module_id", "module")
     @argument_parser(report_parser, "reason", "message")
     def post(self, module: Module, reason: str, message: str):
@@ -107,7 +104,6 @@ class PageLister(Resource):  # POST /pages/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("search", required=False)
 
-    @with_session
     @jwt_authorizer(User, None)
     @lister(50, argument_parser(parser, "search", "counter"))
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
@@ -115,7 +111,7 @@ class PageLister(Resource):  # POST /pages/
 
 
 class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
-    @jwt_authorizer(User, None)
+    @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Page, "page_id", "page")
     @argument_parser(report_parser, "reason", "message")
     def post(self, page: Page, reason: str, message: str):
@@ -123,7 +119,7 @@ class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
 
 
 class ShowAll(Resource):  # test
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         ModuleFilterSession.change_by_user(user.id, "show")
         return {"a": True}

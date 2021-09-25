@@ -8,11 +8,11 @@ from users.database import User
 
 
 class Avatar(Resource):  # [GET|POST] /avatar/
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         return send_from_directory(r"../files/avatars", f"{user.id}.png")
 
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     def post(self, user: User):
         with open(f"files/avatars/{user.id}.png", "wb") as f:
             f.write(request.data)
@@ -23,12 +23,11 @@ class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
     parser.add_argument("changed", type=dict, location="json", required=True)
 
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         return user.get_settings()
 
-    @with_auto_session
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     @argument_parser(parser, "changed")
     def post(self, user: User, changed: dict):
         user.change_settings(changed)
@@ -36,13 +35,12 @@ class Settings(Resource):  # [GET|POST] /settings/
 
 
 class MainSettings(Resource):  # [GET] /settings/main/
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         return user.get_main_settings()
 
 
 class RoleSettings(Resource):  # [GET] /settings/roles/
-    @with_session
     @jwt_authorizer(User)
     def get(self, session, user: User):
         return user.get_role_settings(session)
@@ -52,7 +50,6 @@ class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", required=True)
 
-    @with_session
     @jwt_authorizer(User)
     @argument_parser(parser, "password", ("new-email", "new_email"))
     def post(self, session, user: User, password: str, new_email: str):
@@ -71,8 +68,7 @@ class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", required=True)
 
-    @with_auto_session
-    @jwt_authorizer(User)
+    @jwt_authorizer(User, use_session=False)
     @argument_parser(parser, "password", ("new-password", "new_password"))
     def post(self, user: User, password: str, new_password: str):
         if User.verify_hash(password, user.password):

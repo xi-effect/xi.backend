@@ -6,15 +6,14 @@ from file_system.keeper import WIPPage  # , WIPModule
 
 
 class OwnedModulesLister(Resource):  # POST /modules/owned/
-    @jwt_authorizer(Author, "author")
     @lister(50)
+    @jwt_authorizer(Author, "author", use_session=False)
     def post(self, author: Author):
         pass
 
 
 class OwnedPagesLister(Resource):  # POST /pages/owned/
-    @jwt_authorizer(Author, "author")
     @lister(50)
-    @with_session
+    @jwt_authorizer(Author, "author")
     def post(self, session, author: Author, start: int, finish: int):
-        return [x.get_metadata() for x in WIPPage.find_by_owner(session, author, start, finish - start)]
+        return [x.get_metadata(session) for x in WIPPage.find_by_owner(session, author, start, finish - start)]
