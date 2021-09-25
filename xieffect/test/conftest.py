@@ -5,7 +5,7 @@ from flask.wrappers import Response
 from pytest import fixture
 
 from xieffect.test.components import check_status_code
-from api import app, db
+from api import app
 
 
 class RedirectedFlaskClient(FlaskClient):
@@ -30,12 +30,6 @@ def client():
         assert cookie[0] == "access_token_cookie"
         client.set_cookie("test", "access_token_cookie", cookie[1])
         yield client
-
-
-@fixture
-def database():  # ???
-    with app.app_context():
-        yield db
 
 
 @fixture()
