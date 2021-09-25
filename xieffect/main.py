@@ -43,8 +43,8 @@ app.config["WHOOSHEE_DIR"] = "../files/temp/whooshee"
 
 whooshee = Whooshee(app)
 
-db_meta = MetaData()
-Base = declarative_base(metadata=db_meta)
 engine = create_engine("sqlite:///app.db", pool_recycle=280)
+db_meta = MetaData(bind=engine)
+Base = declarative_base(metadata=db_meta)
 Session = sessionmaker(bind=engine)
 # "mysql+mysqldb://qwert45hi:7b[-2duvd44sgoi1=pwfpji0i@qwert45hi.mysql.pythonanywhere-services.com/development"
