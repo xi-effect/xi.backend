@@ -34,7 +34,7 @@ def with_session(function):
     def with_session_inner(*args, **kwargs):
         with Session.begin() as session:
             kwargs["session"] = session
-            function(*args, **kwargs)
+            return function(*args, **kwargs)
 
     return with_session_inner
 
@@ -42,7 +42,7 @@ def with_session(function):
 def with_auto_session(function):
     def with_auto_session_inner(*args, **kwargs):
         with Session.begin() as _:
-            function(*args, **kwargs)
+            return function(*args, **kwargs)
 
     return with_auto_session_inner
 
