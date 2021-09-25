@@ -6,7 +6,6 @@ from pytest import mark
 
 from xieffect.test.components import check_status_code
 
-
 """
 @mark.order(400)
 def test_module_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
