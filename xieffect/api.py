@@ -83,7 +83,7 @@ def on_http_exception(error: HTTPException):
 @app.errorhandler(Exception)
 def on_any_exception(error: Exception):
     error_text: str = f"Requested URL: {request.path}\nError: {repr(error)}\n" + \
-                      "".join(format_tb(error.__traceback__)[6:])
+                      "".join(format_tb(error.__traceback__))
 
     response = send_file_discord_message(WebhookURLs.ERRORS, error_text, "error_message.txt", "Server error appeared!")
     if response.status_code < 200 or response.status_code > 299:
