@@ -30,10 +30,8 @@ jwt: JWTManager = JWTManager(app)
 @app.before_first_request
 @with_session
 def create_tables(session: Session):
-    from main import db_meta  # noqa  # should be the last import!
+    from main import db_meta
     db_meta.create_all()
-    # from main import whooshee
-    # whooshee.reindex()
 
     from education.elements import Module, Page
     from file_system.keeper import WIPPage

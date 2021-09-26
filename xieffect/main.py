@@ -6,9 +6,10 @@ from typing import Dict
 
 from flask import Flask
 from flask_cors import CORS
-from flask_whooshee import Whooshee
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+
+from componets.add_whoosh import IndexService
 
 # Version control:
 versions: Dict[str, str] = load(open("../files/versions.json"))
@@ -39,12 +40,13 @@ CORS(app, supports_credentials=True)  # , resources={r"/*": {"origins": "https:/
 # Database config:
 app.config["WHOOSHEE_MIN_STRING_LEN"] = 0
 app.config["WHOOSHEE_ENABLE_INDEXING"] = True
-app.config["WHOOSHEE_DIR"] = "../files/temp/whooshee"
-
-whooshee = Whooshee(app)
+app.config["WHOOSH_BASE"] = "../files/temp/whoosh"
 
 engine = create_engine("sqlite:///app.db", pool_recycle=280)
 db_meta = MetaData(bind=engine)
 Base = declarative_base(metadata=db_meta)
 Session = sessionmaker(bind=engine)
+
+index_service = IndexService(config=app.config, session=Session())
+
 # "mysql+mysqldb://qwert45hi:7b[-2duvd44sgoi1=pwfpji0i@qwert45hi.mysql.pythonanywhere-services.com/development"

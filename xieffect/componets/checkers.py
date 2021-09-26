@@ -4,8 +4,9 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
+from componets.add_whoosh import Searcher
 from componets.parsers import counter_parser
-from main import Session
+from main import Session, Base, index_service
 
 
 class Identifiable:
@@ -35,6 +36,19 @@ def first_or_none(result: Result):
     if (first := result.first()) is None:
         return None
     return first[0]
+
+
+def register_as_searchable(*searchable: str):
+    def register_as_searchable_wrapper(model: Type[Base]):
+        model.__searchable__ = list(searchable)
+        index_service.register_class(model)
+
+        searcher = model.search_query
+        model.search_stmt = Searcher(searcher.model_class, searcher.primary, searcher.index)
+
+        return model
+
+    return register_as_searchable_wrapper
 
 
 def with_session(function):

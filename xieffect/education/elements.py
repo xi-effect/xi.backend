@@ -11,9 +11,9 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Pi
 
 from authorship import Author
 from componets import Identifiable
-from componets.checkers import first_or_none
+from componets.checkers import first_or_none, register_as_searchable
 from education.sessions import ModuleFilterSession
-from main import Base, Session, whooshee
+from main import Base, Session  # , whooshee
 
 
 class PageKind(Enum):
@@ -26,7 +26,8 @@ class PageKind(Enum):
         return cls.__members__[string.upper()]
 
 
-@whooshee.register_model("name", "theme", "description")
+# @whooshee.register_model("name", "theme", "description")
+@register_as_searchable("name", "theme", "description")
 class Page(Base, Identifiable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author):
@@ -44,8 +45,8 @@ class Page(Base, Identifiable):
     components = Column(JSON, nullable=False)
 
     kind = Column(Integer, nullable=False)
-    name = Column(String(100), nullable=False)
-    theme = Column(String(100), nullable=False)
+    name = Column(Text, nullable=False)
+    theme = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
 
     reusable = Column(Boolean, nullable=False)
@@ -90,10 +91,14 @@ class Page(Base, Identifiable):
             cls._create(session, json_data, author)
 
     @classmethod
+    def get_page_of_pages(cls, session: Session, start: int, limit: int) -> list:
+        return session.execute(select(cls).offset(start).limit(limit)).scalars().all()
+
+    @classmethod
     def search(cls, session: Session, search: Optional[str], start: int, limit: int) -> list:
-        stmt = select(cls)
-        # cls.query if search is None else cls.query.whooshee_search(search)
-        return session.execute(stmt.offset(start).limit(limit)).scalars().all()  # redo with pagination!!!
+        if search is None:  # redo all search with pagination!!!
+            return cls.get_page_of_pages(session, start, limit)
+        return session.execute(cls.search_stmt(search).offset(start).limit(limit)).scalars().all()
 
     def view(self):  # auto-commit
         self.views += 1
