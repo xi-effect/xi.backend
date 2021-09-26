@@ -96,7 +96,7 @@ class Page(Base, Identifiable):
 
     @classmethod
     def search(cls, session: Session, search: Optional[str], start: int, limit: int) -> list:
-        if search is None:  # redo all search with pagination!!!
+        if search is None or len(search) < 3:  # redo all search with pagination!!!
             return cls.get_page_of_pages(session, start, limit)
         return session.execute(cls.search_stmt(search).offset(start).limit(limit)).scalars().all()
 
