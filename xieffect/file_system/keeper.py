@@ -128,10 +128,27 @@ class WIPModule(JSONFile):
     not_found_text = "Module not found"
     directory: str = "../files/tfs/wip-modules/"
 
-    name = Column(String(100), nullable=False)
+    # Essentials:
+    type = Column(EnumType(ModuleType), nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
+    name = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Filtering:
+    theme = Column(String(20), nullable=False)
+    category = Column(String(20), nullable=False)
+    difficulty = Column(String(20), nullable=False)
 
     def update_metadata(self, json_data: dict) -> None:
+        self.type = ModuleType.from_string(json_data.pop("type"))
         self.name = json_data.pop("name")
+        self.description = json_data.pop("description")
+
+        self.theme = json_data.pop("theme")
+        self.category = json_data.pop("category")
+        self.difficulty = json_data.pop("difficulty")
 
     def get_metadata(self, session: Session) -> Dict[str, Union[int, str]]:
-        return {"id": self.id, "name": self.name}
+        return {"id": self.id, "name": self.name, "type": self.type.to_string(),
+                "theme": self.theme, "category": self.category, "difficulty": self.difficulty,
+                "description": self.description, "status": self.status.to_string(),
+                "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
