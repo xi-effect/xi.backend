@@ -158,6 +158,9 @@ class Point(Base):
         else:  # Theory
             pass
 
+    def delete(self, session: Session):
+        session.delete(self)
+
 
 class ModuleType(Type):
     STANDARD = 0
@@ -327,3 +330,8 @@ class Module(Base, Identifiable):
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
                        "type": self.type.to_string().replace("_", "-")})
         return result
+
+    def delete(self, session: Session):
+        for point in Point.get_module_points(session, self.id):
+            point.delete(session)
+        session.delete(self)

@@ -62,8 +62,6 @@ class CATFile(Base, Identifiable):
             f.write(data)
 
     def delete(self, session: Session):
-        if (page := Page.find_by_id(session, self.id)) is not None:
-            page.delete(session)
         remove(self.get_link())
         session.delete(self)
 
@@ -122,6 +120,11 @@ class WIPPage(JSONFile):
                 "description": self.description, "status": self.status.to_string(),
                 "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
 
+    def delete(self, session: Session):
+        if (page := Page.find_by_id(session, self.id)) is not None:
+            page.delete(session)
+        super().delete(session)
+
 
 class WIPModule(JSONFile):
     __tablename__ = "wip-modules"
@@ -152,3 +155,8 @@ class WIPModule(JSONFile):
                 "theme": self.theme, "category": self.category, "difficulty": self.difficulty,
                 "description": self.description, "status": self.status.to_string(),
                 "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
+
+    def delete(self, session: Session):
+        if (module := Module.find_by_id(session, self.id)) is not None:
+            module.delete(session)
+        super().delete(session)
