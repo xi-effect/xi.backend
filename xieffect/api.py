@@ -45,7 +45,7 @@ def create_tables(session: Session):
                                 "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
     test_author = Author.find_or_create(session, test_user)
 
-    Module.create_test_bundle(session)
+    Module.create_test_bundle(session, test_author)
     Page.create_test_bundle(session, test_author)
     WIPPage.create_test_bundle(session, test_author)
     TestPoint.test(session)

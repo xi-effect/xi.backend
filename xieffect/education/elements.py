@@ -111,13 +111,18 @@ class Page(Base, Identifiable):
                 "views": self.views, "updated": self.updated.isoformat()}
 
 
+class PointType(Type):
+    THEORY = 0
+    PRACTICE = 1
+
+
 class Point(Base):
     __tablename__ = "points"
 
     module_id = Column(Integer, primary_key=True)
     point_id = Column(Integer, primary_key=True)
 
-    type = Column(Integer, nullable=False)  # 0 - Theory; 1 - HyperBlueprint
+    type = Column(EnumType(PointType), nullable=False)
     data = Column(PickleType, nullable=False)  # do a relation!
 
     @classmethod
@@ -127,6 +132,11 @@ class Point(Base):
         new_point = cls(module_id=module_id, point_id=point_id, type=point_type, data=dumps(data))
         session.add(new_point)
         return True
+
+    @classmethod
+    def create_all(cls, session: Session, module_id: int, json_data: List[Dict[str, Union[str, int, list]]]):
+        for i in range(len(json_data)):
+            cls.__create(session, module_id, i, PointType.from_string(json_data[i]["type"]), json_data[i]["data"])
 
     @classmethod
     def find_by_ids(cls, session: Session, module_id: int, point_id: int):
@@ -159,55 +169,55 @@ class ModuleType(Type):
 @register_as_searchable("name", "description")
 class Module(Base, Identifiable):
     @staticmethod
-    def create_test_bundle(session: Session):
+    def create_test_bundle(session: Session, author: Author):
         if Module.find_by_id(session, 0):
             return
         Module.__create(session, 0, ModuleType.TEST, "Пробник математика ЕГЭ", 4, "math", "une",
-                        "enthusiast", 2000, datetime(2020, 10, 22, 10, 30, 3))
+                        "enthusiast", 2000, author, datetime(2020, 10, 22, 10, 30, 3))
         Module.__create(session, 1, ModuleType.THEORY_BLOCK, "История: теория для ЕГЭ", 4, "history", "une",
-                        "enthusiast", 1100, datetime(2021, 1, 2, 22, 30, 33))
+                        "enthusiast", 1100, author, datetime(2021, 1, 2, 22, 30, 33))
         Module.__create(session, 2, ModuleType.STANDARD, "Арифметика", 4, "math", "middle-school",
-                        "newbie", 100, datetime(2012, 10, 12, 15, 57, 2))
+                        "newbie", 100, author, datetime(2012, 10, 12, 15, 57, 2))
         Module.__create(session, 3, ModuleType.PRACTICE_BLOCK, "100 упражнений по матану", 4, "math", "university",
-                        "amateur", 0, datetime(1999, 3, 14, 6, 10, 5))
+                        "amateur", 0, author, datetime(1999, 3, 14, 6, 10, 5))
         Module.__create(session, 4, ModuleType.STANDARD, "English ABCs", 4, "languages", "hobby",
-                        "review", 2000, datetime(2019, 7, 22, 22, 10, 45))
+                        "review", 2000, author, datetime(2019, 7, 22, 22, 10, 45))
         Module.__create(session, 5, ModuleType.STANDARD, "Веб Дизайн", 4, "informatics", "prof-skills",
-                        "enthusiast", 2000, datetime(2020, 10, 22, 10, 30, 8))
+                        "enthusiast", 2000, author, datetime(2020, 10, 22, 10, 30, 8))
         Module.__create(session, 6, ModuleType.STANDARD, "Робототехника", 4, "informatics", "clubs",
-                        "newbie", 3100, datetime(2021, 1, 2, 22, 30, 33))
+                        "newbie", 3100, author, datetime(2021, 1, 2, 22, 30, 33))
         Module.__create(session, 7, ModuleType.TEST, "Архитектура XIX века", 4, "arts", "university",
-                        "expert", 5, datetime(2012, 6, 12, 15, 57, 0))
+                        "expert", 5, author, datetime(2012, 6, 12, 15, 57, 0))
         Module.__create(session, 8, ModuleType.STANDARD, "Безопасность в интернете", 4, "informatics", "university",
-                        "review", 2002, datetime(1999, 3, 14, 6, 10, 5))
+                        "review", 2002, author, datetime(1999, 3, 14, 6, 10, 5))
         Module.__create(session, 9, ModuleType.THEORY_BLOCK, "Литература", 4, "literature", "bne",
-                        "enthusiast", 300, datetime(2019, 7, 12, 22, 10, 40))
+                        "enthusiast", 300, author, datetime(2019, 7, 12, 22, 10, 40))
         Module.__create(session, 10, ModuleType.THEORY_BLOCK, "Классическая Музыка", 4, "arts", "hobby",
-                        "enthusiast", 2000, datetime(2019, 3, 22, 22, 10, 40))
+                        "enthusiast", 2000, author, datetime(2019, 3, 22, 22, 10, 40))
         Module.__create(session, 11, ModuleType.STANDARD, "Немецкий язык", 4, "languages", "main-school",
-                        "enthusiast", 700, datetime(2015, 7, 22, 22, 10, 40))
+                        "enthusiast", 700, author, datetime(2015, 7, 22, 22, 10, 40))
         Module.__create(session, 12, ModuleType.PRACTICE_BLOCK, "География: контурные карты", 4, "geography", "hobby",
-                        "review", 2000, datetime(2019, 7, 22, 22, 1, 40))
+                        "review", 2000, author, datetime(2019, 7, 22, 22, 1, 40))
         Module.__create(session, 13, ModuleType.STANDARD, "Геодезия", 4, "geography", "hobby",
-                        "review", 2000, datetime(2016, 7, 22, 2, 52, 40))
+                        "review", 2000, author, datetime(2016, 7, 22, 2, 52, 40))
         Module.__create(session, 14, ModuleType.STANDARD, "Океанология", 4, "geography", "hobby",
-                        "review", 2000, datetime(2019, 7, 22, 22, 46, 40))
+                        "review", 2000, author, datetime(2019, 7, 22, 22, 46, 40))
         Module.__create(session, 15, ModuleType.TEST, "Ораторское искусство", 4, "arts", "prof-skills",
-                        "amateur", 1200, datetime(2009, 7, 22, 22, 31, 0))
+                        "amateur", 1200, author, datetime(2009, 7, 22, 22, 31, 0))
         Module.__create(session, 16, ModuleType.THEORY_BLOCK, "Социология", 4, "social-science", "university",
-                        "review", 2000, datetime(2012, 6, 12, 15, 57, 0))
+                        "review", 2000, author, datetime(2012, 6, 12, 15, 57, 0))
         Module.__create(session, 17, ModuleType.STANDARD, "Классическая философия", 4, "philosophy", "hobby",
-                        "review", 700, datetime(2019, 7, 22, 22, 11, 40))
+                        "review", 700, author, datetime(2019, 7, 22, 22, 11, 40))
         Module.__create(session, 18, ModuleType.STANDARD, "Физика: термодинамика", 4, "physics", "main-school",
-                        "review", 4200, datetime(2012, 7, 22, 2, 10, 54))
+                        "review", 4200, author, datetime(2012, 7, 22, 2, 10, 54))
         Module.__create(session, 19, ModuleType.PRACTICE_BLOCK, "История России", 4, "history", "hobby",
-                        "review", 270, datetime(2019, 7, 22, 22, 10, 24))
+                        "review", 270, author, datetime(2019, 7, 22, 22, 10, 24))
         Module.__create(session, 20, ModuleType.STANDARD, "Информатика 7 класс", 4, "informatics", "middle-school",
-                        "amateur", 2000, datetime(2019, 7, 22, 22, 10, 12))
+                        "amateur", 2000, author, datetime(2019, 7, 22, 22, 10, 12))
         Module.__create(session, 21, ModuleType.TEST, "Литература Европы XX века", 4, "literature", "hobby",
-                        "review", 2000, datetime(2019, 5, 13, 1, 1, 54))
+                        "review", 2000, author, datetime(2019, 5, 13, 1, 1, 54))
         Module.__create(session, 22, ModuleType.PRACTICE_BLOCK, "Python", 4, "informatics", "clubs",
-                        "newbie", 1500, datetime(2019, 7, 22, 22, 10, 32))
+                        "newbie", 1500, author, datetime(2019, 7, 22, 22, 10, 32))
 
     __tablename__ = "modules"
     not_found_text = "Module not found"
@@ -237,18 +247,41 @@ class Module(Base, Identifiable):
 
     @classmethod
     def __create(cls, session: Session, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
-                 category: str, difficulty: str, popularity: int, creation_date: datetime = None):
+                 category: str, difficulty: str, popularity: int, author: Author, creation_date: datetime = None):
         if creation_date is None:
             creation_date = datetime.utcnow()
         new_module = cls(id=module_id, type=module_type, name=name, length=length,
                          theme=theme, category=category, difficulty=difficulty,
                          popularity=popularity, creation_date=creation_date)
+        new_module.author = author
         session.add(new_module)
         return True
 
     @classmethod
+    def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
+
+        json_data["type"] = PageKind.from_string(json_data["type"])
+        json_data["length"] = len(json_data["points"])
+        entry: cls = cls(**{key: json_data[key] for key in ("id", "length", "type", "name", "description",
+                                                            "theme", "category", "difficulty")})
+        entry.creation_date = datetime.utcnow()
+        entry.author = author
+        session.add(entry)
+        session.flush()
+
+        Point.create_all(session, entry.id, json_data["points"])
+
+        return entry
+
+    @classmethod
     def find_by_id(cls, session: Session, module_id: int):
         return first_or_none(session.execute(select(cls).where(cls.id == module_id)))
+
+    @classmethod
+    def create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
+        if cls.find_by_id(session, json_data["id"]):
+            return None
+        return cls._create(session, json_data, author)
 
     @classmethod
     def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]],
@@ -263,11 +296,14 @@ class Module(Base, Identifiable):
                 global_filter: str = filters["global"]
                 if global_filter == "pinned":
                     # joining queries!
-                    query = query.filter(cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, pinned=True)))
+                    query = query.filter(
+                        cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, pinned=True)))
                 elif global_filter == "starred":
-                    query = query.filter(cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, starred=True)))
+                    query = query.filter(
+                        cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, starred=True)))
                 elif global_filter == "started":
-                    query = query.filter(cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, started=True)))
+                    query = query.filter(
+                        cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, started=True)))
 
             if "difficulty" in keys:
                 query = query.filter_by(difficulty=filters["difficulty"])
