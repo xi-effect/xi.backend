@@ -6,7 +6,7 @@ from flask_restful import Resource
 
 from authorship import Author
 from componets import jwt_authorizer, lister, database_searcher
-from education import Page
+from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 
 
@@ -49,7 +49,7 @@ class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter()
     @lister(20)
     def post(self, session, file_type: Type[JSONFile], author: Author, start: int, finish: int):
-        if WIPPage not in file_type.mro():
+        if WIPPage not in file_type.mro() and WIPModule not in file_type.mro():
             return {"a": f"File type '{file_type}' is not supported"}, 400
         return [x.get_metadata() for x in file_type.find_by_owner(session, author, start, finish - start)]
 
@@ -94,4 +94,16 @@ class PagePublisher(Resource):  # POST /wip/pages/<int:page_id>/publication/
 
         with open(wip_page.get_link()) as f:
             result: bool = Page.create(session, load(f), author) is None
+        return {"a": "Page already exists" if result else "Success"}
+
+
+class ModulePublisher(Resource):  # POST /wip/modules/<int:module_id>/publication/
+    @jwt_authorizer(Author, "author")
+    @database_searcher(WIPPage, "module_id", "wip_module")
+    def post(self, session, author: Author, wip_module: WIPModule):
+        if wip_module.owner != author.id:
+            return {"a": "Access denied"}, 403
+
+        with open(wip_module.get_link()) as f:
+            result: bool = Module.create(session, load(f), author) is None
         return {"a": "Page already exists" if result else "Success"}
