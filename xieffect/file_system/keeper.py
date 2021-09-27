@@ -1,19 +1,19 @@
-from enum import Enum
 from json import dump, load
 from os import remove
 from typing import Dict, Union
 
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, String, Text
+from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable
+from componets import Identifiable, Type
 from componets.checkers import first_or_none
-from education import Page
+from education import PageKind, Page, ModuleType, Module
 from main import Base, Session
 
 
-class WIPStatus(Enum):
+class WIPStatus(Type):
     WIP = 0
     PUBLISHED = 1
 
@@ -27,11 +27,11 @@ class CATFile(Base, Identifiable):
     owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
                    default=0)  # test-only
 
-    status = Column(Integer, nullable=False)
+    status = Column(EnumType(WIPStatus), nullable=False)
 
     @classmethod
     def _create(cls, owner: Author):
-        return cls(owner=owner.id, status=WIPStatus.WIP.value)
+        return cls(owner=owner.id, status=WIPStatus.WIP)
 
     @classmethod
     def create(cls, session: Session, owner: Author):
@@ -105,21 +105,21 @@ class WIPPage(JSONFile):
     not_found_text = "Page not found"
     directory: str = "../files/tfs/wip-pages/"
 
-    kind = Column(Integer, nullable=False)
+    kind = Column(EnumType(PageKind), nullable=False)
 
     name = Column(String(100), nullable=False)
     theme = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
 
     def update_metadata(self, json_data: dict) -> None:
-        self.kind = json_data["kind"]
+        self.kind = ModuleType.from_string(json_data["kind"])
         self.name = json_data["name"]
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
     def get_metadata(self, session: Session) -> dict:
         return {"id": self.id, "kind": self.kind, "name": self.name, "theme": self.theme,
-                "description": self.description, "status": WIPStatus(self.status).name.lower(),
+                "description": self.description, "status": self.status.to_string(),
                 "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
 
 

@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 from json import dumps as json_dumps, loads as json_loads, load
 from pickle import dumps, loads
 from random import randint
@@ -8,22 +7,19 @@ from typing import Dict, List, Optional, Union
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType, Text
+from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable
+from componets import Identifiable, Type
 from componets.checkers import first_or_none, register_as_searchable
 from education.sessions import ModuleFilterSession
 from main import Base, Session  # , whooshee
 
 
-class PageKind(Enum):
+class PageKind(Type):
     THEORY = 0
     PRACTICE = 1
     TASK = 2
-
-    @classmethod
-    def from_string(cls, string):
-        return cls.__members__[string.upper()]
 
 
 # @whooshee.register_model("name", "theme", "description")
@@ -44,7 +40,7 @@ class Page(Base, Identifiable):
     author = relationship("Author")
     components = Column(JSON, nullable=False)
 
-    kind = Column(Integer, nullable=False)
+    kind = Column(EnumType(PageKind), nullable=False)
     name = Column(Text, nullable=False)
     theme = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
@@ -59,7 +55,7 @@ class Page(Base, Identifiable):
 
     @classmethod
     def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
-        json_data["kind"] = PageKind.from_string(json_data["kind"]).value
+        json_data["kind"] = PageKind.from_string(json_data["kind"])
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
         entry.components = json_dumps(json_data["components"])
@@ -108,7 +104,7 @@ class Page(Base, Identifiable):
 
     def to_json(self):
         return {"id": self.id, "name": self.name, "description": self.description,
-                "theme": self.theme, "kind": PageKind(self.kind).name.lower(),
+                "theme": self.theme, "kind": self.kind.to_string(),
                 "components": json_loads(self.components),  # redo?
                 "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public,
                 "author_id": self.author.id, "author_name": self.author.pseudonym,
@@ -153,7 +149,7 @@ class Point(Base):
             pass
 
 
-class ModuleType(Enum):
+class ModuleType(Type):
     STANDARD = 0
     PRACTICE_BLOCK = 1
     THEORY_BLOCK = 2
@@ -219,7 +215,7 @@ class Module(Base, Identifiable):
     # Essentials
     id = Column(Integer, primary_key=True)
     length = Column(Integer, nullable=False)  # the amount of schedule or map points
-    type = Column(Integer, nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
+    type = Column(EnumType(ModuleType), nullable=False)
 
     # Searchable:
     name = Column(Text, nullable=False)
@@ -244,7 +240,7 @@ class Module(Base, Identifiable):
                  category: str, difficulty: str, popularity: int, creation_date: datetime = None):
         if creation_date is None:
             creation_date = datetime.utcnow()
-        new_module = cls(id=module_id, type=module_type.value, name=name, length=length,
+        new_module = cls(id=module_id, type=module_type, name=name, length=length,
                          theme=theme, category=category, difficulty=difficulty,
                          popularity=popularity, creation_date=creation_date)
         session.add(new_module)
@@ -293,5 +289,5 @@ class Module(Base, Identifiable):
         if user_id is not None:
             result.update(ModuleFilterSession.find_json(session, user_id, self.id))
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
-                       "type": ModuleType(self.type).name.lower().replace("_", "-")})
+                       "type": self.type.to_string().replace("_", "-")})
         return result
