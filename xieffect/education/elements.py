@@ -160,6 +160,7 @@ class ModuleType(Enum):
     TEST = 3
 
 
+@register_as_searchable("name", "description")
 class Module(Base, Identifiable):
     @staticmethod
     def create_test_bundle(session: Session):
@@ -219,20 +220,24 @@ class Module(Base, Identifiable):
     id = Column(Integer, primary_key=True)
     length = Column(Integer, nullable=False)  # the amount of schedule or map points
     type = Column(Integer, nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
-    name = Column(String(100), nullable=False)  # the name for the diagram (course map)
+
+    # Searchable:
+    name = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
 
     # Filtering:
     theme = Column(String(20), nullable=False)
     category = Column(String(20), nullable=False)
     difficulty = Column(String(20), nullable=False)
 
-    # Sorting:
+    # Metrics & Sorting:
+    views = Column(Integer, nullable=False, default=0)
     popularity = Column(Integer, nullable=False, default=1000)
     creation_date = Column(DateTime, nullable=False)
 
     # Author-related
-    author = Column(Integer, ForeignKey("authors.id"), nullable=False,
-                    default=0)
+    author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
+    author = relationship("Author")  # redo all modules for it
 
     @classmethod
     def __create(cls, session: Session, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
