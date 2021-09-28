@@ -171,6 +171,12 @@ class ModuleType(Type):
     TEST = 3
 
 
+class SortType(str, Type):
+    POPULARITY = "popularity"
+    VISIT_DATE = "visit-date"
+    CREATION_DATE = "creation-date"
+
+
 @register_as_searchable("name", "description")
 class Module(Base, Identifiable):
     @staticmethod
@@ -289,7 +295,7 @@ class Module(Base, Identifiable):
         return cls._create(session, json_data, author)
 
     @classmethod
-    def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]],
+    def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]], sort: SortType,
                         user_id: int, offset: int, limit: int) -> list:
 
         stmt: Select = select(cls).join(MFS, MFS.module_id == cls.id).filter_by(user_id=user_id, hidden=False)
@@ -298,6 +304,13 @@ class Module(Base, Identifiable):
             if "global" in filters.keys():
                 stmt = stmt.filter_by(**{filters.pop("global"): True})
             stmt = stmt.filter_by(**filters)
+
+        if sort == SortType.POPULARITY:  # reverse?
+            stmt = stmt.order_by(cls.views)
+        elif sort == SortType.CREATION_DATE:
+            stmt = stmt.order_by(MFS.last_changed)
+        elif sort == SortType.VISIT_DATE:
+            stmt = stmt.order_by(MFS.last_visited)
 
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 

@@ -1,11 +1,10 @@
-from enum import Enum
 from typing import List, Dict, Optional
 
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
 
 from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
-from education.elements import Module, Page
+from education.elements import Module, Page, SortType
 from education.sessions import ModuleFilterSession
 from users import User
 from webhooks import send_discord_message, WebhookURLs
@@ -15,12 +14,6 @@ class FilterGetter(Resource):  # [GET] /filters/
     @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         return {"a": user.get_filter_bind()}
-
-
-class SortType(str, Enum):
-    POPULARITY = "popularity"
-    VISIT_DATE = "visit-date"
-    CREATION_DATE = "creation-date"
 
 
 report_parser: RequestParser = RequestParser()
@@ -37,10 +30,7 @@ class ModuleLister(Resource):  # [POST] /modules/
     @lister(12, argument_parser(parser, "counter", "filters", "sort"))
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], sort: str):
         try:
-            if sort is None:
-                sort: SortType = SortType.POPULARITY
-            else:
-                sort: SortType = SortType(sort)
+            sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
         except ValueError:
             return {"a": f"Sorting '{sort}' is not supported"}, 406
 
@@ -50,7 +40,7 @@ class ModuleLister(Resource):  # [POST] /modules/
             user.set_filter_bind()
         user_id: int = user.id
 
-        result: List[Module] = Module.get_module_list(session, filters, user_id, start, finish - start)
+        result: List[Module] = Module.get_module_list(session, filters, sort, user_id, start, finish - start)
 
         if sort == SortType.POPULARITY:
             result.sort(key=lambda x: x.popularity, reverse=True)
