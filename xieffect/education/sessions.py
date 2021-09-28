@@ -58,17 +58,10 @@ class ModuleFilterSession(Base):
         return entry.get_visit_date()
 
     @classmethod
-    def filter_ids_by_user(cls, session: Session, user_id: int, offset: int = None,
-                           limit: int = None, **params) -> List[int]:  # used only in module search!
-        query: BaseQuery = cls.query.filter_by(user_id=user_id, **params)
-        query = query.order_by(cls.last_changed)
-
-        if offset is not None:
-            query = query.offset(offset)
-        if limit is not None:
-            query = query.limit(limit)
-
-        return [x.module_id for x in query.all()]
+    def get_hidden_ids_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> List[int]:
+        return session.execute(
+            select(cls.module_id).filter_by(user_id=user_id).offset(offset).limit(limit)
+        ).scalars().all()
 
     @classmethod
     def change_preference_by_user(cls, session: Session, user_id: int, operation: str, **params) -> None:
