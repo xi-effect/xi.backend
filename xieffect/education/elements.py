@@ -6,13 +6,15 @@ from typing import Dict, List, Optional, Union
 
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import Select
+from sqlalchemy.sql.elements import and_
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType, Text
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
 from componets import Identifiable, Type
 from componets.checkers import first_or_none, register_as_searchable
-from education.sessions import ModuleFilterSession
+from education.sessions import ModuleFilterSession as MFS
 from main import Base, Session  # , whooshee
 
 
@@ -289,33 +291,15 @@ class Module(Base, Identifiable):
     @classmethod
     def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]],
                         user_id: int, offset: int, limit: int) -> list:
-        query: BaseQuery = cls.query
-        # explore joining queries!
-        query = query.filter(cls.id.notin_(ModuleFilterSession.filter_ids_by_user(session, user_id, hidden=True)))
+
+        stmt: Select = select(cls).join(MFS, MFS.module_id == cls.id).filter_by(user_id=user_id, hidden=False)
 
         if filters is not None:
-            keys: List[str] = list(filters.keys())
-            if "global" in keys:
-                global_filter: str = filters["global"]
-                if global_filter == "pinned":
-                    # joining queries!
-                    query = query.filter(
-                        cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, pinned=True)))
-                elif global_filter == "starred":
-                    query = query.filter(
-                        cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, starred=True)))
-                elif global_filter == "started":
-                    query = query.filter(
-                        cls.id.in_(ModuleFilterSession.filter_ids_by_user(session, user_id, started=True)))
+            if "global" in filters.keys():
+                stmt = stmt.filter_by(**{filters.pop("global"): True})
+            stmt = stmt.filter_by(**filters)
 
-            if "difficulty" in keys:
-                query = query.filter_by(difficulty=filters["difficulty"])
-            if "category" in keys:
-                query = query.filter_by(category=filters["category"])
-            if "theme" in keys:
-                query = query.filter_by(theme=filters["theme"])
-
-        return query.offset(offset).limit(limit).all()
+        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
     def get_any_point(self, session: Session) -> Point:
         return Point.find_by_ids(session, self.id, randint(1, self.length))
@@ -326,7 +310,7 @@ class Module(Base, Identifiable):
     def to_json(self, session: Session, user_id: int = None) -> dict:
         result: dict = self.to_short_json()
         if user_id is not None:
-            result.update(ModuleFilterSession.find_json(session, user_id, self.id))
+            result.update(MFS.find_json(session, user_id, self.id))
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
                        "type": self.type.to_string().replace("_", "-")})
         return result
