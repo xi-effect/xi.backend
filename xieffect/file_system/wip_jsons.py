@@ -5,12 +5,12 @@ from flask import request  # , send_from_directory
 from flask_restful import Resource
 
 from authorship import Author
-from componets import jwt_authorizer, lister, database_searcher
+from componets import jwt_authorizer, lister
 from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 
 
-def file_getter(type_only: bool = True, use_session: bool = True):
+def file_getter(type_only: bool = True, use_session: bool = True, use_author: bool = False):
     def file_getter_wrapper(function):
         @jwt_authorizer(Author, "author")
         def get_file_or_type(*args, **kwargs):
@@ -28,7 +28,7 @@ def file_getter(type_only: bool = True, use_session: bool = True):
                 file: result = result.find_by_id(session, kwargs["file_id"] if type_only else kwargs.pop("file_id"))
                 if file is None:
                     return {"a": "File not found"}, 404
-                if file.owner != kwargs.pop("author").id:
+                if file.owner != (kwargs["author"] if use_author else kwargs.pop("author")).id:
                     return {"a": "Access denied"}, 403
                 if not type_only:
                     if use_session:
@@ -83,25 +83,9 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
         return {"a": True}
 
 
-class PagePublisher(Resource):  # POST /wip/pages/<int:page_id>/publication/
-    @jwt_authorizer(Author, "author")
-    @database_searcher(WIPPage, "page_id", "wip_page")
-    def post(self, session, author: Author, wip_page: WIPPage):
-        if wip_page.owner != author.id:
-            return {"a": "Access denied"}, 403
-
-        with open(wip_page.get_link()) as f:
-            result: bool = Page.create(session, load(f), author) is None
-        return {"a": "Page already exists" if result else "Success"}
-
-
-class ModulePublisher(Resource):  # POST /wip/modules/<int:module_id>/publication/
-    @jwt_authorizer(Author, "author")
-    @database_searcher(WIPPage, "module_id", "wip_module")
-    def post(self, session, author: Author, wip_module: WIPModule):
-        if wip_module.owner != author.id:
-            return {"a": "Access denied"}, 403
-
-        with open(wip_module.get_link()) as f:
-            result: bool = Module.create(session, load(f), author) is None
-        return {"a": "Page already exists" if result else "Success"}
+class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
+    @file_getter(type_only=False)
+    def post(self, session, file: JSONFile, author: Author):
+        with open(file.get_link()) as f:
+            result: bool = (Page if type(file) == WIPPage else Module).create(session, load(f), author) is None
+        return {"a": "File already exists" if result else "Success"}

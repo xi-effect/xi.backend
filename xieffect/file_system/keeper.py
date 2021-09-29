@@ -1,6 +1,6 @@
 from json import dump, load
 from os import remove
-from typing import Dict, Union
+from typing import Dict, Union, Type
 
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, String, Text
@@ -69,6 +69,7 @@ class CATFile(Base, Identifiable):
 class JSONFile(CATFile):
     __abstract__ = True
     mimetype: str = "json"
+    public_type: Type[Identifiable] = None
 
     @classmethod
     def create_from_json(cls, session: Session, owner: Author, json_data: dict):
@@ -91,6 +92,11 @@ class JSONFile(CATFile):
     def get_metadata(self, session: Session) -> dict:
         raise NotImplementedError
 
+    def delete(self, session: Session):
+        if (public_file := self.public_type.find_by_id(session, self.id)) is not None:
+            public_file.delete(session)
+        super().delete(session)
+
 
 class WIPPage(JSONFile):
     @staticmethod
@@ -102,6 +108,7 @@ class WIPPage(JSONFile):
     __tablename__ = "wip-pages"
     not_found_text = "Page not found"
     directory: str = "../files/tfs/wip-pages/"
+    public_type: Type[Identifiable] = Page
 
     kind = Column(EnumType(PageKind), nullable=False)
 
@@ -120,16 +127,12 @@ class WIPPage(JSONFile):
                 "description": self.description, "status": self.status.to_string(),
                 "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
 
-    def delete(self, session: Session):
-        if (page := Page.find_by_id(session, self.id)) is not None:
-            page.delete(session)
-        super().delete(session)
-
 
 class WIPModule(JSONFile):
     __tablename__ = "wip-modules"
     not_found_text = "Module not found"
     directory: str = "../files/tfs/wip-modules/"
+    public_type: Type[Identifiable] = Module
 
     # Essentials:
     type = Column(EnumType(ModuleType), nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
@@ -155,8 +158,3 @@ class WIPModule(JSONFile):
                 "theme": self.theme, "category": self.category, "difficulty": self.difficulty,
                 "description": self.description, "status": self.status.to_string(),
                 "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
-
-    def delete(self, session: Session):
-        if (module := Module.find_by_id(session, self.id)) is not None:
-            module.delete(session)
-        super().delete(session)
