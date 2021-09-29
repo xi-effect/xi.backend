@@ -49,9 +49,7 @@ class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter()
     @lister(20)
     def post(self, session, file_type: Type[JSONFile], author: Author, start: int, finish: int):
-        if WIPPage not in file_type.mro() and WIPModule not in file_type.mro():
-            return {"a": f"File type '{file_type}' is not supported"}, 400
-        return [x.get_metadata() for x in file_type.find_by_owner(session, author, start, finish - start)]
+        return [x.get_metadata(session) for x in file_type.find_by_owner(session, author, start, finish - start)]
 
 
 class FileCreator(Resource):  # [POST] /wip/<file_type>/

@@ -6,7 +6,7 @@ from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_acc
 from flask_restful import Api
 from werkzeug.exceptions import HTTPException
 
-from authorship import (Author, AuthorInitializer, OwnedPagesLister)
+from authorship import (Author, AuthorInitializer)
 from componets import with_session
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
@@ -145,7 +145,7 @@ api.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 
 # Adding module resources:
 api.add_resource(FilterGetter, "/filters/")
-api.add_resource(ModuleLister, "/modules/", "/courses/")
+api.add_resource(ModuleLister, "/modules/")
 api.add_resource(HiddenModuleLister, "/modules/hidden/")
 api.add_resource(ModulePreferences, "/modules/<int:module_id>/preference/")
 api.add_resource(ModuleReporter, "/modules/<int:module_id>/report/")
@@ -180,9 +180,6 @@ api.add_resource(ModulePublisher, "/wip/modules/<int:module_id>/publication/")
 api.add_resource(ImageAdder, "/wip/images/")
 api.add_resource(ImageProcessor, "/wip/images/<int:image_id>/")
 api.add_resource(ImageViewer, "/images/<image_id>/")
-
-# Adding author studio resource(s):
-api.add_resource(OwnedPagesLister, "/pages/owned/")
 
 # Adding (old) publishing resources:
 # api.add_resource(Submitter, "/cat/submissions/")
