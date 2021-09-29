@@ -7,13 +7,13 @@ from sqlalchemy.sql.sqltypes import Integer, String, Text
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable, Type
+from componets import Identifiable, TypeEnum
 from componets.checkers import first_or_none
 from education import PageKind, Page, ModuleType, Module
 from main import Base, Session
 
 
-class WIPStatus(Type):
+class WIPStatus(TypeEnum):
     WIP = 0
     PUBLISHED = 1
 

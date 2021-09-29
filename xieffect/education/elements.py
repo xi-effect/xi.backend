@@ -12,13 +12,13 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Pi
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable, Type
+from componets import Identifiable, TypeEnum
 from componets.checkers import first_or_none, register_as_searchable
 from education.sessions import ModuleFilterSession as MFS
 from main import Base, Session  # , whooshee
 
 
-class PageKind(Type):
+class PageKind(TypeEnum):
     THEORY = 0
     PRACTICE = 1
     TASK = 2
@@ -113,7 +113,7 @@ class Page(Base, Identifiable):
                 "views": self.views, "updated": self.updated.isoformat()}
 
 
-class PointType(Type):
+class PointType(TypeEnum):
     THEORY = 0
     PRACTICE = 1
 
@@ -164,14 +164,14 @@ class Point(Base):
         session.delete(self)
 
 
-class ModuleType(Type):
+class ModuleType(TypeEnum):
     STANDARD = 0
     PRACTICE_BLOCK = 1
     THEORY_BLOCK = 2
     TEST = 3
 
 
-class SortType(str, Type):
+class SortType(str, TypeEnum):
     POPULARITY = "popularity"
     VISIT_DATE = "visit-date"
     CREATION_DATE = "creation-date"
