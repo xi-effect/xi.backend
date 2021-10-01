@@ -137,7 +137,7 @@ class Point(Base):
     @classmethod
     def create_all(cls, session: Session, module_id: int, json_data: List[Dict[str, Union[str, int, list]]]):
         for i in range(len(json_data)):
-            cls.__create(session, module_id, i, PointType.from_string(json_data[i]["type"]), json_data[i]["data"])
+            cls.__create(session, module_id, i, PointType.from_string(json_data[i]["type"]), json_data[i]["pages"])
 
     @classmethod
     def find_by_ids(cls, session: Session, module_id: int, point_id: int):
@@ -270,7 +270,7 @@ class Module(Base, Identifiable):
     @classmethod
     def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
 
-        json_data["type"] = PageKind.from_string(json_data["type"])
+        json_data["type"] = ModuleType.from_string(json_data["type"])
         json_data["length"] = len(json_data["points"])
         entry: cls = cls(**{key: json_data[key] for key in ("id", "length", "type", "name", "description",
                                                             "theme", "category", "difficulty")})
