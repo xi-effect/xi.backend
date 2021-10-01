@@ -41,7 +41,7 @@ class Page(Base, Identifiable):
     author = relationship("Author")
     components = Column(JSON, nullable=False)
 
-    kind = Column(EnumType(PageKind), nullable=False)
+    kind = Column(EnumType(PageKind, by_name=True), nullable=False)
     name = Column(Text, nullable=False)
     theme = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
@@ -123,7 +123,7 @@ class Point(Base):
     module_id = Column(Integer, primary_key=True)
     point_id = Column(Integer, primary_key=True)
 
-    type = Column(EnumType(PointType), nullable=False)
+    type = Column(EnumType(PointType, by_name=True), nullable=False)
     data = Column(PickleType, nullable=False)  # do a relation!
 
     @classmethod
@@ -235,7 +235,7 @@ class Module(Base, Identifiable):
     # Essentials
     id = Column(Integer, primary_key=True)
     length = Column(Integer, nullable=False)  # the amount of schedule or map points
-    type = Column(EnumType(ModuleType), nullable=False)
+    type = Column(EnumType(ModuleType, by_name=True), nullable=False)
 
     # Searchable:
     name = Column(Text, nullable=False)

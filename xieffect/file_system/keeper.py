@@ -27,7 +27,7 @@ class CATFile(Base, Identifiable):
     owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
                    default=0)  # test-only
 
-    status = Column(EnumType(WIPStatus), nullable=False)
+    status = Column(EnumType(WIPStatus, by_name=True), nullable=False)
 
     @classmethod
     def _create(cls, owner: Author):
@@ -110,20 +110,20 @@ class WIPPage(JSONFile):
     directory: str = "../files/tfs/wip-pages/"
     public_type: Type[Identifiable] = Page
 
-    kind = Column(EnumType(PageKind), nullable=False)
+    kind = Column(EnumType(PageKind, by_name=True), nullable=False)
 
     name = Column(String(100), nullable=False)
     theme = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
 
     def update_metadata(self, json_data: dict) -> None:
-        self.kind = ModuleType.from_string(json_data["kind"])
+        self.kind = PageKind.from_string(json_data["kind"])
         self.name = json_data["name"]
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
     def get_metadata(self, session: Session) -> dict:
-        return {"id": self.id, "kind": self.kind, "name": self.name, "theme": self.theme,
+        return {"id": self.id, "kind": self.kind.to_string(), "name": self.name, "theme": self.theme,
                 "description": self.description, "status": self.status.to_string(),
                 "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
 
@@ -135,7 +135,7 @@ class WIPModule(JSONFile):
     public_type: Type[Identifiable] = Module
 
     # Essentials:
-    type = Column(EnumType(ModuleType), nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
+    type = Column(EnumType(ModuleType, by_name=True), nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
     name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
 
