@@ -87,5 +87,7 @@ class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publicatio
     @file_getter(type_only=False)
     def post(self, session, file: JSONFile, author: Author):
         with open(file.get_link()) as f:
-            result: bool = (Page if type(file) == WIPPage else Module).create(session, load(f), author) is None
+            content: dict = load(f)
+            content["id"] = file.id  # just making sure
+            result: bool = (Page if type(file) == WIPPage else Module).create(session, content, author) is None
         return {"a": "File already exists" if result else "Success"}
