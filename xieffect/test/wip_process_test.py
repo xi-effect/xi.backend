@@ -38,8 +38,16 @@ class WIPRecycler:
 
     def is_same_on_server(self, url, sample) -> bool:
         result: dict = check_status_code(self.client.get(url))
-        result.pop("id", None)
+        result = {key: result[key] for key in sample.keys()}
         return result == sample
+
+    def assert_same_on_server(self, url, sample, revert: bool = False):
+        result: dict = check_status_code(self.client.get(url))
+        result = {key: result[key] for key in sample.keys()}
+        if revert:
+            assert result != sample
+        else:
+            assert result == sample
 
     def creating(self):
         result: dict = check_status_code(self.client.post(self.wip_url, json=self.file_content1))
@@ -49,18 +57,18 @@ class WIPRecycler:
         self.wip_id_url = self.wip_url + f"{self.file_id}/"
 
         assert self.is_in_list(self.wip_url + "index/") is not None
-        assert self.is_same_on_server(self.wip_id_url, self.file_content1)
+        self.assert_same_on_server(self.wip_id_url, self.file_content1)
 
     def editing(self):
         assert self.file_id is not None
         assert self.file_content1 != self.file_content2
-        assert self.is_same_on_server(self.wip_id_url, self.file_content1)
+        self.assert_same_on_server(self.wip_id_url, self.file_content1)
 
         result: dict = check_status_code(self.client.put(self.wip_id_url, json=self.file_content2))
         assert result == {"a": True}
 
-        assert self.is_same_on_server(self.wip_id_url, self.file_content2)
-        assert not self.is_same_on_server(self.wip_id_url, self.file_content1)
+        self.assert_same_on_server(self.wip_id_url, self.file_content2)
+        self.assert_same_on_server(self.wip_id_url, self.file_content1, revert=True)
 
     def publishing(self):
         assert self.file_id is not None
