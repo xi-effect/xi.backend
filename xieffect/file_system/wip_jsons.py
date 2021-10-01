@@ -47,7 +47,7 @@ def file_getter(type_only: bool = True, use_session: bool = True, use_author: bo
 
 class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter()
-    @lister(20)
+    @lister(50)
     def post(self, session, file_type: Type[JSONFile], author: Author, start: int, finish: int):
         return [x.get_metadata(session) for x in file_type.find_by_owner(session, author, start, finish - start)]
 
@@ -84,7 +84,7 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
 
 
 class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
-    @file_getter(type_only=False)
+    @file_getter(type_only=False, use_session=True, use_author=True)
     def post(self, session, file: JSONFile, author: Author):
         with open(file.get_link(), "rb") as f:
             content: dict = load(f)
