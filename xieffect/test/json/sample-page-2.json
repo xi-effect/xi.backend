@@ -1,9 +1,9 @@
 {
-  "id": null,
   "name": "",
   "description": "Крутое описание страницы",
   "public": true,
   "reusable": true,
+  "blueprint": false,
   "theme": "Картофель Ферма Огород ",
   "kind": "practice",
   "components": [
