@@ -59,7 +59,7 @@ class Page(Base, Identifiable):
         json_data["kind"] = PageKind.from_string(json_data["kind"])
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
-        entry.components = json_dumps(json_data["components"])
+        entry.components = json_dumps(json_data["components"], ensure_ascii=False)
         entry.updated = datetime.utcnow()
         entry.author = author
         session.add(entry)

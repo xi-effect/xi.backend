@@ -86,7 +86,7 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
 class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
     @file_getter(type_only=False)
     def post(self, session, file: JSONFile, author: Author):
-        with open(file.get_link()) as f:
+        with open(file.get_link(), "rb") as f:
             content: dict = load(f)
             content["id"] = file.id  # just making sure
             result: bool = (Page if type(file) == WIPPage else Module).create(session, content, author) is None
