@@ -299,10 +299,11 @@ class Module(Base, Identifiable):
         return cls._create(session, json_data, author)
 
     @classmethod
-    def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]], sort: SortType,
-                        user_id: int, offset: int, limit: int) -> list:
+    def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]], search: str,
+                        sort: SortType, user_id: int, offset: int, limit: int) -> list:
 
-        stmt: Select = select(cls).join(MFS, MFS.module_id == cls.id).filter_by(user_id=user_id, hidden=False)
+        stmt: Select = select(cls) if search is None or len(search) < 3 else cls.search_stmt(search)
+        stmt = stmt.join(MFS, MFS.module_id == cls.id).filter_by(user_id=user_id, hidden=False)
 
         if filters is not None:
             if "global" in filters.keys():

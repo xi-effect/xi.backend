@@ -24,11 +24,12 @@ report_parser.add_argument("message", required=False)
 class ModuleLister(Resource):  # [POST] /modules/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("filters", type=dict, required=False)
+    parser.add_argument("search", required=False)
     parser.add_argument("sort", required=False)
 
     @jwt_authorizer(User)
     @lister(12, argument_parser(parser, "counter", "filters", "sort"))
-    def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], sort: str):
+    def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
         except ValueError:
@@ -40,15 +41,15 @@ class ModuleLister(Resource):  # [POST] /modules/
             user.set_filter_bind()
         user_id: int = user.id
 
-        result: List[Module] = Module.get_module_list(session, filters, sort, user_id, start, finish - start)
+        result: List[Module] = Module.get_module_list(session, filters, search, sort, user_id, start, finish - start)
 
-        if sort == SortType.POPULARITY:
-            result.sort(key=lambda x: x.popularity, reverse=True)
-        elif sort == SortType.VISIT_DATE:
-            result.sort(key=lambda x: (ModuleFilterSession.find_visit_date(session, user_id, x.id),
-                                       x.popularity), reverse=True)
-        elif sort == SortType.CREATION_DATE:
-            result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
+        # if sort == SortType.POPULARITY:
+        #     result.sort(key=lambda x: x.popularity, reverse=True)
+        # elif sort == SortType.VISIT_DATE:
+        #     result.sort(key=lambda x: (ModuleFilterSession.find_visit_date(session, user_id, x.id),
+        #                                x.popularity), reverse=True)
+        # elif sort == SortType.CREATION_DATE:
+        #     result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
 
         return [x.to_json(session) for x in result]
 
