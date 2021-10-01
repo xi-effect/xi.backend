@@ -39,7 +39,7 @@ def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator
         amount = page_size
         while amount == page_size:
             request_json["counter"] = counter
-            response_json: dict = check_status_code(client.post(link, json=request_json))
+            response_json: dict = check_status_code(client.post(link, json=request_json), status_code)
 
             assert isinstance(response_json, list)
             for content in response_json:
