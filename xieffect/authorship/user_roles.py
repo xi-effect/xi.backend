@@ -1,57 +1,61 @@
+from sqlalchemy import Column, select
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean
+
 from componets import UserRole
-from main import db
+from componets.checkers import first_or_none
+from main import Base, Session
 
 
-class Author(db.Model, UserRole):
+class Author(Base, UserRole):
     __tablename__ = "authors"
     not_found_text = "Author does not exist"
 
-    id = db.Column(db.Integer, primary_key=True)
-    pseudonym = db.Column(db.String(100), nullable=False)
-    banned = db.Column(db.Boolean, nullable=False, default=False)
-    last_image_id = db.Column(db.Integer, nullable=False, default=0)
+    id = Column(Integer, primary_key=True)
+    pseudonym = Column(String(100), nullable=False)
+    banned = Column(Boolean, nullable=False, default=False)
+    last_image_id = Column(Integer, nullable=False, default=0)
 
-    modules = db.relationship("Module", backref="authors")
+    modules = relationship("Module", backref="authors")
 
     @classmethod
-    def create(cls, user):  # User class
+    def create(cls, session: Session, user):  # User class
         new_entry = cls(id=user.id, pseudonym=user.username)
-        db.session.add(new_entry)
-        db.session.commit()
+        session.add(new_entry)
         return new_entry
 
     @classmethod
-    def find_by_id(cls, entry_id: int, include_banned: bool = False):
-        return cls.query.filter_by(id=entry_id).first() if include_banned else \
-            cls.query.filter_by(banned=False, id=entry_id).first()
+    def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False):
+        return first_or_none(session.execute(
+            select(cls).where(cls.id == entry_id) if include_banned
+            else select(cls).where(cls.id == entry_id, cls.banned == False)
+        ))
 
     @classmethod
-    def find_or_create(cls, user):  # User class
-        if (author := cls.find_by_id(user.id, True)) is None:
-            author = cls.create(user)
+    def find_or_create(cls, session: Session, user):  # User class
+        if (author := cls.find_by_id(session, user.id, True)) is None:
+            author = cls.create(session, user)
         return author
 
-    def get_next_image_id(self):
+    def get_next_image_id(self):  # auto-commit
         self.last_image_id += 1
-        db.session.commit()
         return self.last_image_id
 
 
-class Moderator(db.Model, UserRole):
+class Moderator(Base, UserRole):
     __tablename__ = "moderators"
     not_found_text = "Permission denied"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
 
     @classmethod
-    def find_by_id(cls, entry_id: int):
-        return cls.query.filter_by(id=entry_id).first()
+    def find_by_id(cls, session: Session, entry_id: int):
+        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
-    def create(cls, user_id: int) -> bool:
-        if cls.find_by_id(user_id):
+    def create(cls, session: Session, user_id: int) -> bool:
+        if cls.find_by_id(session, user_id):
             return False
         new_entry = cls(id=user_id)
-        db.session.add(new_entry)
-        db.session.commit()
+        session.add(new_entry)
         return True

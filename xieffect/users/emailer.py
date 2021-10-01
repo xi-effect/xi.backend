@@ -1,19 +1,20 @@
+from base64 import urlsafe_b64encode
+from email.mime.text import MIMEText
 from os import path, urandom
 from random import randint
 from typing import Optional, Dict, List
-from base64 import urlsafe_b64encode
-from email.mime.text import MIMEText
 
 from google.auth.transport.requests import Request
-from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from itsdangerous import URLSafeSerializer as USS, BadSignature as BS
 
+from main import app
 from webhooks import send_discord_message, WebhookURLs
 
-from main import app
+# DEPRECATED / SUSPENDED
+
 
 email_folder: str = "files/emails/"
 scopes: List[str] = ["https://mail.google.com/"]
@@ -32,7 +33,7 @@ class EmailSender:
             if self.credentials and self.credentials.expired and self.credentials.refresh_token:
                 self.credentials.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file("files/credentials.json", scopes)
+                flow = InstalledAppFlow.from_client_secrets_file("../files/credentials.json", scopes)
                 self.credentials = flow.run_local_server(port=0)
             with open("files/token.json", "w") as token:
                 send_discord_message(WebhookURLs.NOTIF, "Google API token has been re-written!")
@@ -67,11 +68,13 @@ themes: Dict[str, str] = {
 salt: str = app.config["SECURITY_PASSWORD_SALT"]
 
 sender: Optional[EmailSender] = None
-try:
-    sender = EmailSender()
-except RefreshError as error:
-    pass
-    # send_discord_message(WebhookURLs.ERRORS, "Google API token refresh failed again!")
+
+
+# try:
+#     sender = EmailSender()
+# except RefreshError as error:
+#     pass
+#     # send_discord_message(WebhookURLs.ERRORS, "Google API token refresh failed again!")
 
 
 def send_email(receiver: str, code: str, filename: str, theme: str):

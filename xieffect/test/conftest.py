@@ -1,11 +1,11 @@
 from typing import Tuple, Iterator, Callable
 
 from flask.testing import FlaskClient
-from flask.wrappers import Response
 from pytest import fixture
+from werkzeug.test import TestResponse
 
+from api import app
 from xieffect.test.components import check_status_code
-from api import app, db
 
 
 class RedirectedFlaskClient(FlaskClient):
@@ -20,7 +20,7 @@ app.test_client_class = RedirectedFlaskClient
 @fixture
 def client():
     with app.test_client() as client:
-        response: Response = client.post("/auth", follow_redirects=True, data={
+        response: TestResponse = client.post("/auth", follow_redirects=True, data={
             "email": "test@test.test",
             "password": "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
                         "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"})
@@ -32,12 +32,6 @@ def client():
         yield client
 
 
-@fixture
-def database():  # ???
-    with app.app_context():
-        yield db
-
-
 @fixture()
 def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator[dict]]:
     def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
@@ -45,7 +39,7 @@ def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator
         amount = page_size
         while amount == page_size:
             request_json["counter"] = counter
-            response_json: dict = check_status_code(client.post(link, json=request_json))
+            response_json: dict = check_status_code(client.post(link, json=request_json), status_code)
 
             assert isinstance(response_json, list)
             for content in response_json:

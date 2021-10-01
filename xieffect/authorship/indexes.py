@@ -5,7 +5,7 @@ from componets import jwt_authorizer, lister
 
 
 class OwnedModuleLister(Resource):  # [POST] /cat/modules/owned/
-    @jwt_authorizer(Author, "author")
+    @jwt_authorizer(Author, "author", use_session=False)
     @lister(12)
     def post(self, author: Author, start: int, finish: int):
         return author.get_owned_modules(start, finish)

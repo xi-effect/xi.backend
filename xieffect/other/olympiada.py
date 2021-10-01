@@ -6,9 +6,9 @@ from flask import request, send_file
 from flask_restful import Resource
 
 from componets import jwt_authorizer
-from webhooks import send_discord_message, WebhookURLs
-from users import User
 from other.test_keeper import TestPoint, UserSubmissions, ResultCodes
+from users import User
+from webhooks import send_discord_message, WebhookURLs
 
 
 def check_one(inp: str, out: str) -> ResultCodes:
@@ -36,8 +36,8 @@ def check_one(inp: str, out: str) -> ResultCodes:
 
 class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
     @jwt_authorizer(User)
-    def post(self, task_name: str, user: User):
-        if not TestPoint.find_by_task(task_name):
+    def post(self, session, task_name: str, user: User):
+        if not TestPoint.find_by_task(session, task_name):
             return {"a": "Task doesn't exist"}
 
         with open("files/oct/submission.py", "wb") as f:
@@ -48,7 +48,7 @@ class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
         code: int = 0
         failed: int = -1
 
-        for test in TestPoint.find_by_task(task_name):
+        for test in TestPoint.find_by_task(session, task_name):
             code = check_one(test.input, test.output).value
             if code == ResultCodes.Accepted.value:
                 points += test.points
@@ -60,16 +60,16 @@ class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
                                                  f"Task: {task_name}, code: {ResultCodes(code).name}, "
                                                  f"points: {points}, failed after: {failed}")
 
-        return UserSubmissions.create_next(user.id, task_name, code, points, failed).to_json()
+        return UserSubmissions.create_next(session, user.id, task_name, code, points, failed).to_json()
 
 
 class GetTaskSummary(Resource):  # [GET] /tasks/<task_name>/attempts/all/
     @jwt_authorizer(User)
-    def get(self, task_name: str, user: User):
-        if not TestPoint.find_by_task(task_name):
+    def get(self, session, task_name: str, user: User):
+        if not TestPoint.find_by_task(session, task_name):
             return {"a": "Task doesn't exist"}
 
-        result: list = UserSubmissions.find_group(user.id, task_name)
+        result: list = UserSubmissions.find_group(session, user.id, task_name)
         if not result:
             return []
         else:

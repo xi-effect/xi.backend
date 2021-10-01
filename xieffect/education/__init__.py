@@ -6,4 +6,4 @@ from .interaction import ModuleOpener, StandardProgresser, PracticeGenerator, Th
 from .interaction import TheoryContentsGetter, TestContentsGetter, TestNavigator, TestResultCollector, TestReplySaver
 from .interaction import PageGetter
 
-from .elements import Page, Module
+from .elements import Page, Module, ModuleType, PageKind

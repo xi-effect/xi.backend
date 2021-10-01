@@ -7,5 +7,5 @@ from .user_roles import Author
 
 class AuthorInitializer(Resource):  # [GET] /authors/permit/
     @jwt_authorizer(User)
-    def get(self, user: User):
-        return {"a": not Author.find_or_create(user).banned}
+    def get(self, session, user: User):
+        return {"a": not Author.find_or_create(session, user).banned}

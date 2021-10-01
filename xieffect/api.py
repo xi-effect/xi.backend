@@ -6,13 +6,14 @@ from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_acc
 from flask_restful import Api
 from werkzeug.exceptions import HTTPException
 
-from authorship import (Author, AuthorInitializer, OwnedPagesLister)
+from authorship import (Author, AuthorInitializer)
+from componets import with_session
 from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
                        PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
                        TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
-from file_system import (FileLister, FileProcessor, FileCreator, ImageAdder, ImageProcessor, ImageViewer, PagePublisher)
-from main import app, db
+from file_system import (FileLister, FileProcessor, FileCreator, ImageAdder, ImageProcessor, ImageViewer, FilePublisher)
+from main import app, Session
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
 from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
@@ -27,10 +28,10 @@ jwt: JWTManager = JWTManager(app)
 
 # Some request and error handlers:
 @app.before_first_request
-def create_tables():
-    db.create_all()
-    # from main import whooshee
-    # whooshee.reindex()
+@with_session
+def create_tables(session: Session):
+    from main import db_meta
+    db_meta.create_all()
 
     from education.elements import Module, Page
     from file_system.keeper import WIPPage
@@ -38,25 +39,26 @@ def create_tables():
     from users import User
 
     test_user: User
-    if (test_user := User.find_by_email_address("test@test.test")) is None:
+    if (test_user := User.find_by_email_address(session, "test@test.test")) is None:
         send_discord_message(WebhookURLs.STATUS, "Database has been reset")
-        test_user = User.create("test@test.test", "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
+        test_user = User.create(session, "test@test.test", "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
                                 "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
-    test_author = Author.find_or_create(test_user)
+    test_author = Author.find_or_create(session, test_user)
 
-    Module.create_test_bundle()
-    Page.create_test_bundle(test_author)
-    WIPPage.create_test_bundle(test_author)
-    TestPoint.test()
+    Module.create_test_bundle(session, test_author)
+    Page.create_test_bundle(session, test_author)
+    WIPPage.create_test_bundle(session, test_author)
+    TestPoint.test(session)
 
-    if User.find_by_email_address("admin@admin.admin") is None:
-        User.create("admin@admin.admin", "admin", "2b003f13e43546e8b416a9ff3c40bc4ba694d" +
+    if User.find_by_email_address(session, "admin@admin.admin") is None:
+        User.create(session, "admin@admin.admin", "admin", "2b003f13e43546e8b416a9ff3c40bc4ba694d" +
                     "0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe")
 
 
 @jwt.token_in_blocklist_loader
-def check_if_token_revoked(_, jwt_payload):
-    return TokenBlockList.find_by_jti(jwt_payload["jti"]) is not None
+@with_session
+def check_if_token_revoked(_, jwt_payload, session):
+    return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
 
 
 @app.after_request
@@ -78,7 +80,7 @@ def on_http_exception(error: HTTPException):
 @app.errorhandler(Exception)
 def on_any_exception(error: Exception):
     error_text: str = f"Requested URL: {request.path}\nError: {repr(error)}\n" + \
-                      "".join(format_tb(error.__traceback__)[6:])
+                      "".join(format_tb(error.__traceback__))
 
     response = send_file_discord_message(WebhookURLs.ERRORS, error_text, "error_message.txt", "Server error appeared!")
     if response.status_code < 200 or response.status_code > 299:
@@ -142,7 +144,7 @@ api.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 
 # Adding module resources:
 api.add_resource(FilterGetter, "/filters/")
-api.add_resource(ModuleLister, "/modules/", "/courses/")
+api.add_resource(ModuleLister, "/modules/")
 api.add_resource(HiddenModuleLister, "/modules/hidden/")
 api.add_resource(ModulePreferences, "/modules/<int:module_id>/preference/")
 api.add_resource(ModuleReporter, "/modules/<int:module_id>/report/")
@@ -170,15 +172,12 @@ api.add_resource(AuthorInitializer, "/authors/permit/")
 api.add_resource(FileLister, "/wip/<file_type>/index/")
 api.add_resource(FileCreator, "/wip/<file_type>/")
 api.add_resource(FileProcessor, "/wip/<file_type>/<int:file_id>/")
-api.add_resource(PagePublisher, "/wip/pages/<int:page_id>/publication/")
+api.add_resource(FilePublisher, "/wip/<file_type>/<int:file_id>/publication/")
 
 # Adding image resources:
 api.add_resource(ImageAdder, "/wip/images/")
 api.add_resource(ImageProcessor, "/wip/images/<int:image_id>/")
 api.add_resource(ImageViewer, "/images/<image_id>/")
-
-# Adding author studio resource(s):
-api.add_resource(OwnedPagesLister, "/pages/owned/")
 
 # Adding (old) publishing resources:
 # api.add_resource(Submitter, "/cat/submissions/")

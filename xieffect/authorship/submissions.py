@@ -9,6 +9,9 @@ from componets import Identifiable
 from main import db
 
 
+# DEPRECATED / SUSPENDED
+
+
 # from typing import Set
 
 

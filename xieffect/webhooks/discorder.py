@@ -1,7 +1,7 @@
 from enum import Enum
 
-from requests import post, Response
 from discord_webhook import DiscordWebhook
+from requests import post, Response
 
 """
 https://discordapp.com/developers/docs/resources/webhook#execute-webhook

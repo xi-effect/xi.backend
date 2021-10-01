@@ -1,9 +1,9 @@
 {
-  "id": null,
   "name": "",
   "description": "",
   "public": false,
   "reusable": false,
+  "blueprint": false,
   "theme": "",
   "kind": "task",
   "components": [
