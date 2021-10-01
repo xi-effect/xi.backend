@@ -145,13 +145,13 @@ class WIPModule(JSONFile):
     difficulty = Column(String(20), nullable=False)
 
     def update_metadata(self, json_data: dict) -> None:
-        self.type = ModuleType.from_string(json_data.pop("type"))
-        self.name = json_data.pop("name")
-        self.description = json_data.pop("description")
+        self.type = ModuleType.from_string(json_data["type"])
+        self.name = json_data["name"]
+        self.description = json_data["description"]
 
-        self.theme = json_data.pop("theme")
-        self.category = json_data.pop("category")
-        self.difficulty = json_data.pop("difficulty")
+        self.theme = json_data["theme"]
+        self.category = json_data["category"]
+        self.difficulty = json_data["difficulty"]
 
     def get_metadata(self, session: Session) -> Dict[str, Union[int, str]]:
         return {"id": self.id, "name": self.name, "type": self.type.to_string(),
