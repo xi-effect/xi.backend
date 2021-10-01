@@ -30,8 +30,8 @@ class WIPRecycler:
         with open(f"test/json/{file_name2}.json", "rb") as f:
             self.file_content2 = load(f)
 
-    def is_in_list(self, url) -> Optional[dict]:
-        for file in self.list_tester(url, {}, PER_REQUEST):
+    def is_in_list(self, url, per_request: int = None) -> Optional[dict]:
+        for file in self.list_tester(url, {}, PER_REQUEST if per_request is None else per_request):
             if file["id"] == self.file_id:
                 return file
         return None
@@ -81,8 +81,11 @@ class WIPRecycler:
         assert content is not None
 
         check_status_code(self.client.post(self.wip_id_url + "publication/"))
-        assert self.is_in_list(f"/{self.file_type}/") is not None
-        assert self.is_same_on_server(f"/{self.file_type}/{self.file_id}/", content)
+        if self.file_type == "modules":
+            assert self.is_in_list(f"/{self.file_type}/", per_request=12) is not None
+        else:
+            assert self.is_in_list(f"/{self.file_type}/") is not None
+        self.assert_same_on_server(f"/{self.file_type}/{self.file_id}/", content)
 
     def deleting(self, published: bool):
         assert check_status_code(self.client.delete(self.wip_id_url)) == {"a": True}
@@ -101,11 +104,11 @@ class WIPRecycler:
         self.deleting(True)
 
 
-@mark(200)
+@mark.order(200)
 def test_pages(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     WIPRecycler(client, "pages", "sample-page", "sample-page-2", list_tester).wip_full_cycle()
 
 
-@mark(220)
+@mark.order(220)
 def test_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     WIPRecycler(client, "modules", "sample-module", "sample-module-2", list_tester).wip_full_cycle()
