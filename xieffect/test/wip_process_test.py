@@ -13,7 +13,7 @@ PER_REQUEST = 50
 
 
 class WIPRecycler:
-    def __init__(self, client: FlaskClient, file_type: str, file_path: str,
+    def __init__(self, client: FlaskClient, file_type: str, file_path1: str, file_path2: str,
                  list_tester: Callable[[str, dict, int], Iterator[dict]]):
         self.client: FlaskClient = client
         self.list_tester: Callable[[str, dict, int], Iterator[dict]] = list_tester
@@ -23,8 +23,11 @@ class WIPRecycler:
 
         self.file_id: Optional[Union[int, str]] = None
 
-        with open(file_path, "rb") as f:
-            self.file_content = load(f)
+        with open(file_path1, "rb") as f:
+            self.file_content1 = load(f)  # content shouldn't have any id info!
+
+        with open(file_path2, "rb") as f:
+            self.file_content2 = load(f)
 
     def is_in_list(self, url) -> bool:
         return any(file["id"] == self.file_id for file in self.list_tester(url, {}, PER_REQUEST))
@@ -50,9 +53,9 @@ class WIPRecycler:
 
 @mark(200)
 def test_pages(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    WIPRecycler(client, "pages", "lululululul", list_tester).wip_full_cycle()
+    WIPRecycler(client, "pages", "lululululul", "lululululul", list_tester).wip_full_cycle()
 
 
 @mark(220)
 def test_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    WIPRecycler(client, "modules", "lululululul", list_tester).wip_full_cycle()
+    WIPRecycler(client, "modules", "lululululul", "lululululul", list_tester).wip_full_cycle()
