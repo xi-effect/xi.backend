@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Union
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
-from sqlalchemy.sql.elements import and_
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType, Text
 from sqlalchemy_enum34 import EnumType
 
@@ -325,7 +324,7 @@ class Module(Base, Identifiable):
         if user_id is not None:
             result.update(MFS.find_json(session, user_id, self.id))
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
-                       "type": self.type.to_string().replace("_", "-")})
+                       "type": self.type.to_string()})
         return result
 
     def delete(self, session: Session):
