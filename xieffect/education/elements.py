@@ -255,6 +255,8 @@ class Module(Base, Identifiable):
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
     author = relationship("Author")  # redo all modules for it
 
+    image_id = Column(Integer, nullable=True)
+
     @classmethod
     def __create(cls, session: Session, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
                  category: str, difficulty: str, popularity: int, author: Author, creation_date: datetime = None):
@@ -269,13 +271,16 @@ class Module(Base, Identifiable):
 
     @classmethod
     def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
-
         json_data["type"] = ModuleType.from_string(json_data["type"])
         json_data["length"] = len(json_data["points"])
+
         entry: cls = cls(**{key: json_data[key] for key in ("id", "length", "type", "name", "description",
                                                             "theme", "category", "difficulty")})
+        if "image-id" in json_data.keys():
+            entry.image_id = json_data["image_id"]
         entry.creation_date = datetime.utcnow()
         entry.author = author
+
         session.add(entry)
         session.flush()
 
@@ -317,7 +322,7 @@ class Module(Base, Identifiable):
         return Point.find_by_ids(session, self.id, randint(1, self.length))
 
     def to_short_json(self) -> dict:
-        return {"id": self.id, "name": self.name, "author": self.author}
+        return {"id": self.id, "name": self.name, "author-id": self.author_id, "image-id": self.image_id}
 
     def to_json(self, session: Session, user_id: int = None) -> dict:
         result: dict = self.to_short_json()
