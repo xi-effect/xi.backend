@@ -17,7 +17,7 @@ def redirected_to_pages(func):  # session related parts have to be redone!!!!!!!
 
 class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
     @jwt_authorizer(User)
-    @database_searcher(Module, "module_id", "module")
+    @database_searcher(Module, "module_id", "module", use_session=True)
     def get(self, session, user: User, module: Module):
         ModuleFilterSession.find_or_create(session, user.id, module.id).visit_now()
 

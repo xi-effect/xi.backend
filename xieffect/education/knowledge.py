@@ -28,7 +28,7 @@ class ModuleLister(Resource):  # [POST] /modules/
     parser.add_argument("sort", required=False)
 
     @jwt_authorizer(User)
-    @lister(12, argument_parser(parser, "counter", "filters", "sort"))
+    @lister(12, argument_parser(parser, "counter", "filters", "sort", "search"))
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
@@ -70,7 +70,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     parser.add_argument("a", required=True)
 
     @jwt_authorizer(User)
-    @database_searcher(Module, "module_id", check_only=True)
+    @database_searcher(Module, "module_id", check_only=True, use_session=True)
     @argument_parser(parser, ("a", "operation"))
     def post(self, session, module_id: int, user: User, operation: str):
         module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
