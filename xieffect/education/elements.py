@@ -4,7 +4,7 @@ from pickle import dumps, loads
 from random import randint
 from typing import Dict, List, Optional, Union
 
-from sqlalchemy import Column, ForeignKey, select
+from sqlalchemy import Column, ForeignKey, select, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType, Text
@@ -303,12 +303,18 @@ class Module(Base, Identifiable):
                         sort: SortType, user_id: int, offset: int, limit: int) -> list:
 
         stmt: Select = select(cls) if search is None or len(search) < 3 else cls.search_stmt(search)
-        stmt = stmt.join(MFS, MFS.module_id == cls.id).filter_by(user_id=user_id, hidden=False)
 
+        global_filter: Optional[str] = None
         if filters is not None:
             if "global" in filters.keys():
-                stmt = stmt.filter_by(**{filters.pop("global"): True})
+                global_filter = filters.pop("global")
             stmt = stmt.filter_by(**filters)
+
+        stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == False))
+        # if session exists for another user, would it pick it up???
+
+        if global_filter is not None:
+            stmt = stmt.filter_by(**{global_filter: True})
 
         if sort == SortType.POPULARITY:  # reverse?
             stmt = stmt.order_by(cls.views)
