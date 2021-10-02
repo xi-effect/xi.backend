@@ -83,11 +83,11 @@ class WIPRecycler:
         check_status_code(self.client.post(self.wip_id_url + "publication/"))
         if self.file_type == "modules":
             assert self.is_in_list(f"/{self.file_type}/", per_request=12) is not None
+            content.pop("points")
         else:
             assert self.is_in_list(f"/{self.file_type}/") is not None
-        content.pop("points")
         # self.assert_same_on_server(f"/{self.file_type}/{self.file_id}/", content)
-        # Doesn't work because of the test-bundle!
+        # Doesn't work because of the modules' test-bundle!
 
     def deleting(self, published: bool):
         assert check_status_code(self.client.delete(self.wip_id_url)) == {"a": True}
