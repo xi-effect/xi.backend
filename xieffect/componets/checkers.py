@@ -90,13 +90,13 @@ def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "use
 
 
 def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
-                      result_filed_name: Optional[str] = None, check_only: bool = False):
+                      result_filed_name: Optional[str] = None, check_only: bool = False, use_session: bool = False):
     def searcher_wrapper(function):
         error_response: tuple = {"a": identifiable.not_found_text}, 404
 
         @with_session
         def searcher_inner(*args, **kwargs):
-            session = kwargs.pop("session")
+            session = kwargs["session"] if use_session else kwargs.pop("session")
             target_id: int = kwargs.pop(input_field_name)
             result: identifiable = identifiable.find_by_id(session, target_id)
             if result is None:
@@ -107,7 +107,8 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
                 return function(*args, **kwargs)
 
         @with_session
-        def checker_inner(session, *args, **kwargs):
+        def checker_inner(*args, **kwargs):
+            session = kwargs["session"] if use_session else kwargs.pop("session")
             if identifiable.find_by_id(session, kwargs[input_field_name]) is None:
                 return error_response
             else:

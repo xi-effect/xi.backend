@@ -2,7 +2,7 @@ from flask import redirect
 from flask_restful import Resource
 
 from componets import database_searcher, jwt_authorizer, with_session, with_auto_session
-from education.elements import Module, ModuleType, Point, Page
+from education.elements import Module, Point, Page
 from education.sessions import ModuleFilterSession, StandardModuleSession as SMS, TestModuleSession as TMS
 from users import User
 
@@ -17,19 +17,21 @@ def redirected_to_pages(func):  # session related parts have to be redone!!!!!!!
 
 class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
     @jwt_authorizer(User)
-    @database_searcher(Module, "module_id", "module")
+    @database_searcher(Module, "module_id", "module", use_session=True)
     def get(self, session, user: User, module: Module):
         ModuleFilterSession.find_or_create(session, user.id, module.id).visit_now()
 
-        module_type: ModuleType = ModuleType(module.type)
-        if module_type == ModuleType.STANDARD:
-            return {"session": SMS.find_or_create(session, user.id, module.id).id}
-        elif module_type == ModuleType.PRACTICE_BLOCK:
-            return redirect(f"/modules/{module.id}/next/")
-        elif module_type == ModuleType.THEORY_BLOCK:
-            return redirect(f"/modules/{module.id}/contents/")
-        elif module_type == ModuleType.TEST:
-            return {"test": TMS.find_or_create(session, user.id, module.id).id}
+        # module_type: ModuleType = ModuleType(module.type)
+        # if module_type == ModuleType.STANDARD:
+        #     return {"session": SMS.find_or_create(session, user.id, module.id).id}
+        # elif module_type == ModuleType.PRACTICE_BLOCK:
+        #     return redirect(f"/modules/{module.id}/next/")
+        # elif module_type == ModuleType.THEORY_BLOCK:
+        #     return redirect(f"/modules/{module.id}/contents/")
+        # elif module_type == ModuleType.TEST:
+        #     return {"test": TMS.find_or_create(session, user.id, module.id).id}
+
+        return module.to_json(session, user.id)
 
 
 class StandardProgresser(Resource):  # POST /sessions/<int:session_id>/
