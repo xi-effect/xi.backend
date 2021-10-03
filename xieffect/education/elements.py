@@ -108,7 +108,7 @@ class Page(Base, Identifiable):
                 "theme": self.theme, "kind": self.kind.to_string(),
                 "components": json_loads(self.components),  # redo?
                 "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public,
-                "author_id": self.author.id, "author_name": self.author.pseudonym,
+                "author-id": self.author.id, "author-name": self.author.pseudonym,
                 "views": self.views, "updated": self.updated.isoformat()}
 
 
@@ -277,7 +277,7 @@ class Module(Base, Identifiable):
         entry: cls = cls(**{key: json_data[key] for key in ("id", "length", "type", "name", "description",
                                                             "theme", "category", "difficulty")})
         if "image-id" in json_data.keys():
-            entry.image_id = json_data["image_id"]
+            entry.image_id = json_data["image-id"]
         entry.creation_date = datetime.utcnow()
         entry.author = author
 
@@ -330,7 +330,7 @@ class Module(Base, Identifiable):
         if sort == SortType.POPULARITY:  # reverse?
             stmt = stmt.order_by(cls.views)
         elif sort == SortType.CREATION_DATE:
-            stmt = stmt.order_by(MFS.last_changed)
+            stmt = stmt.order_by(cls.creation_date)
         elif sort == SortType.VISIT_DATE:
             stmt = stmt.order_by(MFS.last_visited)
 

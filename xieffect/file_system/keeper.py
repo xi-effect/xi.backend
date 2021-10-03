@@ -136,7 +136,7 @@ class WIPModule(JSONFile):
     public_type: Type[Identifiable] = Module
 
     # Essentials:
-    type = Column(EnumType(ModuleType, by_name=True), nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
+    type = Column(EnumType(ModuleType, by_name=True), nullable=False)
     name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
 
