@@ -103,6 +103,7 @@ class ModuleFilterSession(Base):
             self.pinned = False
         if not (self.is_valuable()):
             session.delete(self)
+            session.flush()
         else:
             self.note_change()
 

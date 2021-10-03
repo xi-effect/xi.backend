@@ -56,7 +56,7 @@ class ModuleLister(Resource):  # [POST] /modules/
 
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @jwt_authorizer(User)
-    @lister(-12)
+    @lister(-12)  # does it work with offset & limit?
     def post(self, session, user: User, start: int, finish: int) -> list:
         result = list()
         for module_id in ModuleFilterSession.get_hidden_ids_by_user(session, user.id, start, finish - start):
