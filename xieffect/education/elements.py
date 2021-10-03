@@ -342,7 +342,9 @@ class Module(Base, Identifiable):
     @classmethod
     def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int):
         stmt: Select = select(cls).join(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == True))
-        stmt.order_by(MFS.last_changed)
+        stmt = stmt.order_by(MFS.last_changed.desc())
+        # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
+        #         for mfs in session.execute(select(MFS)).scalars().all() if mfs.hidden], sep="\n")
         # print(stmt)
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
