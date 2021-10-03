@@ -113,6 +113,36 @@ def test_simple_module_filtering(list_tester: Callable[[str, dict, int], Iterato
 #     pass
 
 
+def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], module_id: int, reverse: bool):
+    message = f"Module #{module_id}, marked as " + "shown" if reverse else "hidden" + " was "
+
+    found: bool = False
+    for hidden_module in list_tester("/modules/hidden", {}, MODULES_PER_REQUEST):
+        assert "id" in hidden_module.keys()
+        if hidden_module["id"] == module_id:
+            found = True
+            break
+    assert found != reverse, message + "" if reverse else "not " + "found in the list of hidden modules"
+
+    found: bool = False
+    for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
+        assert "id" in module.keys()
+        if module["id"] == module_id:
+            found = True
+            break
+    assert found == reverse, message + "not " if reverse else "" + "found in normal modules"
+
+
+@mark.order(425)
+def test_hiding_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    module_id: int = get_some_module_id(list_tester)
+    assert check_status_code(client.post(f"/modules/{module_id}/preference/", json={"a": "hide"})) == {"a": True}
+    assert_hidden(list_tester, module_id, False)
+
+    assert check_status_code(client.post(f"/modules/{module_id}/preference/", json={"a": "show"})) == {"a": True}
+    assert_hidden(list_tester, module_id, True)
+
+
 @mark.order(430)
 def test_module_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/modules", {"search": "ЕГЭ"}, MODULES_PER_REQUEST))) > 0
