@@ -73,8 +73,9 @@ class JSONFile(CATFile):
 
     @classmethod
     def create_from_json(cls, session: Session, owner: Author, json_data: dict):
-        entry: cls = cls._create(owner)
-        entry.update_json(session, json_data)
+        if "id" not in json_data.keys() or (entry := cls.find_by_id(session, json_data["id"])) is None:
+            entry: cls = cls._create(owner)
+            entry.update_json(session, json_data)
         return entry
 
     def update_json(self, session: Session, json_data: dict) -> None:
