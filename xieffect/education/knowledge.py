@@ -43,26 +43,15 @@ class ModuleLister(Resource):  # [POST] /modules/
 
         result: List[Module] = Module.get_module_list(session, filters, search, sort, user_id, start, finish - start)
 
-        # if sort == SortType.POPULARITY:
-        #     result.sort(key=lambda x: x.popularity, reverse=True)
-        # elif sort == SortType.VISIT_DATE:
-        #     result.sort(key=lambda x: (ModuleFilterSession.find_visit_date(session, user_id, x.id),
-        #                                x.popularity), reverse=True)
-        # elif sort == SortType.CREATION_DATE:
-        #     result.sort(key=lambda x: (x.creation_date.timestamp(), x.popularity), reverse=True)
-
         return [x.to_json(session, user_id) for x in result]
 
 
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @jwt_authorizer(User)
-    @lister(-12)  # does it work with offset & limit?
+    @lister(12)
     def post(self, session, user: User, start: int, finish: int) -> list:
-        result = list()
-        for module_id in ModuleFilterSession.get_hidden_ids_by_user(session, user.id, start, finish - start):
-            module: Module = Module.find_by_id(session, module_id)
-            result.append(module.to_short_json())
-        return result
+        return [module.to_short_json()
+                for module in Module.get_hidden_module_list(session, user.id, start, finish - start)]
 
 
 class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference/

@@ -73,8 +73,9 @@ class JSONFile(CATFile):
 
     @classmethod
     def create_from_json(cls, session: Session, owner: Author, json_data: dict):
-        entry: cls = cls._create(owner)
-        entry.update_json(session, json_data)
+        if "id" not in json_data.keys() or (entry := cls.find_by_id(session, json_data["id"])) is None:
+            entry: cls = cls._create(owner)
+            entry.update_json(session, json_data)
         return entry
 
     def update_json(self, session: Session, json_data: dict) -> None:
@@ -135,7 +136,7 @@ class WIPModule(JSONFile):
     public_type: Type[Identifiable] = Module
 
     # Essentials:
-    type = Column(EnumType(ModuleType, by_name=True), nullable=False)  # 0 - standard; 1 - practice; 2 - theory; 3 - test
+    type = Column(EnumType(ModuleType, by_name=True), nullable=False)
     name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
 
