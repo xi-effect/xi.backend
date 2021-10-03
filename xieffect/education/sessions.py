@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime
@@ -72,11 +72,14 @@ class ModuleFilterSession(Base):
     def is_valuable(self) -> bool:
         return self.hidden or self.pinned or self.starred or self.started
 
-    def to_json(self) -> Dict[str, bool]:
-        return {
+    def to_json(self) -> Dict[str, Union[str, bool]]:
+        result: Dict[str, Union[str, bool]] = {
             "hidden": self.hidden, "pinned": self.pinned,
             "starred": self.starred, "started": self.started
         }
+        if self.started:
+            result["visited"] = self.last_visited.isoformat()
+        return result
 
     def get_visit_date(self) -> float:
         return self.last_visited.timestamp() if self.last_visited is not None else -1

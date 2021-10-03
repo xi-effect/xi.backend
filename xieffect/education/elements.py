@@ -357,7 +357,8 @@ class Module(Base, Identifiable):
         if user_id is not None:
             result.update(MFS.find_json(session, user_id, self.id))
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
-                       "type": self.type.to_string(), "description": self.description})
+                       "type": self.type.to_string(), "description": self.description,
+                       "views": self.views, "created": self.creation_date.isoformat()})
         return result
 
     def delete(self, session: Session):
