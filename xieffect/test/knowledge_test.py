@@ -50,6 +50,16 @@ def test_module_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/modules", {}, MODULES_PER_REQUEST))) > 0
 
 
+def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
+                       check: Callable[[dict], bool]) -> Optional[int]:
+    module_id: Optional[int] = None
+    for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
+        assert "id" in module.keys()
+        if check(module):
+            module_id = module["id"]
+            break
+    return module_id
+
 def lister_with_filters(list_tester: Callable[[str, dict, int], Iterator[dict]], filters: dict):
     return list_tester("/modules", {"filters": filters}, MODULES_PER_REQUEST)
 
@@ -61,14 +71,10 @@ def test_global_module_filtering(client: FlaskClient, list_tester: Callable[[str
         "starred": "star",
     }
 
-    module_id: Optional[int] = None
-    for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
-        assert "id" in module.keys()
-        if not (module["pinned"] or module["starred"]):
-            module_id = module["id"]
+    module_id: int = get_some_module_id(list_tester, lambda module: not (module["pinned"] or module["starred"]))
     assert module_id is not None, "No not-pinned and not-starred modules found"
-
     url: str = f"/modules/{module_id}/"
+
     for filter_name, operation_name in filter_to_operation.items():
         assert check_status_code(client.post(url + "preference/", json={"a": operation_name})) == {"a": True}
 
