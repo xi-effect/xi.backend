@@ -64,6 +64,29 @@ def lister_with_filters(list_tester: Callable[[str, dict, int], Iterator[dict]],
     return list_tester("/modules", {"filters": filters}, MODULES_PER_REQUEST)
 
 
+def assert_with_global_filter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]],
+                              operation_name: str, filter_name: str, url: str, module_id: int, reverse: bool):
+    if reverse:
+        operation_name = "un" + operation_name
+        iterator: Iterator[dict] = list_tester("/modules", {}, MODULES_PER_REQUEST)
+    else:
+        iterator: Iterator[dict] = lister_with_filters(list_tester, {"global": filter_name})
+
+    assert check_status_code(client.post(url + "preference/", json={"a": operation_name})) == {"a": True}
+
+    result: dict = check_status_code(client.get(url))
+    assert result[filter_name] != reverse
+
+    success: bool = False
+    for module in iterator:
+        assert filter_name in module.keys()
+        assert module[filter_name] != reverse
+        if module["id"] == module_id:
+            success = True
+    assert success, f"Module #{module_id}, marked as " + ("un" if reverse else "") + f"{filter_name}, was " \
+                    + ("" if reverse else "not ") + f"found in the list of {filter_name} modules"
+
+
 @mark.order(421)
 def test_global_module_filtering(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     filter_to_operation = {
@@ -76,18 +99,8 @@ def test_global_module_filtering(client: FlaskClient, list_tester: Callable[[str
     url: str = f"/modules/{module_id}/"
 
     for filter_name, operation_name in filter_to_operation.items():
-        assert check_status_code(client.post(url + "preference/", json={"a": operation_name})) == {"a": True}
-
-        result: dict = check_status_code(client.get(url))
-        assert result[filter_name] == True
-
-        success: bool = False
-        for module in lister_with_filters(list_tester, {"global": filter_name}):
-            assert filter_name in module.keys()
-            assert module[filter_name]
-            if module["id"] == module_id:
-                success = True
-        assert success, f"Module #{module_id}, marked as {filter_name}, was not found in the list of such modules"
+        assert_with_global_filter(client, list_tester, operation_name, filter_name, url, module_id, False)
+        assert_with_global_filter(client, list_tester, operation_name, filter_name, url, module_id, True)
 
 
 @mark.order(422)
