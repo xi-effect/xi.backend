@@ -330,9 +330,9 @@ class Module(Base, Identifiable):
         if sort == SortType.POPULARITY:  # reverse?
             stmt = stmt.order_by(cls.views)
         elif sort == SortType.CREATION_DATE:
-            stmt = stmt.order_by(cls.creation_date)
+            stmt = stmt.order_by(cls.creation_date.desc())
         elif sort == SortType.VISIT_DATE:
-            stmt = stmt.order_by(MFS.last_visited)
+            stmt = stmt.order_by(MFS.last_visited.desc())
 
         # print(len(session.execute(stmt.offset(offset).limit(limit)).scalars().all()))
         # print(stmt)
