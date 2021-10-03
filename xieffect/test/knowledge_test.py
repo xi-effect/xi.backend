@@ -129,7 +129,7 @@ def test_simple_module_filtering(list_tester: Callable[[str, dict, int], Iterato
 def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
                                 /, revert: bool = False) -> Callable[[dict, dict], None]:
     def assert_non_descending_order_inner(module1: dict, module2: dict):
-        print(module2.get(dict_key, default), module1.get(dict_key, default))
+        # print(module2.get(dict_key, default), module1.get(dict_key, default))
         if revert:
             module1, module2 = module2, module1
         if default is None:
@@ -199,4 +199,25 @@ def test_hiding_modules(client: FlaskClient, list_tester: Callable[[str, dict, i
 
 @mark.order(431)
 def test_hidden_module_ordering(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    pass
+    module_id1: int = get_some_module_id(list_tester)
+    module_id2: int = get_some_module_id(list_tester, lambda module: module["id"] != module_id1)
+    assert module_id1 is not None and module_id2 is not None, "Couldn't find two modules"
+    assert module_id1 != module_id2, "Function get_some_module_id() returned same module_id twice"
+
+    set_module_hidden(client, module_id1, True)
+    set_module_hidden(client, module_id2, True)
+
+    met_module_id2: bool = False
+    for module in list_tester("/modules/hidden/", {}, MODULES_PER_REQUEST):
+        assert "id" in module.keys()
+        if module["id"] == module_id2:
+            met_module_id2 = True
+        if module["id"] == module_id1:
+            assert met_module_id2, f"Met module_id1 ({module_id1}) before module_id2 ({module_id2})"
+            break
+    else:
+        assert met_module_id2, f"Met neither module_id1 ({module_id1}), nor module_id2 ({module_id2})"
+        assert False, f"Didn't meet module_id1 ({module_id1})"
+
+    set_module_hidden(client, module_id1, False)
+    set_module_hidden(client, module_id2, False)
