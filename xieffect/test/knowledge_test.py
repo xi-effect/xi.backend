@@ -127,7 +127,7 @@ def test_simple_module_filtering(list_tester: Callable[[str, dict, int], Iterato
 
 
 def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], module_id: int, reverse: bool):
-    message = f"Module #{module_id}, marked as " + "shown" if reverse else "hidden" + " was "
+    message = f"Module #{module_id}, marked as " + ("shown" if reverse else "hidden") + ", was "
 
     found: bool = False
     for hidden_module in list_tester("/modules/hidden", {}, MODULES_PER_REQUEST):
@@ -135,7 +135,7 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
         if hidden_module["id"] == module_id:
             found = True
             break
-    assert found != reverse, message + "" if reverse else "not " + "found in the list of hidden modules"
+    assert found != reverse, message + ("" if reverse else "not ") + "found in the list of hidden modules"
 
     found: bool = False
     for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
@@ -143,7 +143,7 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
         if module["id"] == module_id:
             found = True
             break
-    assert found == reverse, message + "not " if reverse else "" + "found in normal modules"
+    assert found == reverse, message + ("not " if reverse else "") + "found in normal modules"
 
 
 @mark.order(425)
