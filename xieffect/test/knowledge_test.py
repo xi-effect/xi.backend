@@ -161,11 +161,17 @@ def test_module_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/modules", {"search": "ЕГЭ"}, MODULES_PER_REQUEST))) > 0
 
 
-def assert_non_descending_order(dict_key: str) -> Callable[[dict, dict], None]:
+def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
+                                /, revert: bool = False) -> Callable[[dict, dict], None]:
     def assert_non_descending_order_inner(module1: dict, module2: dict):
-        assert dict_key in module1.keys() and dict_key in module2.keys()
-        # print(module2[dict_key], module1[dict_key])
-        assert module2[dict_key] >= module1[dict_key]
+        print(module2.get(dict_key, default), module1.get(dict_key, default))
+        if revert:
+            module1, module2 = module2, module1
+        if default is None:
+            assert dict_key in module1.keys() and dict_key in module2.keys()
+            assert module2[dict_key] >= module1[dict_key]
+        else:
+            assert module2.get(dict_key, default) >= module1.get(dict_key, default)
 
     return assert_non_descending_order_inner
 
@@ -174,8 +180,8 @@ def assert_non_descending_order(dict_key: str) -> Callable[[dict, dict], None]:
 def test_module_sorting(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     sort_types: Dict[str, Callable[[dict, dict], None]] = {
         "popularity": assert_non_descending_order("views"),
-        "creation-date": assert_non_descending_order("created"),
-        # "visit-date": ,
+        "creation-date": assert_non_descending_order("created", revert=True),
+        "visit-date": assert_non_descending_order("visited", "", revert=True),
     }
 
     for sort_name, assert_in_order in sort_types.items():
