@@ -182,13 +182,18 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
     assert found == reverse, message + ("not " if reverse else "") + "found in normal modules"
 
 
+def set_module_hidden(client: FlaskClient, module_id: int, hidden: bool):
+    assert check_status_code(client.post(f"/modules/{module_id}/preference/",
+                             json={"a": "hide" if hidden else "show"})) == {"a": True}
+
+
 @mark.order(430)
 def test_hiding_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     module_id: int = get_some_module_id(list_tester)
-    assert check_status_code(client.post(f"/modules/{module_id}/preference/", json={"a": "hide"})) == {"a": True}
+    set_module_hidden(client, module_id, True)
     assert_hidden(list_tester, module_id, False)
 
-    assert check_status_code(client.post(f"/modules/{module_id}/preference/", json={"a": "show"})) == {"a": True}
+    set_module_hidden(client, module_id, False)
     assert_hidden(list_tester, module_id, True)
 
 
