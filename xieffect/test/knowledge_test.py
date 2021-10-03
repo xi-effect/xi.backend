@@ -50,11 +50,11 @@ def test_module_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
 
 
 def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
-                       check: Callable[[dict], bool]) -> Optional[int]:
+                       check: Optional[Callable[[dict], bool]] = None) -> Optional[int]:
     module_id: Optional[int] = None
     for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
         assert "id" in module.keys()
-        if check(module):
+        if check is None or check(module):
             module_id = module["id"]
             break
     return module_id
