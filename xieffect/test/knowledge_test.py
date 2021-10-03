@@ -6,7 +6,6 @@ from pytest import mark
 
 from xieffect.test.components import check_status_code
 
-
 PAGES_PER_REQUEST: int = 50
 MODULES_PER_REQUEST: int = 12
 
@@ -50,8 +49,42 @@ def test_module_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/modules", {}, MODULES_PER_REQUEST))) > 0
 
 
+def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
+                       check: Optional[Callable[[dict], bool]] = None) -> Optional[int]:
+    module_id: Optional[int] = None
+    for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
+        assert "id" in module.keys()
+        if check is None or check(module):
+            module_id = module["id"]
+            break
+    return module_id
+
+
 def lister_with_filters(list_tester: Callable[[str, dict, int], Iterator[dict]], filters: dict):
     return list_tester("/modules", {"filters": filters}, MODULES_PER_REQUEST)
+
+
+def assert_with_global_filter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]],
+                              operation_name: str, filter_name: str, url: str, module_id: int, reverse: bool):
+    if reverse:
+        operation_name = "un" + operation_name
+        iterator: Iterator[dict] = list_tester("/modules", {}, MODULES_PER_REQUEST)
+    else:
+        iterator: Iterator[dict] = lister_with_filters(list_tester, {"global": filter_name})
+
+    assert check_status_code(client.post(url + "preference/", json={"a": operation_name})) == {"a": True}
+
+    result: dict = check_status_code(client.get(url))
+    assert result[filter_name] != reverse
+
+    success: bool = False
+    for module in iterator:
+        assert filter_name in module.keys()
+        assert module[filter_name] != reverse
+        if module["id"] == module_id:
+            success = True
+    assert success, f"Module #{module_id}, marked as " + ("un" if reverse else "") + f"{filter_name}, was " \
+                    + ("" if reverse else "not ") + f"found in the list of {filter_name} modules"
 
 
 @mark.order(421)
@@ -61,27 +94,13 @@ def test_global_module_filtering(client: FlaskClient, list_tester: Callable[[str
         "starred": "star",
     }
 
-    module_id: Optional[int] = None
-    for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
-        assert "id" in module.keys()
-        if not (module["pinned"] or module["starred"]):
-            module_id = module["id"]
+    module_id: int = get_some_module_id(list_tester, lambda module: not (module["pinned"] or module["starred"]))
     assert module_id is not None, "No not-pinned and not-starred modules found"
-
     url: str = f"/modules/{module_id}/"
+
     for filter_name, operation_name in filter_to_operation.items():
-        assert check_status_code(client.post(url + "preference/", json={"a": operation_name})) == {"a": True}
-
-        result: dict = check_status_code(client.get(url))
-        assert result[filter_name] == True
-
-        success: bool = False
-        for module in lister_with_filters(list_tester, {"global": filter_name}):
-            assert filter_name in module.keys()
-            assert module[filter_name]
-            if module["id"] == module_id:
-                success = True
-        assert success, f"Module #{module_id}, marked as {filter_name}, is not found in the list of such modules"
+        assert_with_global_filter(client, list_tester, operation_name, filter_name, url, module_id, False)
+        assert_with_global_filter(client, list_tester, operation_name, filter_name, url, module_id, True)
 
 
 @mark.order(422)
@@ -105,6 +124,36 @@ def test_simple_module_filtering(list_tester: Callable[[str, dict, int], Iterato
 # @mark.order(423)
 # def test_complex_module_filtering(list_tester: Callable[[str, dict, int], Iterator[dict]]):
 #     pass
+
+
+def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], module_id: int, reverse: bool):
+    message = f"Module #{module_id}, marked as " + ("shown" if reverse else "hidden") + ", was "
+
+    found: bool = False
+    for hidden_module in list_tester("/modules/hidden", {}, MODULES_PER_REQUEST):
+        assert "id" in hidden_module.keys()
+        if hidden_module["id"] == module_id:
+            found = True
+            break
+    assert found != reverse, message + ("" if reverse else "not ") + "found in the list of hidden modules"
+
+    found: bool = False
+    for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
+        assert "id" in module.keys()
+        if module["id"] == module_id:
+            found = True
+            break
+    assert found == reverse, message + ("not " if reverse else "") + "found in normal modules"
+
+
+@mark.order(425)
+def test_hiding_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    module_id: int = get_some_module_id(list_tester)
+    assert check_status_code(client.post(f"/modules/{module_id}/preference/", json={"a": "hide"})) == {"a": True}
+    assert_hidden(list_tester, module_id, False)
+
+    assert check_status_code(client.post(f"/modules/{module_id}/preference/", json={"a": "show"})) == {"a": True}
+    assert_hidden(list_tester, module_id, True)
 
 
 @mark.order(430)

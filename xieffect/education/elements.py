@@ -4,7 +4,7 @@ from pickle import dumps, loads
 from random import randint
 from typing import Dict, List, Optional, Union
 
-from sqlalchemy import Column, ForeignKey, select, and_
+from sqlalchemy import Column, ForeignKey, select, and_, or_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType, Text
@@ -302,6 +302,9 @@ class Module(Base, Identifiable):
     def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]], search: str,
                         sort: SortType, user_id: int, offset: int, limit: int) -> list:
 
+        # print(filters, search, sort)
+        # print([(mfs.module_id, mfs.user_id, mfs.to_json()) for mfs in session.execute(select(MFS)).scalars().all()])
+
         stmt: Select = select(cls) if search is None or len(search) < 3 else cls.search_stmt(search)
 
         global_filter: Optional[str] = None
@@ -310,8 +313,16 @@ class Module(Base, Identifiable):
                 global_filter = filters.pop("global")
             stmt = stmt.filter_by(**filters)
 
-        stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == False))
+        # print(len(session.execute(stmt).scalars().all()))
+
+        stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id))
         # if session exists for another user, would it pick it up???
+
+        # print(len(session.execute(stmt).scalars().all()))
+
+        stmt = stmt.filter(or_(MFS.hidden != True, MFS.hidden.is_(None)))
+
+        # print(len(session.execute(stmt).scalars().all()))
 
         if global_filter is not None:
             stmt = stmt.filter_by(**{global_filter: True})
@@ -322,6 +333,9 @@ class Module(Base, Identifiable):
             stmt = stmt.order_by(MFS.last_changed)
         elif sort == SortType.VISIT_DATE:
             stmt = stmt.order_by(MFS.last_visited)
+
+        # print(len(session.execute(stmt.offset(offset).limit(limit)).scalars().all()))
+        # print(stmt)
 
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 

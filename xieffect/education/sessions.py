@@ -60,7 +60,7 @@ class ModuleFilterSession(Base):
     @classmethod
     def get_hidden_ids_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> List[int]:
         return session.execute(
-            select(cls.module_id).filter_by(user_id=user_id).offset(offset).limit(limit)
+            select(cls.module_id).filter_by(user_id=user_id, hidden=True).offset(offset).limit(limit)
         ).scalars().all()
 
     @classmethod
@@ -103,6 +103,7 @@ class ModuleFilterSession(Base):
             self.pinned = False
         if not (self.is_valuable()):
             session.delete(self)
+            session.flush()
         else:
             self.note_change()
 
