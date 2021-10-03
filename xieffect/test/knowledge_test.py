@@ -126,6 +126,42 @@ def test_simple_module_filtering(list_tester: Callable[[str, dict, int], Iterato
 #     pass
 
 
+def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
+                                /, revert: bool = False) -> Callable[[dict, dict], None]:
+    def assert_non_descending_order_inner(module1: dict, module2: dict):
+        print(module2.get(dict_key, default), module1.get(dict_key, default))
+        if revert:
+            module1, module2 = module2, module1
+        if default is None:
+            assert dict_key in module1.keys() and dict_key in module2.keys()
+            assert module2[dict_key] >= module1[dict_key]
+        else:
+            assert module2.get(dict_key, default) >= module1.get(dict_key, default)
+
+    return assert_non_descending_order_inner
+
+
+@mark.order(425)
+def test_module_sorting(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    sort_types: Dict[str, Callable[[dict, dict], None]] = {
+        "popularity": assert_non_descending_order("views"),
+        "creation-date": assert_non_descending_order("created", revert=True),
+        "visit-date": assert_non_descending_order("visited", "", revert=True),
+    }
+
+    for sort_name, assert_in_order in sort_types.items():
+        prev_module: Optional[dict] = None
+        for module in list_tester("/modules/", {"sort": sort_name}, MODULES_PER_REQUEST):
+            if prev_module is not None:
+                assert_in_order(prev_module, module)
+            prev_module = module
+
+
+@mark.order(427)
+def test_module_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    assert len(list(list_tester("/modules", {"search": "ЕГЭ"}, MODULES_PER_REQUEST))) > 0
+
+
 def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], module_id: int, reverse: bool):
     message = f"Module #{module_id}, marked as " + ("shown" if reverse else "hidden") + ", was "
 
@@ -146,7 +182,7 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
     assert found == reverse, message + ("not " if reverse else "") + "found in normal modules"
 
 
-@mark.order(425)
+@mark.order(430)
 def test_hiding_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     module_id: int = get_some_module_id(list_tester)
     assert check_status_code(client.post(f"/modules/{module_id}/preference/", json={"a": "hide"})) == {"a": True}
@@ -156,37 +192,6 @@ def test_hiding_modules(client: FlaskClient, list_tester: Callable[[str, dict, i
     assert_hidden(list_tester, module_id, True)
 
 
-@mark.order(430)
-def test_module_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    assert len(list(list_tester("/modules", {"search": "ЕГЭ"}, MODULES_PER_REQUEST))) > 0
-
-
-def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
-                                /, revert: bool = False) -> Callable[[dict, dict], None]:
-    def assert_non_descending_order_inner(module1: dict, module2: dict):
-        print(module2.get(dict_key, default), module1.get(dict_key, default))
-        if revert:
-            module1, module2 = module2, module1
-        if default is None:
-            assert dict_key in module1.keys() and dict_key in module2.keys()
-            assert module2[dict_key] >= module1[dict_key]
-        else:
-            assert module2.get(dict_key, default) >= module1.get(dict_key, default)
-
-    return assert_non_descending_order_inner
-
-
-@mark.order(435)
-def test_module_sorting(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    sort_types: Dict[str, Callable[[dict, dict], None]] = {
-        "popularity": assert_non_descending_order("views"),
-        "creation-date": assert_non_descending_order("created", revert=True),
-        "visit-date": assert_non_descending_order("visited", "", revert=True),
-    }
-
-    for sort_name, assert_in_order in sort_types.items():
-        prev_module: Optional[dict] = None
-        for module in list_tester("/modules/", {"sort": sort_name}, MODULES_PER_REQUEST):
-            if prev_module is not None:
-                assert_in_order(prev_module, module)
-            prev_module = module
+@mark.order(431)
+def test_hidden_module_ordering(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    pass
