@@ -1,5 +1,5 @@
 from json import load
-from typing import Callable, Iterator, Optional
+from typing import Callable, Iterator, Optional, Dict
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -23,7 +23,7 @@ def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[dict]]
 @mark.order(406)
 def test_getting_pages(client: FlaskClient):
     page_json: dict = check_status_code(client.get("/pages/1"))
-    for key in ("author_id", "author_name", "views", "updated"):
+    for key in ("author-id", "author-name", "views", "updated"):
         page_json.pop(key)
 
     with open("../files/tfs/test/1.json", "rb") as f:
@@ -161,6 +161,25 @@ def test_module_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/modules", {"search": "ЕГЭ"}, MODULES_PER_REQUEST))) > 0
 
 
-# @mark.order(435)
-# def test_module_sorting(list_tester: Callable[[str, dict, int], Iterator[dict]]):
-#     pass
+def assert_non_descending_order(dict_key: str) -> Callable[[dict, dict], None]:
+    def assert_non_descending_order_inner(module1: dict, module2: dict):
+        assert dict_key in module1.keys() and dict_key in module2.keys()
+        assert module2["views"] >= module1["views"]
+
+    return assert_non_descending_order_inner
+
+
+@mark.order(435)
+def test_module_sorting(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    sort_types: Dict[str, Callable[[dict, dict], None]] = {
+        "popularity": assert_non_descending_order("views"),
+        # "visit-date": "",
+        # "creation-date": "",
+    }
+
+    for sort_name, assert_in_order in sort_types.items():
+        prev_module: Optional[dict] = None
+        for module in list_tester("/modules/", {"sort": sort_name}, MODULES_PER_REQUEST):
+            if prev_module is not None:
+                assert_in_order(prev_module, module)
+            prev_module = module
