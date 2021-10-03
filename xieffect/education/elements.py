@@ -320,7 +320,7 @@ class Module(Base, Identifiable):
 
         # print(len(session.execute(stmt).scalars().all()))
 
-        stmt = stmt.filter(or_(MFS.hidden != True, MFS.hidden == None))  # noqa  # This is show SQLAlchemy does things
+        stmt = stmt.filter(or_(MFS.hidden != True, MFS.hidden.is_(None)))
 
         # print(len(session.execute(stmt).scalars().all()))
 
