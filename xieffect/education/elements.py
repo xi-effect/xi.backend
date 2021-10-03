@@ -339,6 +339,13 @@ class Module(Base, Identifiable):
 
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
+    @classmethod
+    def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int):
+        stmt: Select = select(cls).join(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == True))
+        stmt.order_by(MFS.last_changed)
+        # print(stmt)
+        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
+
     def get_any_point(self, session: Session) -> Point:
         return Point.find_by_ids(session, self.id, randint(1, self.length))
 
