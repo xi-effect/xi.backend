@@ -6,7 +6,6 @@ from pytest import mark
 
 from xieffect.test.components import check_status_code
 
-
 PAGES_PER_REQUEST: int = 50
 MODULES_PER_REQUEST: int = 12
 
@@ -60,6 +59,7 @@ def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
             break
     return module_id
 
+
 def lister_with_filters(list_tester: Callable[[str, dict, int], Iterator[dict]], filters: dict):
     return list_tester("/modules", {"filters": filters}, MODULES_PER_REQUEST)
 
@@ -87,7 +87,7 @@ def test_global_module_filtering(client: FlaskClient, list_tester: Callable[[str
             assert module[filter_name]
             if module["id"] == module_id:
                 success = True
-        assert success, f"Module #{module_id}, marked as {filter_name}, is not found in the list of such modules"
+        assert success, f"Module #{module_id}, marked as {filter_name}, was not found in the list of such modules"
 
 
 @mark.order(422)
