@@ -1,6 +1,9 @@
-import sys
 from datetime import datetime, timedelta, timezone
+from json import load, dump
+from os.path import exists
+from sys import stderr
 from traceback import format_tb
+from typing import Dict
 
 from flask import Response, request
 from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
@@ -14,7 +17,7 @@ from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModuleP
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
                        TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
 from file_system import (FileLister, FileProcessor, FileCreator, ImageAdder, ImageProcessor, ImageViewer, FilePublisher)
-from main import app, Session
+from main import app, Session, versions
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
 from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
@@ -29,7 +32,7 @@ jwt: JWTManager = JWTManager(app)
 
 def log_stuff(level: str, message: str):
     if app.debug:
-        print(message, **({"file": sys.stderr} if level == "error" else {}))
+        print(message, **({"file": stderr} if level == "error" else {}))
     else:
         if level == "status":
             send_discord_message(WebhookURLs.STATUS, message)
@@ -44,6 +47,19 @@ def log_stuff(level: str, message: str):
 @app.before_first_request
 @with_session
 def create_tables(session: Session):
+    if exists("../files/versions-lock.json"):
+        versions_lock: Dict[str, str] = load(open("../files/versions-lock.json", encoding="utf-8"))
+    else:
+        versions_lock: Dict[str, str] = {}
+
+    if versions_lock != versions:
+        log_stuff("status", "\n".join([
+            f"{key:3} was updated to {versions[key]}"
+            for key in versions.keys()
+            if versions_lock.get(key, None) != versions[key]
+        ]).expandtabs())
+        dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
+
     from main import db_meta
     db_meta.create_all()
 

@@ -8,3 +8,4 @@ ngrok.exe
 /xieffect/app.db
 /xieffect/test/.pytest_cache
 /files/temp/*
+/files/versions-lock.json

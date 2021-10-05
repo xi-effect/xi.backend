@@ -12,7 +12,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from componets.add_whoosh import IndexService
 
 # Version control:
-versions: Dict[str, str] = load(open("../files/versions.json"))
+versions: Dict[str, str] = load(open("../files/versions.json", encoding="utf-8"))
 
 app: Flask = Flask(__name__)
 
