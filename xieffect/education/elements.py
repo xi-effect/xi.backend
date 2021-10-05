@@ -330,9 +330,9 @@ class Module(Base, Identifiable):
         if sort == SortType.POPULARITY:  # reverse?
             stmt = stmt.order_by(cls.views)
         elif sort == SortType.CREATION_DATE:
-            stmt = stmt.order_by(cls.creation_date)
+            stmt = stmt.order_by(cls.creation_date.desc())
         elif sort == SortType.VISIT_DATE:
-            stmt = stmt.order_by(MFS.last_visited)
+            stmt = stmt.order_by(MFS.last_visited.desc())
 
         # print(len(session.execute(stmt.offset(offset).limit(limit)).scalars().all()))
         # print(stmt)
@@ -342,7 +342,9 @@ class Module(Base, Identifiable):
     @classmethod
     def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int):
         stmt: Select = select(cls).join(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == True))
-        stmt.order_by(MFS.last_changed)
+        stmt = stmt.order_by(MFS.last_changed.desc())
+        # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
+        #         for mfs in session.execute(select(MFS)).scalars().all() if mfs.hidden], sep="\n")
         # print(stmt)
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
@@ -357,7 +359,8 @@ class Module(Base, Identifiable):
         if user_id is not None:
             result.update(MFS.find_json(session, user_id, self.id))
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
-                       "type": self.type.to_string(), "description": self.description})
+                       "type": self.type.to_string(), "description": self.description,
+                       "views": self.views, "created": self.creation_date.isoformat()})
         return result
 
     def delete(self, session: Session):

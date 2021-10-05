@@ -1,5 +1,9 @@
 from datetime import datetime, timedelta, timezone
+from json import load, dump
+from os.path import exists
+from sys import stderr
 from traceback import format_tb
+from typing import Dict
 
 from flask import Response, request
 from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
@@ -13,7 +17,7 @@ from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModuleP
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
                        TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
 from file_system import (FileLister, FileProcessor, FileCreator, ImageAdder, ImageProcessor, ImageViewer, FilePublisher)
-from main import app, Session
+from main import app, Session, versions
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
 from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
 from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
@@ -26,10 +30,36 @@ api: Api = Api(app)
 jwt: JWTManager = JWTManager(app)
 
 
+def log_stuff(level: str, message: str):
+    if app.debug:
+        print(message, **({"file": stderr} if level == "error" else {}))
+    else:
+        if level == "status":
+            send_discord_message(WebhookURLs.STATUS, message)
+        else:
+            response = send_file_discord_message(
+                WebhookURLs.ERRORS, message, "error_message.txt", "Server error appeared!")
+            if response.status_code < 200 or response.status_code > 299:
+                send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
+
+
 # Some request and error handlers:
 @app.before_first_request
 @with_session
 def create_tables(session: Session):
+    if exists("../files/versions-lock.json"):
+        versions_lock: Dict[str, str] = load(open("../files/versions-lock.json", encoding="utf-8"))
+    else:
+        versions_lock: Dict[str, str] = {}
+
+    if versions_lock != versions:
+        log_stuff("status", "\n".join([
+            f"{key:3} was updated to {versions[key]}"
+            for key in versions.keys()
+            if versions_lock.get(key, None) != versions[key]
+        ]).expandtabs())
+        dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
+
     from main import db_meta
     db_meta.create_all()
 
@@ -40,7 +70,7 @@ def create_tables(session: Session):
 
     test_user: User
     if (test_user := User.find_by_email_address(session, "test@test.test")) is None:
-        send_discord_message(WebhookURLs.STATUS, "Database has been reset")
+        log_stuff("status", "Database has been reset")
         test_user = User.create(session, "test@test.test", "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
                                 "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
     test_author = Author.find_or_create(session, test_user)
@@ -81,10 +111,7 @@ def on_http_exception(error: HTTPException):
 def on_any_exception(error: Exception):
     error_text: str = f"Requested URL: {request.path}\nError: {repr(error)}\n" + \
                       "".join(format_tb(error.__traceback__))
-
-    response = send_file_discord_message(WebhookURLs.ERRORS, error_text, "error_message.txt", "Server error appeared!")
-    if response.status_code < 200 or response.status_code > 299:
-        send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
+    log_stuff("error", error_text)
     return {"a": error_text}, 500
 
 
