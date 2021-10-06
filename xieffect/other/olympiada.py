@@ -3,7 +3,7 @@ from subprocess import call, TimeoutExpired
 from typing import IO
 
 from flask import request, send_file
-from flask_restful import Resource
+from flask_restx import Resource
 
 from componets import jwt_authorizer
 from other.test_keeper import TestPoint, UserSubmissions, ResultCodes

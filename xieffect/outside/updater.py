@@ -1,5 +1,5 @@
-from flask_restful import Resource
-from flask_restful.reqparse import RequestParser
+from flask_restx import Resource, Namespace
+from flask_restx.reqparse import RequestParser
 
 from componets import argument_parser
 from webhooks import send_discord_message, WebhookURLs, execute_in_console, reload_webapp

@@ -7,7 +7,7 @@ from typing import Dict
 
 from flask import Response, request
 from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
-from flask_restful import Api
+from flask_restx import Api
 from werkzeug.exceptions import HTTPException
 
 from authorship import (Author, AuthorInitializer)
@@ -26,7 +26,10 @@ from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, Pass
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
-api: Api = Api(app)
+api: Api = Api(app, doc="/doc/")
+
+ns = api.namespace("main", path="/")
+
 jwt: JWTManager = JWTManager(app)
 
 
@@ -136,96 +139,96 @@ def unauthorized_callback(callback):
 
 
 # Adding basic resources:
-api.add_resource(HelloWorld, "/")
-api.add_resource(ServerMessenger, "/status/")
+ns.add_resource(HelloWorld, "/")  # doesn't work somehow
+ns.add_resource(ServerMessenger, "/status/")
 
 # Adding email resources:
-api.add_resource(EmailSender, "/email/<email>/")
-api.add_resource(EmailConfirm, "/email-confirm/")
+ns.add_resource(EmailSender, "/email/<email>/")
+ns.add_resource(EmailConfirm, "/email-confirm/")
 
 # Adding sign up/in/out resources:
-api.add_resource(UserRegistration, "/reg/")
-api.add_resource(UserLogin, "/auth/")
-api.add_resource(UserLogout, "/logout/")
+ns.add_resource(UserRegistration, "/reg/")
+ns.add_resource(UserLogin, "/auth/")
+ns.add_resource(UserLogout, "/logout/")
 
 # Adding password resetting resources:
-api.add_resource(PasswordResetSender, "/password-reset/<email>/")
-api.add_resource(PasswordReseter, "/password-reset/confirm/")
+ns.add_resource(PasswordResetSender, "/password-reset/<email>/")
+ns.add_resource(PasswordReseter, "/password-reset/confirm/")
 
 # Adding settings resources:
-api.add_resource(Avatar, "/avatar/")
-api.add_resource(Settings, "/settings/")
-api.add_resource(MainSettings, "/settings/main/")
-api.add_resource(RoleSettings, "/settings/roles/")
-api.add_resource(EmailChanger, "/email-change/")
-api.add_resource(PasswordChanger, "/password-change/")
+ns.add_resource(Avatar, "/avatar/")
+ns.add_resource(Settings, "/settings/")
+ns.add_resource(MainSettings, "/settings/main/")
+ns.add_resource(RoleSettings, "/settings/roles/")
+ns.add_resource(EmailChanger, "/email-change/")
+ns.add_resource(PasswordChanger, "/password-change/")
 
 # Adding profile viewing resource(s):
-api.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
+ns.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 
 # Adding student's main_page resources:
-# api.add_resource(SchoolIntegration, "/school/")
-# api.add_resource(Activities, "/activities/")
-# api.add_resource(Tasks, "/tasks/<int:task_id>/")
-# api.add_resource(Notif, "/notif/<int:notification_id>/")
+# ns.add_resource(SchoolIntegration, "/school/")
+# ns.add_resource(Activities, "/activities/")
+# ns.add_resource(Tasks, "/tasks/<int:task_id>/")
+# ns.add_resource(Notif, "/notif/<int:notification_id>/")
 
 # Adding module resources:
-api.add_resource(FilterGetter, "/filters/")
-api.add_resource(ModuleLister, "/modules/")
-api.add_resource(HiddenModuleLister, "/modules/hidden/")
-api.add_resource(ModulePreferences, "/modules/<int:module_id>/preference/")
-api.add_resource(ModuleReporter, "/modules/<int:module_id>/report/")
+ns.add_resource(FilterGetter, "/filters/")
+ns.add_resource(ModuleLister, "/modules/")
+ns.add_resource(HiddenModuleLister, "/modules/hidden/")
+ns.add_resource(ModulePreferences, "/modules/<int:module_id>/preference/")
+ns.add_resource(ModuleReporter, "/modules/<int:module_id>/report/")
 
 # Adding page resources:
-api.add_resource(PageLister, "/pages/")
-api.add_resource(PageReporter, "/pages/<int:page_id>/report/")
-api.add_resource(PageGetter, "/pages/<int:page_id>/")
+ns.add_resource(PageLister, "/pages/")
+ns.add_resource(PageReporter, "/pages/<int:page_id>/report/")
+ns.add_resource(PageGetter, "/pages/<int:page_id>/")
 
 # Adding in-module resources:
-api.add_resource(ModuleOpener, "/modules/<int:module_id>/")
-api.add_resource(StandardProgresser, "/sessions/<int:session_id>/")
-api.add_resource(PracticeGenerator, "/modules/<int:module_id>/next/")
-api.add_resource(TheoryContentsGetter, "/modules/<int:module_id>/contents/")
-api.add_resource(TheoryNavigator, "/modules/<int:module_id>/points/<int:point_id>/")
-api.add_resource(TestContentsGetter, "/tests/<int:test_id>/contents/")
-api.add_resource(TestNavigator, "/tests/<int:test_id>/tasks/<int:task_id>/")
-api.add_resource(TestReplySaver, "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
-api.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
+ns.add_resource(ModuleOpener, "/modules/<int:module_id>/")
+ns.add_resource(StandardProgresser, "/sessions/<int:session_id>/")
+ns.add_resource(PracticeGenerator, "/modules/<int:module_id>/next/")
+ns.add_resource(TheoryContentsGetter, "/modules/<int:module_id>/contents/")
+ns.add_resource(TheoryNavigator, "/modules/<int:module_id>/points/<int:point_id>/")
+ns.add_resource(TestContentsGetter, "/tests/<int:test_id>/contents/")
+ns.add_resource(TestNavigator, "/tests/<int:test_id>/tasks/<int:task_id>/")
+ns.add_resource(TestReplySaver, "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
+ns.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
 
 # Adding role control:
-api.add_resource(AuthorInitializer, "/authors/permit/")
+ns.add_resource(AuthorInitializer, "/authors/permit/")
 
 # Adding work-in-progress resources:
-api.add_resource(FileLister, "/wip/<file_type>/index/")
-api.add_resource(FileCreator, "/wip/<file_type>/")
-api.add_resource(FileProcessor, "/wip/<file_type>/<int:file_id>/")
-api.add_resource(FilePublisher, "/wip/<file_type>/<int:file_id>/publication/")
+ns.add_resource(FileLister, "/wip/<file_type>/index/")
+ns.add_resource(FileCreator, "/wip/<file_type>/")
+ns.add_resource(FileProcessor, "/wip/<file_type>/<int:file_id>/")
+ns.add_resource(FilePublisher, "/wip/<file_type>/<int:file_id>/publication/")
 
 # Adding image resources:
-api.add_resource(ImageAdder, "/wip/images/")
-api.add_resource(ImageProcessor, "/wip/images/<int:image_id>/")
-api.add_resource(ImageViewer, "/images/<image_id>/")
+ns.add_resource(ImageAdder, "/wip/images/")
+ns.add_resource(ImageProcessor, "/wip/images/<int:image_id>/")
+ns.add_resource(ImageViewer, "/images/<image_id>/")
 
 # Adding (old) publishing resources:
-# api.add_resource(Submitter, "/cat/submissions/")
-# api.add_resource(SubmissionLister, "/cat/submissions/owned/")
-# api.add_resource(SubmissionIndexer, "/cat/submissions/index/")
-# api.add_resource(SubmissionReader, "/cat/submissions/<int:submission_id>/")
-# api.add_resource(ReviewIndex, "/cat/reviews/<int:submission_id>/")
-# api.add_resource(Publisher, "/cat/publications/")
+# ns.add_resource(Submitter, "/cat/submissions/")
+# ns.add_resource(SubmissionLister, "/cat/submissions/owned/")
+# ns.add_resource(SubmissionIndexer, "/cat/submissions/index/")
+# ns.add_resource(SubmissionReader, "/cat/submissions/<int:submission_id>/")
+# ns.add_resource(ReviewIndex, "/cat/reviews/<int:submission_id>/")
+# ns.add_resource(Publisher, "/cat/publications/")
 
 # Adding application resource(s):
-api.add_resource(Version, "/<app_name>/version/")
-# api.add_resource(GithubWebhook,         "/update/")
-api.add_resource(GithubDocumentsWebhook, "/update-docs/")
+ns.add_resource(Version, "/<app_name>/version/")
+# ns.add_resource(GithubWebhook,         "/update/")
+ns.add_resource(GithubDocumentsWebhook, "/update-docs/")
 
 # Adding side-thing resources:
-api.add_resource(UpdateRequest, "/oct/update/")
-api.add_resource(SubmitTask, "/tasks/<task_name>/attempts/new/")
-api.add_resource(GetTaskSummary, "/tasks/<task_name>/attempts/all/")
+ns.add_resource(UpdateRequest, "/oct/update/")
+ns.add_resource(SubmitTask, "/tasks/<task_name>/attempts/new/")
+ns.add_resource(GetTaskSummary, "/tasks/<task_name>/attempts/all/")
 
 # Test only:
-api.add_resource(ShowAll, "/test/")
+ns.add_resource(ShowAll, "/test/")
 
 if __name__ == "__main__":  # test only
     app.run(debug=True)

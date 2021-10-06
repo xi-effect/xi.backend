@@ -1,5 +1,5 @@
 from flask import send_from_directory
-from flask_restful import Resource
+from flask_restx import Resource
 
 from componets import jwt_authorizer
 from users import User

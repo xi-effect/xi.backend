@@ -1,4 +1,4 @@
-from flask_restful.reqparse import RequestParser
+from flask_restx.reqparse import RequestParser
 
 counter_parser: RequestParser = RequestParser()
 counter_parser.add_argument("counter", type=int, required=True)

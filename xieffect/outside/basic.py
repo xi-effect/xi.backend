@@ -1,5 +1,5 @@
-from flask_restful import Resource
-from flask_restful.reqparse import RequestParser
+from flask_restx import Resource, Namespace
+from flask_restx.reqparse import RequestParser
 
 from componets import jwt_authorizer, argument_parser
 from main import versions

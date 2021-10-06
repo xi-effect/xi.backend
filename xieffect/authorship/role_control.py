@@ -1,4 +1,4 @@
-from flask_restful import Resource
+from flask_restx import Resource  # , Namespace
 
 from componets import jwt_authorizer
 from users import User

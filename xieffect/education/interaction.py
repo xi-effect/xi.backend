@@ -1,5 +1,5 @@
 from flask import redirect
-from flask_restful import Resource
+from flask_restx import Resource
 
 from componets import database_searcher, jwt_authorizer, with_session, with_auto_session
 from education.elements import Module, Point, Page

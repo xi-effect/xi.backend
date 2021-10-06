@@ -1,6 +1,6 @@
 from flask import request, send_from_directory
-from flask_restful import Resource
-from flask_restful.reqparse import RequestParser
+from flask_restx import Resource
+from flask_restx.reqparse import RequestParser
 
 from authorship.submissions import CATSubmission
 from authorship.user_roles import Author, Moderator

@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 
-from flask_restful import Resource
-from flask_restful.reqparse import RequestParser
+from flask_restx import Resource
+from flask_restx.reqparse import RequestParser
 
 from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
 from education.elements import Module, Page, SortType

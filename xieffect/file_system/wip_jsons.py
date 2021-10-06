@@ -2,7 +2,7 @@ from json import load
 from typing import Type
 
 from flask import request  # , send_from_directory
-from flask_restful import Resource
+from flask_restx import Resource
 
 from authorship import Author
 from componets import jwt_authorizer, lister

@@ -1,7 +1,7 @@
 from os import remove
 
 from flask import request, send_from_directory
-from flask_restful import Resource
+from flask_restx import Resource
 
 from authorship import Author
 from componets.checkers import jwt_authorizer
