@@ -15,10 +15,14 @@ class ImageAdder(Resource):  # POST /wip/images/
         image_id: int = author.get_next_image_id()
         with open(f"files/images/{author_id}-{image_id}.png", "wb") as f:
             f.write(request.data)
-        return {"aid": author_id, "iid": image_id}
+        return {"author_id": author_id, "image_id": image_id}
 
 
-class ImageProcessor(Resource):  # [PUT|DELETE] /wip/images/<int:image_id>/
+class ImageProcessor(Resource):  # [GET|PUT|DELETE] /wip/images/<int:image_id>/
+    @jwt_authorizer(Author, "author", use_session=False)
+    def get(self, author: Author, image_id: int):
+        return redirect(f"/images/{author.id}-{image_id}/")
+
     @jwt_authorizer(Author, "author", use_session=False)
     def put(self, author: Author, image_id: int):
         with open(f"files/images/{author.id}-{image_id}.png", "wb") as f:
@@ -31,7 +35,7 @@ class ImageProcessor(Resource):  # [PUT|DELETE] /wip/images/<int:image_id>/
         return {"a": True}
 
 
-class ImageViewer(Resource):  # GET /images/<int:image_id>/
+class ImageViewer(Resource):  # GET /images/<image_id>/
     @jwt_authorizer(User, None, use_session=False)
-    def get(self, image_id: int):
-        return send_from_directory("../files/images/", str(image_id) + ".png")
+    def get(self, image_id: str):
+        return send_from_directory("../files/images/", image_id + ".png")
