@@ -25,17 +25,22 @@ from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, Pass
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
-api: Api = Api(app, doc="/doc/")
+api: Api = Api(app, doc="/doc/", version=versions["API"])
 
 ns = api.namespace("main", path="/")
+
 api.add_namespace(basic_namespace)
 api.add_namespace(github_namespace)
-api.add_namespace(modules_view_namespace)
+
+api.add_namespace(settings_namespace)
+
 api.add_namespace(pages_view_namespace)
+api.add_namespace(modules_view_namespace)
+
 api.add_namespace(authors_namespace)
+
 api.add_namespace(wip_images_namespace)
 api.add_namespace(wip_json_file_namespace)
-api.add_namespace(settings_namespace)
 
 jwt: JWTManager = JWTManager(app)
 

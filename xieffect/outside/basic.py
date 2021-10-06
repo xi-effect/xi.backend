@@ -5,7 +5,7 @@ from componets import jwt_authorizer, argument_parser
 from main import versions
 from users import User
 
-basic_namespace: Namespace = Namespace("/")
+basic_namespace: Namespace = Namespace("basic", path="/")
 
 
 @basic_namespace.route("/")
