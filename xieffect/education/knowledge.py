@@ -103,17 +103,19 @@ class PageLister(Resource):  # POST /pages/
 
     @jwt_authorizer(User, None)
     @lister(50, argument_parser(parser, "search", "counter"))
+    @pages_view_namespace.marshal_list_with(Page.marshal_models["main"])
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
-        return [page.to_json() for page in Page.search(session, search, start, finish - start)]
+        return Page.search(session, search, start, finish - start)
 
 
 @pages_view_namespace.route("/<int:page_id>/")
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
     @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Page, "page_id", "page")
+    @pages_view_namespace.marshal_list_with(Page.marshal_models["main"])
     def get(self, page: Page):  # add some access checks
         page.view()
-        return page.to_json()
+        return page
 
 
 @pages_view_namespace.route("/<int:page_id>/report/")
