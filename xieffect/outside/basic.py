@@ -5,7 +5,6 @@ from componets import jwt_authorizer, argument_parser
 from main import versions
 from users import User
 
-
 basic_namespace: Namespace = Namespace("/")
 
 

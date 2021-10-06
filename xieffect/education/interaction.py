@@ -2,8 +2,8 @@ from flask import redirect
 from flask_restx import Resource
 
 from componets import database_searcher, jwt_authorizer, with_session, with_auto_session
-from education.elements import Module, Point, Page
-from education.sessions import ModuleFilterSession, StandardModuleSession as SMS, TestModuleSession as TMS
+from education.elements import Module, Point
+from education.sessions import StandardModuleSession as SMS, TestModuleSession as TMS
 from users import User
 
 

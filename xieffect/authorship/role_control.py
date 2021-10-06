@@ -4,7 +4,6 @@ from componets import jwt_authorizer
 from users import User
 from .user_roles import Author
 
-
 authors_namespace: Namespace = Namespace("authors", path="/authors")
 
 

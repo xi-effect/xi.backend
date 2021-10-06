@@ -166,12 +166,6 @@ ns.add_resource(PasswordChanger, "/password-change/")
 # Adding profile viewing resource(s):
 ns.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 
-# Adding student's main_page resources:
-# ns.add_resource(SchoolIntegration, "/school/")
-# ns.add_resource(Activities, "/activities/")
-# ns.add_resource(Tasks, "/tasks/<int:task_id>/")
-# ns.add_resource(Notif, "/notif/<int:notification_id>/")
-
 # Adding module resources:
 ns.add_resource(FilterGetter, "/filters/")
 
@@ -187,14 +181,6 @@ ns.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
 
 # Adding image resources:
 ns.add_resource(ImageViewer, "/images/<image_id>/")
-
-# Adding (old) publishing resources:
-# ns.add_resource(Submitter, "/cat/submissions/")
-# ns.add_resource(SubmissionLister, "/cat/submissions/owned/")
-# ns.add_resource(SubmissionIndexer, "/cat/submissions/index/")
-# ns.add_resource(SubmissionReader, "/cat/submissions/<int:submission_id>/")
-# ns.add_resource(ReviewIndex, "/cat/reviews/<int:submission_id>/")
-# ns.add_resource(Publisher, "/cat/publications/")
 
 # Adding application resource(s):
 ns.add_resource(Version, "/<app_name>/version/")

@@ -6,7 +6,6 @@ from componets import jwt_authorizer, argument_parser, password_parser
 from users.database import User
 # from users.emailer import send_generated_email
 
-
 settings_namespace: Namespace = Namespace("settings")
 
 

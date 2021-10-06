@@ -7,7 +7,6 @@ from authorship import Author
 from componets.checkers import jwt_authorizer
 from users import User
 
-
 wip_images_namespace: Namespace = Namespace("wip-images", path="/wip/images/")
 
 
