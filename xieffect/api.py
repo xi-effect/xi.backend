@@ -10,18 +10,17 @@ from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_acc
 from flask_restx import Api
 from werkzeug.exceptions import HTTPException
 
-from authorship import (Author, AuthorInitializer)
+from authorship import (Author, authors_namespace)
 from componets import with_session
-from education import (ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences,
-                       PageLister, PageReporter, PageGetter, StandardProgresser, PracticeGenerator,
+from education import (modules_view_namespace, pages_view_namespace, PageGetter, StandardProgresser, PracticeGenerator,
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
-                       TestResultCollector, FilterGetter, ShowAll, ModuleOpener)
-from file_system import (FileLister, FileProcessor, FileCreator, ImageAdder, ImageProcessor, ImageViewer, FilePublisher)
+                       TestResultCollector, FilterGetter, ModuleOpener)
+from file_system import (wip_json_file_namespace, wip_images_namespace, ImageViewer)
 from main import app, Session, versions
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
-from outside import (HelloWorld, ServerMessenger, GithubDocumentsWebhook)
+from outside import (basic_namespace, github_namespace)
 from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
-                   PasswordReseter, Avatar, Settings, MainSettings, RoleSettings, EmailChanger,
+                   PasswordReseter, Avatar, settings_namespace, EmailChanger,
                    PasswordChanger, EmailSender, EmailConfirm, AvatarViewer)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
@@ -29,6 +28,14 @@ from webhooks import send_discord_message, send_file_discord_message, WebhookURL
 api: Api = Api(app, doc="/doc/")
 
 ns = api.namespace("main", path="/")
+api.add_namespace(basic_namespace)
+api.add_namespace(github_namespace)
+api.add_namespace(modules_view_namespace)
+api.add_namespace(pages_view_namespace)
+api.add_namespace(authors_namespace)
+api.add_namespace(wip_images_namespace)
+api.add_namespace(wip_json_file_namespace)
+api.add_namespace(settings_namespace)
 
 jwt: JWTManager = JWTManager(app)
 
@@ -138,10 +145,6 @@ def unauthorized_callback(callback):
     return {"a": f"unauthorized: {callback}"}, 401
 
 
-# Adding basic resources:
-ns.add_resource(HelloWorld, "/")  # doesn't work somehow
-ns.add_resource(ServerMessenger, "/status/")
-
 # Adding email resources:
 ns.add_resource(EmailSender, "/email/<email>/")
 ns.add_resource(EmailConfirm, "/email-confirm/")
@@ -157,9 +160,6 @@ ns.add_resource(PasswordReseter, "/password-reset/confirm/")
 
 # Adding settings resources:
 ns.add_resource(Avatar, "/avatar/")
-ns.add_resource(Settings, "/settings/")
-ns.add_resource(MainSettings, "/settings/main/")
-ns.add_resource(RoleSettings, "/settings/roles/")
 ns.add_resource(EmailChanger, "/email-change/")
 ns.add_resource(PasswordChanger, "/password-change/")
 
@@ -174,14 +174,8 @@ ns.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 
 # Adding module resources:
 ns.add_resource(FilterGetter, "/filters/")
-ns.add_resource(ModuleLister, "/modules/")
-ns.add_resource(HiddenModuleLister, "/modules/hidden/")
-ns.add_resource(ModulePreferences, "/modules/<int:module_id>/preference/")
-ns.add_resource(ModuleReporter, "/modules/<int:module_id>/report/")
 
 # Adding page resources:
-ns.add_resource(PageLister, "/pages/")
-ns.add_resource(PageReporter, "/pages/<int:page_id>/report/")
 ns.add_resource(PageGetter, "/pages/<int:page_id>/")
 
 # Adding in-module resources:
@@ -195,18 +189,7 @@ ns.add_resource(TestNavigator, "/tests/<int:test_id>/tasks/<int:task_id>/")
 ns.add_resource(TestReplySaver, "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
 ns.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
 
-# Adding role control:
-ns.add_resource(AuthorInitializer, "/authors/permit/")
-
-# Adding work-in-progress resources:
-ns.add_resource(FileLister, "/wip/<file_type>/index/")
-ns.add_resource(FileCreator, "/wip/<file_type>/")
-ns.add_resource(FileProcessor, "/wip/<file_type>/<int:file_id>/")
-ns.add_resource(FilePublisher, "/wip/<file_type>/<int:file_id>/publication/")
-
 # Adding image resources:
-ns.add_resource(ImageAdder, "/wip/images/")
-ns.add_resource(ImageProcessor, "/wip/images/<int:image_id>/")
 ns.add_resource(ImageViewer, "/images/<image_id>/")
 
 # Adding (old) publishing resources:
@@ -219,16 +202,11 @@ ns.add_resource(ImageViewer, "/images/<image_id>/")
 
 # Adding application resource(s):
 ns.add_resource(Version, "/<app_name>/version/")
-# ns.add_resource(GithubWebhook,         "/update/")
-ns.add_resource(GithubDocumentsWebhook, "/update-docs/")
 
 # Adding side-thing resources:
 ns.add_resource(UpdateRequest, "/oct/update/")
 ns.add_resource(SubmitTask, "/tasks/<task_name>/attempts/new/")
 ns.add_resource(GetTaskSummary, "/tasks/<task_name>/attempts/all/")
-
-# Test only:
-ns.add_resource(ShowAll, "/test/")
 
 if __name__ == "__main__":  # test only
     app.run(debug=True)

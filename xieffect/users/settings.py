@@ -1,10 +1,13 @@
 from flask import request, send_from_directory
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
 from componets import jwt_authorizer, argument_parser, password_parser
 from users.database import User
 # from users.emailer import send_generated_email
+
+
+settings_namespace: Namespace = Namespace("settings")
 
 
 class Avatar(Resource):  # [GET|POST] /avatar/
@@ -19,6 +22,7 @@ class Avatar(Resource):  # [GET|POST] /avatar/
         return {"a": True}
 
 
+@settings_namespace.route("/")
 class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
     parser.add_argument("changed", type=dict, location="json", required=True)
@@ -34,12 +38,14 @@ class Settings(Resource):  # [GET|POST] /settings/
         return {"a": True}
 
 
+@settings_namespace.route("/main/")
 class MainSettings(Resource):  # [GET] /settings/main/
     @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         return user.get_main_settings()
 
 
+@settings_namespace.route("/roles/")
 class RoleSettings(Resource):  # [GET] /settings/roles/
     @jwt_authorizer(User)
     def get(self, session, user: User):

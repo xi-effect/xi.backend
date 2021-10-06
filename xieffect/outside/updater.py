@@ -5,8 +5,10 @@ from componets import argument_parser
 from webhooks import send_discord_message, WebhookURLs, execute_in_console, reload_webapp
 
 github_token: str = ""
+github_namespace: Namespace = Namespace("github")
 
 
+@github_namespace.route("/update/")
 class GithubWebhook(Resource):  # [POST] /update/
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, location="headers")
@@ -26,6 +28,7 @@ class GithubWebhook(Resource):  # [POST] /update/
                                                      f"No action was applied.")
 
 
+@github_namespace.route("/update-docs/")
 class GithubDocumentsWebhook(Resource):  # [POST] /update-docs/
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, location="headers")

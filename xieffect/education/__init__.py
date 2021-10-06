@@ -1,6 +1,4 @@
-from .knowledge import FilterGetter, ModuleLister, HiddenModuleLister, ModuleReporter, ModulePreferences
-from .knowledge import PageLister, PageReporter
-from .knowledge import ShowAll
+from .knowledge import FilterGetter, pages_view_namespace, modules_view_namespace
 
 from .interaction import ModuleOpener, StandardProgresser, PracticeGenerator, TheoryNavigator
 from .interaction import TheoryContentsGetter, TestContentsGetter, TestNavigator, TestResultCollector, TestReplySaver

@@ -6,6 +6,10 @@ from main import versions
 from users import User
 
 
+basic_namespace: Namespace = Namespace("/")
+
+
+@basic_namespace.route("/")
 class HelloWorld(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("test")
@@ -21,6 +25,7 @@ class HelloWorld(Resource):
         return {"hello": test}
 
 
+@basic_namespace.route("/status/")
 class ServerMessenger(Resource):
     def get(self):
         return {"type": 2, "text": "Version: " + versions["API"]}

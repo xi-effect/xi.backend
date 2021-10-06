@@ -2,7 +2,7 @@ from json import load
 from typing import Type
 
 from flask import request  # , send_from_directory
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from authorship import Author
 from componets import jwt_authorizer, lister
@@ -45,6 +45,10 @@ def file_getter(type_only: bool = True, use_session: bool = True, use_author: bo
     return file_getter_wrapper
 
 
+wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_type>/")
+
+
+@wip_json_file_namespace.route("/index/")
 class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter()
     @lister(50)
@@ -52,6 +56,7 @@ class FileLister(Resource):  # [POST] /wip/<file_type>/index/
         return [x.get_metadata(session) for x in file_type.find_by_owner(session, author, start, finish - start)]
 
 
+@wip_json_file_namespace.route("/")
 class FileCreator(Resource):  # [POST] /wip/<file_type>/
     @file_getter()
     def post(self, session, author: Author, file_type: Type[JSONFile]):
@@ -60,6 +65,7 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
         return {"id": result.id}
 
 
+@wip_json_file_namespace.route("/<int:file_id>/")
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
     @file_getter(type_only=False, use_session=False)
     def get(self, file: JSONFile):
@@ -83,6 +89,7 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
         return {"a": True}
 
 
+@wip_json_file_namespace.route("/<int:file_id>/publication/")
 class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
     @file_getter(type_only=False, use_session=True, use_author=True)
     def post(self, session, file: JSONFile, author: Author):
