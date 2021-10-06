@@ -12,9 +12,9 @@ from werkzeug.exceptions import HTTPException
 
 from authorship import (Author, authors_namespace)
 from componets import with_session
-from education import (modules_view_namespace, pages_view_namespace, PageGetter, StandardProgresser, PracticeGenerator,
+from education import (modules_view_namespace, pages_view_namespace, StandardProgresser, PracticeGenerator,
                        TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
-                       TestResultCollector, FilterGetter, ModuleOpener)
+                       TestResultCollector, FilterGetter)
 from file_system import (wip_json_file_namespace, wip_images_namespace, ImageViewer)
 from main import app, Session, versions
 from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
@@ -175,11 +175,7 @@ ns.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
 # Adding module resources:
 ns.add_resource(FilterGetter, "/filters/")
 
-# Adding page resources:
-ns.add_resource(PageGetter, "/pages/<int:page_id>/")
-
 # Adding in-module resources:
-ns.add_resource(ModuleOpener, "/modules/<int:module_id>/")
 ns.add_resource(StandardProgresser, "/sessions/<int:session_id>/")
 ns.add_resource(PracticeGenerator, "/modules/<int:module_id>/next/")
 ns.add_resource(TheoryContentsGetter, "/modules/<int:module_id>/contents/")
