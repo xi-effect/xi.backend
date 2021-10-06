@@ -12,19 +12,19 @@ MODULES_PER_REQUEST: int = 12
 
 @mark.order(400)
 def test_page_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    assert len(list(list_tester("/pages", {}, PAGES_PER_REQUEST))) > 0
+    assert len(list(list_tester("/pages/", {}, PAGES_PER_REQUEST))) > 0
 
 
 @mark.order(401)
 def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    assert len(list(list_tester("/pages", {"search": "Описание test"}, PAGES_PER_REQUEST))) > 0
+    assert len(list(list_tester("/pages/", {"search": "Описание test"}, PAGES_PER_REQUEST))) > 0
 
 
 @mark.order(406)
 def test_getting_pages(client: FlaskClient):
-    page_json: dict = check_status_code(client.get("/pages/1"))
+    page_json: dict = check_status_code(client.get("/pages/1/"))
     for key in ("author-id", "author-name", "views", "updated"):
-        page_json.pop(key)
+        page_json.pop(key, None)
 
     with open("../files/tfs/test/1.json", "rb") as f:
         assert page_json == load(f)
@@ -32,11 +32,11 @@ def test_getting_pages(client: FlaskClient):
 
 @mark.order(407)
 def test_page_view_counter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    page_json: dict = check_status_code(client.post("/pages", json={"counter": 0}))[0]
+    page_json: dict = check_status_code(client.post("/pages/", json={"counter": 0}))[0]
     page_id, views_before = [page_json[key] for key in ["id", "views"]]
-    check_status_code(client.get(f"/pages/{page_id}"), get_json=False)
+    check_status_code(client.get(f"/pages/{page_id}/"), get_json=False)
 
-    for page_json in list_tester("/pages", {}, PAGES_PER_REQUEST):
+    for page_json in list_tester("/pages/", {}, PAGES_PER_REQUEST):
         if page_json["id"] == page_id:
             assert page_json["views"] == views_before + 1
             break
@@ -46,13 +46,13 @@ def test_page_view_counter(client: FlaskClient, list_tester: Callable[[str, dict
 
 @mark.order(420)
 def test_module_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    assert len(list(list_tester("/modules", {}, MODULES_PER_REQUEST))) > 0
+    assert len(list(list_tester("/modules/", {}, MODULES_PER_REQUEST))) > 0
 
 
 def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
                        check: Optional[Callable[[dict], bool]] = None) -> Optional[int]:
     module_id: Optional[int] = None
-    for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
+    for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
         assert "id" in module.keys()
         if check is None or check(module):
             module_id = module["id"]
@@ -61,14 +61,14 @@ def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
 
 
 def lister_with_filters(list_tester: Callable[[str, dict, int], Iterator[dict]], filters: dict):
-    return list_tester("/modules", {"filters": filters}, MODULES_PER_REQUEST)
+    return list_tester("/modules/", {"filters": filters}, MODULES_PER_REQUEST)
 
 
 def assert_with_global_filter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]],
                               operation_name: str, filter_name: str, url: str, module_id: int, reverse: bool):
     if reverse:
         operation_name = "un" + operation_name
-        iterator: Iterator[dict] = list_tester("/modules", {}, MODULES_PER_REQUEST)
+        iterator: Iterator[dict] = list_tester("/modules/", {}, MODULES_PER_REQUEST)
     else:
         iterator: Iterator[dict] = lister_with_filters(list_tester, {"global": filter_name})
 
@@ -159,14 +159,14 @@ def test_module_sorting(client: FlaskClient, list_tester: Callable[[str, dict, i
 
 @mark.order(427)
 def test_module_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    assert len(list(list_tester("/modules", {"search": "ЕГЭ"}, MODULES_PER_REQUEST))) > 0
+    assert len(list(list_tester("/modules/", {"search": "ЕГЭ"}, MODULES_PER_REQUEST))) > 0
 
 
 def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], module_id: int, reverse: bool):
     message = f"Module #{module_id}, marked as " + ("shown" if reverse else "hidden") + ", was "
 
     found: bool = False
-    for hidden_module in list_tester("/modules/hidden", {}, MODULES_PER_REQUEST):
+    for hidden_module in list_tester("/modules/hidden/", {}, MODULES_PER_REQUEST):
         assert "id" in hidden_module.keys()
         if hidden_module["id"] == module_id:
             found = True
@@ -174,7 +174,7 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
     assert found != reverse, message + ("" if reverse else "not ") + "found in the list of hidden modules"
 
     found: bool = False
-    for module in list_tester("/modules", {}, MODULES_PER_REQUEST):
+    for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
         assert "id" in module.keys()
         if module["id"] == module_id:
             found = True
