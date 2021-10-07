@@ -1,3 +1,4 @@
+from functools import wraps
 from typing import Type, Optional, Union, Tuple, Callable, Any, Dict
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -72,8 +73,9 @@ def with_auto_session(function):
 
 def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user", use_session: bool = True):
     def authorizer_wrapper(function):
+        @wraps(function)
         @jwt_required()
-        @with_session  # remove for cool_marshal_with to work
+        @with_session
         def authorizer_inner(*args, **kwargs):
             session = kwargs["session"]
             result: role = role.find_by_id(session, get_jwt_identity())
@@ -86,7 +88,6 @@ def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "use
                     kwargs.pop("session")
                 return function(*args, **kwargs)
 
-        # authorizer_inner.__apidoc__ = "lol"
         return authorizer_inner
 
     return authorizer_wrapper
@@ -97,6 +98,7 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
     def searcher_wrapper(function):
         error_response: tuple = {"a": identifiable.not_found_text}, 404
 
+        @wraps(function)
         @with_session
         def searcher_inner(*args, **kwargs):
             session = kwargs["session"] if use_session else kwargs.pop("session")
@@ -109,6 +111,7 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
                     kwargs[result_filed_name] = result
                 return function(*args, **kwargs)
 
+        @wraps(function)
         @with_session
         def checker_inner(*args, **kwargs):
             session = kwargs["session"] if use_session else kwargs.pop("session")
@@ -127,6 +130,7 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
 
 def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str]]):
     def argument_wrapper(function):
+        @wraps(function)
         def argument_inner(*args, **kwargs):
             data: dict = parser.parse_args()
             for arg_name in arg_names:
@@ -143,6 +147,7 @@ def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str
 
 def lister(per_request: int, argument_parser: Callable[[Callable], Any] = argument_parser(counter_parser, "counter")):
     def lister_wrapper(function):
+        @wraps(function)
         @argument_parser
         def lister_inner(*args, **kwargs):
             counter: int = kwargs.pop("counter") * per_request
