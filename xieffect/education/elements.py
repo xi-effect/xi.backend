@@ -1,5 +1,5 @@
 from datetime import datetime
-from json import dumps as json_dumps, loads as json_loads, load
+from json import dumps as json_dumps, load
 from pickle import dumps, loads
 from random import randint
 from typing import Dict, List, Optional, Union
@@ -11,7 +11,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Pi
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable, TypeEnum
+from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable
 from componets.checkers import first_or_none, register_as_searchable
 from education.sessions import ModuleFilterSession as MFS
 from main import Base, Session  # , whooshee
@@ -25,7 +25,8 @@ class PageKind(TypeEnum):
 
 # @whooshee.register_model("name", "theme", "description")
 @register_as_searchable("name", "theme", "description")
-class Page(Base, Identifiable):
+@create_marshal_model("main", "author_id", "author", "suspended", full=True)
+class Page(Base, Identifiable, Marshalable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author):
         for i in range(1, 4):
@@ -102,14 +103,6 @@ class Page(Base, Identifiable):
 
     def delete(self, session: Session):
         session.delete(self)
-
-    def to_json(self):
-        return {"id": self.id, "name": self.name, "description": self.description,
-                "theme": self.theme, "kind": self.kind.to_string(),
-                "components": json_loads(self.components),  # redo?
-                "blueprint": self.blueprint, "reusable": self.reusable, "public": self.public,
-                "author-id": self.author.id, "author-name": self.author.pseudonym,
-                "views": self.views, "updated": self.updated.isoformat()}
 
 
 class PointType(TypeEnum):
@@ -249,7 +242,7 @@ class Module(Base, Identifiable):
     # Metrics & Sorting:
     views = Column(Integer, nullable=False, default=0)
     popularity = Column(Integer, nullable=False, default=1000)
-    creation_date = Column(DateTime, nullable=False)
+    created = Column(DateTime, nullable=False)
 
     # Author-related
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
@@ -264,7 +257,7 @@ class Module(Base, Identifiable):
             creation_date = datetime.utcnow()
         new_module = cls(id=module_id, type=module_type, name=name, length=length,
                          theme=theme, category=category, difficulty=difficulty,
-                         popularity=popularity, creation_date=creation_date)
+                         popularity=popularity, created=creation_date)
         new_module.author = author
         session.add(new_module)
         return True
@@ -278,7 +271,7 @@ class Module(Base, Identifiable):
                                                             "theme", "category", "difficulty")})
         if "image-id" in json_data.keys():
             entry.image_id = json_data["image-id"]
-        entry.creation_date = datetime.utcnow()
+        entry.created = datetime.utcnow()
         entry.author = author
 
         session.add(entry)
@@ -330,7 +323,7 @@ class Module(Base, Identifiable):
         if sort == SortType.POPULARITY:  # reverse?
             stmt = stmt.order_by(cls.views)
         elif sort == SortType.CREATION_DATE:
-            stmt = stmt.order_by(cls.creation_date.desc())
+            stmt = stmt.order_by(cls.created.desc())
         elif sort == SortType.VISIT_DATE:
             stmt = stmt.order_by(MFS.last_visited.desc())
 
@@ -360,7 +353,7 @@ class Module(Base, Identifiable):
             result.update(MFS.find_json(session, user_id, self.id))
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
                        "type": self.type.to_string(), "description": self.description,
-                       "views": self.views, "created": self.creation_date.isoformat()})
+                       "views": self.views, "created": self.created.isoformat()})
         return result
 
     def delete(self, session: Session):

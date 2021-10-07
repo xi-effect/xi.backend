@@ -1,7 +1,7 @@
 from typing import Type, Optional, Union, Tuple, Callable, Any
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_restful.reqparse import RequestParser
+from flask_restx.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
 from componets.add_whoosh import Searcher

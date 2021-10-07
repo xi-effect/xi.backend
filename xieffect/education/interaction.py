@@ -1,9 +1,9 @@
 from flask import redirect
-from flask_restful import Resource
+from flask_restx import Resource
 
 from componets import database_searcher, jwt_authorizer, with_session, with_auto_session
-from education.elements import Module, Point, Page
-from education.sessions import ModuleFilterSession, StandardModuleSession as SMS, TestModuleSession as TMS
+from education.elements import Module, Point
+from education.sessions import StandardModuleSession as SMS, TestModuleSession as TMS
 from users import User
 
 
@@ -15,23 +15,15 @@ def redirected_to_pages(func):  # session related parts have to be redone!!!!!!!
     return inner_redirected_to_pages
 
 
-class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
-    @jwt_authorizer(User)
-    @database_searcher(Module, "module_id", "module", use_session=True)
-    def get(self, session, user: User, module: Module):
-        ModuleFilterSession.find_or_create(session, user.id, module.id).visit_now()
-
-        # module_type: ModuleType = ModuleType(module.type)
-        # if module_type == ModuleType.STANDARD:
-        #     return {"session": SMS.find_or_create(session, user.id, module.id).id}
-        # elif module_type == ModuleType.PRACTICE_BLOCK:
-        #     return redirect(f"/modules/{module.id}/next/")
-        # elif module_type == ModuleType.THEORY_BLOCK:
-        #     return redirect(f"/modules/{module.id}/contents/")
-        # elif module_type == ModuleType.TEST:
-        #     return {"test": TMS.find_or_create(session, user.id, module.id).id}
-
-        return module.to_json(session, user.id)
+# module_type: ModuleType = ModuleType(module.type)
+# if module_type == ModuleType.STANDARD:
+#     return {"session": SMS.find_or_create(session, user.id, module.id).id}
+# elif module_type == ModuleType.PRACTICE_BLOCK:
+#     return redirect(f"/modules/{module.id}/next/")
+# elif module_type == ModuleType.THEORY_BLOCK:
+#     return redirect(f"/modules/{module.id}/contents/")
+# elif module_type == ModuleType.TEST:
+#     return {"test": TMS.find_or_create(session, user.id, module.id).id}
 
 
 class StandardProgresser(Resource):  # POST /sessions/<int:session_id>/
@@ -94,11 +86,3 @@ class TestResultCollector(Resource):  # GET /tests/<int:test_id>/results/
     @database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS):
         return test.collect_results()
-
-
-class PageGetter(Resource):  # GET /pages/<int:page_id>/
-    @jwt_authorizer(User, None, use_session=False)
-    @database_searcher(Page, "page_id", "page")
-    def get(self, page: Page):  # add some access checks
-        page.view()
-        return page.to_json()

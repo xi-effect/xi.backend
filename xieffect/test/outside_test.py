@@ -14,9 +14,9 @@ def base_client():
         yield client
 
 
-@mark.order(0)
-def test_startup(base_client: FlaskClient):
-    assert check_status_code(base_client.get("/")) == {"hello": "word"}
+# @mark.order(0)
+# def test_startup(base_client: FlaskClient):
+#     assert check_status_code(base_client.get("/")) == {"hello": "word"}
 
 
 @mark.order(1)

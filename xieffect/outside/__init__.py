@@ -1,2 +1,2 @@
-from .basic import HelloWorld, ServerMessenger
-from .updater import GithubWebhook, GithubDocumentsWebhook
+from .basic import basic_namespace
+from .updater import github_namespace

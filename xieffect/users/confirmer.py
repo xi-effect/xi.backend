@@ -1,5 +1,5 @@
-from flask_restful import Resource
-from flask_restful.reqparse import RequestParser
+from flask_restx import Resource
+from flask_restx.reqparse import RequestParser
 
 from componets import argument_parser, with_session
 from users.database import User

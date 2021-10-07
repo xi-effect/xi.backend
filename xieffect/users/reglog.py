@@ -1,8 +1,8 @@
 from flask import Response, jsonify
 from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_jwt_extended import get_jwt, jwt_required, unset_jwt_cookies
-from flask_restful import Resource
-from flask_restful.reqparse import RequestParser
+from flask_restx import Resource
+from flask_restx.reqparse import RequestParser
 
 from componets import password_parser, argument_parser, with_session
 from users.database import TokenBlockList, User

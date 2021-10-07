@@ -1,2 +1,2 @@
-from .wip_files import ImageAdder, ImageProcessor, ImageViewer
-from .wip_jsons import FileLister, FileProcessor, FileCreator, FilePublisher
+from .wip_files import wip_images_namespace, ImageViewer
+from .wip_jsons import wip_json_file_namespace
