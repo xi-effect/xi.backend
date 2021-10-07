@@ -1,9 +1,9 @@
 from typing import List, Dict, Optional
 
-from flask_restx import Resource, Namespace
+from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser, a_response
+from componets import Namespace, counter_parser
 from education.elements import Module, Page, SortType
 from education.sessions import ModuleFilterSession
 from users import User
@@ -24,8 +24,8 @@ report_parser.add_argument("message", required=False)
 
 @education_namespace.route("/filters/")
 class FilterGetter(Resource):  # [GET] /filters/
-    @a_response(education_namespace)
-    @jwt_authorizer(education_namespace, User, use_session=False)
+    @education_namespace.a_response()
+    @education_namespace.jwt_authorizer(User, use_session=False)
     def get(self, user: User) -> str:
         return user.get_filter_bind()
 
@@ -37,9 +37,9 @@ class ModuleLister(Resource):  # [POST] /modules/
     parser.add_argument("search", required=False)
     parser.add_argument("sort", required=False)
 
-    @jwt_authorizer(modules_view_namespace, User)
-    @argument_parser(parser, "counter", "filters", "sort", "search", ns=modules_view_namespace)
-    @lister(12)
+    @modules_view_namespace.jwt_authorizer(User)
+    @modules_view_namespace.argument_parser(parser, "counter", "filters", "sort", "search")
+    @modules_view_namespace.lister(12)
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
@@ -59,9 +59,9 @@ class ModuleLister(Resource):  # [POST] /modules/
 
 @modules_view_namespace.route("/hidden/")
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
-    @jwt_authorizer(modules_view_namespace, User)
-    @argument_parser(counter_parser, "counter", ns=modules_view_namespace)
-    @lister(12)
+    @modules_view_namespace.jwt_authorizer(User)
+    @modules_view_namespace.argument_parser(counter_parser, "counter")
+    @modules_view_namespace.lister(12)
     def post(self, session, user: User, start: int, finish: int) -> list:
         return [module.to_short_json()
                 for module in Module.get_hidden_module_list(session, user.id, start, finish - start)]
@@ -69,8 +69,8 @@ class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
 
 @modules_view_namespace.route("/<int:module_id>/")
 class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
-    @jwt_authorizer(modules_view_namespace, User)
-    @database_searcher(modules_view_namespace, Module, "module_id", "module", use_session=True)
+    @modules_view_namespace.jwt_authorizer(User)
+    @modules_view_namespace.database_searcher(Module, "module_id", "module", use_session=True)
     def get(self, session, user: User, module: Module):
         ModuleFilterSession.find_or_create(session, user.id, module.id).visit_now()
         return module.to_json(session, user.id)
@@ -81,10 +81,10 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True)
 
-    @a_response(modules_view_namespace)
-    @jwt_authorizer(modules_view_namespace, User)
-    @database_searcher(modules_view_namespace, Module, "module_id", check_only=True, use_session=True)
-    @argument_parser(parser, ("a", "operation"), ns=modules_view_namespace)
+    @modules_view_namespace.a_response()
+    @modules_view_namespace.jwt_authorizer(User)
+    @modules_view_namespace.database_searcher(Module, "module_id", check_only=True, use_session=True)
+    @modules_view_namespace.argument_parser(parser, ("a", "operation"))
     def post(self, session, module_id: int, user: User, operation: str) -> None:
         module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
         module.change_preference(session, operation)
@@ -92,10 +92,10 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
 
 @modules_view_namespace.route("/<int:module_id>/report/")
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
-    @a_response(modules_view_namespace)
-    @jwt_authorizer(modules_view_namespace, User, None, use_session=False)
-    @database_searcher(modules_view_namespace, Module, "module_id", "module")
-    @argument_parser(report_parser, "reason", "message", ns=modules_view_namespace)
+    @modules_view_namespace.a_response()
+    @modules_view_namespace.jwt_authorizer(User, None, use_session=False)
+    @modules_view_namespace.database_searcher(Module, "module_id", "module")
+    @modules_view_namespace.argument_parser(report_parser, "reason", "message")
     def post(self, module: Module, reason: str, message: str) -> None:
         send_discord_message(
             WebhookURLs.COMPLAINER,
@@ -109,18 +109,18 @@ class PageLister(Resource):  # POST /pages/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("search", required=False)
 
-    @jwt_authorizer(pages_view_namespace, User, None)
-    @argument_parser(parser, "search", "counter", ns=pages_view_namespace)
+    @pages_view_namespace.jwt_authorizer(User, None)
+    @pages_view_namespace.argument_parser(parser, "search", "counter")
     @pages_view_namespace.marshal_list_with(short_page_json, skip_none=True)
-    @lister(50)
+    @pages_view_namespace.lister(50)
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
         return Page.search(session, search, start, finish - start)
 
 
 @pages_view_namespace.route("/<int:page_id>/")
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
-    @jwt_authorizer(pages_view_namespace, User, None, use_session=False)
-    @database_searcher(pages_view_namespace, Page, "page_id", "page")
+    @pages_view_namespace.jwt_authorizer(User, None, use_session=False)
+    @pages_view_namespace.database_searcher(Page, "page_id", "page")
     @pages_view_namespace.marshal_with(page_view_json, skip_none=True)
     def get(self, page: Page):  # add some access checks
         page.view()
@@ -129,16 +129,16 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
 
 @pages_view_namespace.route("/<int:page_id>/report/")
 class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
-    @jwt_authorizer(pages_view_namespace, User, None, use_session=False)
-    @database_searcher(pages_view_namespace, Page, "page_id", "page")
-    @argument_parser(report_parser, "reason", "message", ns=pages_view_namespace)
+    @pages_view_namespace.jwt_authorizer(User, None, use_session=False)
+    @pages_view_namespace.database_searcher(Page, "page_id", "page")
+    @pages_view_namespace.argument_parser(report_parser, "reason", "message")
     def post(self, page: Page, reason: str, message: str):
         pass
 
 
 @modules_view_namespace.route("/reset-hidden/")
 class ShowAllModules(Resource):  # GET /modules/reset-hidden/
-    @a_response(modules_view_namespace)
-    @jwt_authorizer(modules_view_namespace, User, use_session=False)
+    @modules_view_namespace.a_response()
+    @modules_view_namespace.jwt_authorizer(User, use_session=False)
     def get(self, user: User) -> None:
         ModuleFilterSession.change_by_user(user.id, "show")

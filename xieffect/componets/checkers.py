@@ -72,119 +72,116 @@ def with_auto_session(function):
     return with_auto_session_inner
 
 
-def doc_responses(ns: RestXNamespace, *responses: ResponseDoc):
-    def doc_responses_wrapper(function):
-        for response in responses:
-            response.register_model(ns)  # do?
-            function = ns.response(*response.get_args())(function)
-        return function
+class Namespace(RestXNamespace):
+    def doc_responses(self, *responses: ResponseDoc):
+        def doc_responses_wrapper(function):
+            for response in responses:
+                response.register_model(self)  # do?
+                function = self.response(*response.get_args())(function)
+            return function
 
-    return doc_responses_wrapper
+        return doc_responses_wrapper
 
+    def a_response(self):
+        def bool_a_response_wrapper(function: Callable[[Any], Union[None, bool, str]]):
+            return_type: Type = getattr(function, "__annotations__")["return"]
+            is_bool = return_type is None or issubclass(return_type, bool)
 
-def a_response(ns: RestXNamespace):
-    def bool_a_response_wrapper(function: Callable[[Any], Union[None, bool, str]]):
-        return_type: Type = getattr(function, "__annotations__")["return"]
-        is_bool = return_type is None or issubclass(return_type, bool)
+            @wraps(function)
+            def bool_a_response_inner(*args, **kwargs):
+                result = function(*args, **kwargs)
+                return {"a": True if return_type is None else result}
 
-        @wraps(function)
-        def bool_a_response_inner(*args, **kwargs):
-            result = function(*args, **kwargs)
-            return {"a": True if return_type is None else result}
+            return self.response(*(success_response if is_bool else message_response).get_args())(bool_a_response_inner)
 
-        return ns.response(*(success_response if is_bool else message_response).get_args())(bool_a_response_inner)
+        return bool_a_response_wrapper
 
-    return bool_a_response_wrapper
+    def jwt_authorizer(self, role: Type[UserRole], result_filed_name: Optional[str] = "user", use_session: bool = True):
+        def authorizer_wrapper(function):
+            response_code: int = 401 if role is UserRole.default_role else 403
 
-
-def jwt_authorizer(ns: RestXNamespace, role: Type[UserRole],
-                   result_filed_name: Optional[str] = "user", use_session: bool = True):
-    def authorizer_wrapper(function):
-        response_code: int = 401 if role is UserRole.default_role else 403
-
-        @wraps(function)
-        @jwt_required()
-        @with_session
-        def authorizer_inner(*args, **kwargs):
-            session = kwargs["session"]
-            result: role = role.find_by_id(session, get_jwt_identity())
-            if result is None:
-                return {"a": role.not_found_text}, response_code
-            else:
-                if result_filed_name is not None:
-                    kwargs[result_filed_name] = result
-                if not use_session:
-                    kwargs.pop("session")
-                return function(*args, **kwargs)
-
-        return ns.response(*ResponseDoc.error_response(response_code, role.not_found_text).get_args())(authorizer_inner)
-
-    return authorizer_wrapper
-
-
-def database_searcher(ns: RestXNamespace, identifiable: Type[Identifiable], input_field_name: str,
-                      result_filed_name: Optional[str] = None, check_only: bool = False, use_session: bool = False):
-    def searcher_wrapper(function):
-        error_response: tuple = {"a": identifiable.not_found_text}, 404
-
-        @wraps(function)
-        @with_session
-        def searcher_inner(*args, **kwargs):
-            session = kwargs["session"] if use_session else kwargs.pop("session")
-            target_id: int = kwargs.pop(input_field_name)
-            result: identifiable = identifiable.find_by_id(session, target_id)
-            if result is None:
-                return error_response
-            else:
-                if result_filed_name is not None:
-                    kwargs[result_filed_name] = result
-                return function(*args, **kwargs)
-
-        @wraps(function)
-        @with_session
-        def checker_inner(*args, **kwargs):
-            session = kwargs["session"] if use_session else kwargs.pop("session")
-            if identifiable.find_by_id(session, kwargs[input_field_name]) is None:
-                return error_response
-            else:
-                return function(*args, **kwargs)
-
-        result = checker_inner if check_only else searcher_inner
-        return ns.response(*ResponseDoc.error_response(404, identifiable.not_found_text).get_args())(result)
-
-    return searcher_wrapper
-
-
-def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str]], ns: RestXNamespace):
-    def argument_wrapper(function):
-        @wraps(function)
-        @ns.expect(parser)
-        def argument_inner(*args, **kwargs):
-            data: dict = parser.parse_args()
-            for arg_name in arg_names:
-                if isinstance(arg_name, str):
-                    kwargs[arg_name] = data[arg_name]
+            @wraps(function)
+            @jwt_required()
+            @with_session
+            def authorizer_inner(*args, **kwargs):
+                session = kwargs["session"]
+                result: role = role.find_by_id(session, get_jwt_identity())
+                if result is None:
+                    return {"a": role.not_found_text}, response_code
                 else:
-                    kwargs[arg_name[1]] = data[arg_name[0]]
-            return function(*args, **kwargs)
+                    if result_filed_name is not None:
+                        kwargs[result_filed_name] = result
+                    if not use_session:
+                        kwargs.pop("session")
+                    return function(*args, **kwargs)
 
-        return argument_inner
+            return self.response(
+                *ResponseDoc.error_response(response_code, role.not_found_text).get_args())(authorizer_inner)
 
-    return argument_wrapper
+        return authorizer_wrapper
 
+    def database_searcher(self, identifiable: Type[Identifiable], input_field_name: str,
+                          result_filed_name: Optional[str] = None, check_only: bool = False, use_session: bool = False):
+        def searcher_wrapper(function):
+            error_response: tuple = {"a": identifiable.not_found_text}, 404
 
-def lister(per_request: int):
-    def lister_wrapper(function):
-        @wraps(function)
-        def lister_inner(*args, **kwargs):
-            counter: int = kwargs.pop("counter") * per_request
-            kwargs["start"] = counter
-            kwargs["finish"] = counter + per_request
-            return function(*args, **kwargs)
+            @wraps(function)
+            @with_session
+            def searcher_inner(*args, **kwargs):
+                session = kwargs["session"] if use_session else kwargs.pop("session")
+                target_id: int = kwargs.pop(input_field_name)
+                result: identifiable = identifiable.find_by_id(session, target_id)
+                if result is None:
+                    return error_response
+                else:
+                    if result_filed_name is not None:
+                        kwargs[result_filed_name] = result
+                    return function(*args, **kwargs)
 
-        return lister_inner
+            @wraps(function)
+            @with_session
+            def checker_inner(*args, **kwargs):
+                session = kwargs["session"] if use_session else kwargs.pop("session")
+                if identifiable.find_by_id(session, kwargs[input_field_name]) is None:
+                    return error_response
+                else:
+                    return function(*args, **kwargs)
 
-    return lister_wrapper
+            result = checker_inner if check_only else searcher_inner
+            return self.response(*ResponseDoc.error_response(404, identifiable.not_found_text).get_args())(result)
+
+        return searcher_wrapper
+
+    def argument_parser(self, parser: RequestParser, *arg_names: Union[str, Tuple[str, str]]):
+        def argument_wrapper(function):
+            @wraps(function)
+            @self.expect(parser)
+            def argument_inner(*args, **kwargs):
+                data: dict = parser.parse_args()
+                for arg_name in arg_names:
+                    if isinstance(arg_name, str):
+                        kwargs[arg_name] = data[arg_name]
+                    else:
+                        kwargs[arg_name[1]] = data[arg_name[0]]
+                return function(*args, **kwargs)
+
+            return argument_inner
+
+        return argument_wrapper
+
+    @staticmethod
+    def lister(per_request: int):
+        def lister_wrapper(function):
+            @wraps(function)
+            def lister_inner(*args, **kwargs):
+                counter: int = kwargs.pop("counter") * per_request
+                kwargs["start"] = counter
+                kwargs["finish"] = counter + per_request
+                return function(*args, **kwargs)
+
+            return lister_inner
+
+        return lister_wrapper
 
 
 """

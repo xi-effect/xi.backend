@@ -1,14 +1,14 @@
 from flask import redirect
-from flask_restx import Resource, Namespace
+from flask_restx import Resource
 
-from componets import database_searcher, jwt_authorizer, with_session, with_auto_session
+from componets import Namespace, with_session, with_auto_session
 from education.elements import Module, Point
 from education.sessions import StandardModuleSession as SMS, TestModuleSession as TMS
 from users import User
 
 
 def redirected_to_pages(func):  # session related parts have to be redone!!!!!!!
-    @jwt_authorizer(interaction_namespace, User, None)
+    @interaction_namespace.jwt_authorizer(User, None)
     def inner_redirected_to_pages(*args, **kwargs):
         return redirect(f"/pages/{func(*args, **kwargs)}/")
 
@@ -33,7 +33,7 @@ interaction_namespace: Namespace = Namespace("interaction", path="")
 class StandardProgresser(Resource):  # POST /sessions/<int:session_id>/
     @with_auto_session  # redo!!
     @redirected_to_pages
-    @database_searcher(interaction_namespace, SMS, "session_id", "session")
+    @interaction_namespace.database_searcher(SMS, "session_id", "session")
     def post(self, session: SMS):
         return session.next_page_id()
 
@@ -41,15 +41,15 @@ class StandardProgresser(Resource):  # POST /sessions/<int:session_id>/
 @interaction_namespace.route("/module/<int:module_id>/next/")
 class PracticeGenerator(Resource):  # GET /module/<int:module_id>/next/
     @redirected_to_pages
-    @database_searcher(interaction_namespace, Module, "module_id", "module")
+    @interaction_namespace.database_searcher(Module, "module_id", "module")
     def get(self, session, module: Module):
         return module.get_any_point(session).execute()
 
 
 @interaction_namespace.route("/module/<int:module_id>/contents/")
 class TheoryContentsGetter(Resource):  # GET /module/<int:module_id>/contents/
-    @jwt_authorizer(interaction_namespace, User, None, use_session=False)
-    @database_searcher(interaction_namespace, Module, "module_id", "module")
+    @interaction_namespace.jwt_authorizer(User, None, use_session=False)
+    @interaction_namespace.database_searcher(Module, "module_id", "module")
     def get(self, module: Module):
         pass  # not done!
 
@@ -58,31 +58,31 @@ class TheoryContentsGetter(Resource):  # GET /module/<int:module_id>/contents/
 class TheoryNavigator(Resource):  # GET /module/<int:module_id>/points/<int:point_id>/
     @with_session
     @redirected_to_pages
-    @database_searcher(interaction_namespace, Module, "module_id", "module")
+    @interaction_namespace.database_searcher(Module, "module_id", "module")
     def get(self, session, module: Module, point_id: int):
         return Point.find_and_execute(session, module.id, point_id)
 
 
 @interaction_namespace.route("/tests/<int:test_id>/contents/")
 class TestContentsGetter(Resource):  # GET /tests/<int:test_id>/contents/
-    @jwt_authorizer(interaction_namespace, User, None, use_session=False)
-    @database_searcher(interaction_namespace, TMS, "test_id", "test")
+    @interaction_namespace.jwt_authorizer(User, None, use_session=False)
+    @interaction_namespace.database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS):
         pass  # not done!
 
 
 @interaction_namespace.route("/tests/<int:test_id>/points/<int:task_id>/")
 class TestNavigator(Resource):  # GET /tests/<int:test_id>/points/<int:task_id>/
-    @jwt_authorizer(interaction_namespace, User, None, use_session=False)
-    @database_searcher(interaction_namespace, TMS, "test_id", "test")
+    @interaction_namespace.jwt_authorizer(User, None, use_session=False)
+    @interaction_namespace.database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS, task_id: int):
         return test.get_task(task_id)
 
 
 @interaction_namespace.route("/tests/<int:test_id>/tasks/<int:task_id>/reply/")
 class TestReplySaver(Resource):  # P*T /tests/<int:test_id>/tasks/<int:task_id>/reply/
-    @jwt_authorizer(interaction_namespace, User, None)
-    @database_searcher(interaction_namespace, TMS, "test_id", "test")
+    @interaction_namespace.jwt_authorizer(User, None)
+    @interaction_namespace.database_searcher(TMS, "test_id", "test")
     def post(self, session, test: TMS, task_id: int, reply):
         test.set_reply(session, task_id, reply)
         return {"a": True}
@@ -93,7 +93,7 @@ class TestReplySaver(Resource):  # P*T /tests/<int:test_id>/tasks/<int:task_id>/
 
 @interaction_namespace.route("/tests/<int:test_id>/results/")
 class TestResultCollector(Resource):  # GET /tests/<int:test_id>/results/
-    @jwt_authorizer(interaction_namespace, User, None, use_session=False)
-    @database_searcher(interaction_namespace, TMS, "test_id", "test")
+    @interaction_namespace.jwt_authorizer(User, None, use_session=False)
+    @interaction_namespace.database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS):
         return test.collect_results()

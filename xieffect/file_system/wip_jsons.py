@@ -3,12 +3,11 @@ from json import load
 from typing import Type
 
 from flask import request  # , send_from_directory
-from flask_restx import Resource, Namespace, Model
+from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 
 from authorship import Author
-from componets import jwt_authorizer, lister, argument_parser, counter_parser, a_response
-from componets import doc_responses, ResponseDoc
+from componets import Namespace, counter_parser, ResponseDoc
 from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 
@@ -16,7 +15,7 @@ from .keeper import JSONFile, WIPModule, WIPPage
 def file_getter(type_only: bool = True, use_session: bool = True, use_author: bool = False):
     def file_getter_wrapper(function):
         @wraps(function)
-        @jwt_authorizer(wip_json_file_namespace, Author, "author")
+        @wip_json_file_namespace.jwt_authorizer(Author, "author")
         def get_file_or_type(*args, **kwargs):
             session = kwargs.pop("session")
             result: Type[JSONFile]
@@ -55,15 +54,15 @@ wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_typ
 @wip_json_file_namespace.route("/index/")
 class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter()
-    @argument_parser(counter_parser, "counter", ns=wip_json_file_namespace)
-    @lister(50)
+    @wip_json_file_namespace.argument_parser(counter_parser, "counter")
+    @wip_json_file_namespace.lister(50)
     def post(self, session, file_type: Type[JSONFile], author: Author, start: int, finish: int):
         return [x.get_metadata(session) for x in file_type.find_by_owner(session, author, start, finish - start)]
 
 
 @wip_json_file_namespace.route("/")
 class FileCreator(Resource):  # [POST] /wip/<file_type>/
-    @doc_responses(wip_json_file_namespace, ResponseDoc(model=Model("ID Response", {"id": Integer})))
+    @wip_json_file_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @file_getter()
     def post(self, session, author: Author, file_type: Type[JSONFile]):
         result: file_type = file_type.create_from_json(session, author, request.get_json())
@@ -83,13 +82,13 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     # def get(self, file_type: Type[CATFile], file_id: int):
     #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
 
-    @a_response(wip_json_file_namespace)
+    @wip_json_file_namespace.a_response()
     @file_getter(type_only=False)
     def put(self, session, file: JSONFile) -> None:
         file.update_json(session, request.get_json())
         # file.update(request.get_data())
 
-    @a_response(wip_json_file_namespace)
+    @wip_json_file_namespace.a_response()
     @file_getter(type_only=False)
     def delete(self, session, file: JSONFile) -> None:
         file.delete(session)
@@ -97,7 +96,7 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
 
 @wip_json_file_namespace.route("/<int:file_id>/publication/")
 class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
-    @a_response(wip_json_file_namespace)
+    @wip_json_file_namespace.a_response()
     @file_getter(type_only=False, use_session=True, use_author=True)
     def post(self, session, file: JSONFile, author: Author) -> str:
         with open(file.get_link(), "rb") as f:

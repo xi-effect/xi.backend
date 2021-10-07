@@ -3,9 +3,9 @@ from subprocess import call, TimeoutExpired
 from typing import IO
 
 from flask import request
-from flask_restx import Resource, Namespace
+from flask_restx import Resource
 
-from componets import jwt_authorizer
+from componets import Namespace
 from other.test_keeper import TestPoint, UserSubmissions, ResultCodes
 from users import User
 from webhooks import send_discord_message, WebhookURLs
@@ -38,7 +38,7 @@ def check_one(inp: str, out: str) -> ResultCodes:
 
 @oct_namespace.route("/new/")
 class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
-    @jwt_authorizer(oct_namespace, User)
+    @oct_namespace.jwt_authorizer(User)
     def post(self, session, task_name: str, user: User):
         if not TestPoint.find_by_task(session, task_name):
             return {"a": "Task doesn't exist"}
@@ -68,7 +68,7 @@ class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
 
 @oct_namespace.route("/all/")
 class GetTaskSummary(Resource):  # [GET] /tasks/<task_name>/attempts/all/
-    @jwt_authorizer(oct_namespace, User)
+    @oct_namespace.jwt_authorizer(User)
     def get(self, session, task_name: str, user: User):
         if not TestPoint.find_by_task(session, task_name):
             return {"a": "Task doesn't exist"}

@@ -65,7 +65,7 @@ class Page(Base, Identifiable, Marshalable):
         entry.components = json_dumps(json_data["components"], ensure_ascii=False)
         entry.updated = datetime.utcnow()
         entry.author = author
-        # entry.author_name = author.pseudonym
+        entry.author_name = author.pseudonym
         session.add(entry)
         return entry
 

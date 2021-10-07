@@ -23,11 +23,13 @@ def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[dict]]
 @mark.order(406)
 def test_getting_pages(client: FlaskClient):
     page_json: dict = check_status_code(client.get("/pages/1/"))
-    for key in ("author-id", "author-name", "views", "updated"):
-        page_json.pop(key, None)
 
     with open("../files/tfs/test/1.json", "rb") as f:
-        assert page_json == load(f)
+        file_content: dict = load(f)
+    for key in ("blueprint", "reusable", "public"):
+        file_content.pop(key)
+
+    assert page_json == file_content
 
 
 @mark.order(407)

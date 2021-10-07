@@ -1,7 +1,7 @@
-from flask_restx import Resource, Namespace
+from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import jwt_authorizer, argument_parser
+from componets import Namespace
 from main import versions
 from users import User
 
@@ -16,8 +16,8 @@ class HelloWorld(Resource):
     def get(self):
         return {"hello": "word"}
 
-    @jwt_authorizer(basic_namespace, User, use_session=False)
-    @argument_parser(parser, "test", ns=basic_namespace)
+    @basic_namespace.jwt_authorizer(User, use_session=False)
+    @basic_namespace.argument_parser(parser, "test")
     def post(self, test: str, user: User):
         print(f"Got {test} in the field 'test', said hello")
         print(f"User, who asked was {user.email}")
