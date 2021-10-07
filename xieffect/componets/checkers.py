@@ -2,11 +2,12 @@ from functools import wraps
 from typing import Type, Optional, Union, Tuple
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_restx import Namespace
+from flask_restx import Namespace as RestXNamespace
 from flask_restx.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
-from componets.add_whoosh import Searcher
+from .add_whoosh import Searcher
+from .marshals import ResponseDoc, success_response, message_response
 from main import Session, Base, index_service
 
 
@@ -53,6 +54,7 @@ def register_as_searchable(*searchable: str):
 
 
 def with_session(function):
+    @wraps(function)
     def with_session_inner(*args, **kwargs):
         with Session.begin() as session:
             kwargs["session"] = session
@@ -62,11 +64,36 @@ def with_session(function):
 
 
 def with_auto_session(function):
+    @wraps(function)
     def with_auto_session_inner(*args, **kwargs):
         with Session.begin() as _:
             return function(*args, **kwargs)
 
     return with_auto_session_inner
+
+
+def doc_responses(ns: RestXNamespace, *responses: ResponseDoc):
+    def doc_responses_wrapper(function):
+        for response in responses:
+            response.register_model(ns)  # do?
+            function = ns.response(*response.get_args())(function)
+        return function
+
+    return doc_responses_wrapper
+
+
+def doc_success_response(ns: RestXNamespace):
+    def doc_success_response_wrapper(function):
+        return doc_responses(ns, success_response)(function)
+
+    return doc_success_response_wrapper
+
+
+def doc_message_response(ns: RestXNamespace):
+    def doc_success_response_wrapper(function):
+        return doc_responses(ns, message_response)(function)
+
+    return doc_success_response_wrapper
 
 
 def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user", use_session: bool = True):
@@ -126,7 +153,7 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
     return searcher_wrapper
 
 
-def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str]], ns: Namespace):
+def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str]], ns: RestXNamespace):
     def argument_wrapper(function):
         @wraps(function)
         @ns.expect(parser)

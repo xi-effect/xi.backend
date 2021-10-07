@@ -1,7 +1,9 @@
+from dataclasses import dataclass
 from datetime import datetime
 from json import loads as json_loads
-from typing import Type, Dict
+from typing import Type, Dict, Tuple, Union, Optional
 
+from flask_restx import Model, Namespace
 from flask_restx.fields import Raw as RawField, Boolean as BooleanField, Integer as IntegerField, String as StringField
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import Boolean, Integer, String, JSON, DateTime
@@ -52,3 +54,23 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False):
 
 class Marshalable:
     marshal_models: Dict[str, Dict[str, Type[RawField]]] = {}
+
+
+@dataclass()
+class ResponseDoc:
+    code: int = 200
+    description: str = None
+    model: Optional[Model] = None
+
+    def register_model(self, ns: Namespace):
+        if self.model is not None:
+            self.model = ns.model(self.model.name, self.model)
+
+    def get_args(self) -> Union[Tuple[int, str], Tuple[int, str, Model]]:
+        if self.model is None:
+            return self.code, self.description
+        return self.code, self.description, self.model
+
+
+success_response: ResponseDoc = ResponseDoc(model=Model("Default Response", {"a": BooleanField}))
+message_response: ResponseDoc = ResponseDoc(model=Model("Message Response", {"a": StringField}))
