@@ -157,8 +157,10 @@ def lister(per_request: int, argument_parser: Callable[[Callable], Any] = argume
 
 def yad(decorators):
     def decorator(f):
+        __apidoc__ = f.__apidoc__
         for d in reversed(decorators):
             f = d(f)
+        f.__apidoc__ = __apidoc__
         return f
 
     return decorator
@@ -166,7 +168,6 @@ def yad(decorators):
 
 def cool_marshal_with(model: Dict[str, Type[Raw]], namespace: Namespace, *decorators, as_list: bool = False):
     def cool_marshal_with_wrapper(function):
-        @namespace.doc(responses={"200": (None, [model] if as_list else model)})
         @yad(decorators)
         @namespace.marshal_with(model, skip_none=True, as_list=as_list)
         def cool_marshal_with_inner(*args, **kwargs):
