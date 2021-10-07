@@ -27,7 +27,7 @@ class Settings(Resource):  # [GET|POST] /settings/
     parser.add_argument("changed", type=dict, location="json", required=True)
 
     @jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(User.marshal_models["full-settings"])
+    @settings_namespace.marshal_with(User.marshal_models["full-settings"], skip_none=True)
     def get(self, user: User):
         return user
 
@@ -41,7 +41,7 @@ class Settings(Resource):  # [GET|POST] /settings/
 @settings_namespace.route("/main/")
 class MainSettings(Resource):  # [GET] /settings/main/
     @jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(User.marshal_models["main-settings"])
+    @settings_namespace.marshal_with(User.marshal_models["main-settings"], skip_none=True)
     def get(self, user: User):
         return user
 

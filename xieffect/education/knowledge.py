@@ -103,7 +103,7 @@ class PageLister(Resource):  # POST /pages/
 
     @jwt_authorizer(User, None)
     @lister(50, argument_parser(parser, "search", "counter"))
-    @pages_view_namespace.marshal_list_with(Page.marshal_models["main"])
+    @pages_view_namespace.marshal_list_with(Page.marshal_models["main"], skip_none=True)
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
         return Page.search(session, search, start, finish - start)
 
@@ -112,7 +112,7 @@ class PageLister(Resource):  # POST /pages/
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
     @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Page, "page_id", "page")
-    @pages_view_namespace.marshal_list_with(Page.marshal_models["main"])
+    @pages_view_namespace.marshal_list_with(Page.marshal_models["main"], skip_none=True)
     def get(self, page: Page):  # add some access checks
         page.view()
         return page
