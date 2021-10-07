@@ -10,12 +10,7 @@ from users import User
 from webhooks import send_discord_message, WebhookURLs
 
 
-class FilterGetter(Resource):  # [GET] /filters/
-    @jwt_authorizer(User, use_session=False)
-    def get(self, user: User):
-        return {"a": user.get_filter_bind()}
-
-
+education_namespace: Namespace = Namespace("modules", path="/")
 modules_view_namespace: Namespace = Namespace("modules")
 pages_view_namespace: Namespace = Namespace("pages")
 
@@ -24,6 +19,13 @@ page_json = pages_view_namespace.model("Page", Page.marshal_models["main"])
 report_parser: RequestParser = RequestParser()
 report_parser.add_argument("reason", required=True)
 report_parser.add_argument("message", required=False)
+
+
+@education_namespace.route("/filters/")
+class FilterGetter(Resource):  # [GET] /filters/
+    @jwt_authorizer(User, use_session=False)
+    def get(self, user: User):
+        return {"a": user.get_filter_bind()}
 
 
 @modules_view_namespace.route("/")

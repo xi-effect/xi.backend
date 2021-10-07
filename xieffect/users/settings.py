@@ -7,10 +7,13 @@ from users.database import User
 # from users.emailer import send_generated_email
 
 settings_namespace: Namespace = Namespace("settings")
+other_settings_namespace: Namespace = Namespace("avatar-settings", path="/")  # redo (unite with settings_namespace)
+protected_settings_namespace: Namespace = Namespace("protected-settings", path="/")
 full_settings = settings_namespace.model("FullSettings", User.marshal_models["full-settings"])
 main_settings = settings_namespace.model("MainSettings", User.marshal_models["main-settings"])
 
 
+@other_settings_namespace.route("/avatar/")
 class Avatar(Resource):  # [GET|POST] /avatar/
     @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
@@ -55,6 +58,7 @@ class RoleSettings(Resource):  # [GET] /settings/roles/
         return user.get_role_settings(session)
 
 
+@protected_settings_namespace.route("/email-change/")
 class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", required=True)
@@ -73,6 +77,7 @@ class EmailChanger(Resource):  # [POST] /email-change/
         return {"a": "Success"}
 
 
+@protected_settings_namespace.route("/password-change/")
 class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", required=True)

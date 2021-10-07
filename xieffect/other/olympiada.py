@@ -2,13 +2,15 @@ from os import path
 from subprocess import call, TimeoutExpired
 from typing import IO
 
-from flask import request, send_file
-from flask_restx import Resource
+from flask import request
+from flask_restx import Resource, Namespace
 
 from componets import jwt_authorizer
 from other.test_keeper import TestPoint, UserSubmissions, ResultCodes
 from users import User
 from webhooks import send_discord_message, WebhookURLs
+
+oct_namespace: Namespace = Namespace("oct", path="/tasks/<task_name>/attempts/")
 
 
 def check_one(inp: str, out: str) -> ResultCodes:
@@ -34,6 +36,7 @@ def check_one(inp: str, out: str) -> ResultCodes:
     return ResultCodes.Accepted if result.split() == out.split() else ResultCodes.WrongAnswer
 
 
+@oct_namespace.route("/new/")
 class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
     @jwt_authorizer(User)
     def post(self, session, task_name: str, user: User):
@@ -63,6 +66,7 @@ class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
         return UserSubmissions.create_next(session, user.id, task_name, code, points, failed).to_json()
 
 
+@oct_namespace.route("/all/")
 class GetTaskSummary(Resource):  # [GET] /tasks/<task_name>/attempts/all/
     @jwt_authorizer(User)
     def get(self, session, task_name: str, user: User):
@@ -76,9 +80,9 @@ class GetTaskSummary(Resource):  # [GET] /tasks/<task_name>/attempts/all/
             return list(map(lambda x: x.to_json(), result))
 
 
-class UpdateRequest(Resource):  # [GET] /oct/update/
-    def get(self):
-        return send_file(r"OlimpCheck.jar")
+# class UpdateRequest(Resource):  # [GET] /oct/update/
+#     def get(self):
+#         return send_file(r"OlimpCheck.jar")
 
 
 pass  # api for creating remotely

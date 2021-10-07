@@ -8,6 +8,7 @@ from componets.checkers import jwt_authorizer
 from users import User
 
 wip_images_namespace: Namespace = Namespace("wip-images", path="/wip/images/")
+images_view_namespace: Namespace = Namespace("images", path="/images/")
 
 
 @wip_images_namespace.route("/")
@@ -39,6 +40,7 @@ class ImageProcessor(Resource):  # [GET|PUT|DELETE] /wip/images/<int:image_id>/
         return {"a": True}
 
 
+@images_view_namespace.route("/<image_id>/")
 class ImageViewer(Resource):  # GET /images/<image_id>/
     @jwt_authorizer(User, None, use_session=False)
     def get(self, image_id: str):

@@ -12,35 +12,42 @@ from werkzeug.exceptions import HTTPException
 
 from authorship import (Author, authors_namespace)
 from componets import with_session
-from education import (modules_view_namespace, pages_view_namespace, StandardProgresser, PracticeGenerator,
-                       TheoryNavigator, TheoryContentsGetter, TestContentsGetter, TestNavigator, TestReplySaver,
-                       TestResultCollector, FilterGetter)
-from file_system import (wip_json_file_namespace, wip_images_namespace, ImageViewer)
+from education import (modules_view_namespace, pages_view_namespace, education_namespace,
+                       StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter, TestContentsGetter,
+                       TestNavigator, TestReplySaver, TestResultCollector)
+from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace)
 from main import app, Session, versions
-from other import (Version, SubmitTask, GetTaskSummary, UpdateRequest)  # UploadAppUpdate,
+from other import (application_namespace, oct_namespace)
 from outside import (basic_namespace, github_namespace)
-from users import (TokenBlockList, UserRegistration, UserLogin, UserLogout, PasswordResetSender,
-                   PasswordReseter, Avatar, settings_namespace, EmailChanger,
-                   PasswordChanger, EmailSender, EmailConfirm, AvatarViewer)
+from users import (TokenBlockList, reglog_namespace, email_namespace,
+                   settings_namespace, other_settings_namespace, protected_settings_namespace)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
 api: Api = Api(app, doc="/doc/", version=versions["API"])
 
-ns = api.namespace("main", path="/")
-
-api.add_namespace(basic_namespace)
+api.add_namespace(application_namespace)
 api.add_namespace(github_namespace)
+api.add_namespace(basic_namespace)
+
+api.add_namespace(email_namespace)
+api.add_namespace(reglog_namespace)
 
 api.add_namespace(settings_namespace)
+api.add_namespace(other_settings_namespace)
+api.add_namespace(protected_settings_namespace)
 
+api.add_namespace(education_namespace)
 api.add_namespace(pages_view_namespace)
 api.add_namespace(modules_view_namespace)
+api.add_namespace(images_view_namespace)
 
 api.add_namespace(authors_namespace)
-
 api.add_namespace(wip_images_namespace)
 api.add_namespace(wip_json_file_namespace)
+
+api.add_namespace(oct_namespace)
+ns = api.namespace("other", path="/")
 
 jwt: JWTManager = JWTManager(app)
 
@@ -150,30 +157,6 @@ def unauthorized_callback(callback):
     return {"a": f"unauthorized: {callback}"}, 401
 
 
-# Adding email resources:
-ns.add_resource(EmailSender, "/email/<email>/")
-ns.add_resource(EmailConfirm, "/email-confirm/")
-
-# Adding sign up/in/out resources:
-ns.add_resource(UserRegistration, "/reg/")
-ns.add_resource(UserLogin, "/auth/")
-ns.add_resource(UserLogout, "/logout/")
-
-# Adding password resetting resources:
-ns.add_resource(PasswordResetSender, "/password-reset/<email>/")
-ns.add_resource(PasswordReseter, "/password-reset/confirm/")
-
-# Adding settings resources:
-ns.add_resource(Avatar, "/avatar/")
-ns.add_resource(EmailChanger, "/email-change/")
-ns.add_resource(PasswordChanger, "/password-change/")
-
-# Adding profile viewing resource(s):
-ns.add_resource(AvatarViewer, "/authors/<int:user_id>/avatar/")
-
-# Adding module resources:
-ns.add_resource(FilterGetter, "/filters/")
-
 # Adding in-module resources:
 ns.add_resource(StandardProgresser, "/sessions/<int:session_id>/")
 ns.add_resource(PracticeGenerator, "/modules/<int:module_id>/next/")
@@ -183,17 +166,6 @@ ns.add_resource(TestContentsGetter, "/tests/<int:test_id>/contents/")
 ns.add_resource(TestNavigator, "/tests/<int:test_id>/tasks/<int:task_id>/")
 ns.add_resource(TestReplySaver, "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
 ns.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
-
-# Adding image resources:
-ns.add_resource(ImageViewer, "/images/<image_id>/")
-
-# Adding application resource(s):
-ns.add_resource(Version, "/<app_name>/version/")
-
-# Adding side-thing resources:
-ns.add_resource(UpdateRequest, "/oct/update/")
-ns.add_resource(SubmitTask, "/tasks/<task_name>/attempts/new/")
-ns.add_resource(GetTaskSummary, "/tasks/<task_name>/attempts/all/")
 
 if __name__ == "__main__":  # test only
     app.run(debug=True)

@@ -1,2 +1,2 @@
-from .applications import Version, UploadAppUpdate
-from .olympiada import SubmitTask, GetTaskSummary, UpdateRequest
+from .applications import application_namespace
+from .olympiada import oct_namespace

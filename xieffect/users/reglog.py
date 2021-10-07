@@ -11,6 +11,7 @@ from users.database import TokenBlockList, User
 reglog_namespace: Namespace = Namespace("reglog", path="/")
 
 
+@reglog_namespace.route("/reg/")
 class UserRegistration(Resource):  # [POST] /reg/
     parser = password_parser.copy()
     parser.add_argument("email", required=True)
@@ -32,6 +33,7 @@ class UserRegistration(Resource):  # [POST] /reg/
         # except: return {"a": False}, 500
 
 
+@reglog_namespace.route("/auth/")
 class UserLogin(Resource):  # [POST] /auth/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="email is required")
@@ -53,6 +55,7 @@ class UserLogin(Resource):  # [POST] /auth/
             return {"a": "Wrong password"}
 
 
+@reglog_namespace.route("/logout/")
 class UserLogout(Resource):  # [POST] /logout/
     @with_session
     @jwt_required()
@@ -63,6 +66,7 @@ class UserLogout(Resource):  # [POST] /logout/
         return response
 
 
+@reglog_namespace.route("/password-reset/<email>/")
 class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
     @with_session
     def get(self, session, email: str):
@@ -72,6 +76,7 @@ class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
         return {"a": True}
 
 
+@reglog_namespace.route("/password-reset/confirm/")
 class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True)

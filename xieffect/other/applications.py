@@ -1,10 +1,14 @@
 from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 
 from main import versions
 
 
+application_namespace: Namespace = Namespace("app", path="/<app_name>/")
+
+
+@application_namespace.route("/version/")
 class Version(Resource):  # [GET] /<app_name>/version/
     def get(self, app_name: str):
         if app_name.upper() in versions.keys():
@@ -13,6 +17,7 @@ class Version(Resource):  # [GET] /<app_name>/version/
             return {"a": "No such app"}, 400
 
 
+@application_namespace.route("/")
 class UploadAppUpdate(Resource):  # POST /<app_name>/
     @jwt_required()
     def post(self, app_name: str):

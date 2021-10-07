@@ -5,7 +5,10 @@ from componets import argument_parser, with_session
 from users.database import User
 # from users.emailer import send_generated_email, parse_code
 
+email_namespace: Namespace = Namespace("email", path="/")
 
+
+@email_namespace.route("/email/<email>/")
 class EmailSender(Resource):  # [POST] /email/<email>/
     @with_session
     def post(self, session, email: str):
@@ -21,6 +24,7 @@ class EmailSender(Resource):  # [POST] /email/<email>/
         return {"a": "Success"}
 
 
+@email_namespace.route("/email-confirm/")  # redo?
 class EmailConfirm(Resource):  # [POST] /email-confirm/
     parser: RequestParser = RequestParser()
     parser.add_argument("code", required=True)
