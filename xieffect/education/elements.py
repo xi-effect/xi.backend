@@ -242,7 +242,7 @@ class Module(Base, Identifiable):
     # Metrics & Sorting:
     views = Column(Integer, nullable=False, default=0)
     popularity = Column(Integer, nullable=False, default=1000)
-    creation_date = Column(DateTime, nullable=False)
+    created = Column(DateTime, nullable=False)
 
     # Author-related
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
@@ -257,7 +257,7 @@ class Module(Base, Identifiable):
             creation_date = datetime.utcnow()
         new_module = cls(id=module_id, type=module_type, name=name, length=length,
                          theme=theme, category=category, difficulty=difficulty,
-                         popularity=popularity, creation_date=creation_date)
+                         popularity=popularity, created=creation_date)
         new_module.author = author
         session.add(new_module)
         return True
@@ -271,7 +271,7 @@ class Module(Base, Identifiable):
                                                             "theme", "category", "difficulty")})
         if "image-id" in json_data.keys():
             entry.image_id = json_data["image-id"]
-        entry.creation_date = datetime.utcnow()
+        entry.created = datetime.utcnow()
         entry.author = author
 
         session.add(entry)
@@ -323,7 +323,7 @@ class Module(Base, Identifiable):
         if sort == SortType.POPULARITY:  # reverse?
             stmt = stmt.order_by(cls.views)
         elif sort == SortType.CREATION_DATE:
-            stmt = stmt.order_by(cls.creation_date.desc())
+            stmt = stmt.order_by(cls.created.desc())
         elif sort == SortType.VISIT_DATE:
             stmt = stmt.order_by(MFS.last_visited.desc())
 
@@ -353,7 +353,7 @@ class Module(Base, Identifiable):
             result.update(MFS.find_json(session, user_id, self.id))
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
                        "type": self.type.to_string(), "description": self.description,
-                       "views": self.views, "created": self.creation_date.isoformat()})
+                       "views": self.views, "created": self.created.isoformat()})
         return result
 
     def delete(self, session: Session):
