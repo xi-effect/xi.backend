@@ -34,7 +34,7 @@ class ModuleLister(Resource):  # [POST] /modules/
     parser.add_argument("sort", required=False)
 
     @jwt_authorizer(User)
-    @lister(12, argument_parser(parser, "counter", "filters", "sort", "search"))
+    @lister(12, argument_parser(parser, "counter", "filters", "sort", "search", ns=modules_view_namespace))
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
@@ -77,7 +77,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
 
     @jwt_authorizer(User)
     @database_searcher(Module, "module_id", check_only=True, use_session=True)
-    @argument_parser(parser, ("a", "operation"))
+    @argument_parser(parser, ("a", "operation"), ns=modules_view_namespace)
     def post(self, session, module_id: int, user: User, operation: str):
         module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
         module.change_preference(session, operation)
@@ -88,7 +88,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
     @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Module, "module_id", "module")
-    @argument_parser(report_parser, "reason", "message")
+    @argument_parser(report_parser, "reason", "message", ns=modules_view_namespace)
     def post(self, module: Module, reason: str, message: str):
         send_discord_message(
             WebhookURLs.COMPLAINER,
@@ -104,8 +104,8 @@ class PageLister(Resource):  # POST /pages/
     parser.add_argument("search", required=False)
 
     @jwt_authorizer(User, None)
-    @lister(50, argument_parser(parser, "search", "counter"))
     @pages_view_namespace.marshal_list_with(page_json, skip_none=True)
+    @lister(50, argument_parser(parser, "search", "counter", ns=pages_view_namespace))
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
         return Page.search(session, search, start, finish - start)
 
@@ -124,7 +124,7 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
 class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
     @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Page, "page_id", "page")
-    @argument_parser(report_parser, "reason", "message")
+    @argument_parser(report_parser, "reason", "message", ns=pages_view_namespace)
     def post(self, page: Page, reason: str, message: str):
         pass
 

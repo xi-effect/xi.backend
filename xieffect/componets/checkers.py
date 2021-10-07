@@ -2,6 +2,7 @@ from functools import wraps
 from typing import Type, Optional, Union, Tuple, Callable, Any
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_restx import Namespace
 from flask_restx.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
@@ -126,9 +127,10 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
     return searcher_wrapper
 
 
-def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str]]):
+def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str]], ns: Namespace):
     def argument_wrapper(function):
         @wraps(function)
+        @ns.expect(parser)
         def argument_inner(*args, **kwargs):
             data: dict = parser.parse_args()
             for arg_name in arg_names:

@@ -34,13 +34,10 @@ class Settings(Resource):  # [GET|POST] /settings/
         return user
 
     @jwt_authorizer(User, use_session=False)
-    @argument_parser(parser, "changed")
+    @argument_parser(parser, "changed", ns=settings_namespace)  # fix with json (marshal?)
     def post(self, user: User, changed: dict):
         user.change_settings(changed)
         return {"a": True}
-
-
-print(Settings.get.__apidoc__)
 
 
 @settings_namespace.route("/main/")
@@ -63,7 +60,7 @@ class EmailChanger(Resource):  # [POST] /email-change/
     parser.add_argument("new-email", required=True)
 
     @jwt_authorizer(User)
-    @argument_parser(parser, "password", ("new-email", "new_email"))
+    @argument_parser(parser, "password", ("new-email", "new_email"), ns=settings_namespace)
     def post(self, session, user: User, password: str, new_email: str):
         if not User.verify_hash(password, user.password):
             return {"a": "Wrong password"}
@@ -81,7 +78,7 @@ class PasswordChanger(Resource):  # [POST] /password-change/
     parser.add_argument("new-password", required=True)
 
     @jwt_authorizer(User, use_session=False)
-    @argument_parser(parser, "password", ("new-password", "new_password"))
+    @argument_parser(parser, "password", ("new-password", "new_password"), ns=settings_namespace)
     def post(self, user: User, password: str, new_password: str):
         if User.verify_hash(password, user.password):
             user.change_password(new_password)
