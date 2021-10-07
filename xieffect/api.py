@@ -12,9 +12,7 @@ from werkzeug.exceptions import HTTPException
 
 from authorship import (Author, authors_namespace)
 from componets import with_session
-from education import (modules_view_namespace, pages_view_namespace, education_namespace,
-                       StandardProgresser, PracticeGenerator, TheoryNavigator, TheoryContentsGetter, TestContentsGetter,
-                       TestNavigator, TestReplySaver, TestResultCollector)
+from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
 from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace)
 from main import app, Session, versions
 from other import (application_namespace, oct_namespace)
@@ -38,16 +36,16 @@ api.add_namespace(other_settings_namespace)
 api.add_namespace(protected_settings_namespace)
 
 api.add_namespace(education_namespace)
+api.add_namespace(images_view_namespace)
 api.add_namespace(pages_view_namespace)
 api.add_namespace(modules_view_namespace)
-api.add_namespace(images_view_namespace)
+api.add_namespace(interaction_namespace)
 
 api.add_namespace(authors_namespace)
 api.add_namespace(wip_images_namespace)
 api.add_namespace(wip_json_file_namespace)
 
 api.add_namespace(oct_namespace)
-ns = api.namespace("other", path="/")
 
 jwt: JWTManager = JWTManager(app)
 
@@ -156,16 +154,6 @@ def invalid_token_callback(callback):
 def unauthorized_callback(callback):
     return {"a": f"unauthorized: {callback}"}, 401
 
-
-# Adding in-module resources:
-ns.add_resource(StandardProgresser, "/sessions/<int:session_id>/")
-ns.add_resource(PracticeGenerator, "/modules/<int:module_id>/next/")
-ns.add_resource(TheoryContentsGetter, "/modules/<int:module_id>/contents/")
-ns.add_resource(TheoryNavigator, "/modules/<int:module_id>/points/<int:point_id>/")
-ns.add_resource(TestContentsGetter, "/tests/<int:test_id>/contents/")
-ns.add_resource(TestNavigator, "/tests/<int:test_id>/tasks/<int:task_id>/")
-ns.add_resource(TestReplySaver, "/tests/<int:test_id>/tasks/<int:task_id>/reply/")
-ns.add_resource(TestResultCollector, "/tests/<int:test_id>/results/")
 
 if __name__ == "__main__":  # test only
     app.run(debug=True)
