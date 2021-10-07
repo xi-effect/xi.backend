@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Type, Optional, Union, Tuple, Callable, Any
+from typing import Type, Optional, Union, Tuple
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace
@@ -7,7 +7,6 @@ from flask_restx.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
 from componets.add_whoosh import Searcher
-from componets.parsers import counter_parser
 from main import Session, Base, index_service
 
 
@@ -145,10 +144,9 @@ def argument_parser(parser: RequestParser, *arg_names: Union[str, Tuple[str, str
     return argument_wrapper
 
 
-def lister(per_request: int, argument_parser: Callable[[Callable], Any] = argument_parser(counter_parser, "counter")):
+def lister(per_request: int):
     def lister_wrapper(function):
         @wraps(function)
-        @argument_parser
         def lister_inner(*args, **kwargs):
             counter: int = kwargs.pop("counter") * per_request
             kwargs["start"] = counter

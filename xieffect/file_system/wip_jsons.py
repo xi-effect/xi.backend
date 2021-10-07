@@ -5,7 +5,7 @@ from flask import request  # , send_from_directory
 from flask_restx import Resource, Namespace
 
 from authorship import Author
-from componets import jwt_authorizer, lister
+from componets import jwt_authorizer, lister, argument_parser, counter_parser
 from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 
@@ -51,6 +51,7 @@ wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_typ
 @wip_json_file_namespace.route("/index/")
 class FileLister(Resource):  # [POST] /wip/<file_type>/index/
     @file_getter()
+    @argument_parser(counter_parser, "counter", ns=wip_json_file_namespace)
     @lister(50)
     def post(self, session, file_type: Type[JSONFile], author: Author, start: int, finish: int):
         return [x.get_metadata(session) for x in file_type.find_by_owner(session, author, start, finish - start)]
