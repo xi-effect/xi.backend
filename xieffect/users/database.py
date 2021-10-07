@@ -5,7 +5,7 @@ from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from authorship import Moderator, Author
-from componets import UserRole
+from componets import UserRole, create_marshal_model, Marshalable
 from componets.checkers import first_or_none
 from main import Base, Session
 
@@ -25,7 +25,9 @@ class TokenBlockList(Base):
         session.add(cls(jti=jti))
 
 
-class User(Base, UserRole):
+@create_marshal_model("main-settings", "username", "dark_theme", "language")
+@create_marshal_model("full-settings", "filter_bind", "password", "id", full=True)
+class User(Base, UserRole, Marshalable):
     __tablename__ = "users"
     not_found_text = "User does not exist"
 
@@ -104,16 +106,6 @@ class User(Base, UserRole):
             "moderator": Moderator.find_by_id(session, self.id) is not None,
             "author": "not-yet" if (author := Author.find_by_id(session, self.id, include_banned=True)
                                     ) is None else "banned" if author.banned else "current"
-        }
-
-    def get_main_settings(self) -> Dict[str, str]:
-        return {"username": self.username, "dark-theme": self.dark_theme, "language": self.language}
-
-    def get_settings(self) -> Dict[str, str]:
-        return {
-            "email": self.email, "email-confirmed": self.email_confirmed, "username": self.username,
-            "name": self.name, "surname": self.surname, "patronymic": self.patronymic,
-            "dark-theme": self.dark_theme, "language": self.language
         }
 
     def get_filter_bind(self) -> str:
