@@ -1,6 +1,8 @@
-from typing import Type, Optional, Union, Tuple, Callable, Any
+from typing import Type, Optional, Union, Tuple, Callable, Any, Dict
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_restx import Namespace
+from flask_restx.fields import Raw
 from flask_restx.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
@@ -71,7 +73,7 @@ def with_auto_session(function):
 def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user", use_session: bool = True):
     def authorizer_wrapper(function):
         @jwt_required()
-        @with_session
+        @with_session  # remove for cool_marshal_with to work
         def authorizer_inner(*args, **kwargs):
             session = kwargs["session"]
             result: role = role.find_by_id(session, get_jwt_identity())
@@ -84,6 +86,7 @@ def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "use
                     kwargs.pop("session")
                 return function(*args, **kwargs)
 
+        # authorizer_inner.__apidoc__ = "lol"
         return authorizer_inner
 
     return authorizer_wrapper
@@ -150,3 +153,25 @@ def lister(per_request: int, argument_parser: Callable[[Callable], Any] = argume
         return lister_inner
 
     return lister_wrapper
+
+
+def yad(decorators):
+    def decorator(f):
+        for d in reversed(decorators):
+            f = d(f)
+        return f
+
+    return decorator
+
+
+def cool_marshal_with(model: Dict[str, Type[Raw]], namespace: Namespace, *decorators, as_list: bool = False):
+    def cool_marshal_with_wrapper(function):
+        @namespace.doc(responses={"200": (None, [model] if as_list else model)})
+        @yad(decorators)
+        @namespace.marshal_with(model, skip_none=True, as_list=as_list)
+        def cool_marshal_with_inner(*args, **kwargs):
+            return function(*args, **kwargs)
+
+        return cool_marshal_with_inner
+
+    return cool_marshal_with_wrapper
