@@ -1,9 +1,7 @@
 from functools import wraps
-from typing import Type, Optional, Union, Tuple, Callable, Any, Dict
+from typing import Type, Optional, Union, Tuple, Callable, Any
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_restx import Namespace
-from flask_restx.fields import Raw
 from flask_restx.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
@@ -160,6 +158,7 @@ def lister(per_request: int, argument_parser: Callable[[Callable], Any] = argume
     return lister_wrapper
 
 
+"""
 def yad(decorators):
     def decorator(f):
         __apidoc__ = f.__apidoc__
@@ -181,3 +180,4 @@ def cool_marshal_with(model: Dict[str, Type[Raw]], namespace: Namespace, *decora
         return cool_marshal_with_inner
 
     return cool_marshal_with_wrapper
+"""

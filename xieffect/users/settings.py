@@ -1,9 +1,8 @@
 from flask import request, send_from_directory
-from flask_restx import Resource, Namespace, marshal_with
+from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
 from componets import jwt_authorizer, argument_parser, password_parser
-from componets.checkers import cool_marshal_with
 from users.database import User
 # from users.emailer import send_generated_email
 
@@ -29,7 +28,8 @@ class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
     parser.add_argument("changed", type=dict, location="json", required=True)
 
-    @cool_marshal_with(full_settings, settings_namespace, jwt_authorizer(User, use_session=False))
+    @jwt_authorizer(User, use_session=False)
+    @settings_namespace.marshal_with(full_settings, skip_none=True)
     def get(self, user: User):
         return user
 
@@ -45,7 +45,8 @@ print(Settings.get.__apidoc__)
 
 @settings_namespace.route("/main/")
 class MainSettings(Resource):  # [GET] /settings/main/
-    @cool_marshal_with(main_settings, settings_namespace, jwt_authorizer(User, use_session=False))
+    @jwt_authorizer(User, use_session=False)
+    @settings_namespace.marshal_with(main_settings, skip_none=True)
     def get(self, user: User):
         return user
 

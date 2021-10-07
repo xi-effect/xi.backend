@@ -4,7 +4,6 @@ from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
 from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
-from componets.checkers import cool_marshal_with
 from education.elements import Module, Page, SortType
 from education.sessions import ModuleFilterSession
 from users import User
@@ -104,19 +103,18 @@ class PageLister(Resource):  # POST /pages/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("search", required=False)
 
-    @cool_marshal_with(page_json, pages_view_namespace,
-                       jwt_authorizer(User, None),
-                       lister(50, argument_parser(parser, "search", "counter")),
-                       as_list=True)
+    @jwt_authorizer(User, None)
+    @lister(50, argument_parser(parser, "search", "counter"))
+    @pages_view_namespace.marshal_list_with(page_json, skip_none=True)
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
         return Page.search(session, search, start, finish - start)
 
 
 @pages_view_namespace.route("/<int:page_id>/")
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
-    @cool_marshal_with(page_json, pages_view_namespace,
-                       jwt_authorizer(User, None, use_session=False),
-                       database_searcher(Page, "page_id", "page"))
+    @jwt_authorizer(User, None, use_session=False)
+    @database_searcher(Page, "page_id", "page")
+    @pages_view_namespace.marshal_with(page_json, skip_none=True)
     def get(self, page: Page):  # add some access checks
         page.view()
         return page
