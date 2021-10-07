@@ -10,17 +10,17 @@ from sqlalchemy_enum34 import EnumType
 from .other import TypeEnum
 
 
-class EnumField(RawField):
+class EnumField(StringField):
     def format(self, value: TypeEnum) -> str:
         return value.to_string()
 
 
-class DateTimeField(RawField):
+class DateTimeField(StringField):
     def format(self, value: datetime) -> str:
         return value.isoformat()
 
 
-class JSONLoadableField(RawField):
+class JSONLoadableField(StringField):
     def format(self, value: str) -> str:
         return json_loads(value)
 
