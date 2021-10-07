@@ -2,7 +2,7 @@ from flask import request, send_from_directory
 from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
-from componets import jwt_authorizer, argument_parser, password_parser, doc_success_response, doc_message_response
+from componets import jwt_authorizer, argument_parser, password_parser, a_response
 from users.database import User
 # from users.emailer import send_generated_email
 
@@ -19,12 +19,11 @@ class Avatar(Resource):  # [GET|POST] /avatar/
     def get(self, user: User):
         return send_from_directory(r"../files/avatars", f"{user.id}.png")
 
-    @doc_success_response(other_settings_namespace)
+    @a_response(other_settings_namespace)
     @jwt_authorizer(User, use_session=False)
-    def post(self, user: User):
+    def post(self, user: User) -> None:
         with open(f"files/avatars/{user.id}.png", "wb") as f:
             f.write(request.data)
-        return {"a": True}
 
 
 @settings_namespace.route("/")
@@ -37,12 +36,11 @@ class Settings(Resource):  # [GET|POST] /settings/
     def get(self, user: User):
         return user
 
-    @doc_success_response(settings_namespace)
+    @a_response(settings_namespace)
     @jwt_authorizer(User, use_session=False)
     @argument_parser(parser, "changed", ns=settings_namespace)  # fix with json (marshal?)
-    def post(self, user: User, changed: dict):
+    def post(self, user: User, changed: dict) -> None:
         user.change_settings(changed)
-        return {"a": True}
 
 
 @settings_namespace.route("/main/")
@@ -65,19 +63,19 @@ class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", required=True)
 
-    @doc_message_response(protected_settings_namespace)
+    @a_response(protected_settings_namespace)
     @jwt_authorizer(User)
     @argument_parser(parser, "password", ("new-email", "new_email"), ns=settings_namespace)
-    def post(self, session, user: User, password: str, new_email: str):
+    def post(self, session, user: User, password: str, new_email: str) -> str:
         if not User.verify_hash(password, user.password):
-            return {"a": "Wrong password"}
+            return "Wrong password"
 
         if User.find_by_email_address(session, new_email):
-            return {"a": "Email in use"}
+            return "Email in use"
 
         # send_generated_email(new_email, "confirm", "registration-email.html")
         user.change_email(session, new_email)
-        return {"a": "Success"}
+        return "Success"
 
 
 @protected_settings_namespace.route("/password-change/")
@@ -85,12 +83,12 @@ class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", required=True)
 
-    @doc_message_response(protected_settings_namespace)
+    @a_response(protected_settings_namespace)
     @jwt_authorizer(User, use_session=False)
     @argument_parser(parser, "password", ("new-password", "new_password"), ns=settings_namespace)
-    def post(self, user: User, password: str, new_password: str):
+    def post(self, user: User, password: str, new_password: str) -> str:
         if User.verify_hash(password, user.password):
             user.change_password(new_password)
-            return {"a": "Success"}
+            return "Success"
         else:
-            return {"a": "Wrong password"}
+            return "Wrong password"

@@ -64,6 +64,7 @@ class User(Base, UserRole, Marshalable):
 
     @classmethod
     def find_by_email_address(cls, session: Session, email):
+        # send_generated_email(email, "pass", "password-reset-email.html")
         return first_or_none(session.execute(select(cls).where(cls.email == email)))
 
     @classmethod

@@ -5,7 +5,7 @@ from flask_restx import Resource, Namespace, Model
 from flask_restx.fields import Integer
 
 from authorship import Author
-from componets.checkers import jwt_authorizer, doc_success_response, doc_responses, ResponseDoc
+from componets.checkers import jwt_authorizer, a_response, doc_responses, ResponseDoc
 from users import User
 
 wip_images_namespace: Namespace = Namespace("wip-images", path="/wip/images/")
@@ -31,18 +31,16 @@ class ImageProcessor(Resource):  # [GET|PUT|DELETE] /wip/images/<int:image_id>/
     def get(self, author: Author, image_id: int):
         return redirect(f"/images/{author.id}-{image_id}/")
 
-    @doc_success_response(wip_images_namespace)
+    @a_response(wip_images_namespace)
     @jwt_authorizer(Author, "author", use_session=False)
-    def put(self, author: Author, image_id: int):
+    def put(self, author: Author, image_id: int) -> None:
         with open(f"files/images/{author.id}-{image_id}.png", "wb") as f:
             f.write(request.data)
-        return {"a": True}
 
-    @doc_success_response(wip_images_namespace)
+    @a_response(wip_images_namespace)
     @jwt_authorizer(Author, "author", use_session=False)
-    def delete(self, author: Author, image_id: int):
+    def delete(self, author: Author, image_id: int) -> None:
         remove(f"files/images/{author.id}-{image_id}.png")
-        return {"a": True}
 
 
 @images_view_namespace.route("/<image_id>/")

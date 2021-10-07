@@ -7,8 +7,8 @@ from flask_restx import Resource, Namespace, Model
 from flask_restx.fields import Integer
 
 from authorship import Author
-from componets import jwt_authorizer, lister, argument_parser, counter_parser
-from componets import doc_success_response, doc_message_response, doc_responses, ResponseDoc
+from componets import jwt_authorizer, lister, argument_parser, counter_parser, a_response
+from componets import doc_responses, ResponseDoc
 from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 
@@ -83,27 +83,25 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     # def get(self, file_type: Type[CATFile], file_id: int):
     #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
 
-    @doc_success_response(wip_json_file_namespace)
+    @a_response(wip_json_file_namespace)
     @file_getter(type_only=False)
-    def put(self, session, file: JSONFile):
+    def put(self, session, file: JSONFile) -> None:
         file.update_json(session, request.get_json())
         # file.update(request.get_data())
-        return {"a": True}
 
-    @doc_success_response(wip_json_file_namespace)
+    @a_response(wip_json_file_namespace)
     @file_getter(type_only=False)
-    def delete(self, session, file: JSONFile):
+    def delete(self, session, file: JSONFile) -> None:
         file.delete(session)
-        return {"a": True}
 
 
 @wip_json_file_namespace.route("/<int:file_id>/publication/")
 class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
-    @doc_message_response(wip_json_file_namespace)
+    @a_response(wip_json_file_namespace)
     @file_getter(type_only=False, use_session=True, use_author=True)
-    def post(self, session, file: JSONFile, author: Author):
+    def post(self, session, file: JSONFile, author: Author) -> str:
         with open(file.get_link(), "rb") as f:
             content: dict = load(f)
             content["id"] = file.id  # just making sure
             result: bool = (Page if type(file) == WIPPage else Module).create(session, content, author) is None
-        return {"a": "File already exists" if result else "Success"}
+        return "File already exists" if result else "Success"

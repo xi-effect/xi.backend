@@ -37,6 +37,11 @@ class Author(Base, UserRole):
             author = cls.create(session, user)
         return author
 
+    @classmethod
+    def initialize(cls, session: Session, user) -> bool:  # User class
+        author = cls.find_by_id(session, user)
+        return not author.banned
+
     def get_next_image_id(self):  # auto-commit
         self.last_image_id += 1
         return self.last_image_id

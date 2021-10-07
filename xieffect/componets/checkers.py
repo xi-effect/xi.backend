@@ -1,14 +1,14 @@
 from functools import wraps
-from typing import Type, Optional, Union, Tuple
+from typing import Type, Optional, Union, Tuple, Callable, Any
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace as RestXNamespace
 from flask_restx.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
+from main import Session, Base, index_service
 from .add_whoosh import Searcher
 from .marshals import ResponseDoc, success_response, message_response
-from main import Session, Base, index_service
 
 
 class Identifiable:
@@ -82,18 +82,20 @@ def doc_responses(ns: RestXNamespace, *responses: ResponseDoc):
     return doc_responses_wrapper
 
 
-def doc_success_response(ns: RestXNamespace):
-    def doc_success_response_wrapper(function):
-        return doc_responses(ns, success_response)(function)
+def a_response(ns: RestXNamespace):
+    def bool_a_response_wrapper(function: Callable[[Any], Union[None, bool, str]]):
+        return_type: Type = getattr(function, "__annotations__")["return"]
+        is_bool = return_type is None or issubclass(return_type, bool)
 
-    return doc_success_response_wrapper
+        @wraps(function)
+        @doc_responses(ns, success_response if is_bool else message_response)
+        def bool_a_response_inner(*args, **kwargs):
+            result = function(*args, **kwargs)
+            return {"a": True if return_type is None else result}
 
+        return bool_a_response_inner
 
-def doc_message_response(ns: RestXNamespace):
-    def doc_success_response_wrapper(function):
-        return doc_responses(ns, message_response)(function)
-
-    return doc_success_response_wrapper
+    return bool_a_response_wrapper
 
 
 def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user", use_session: bool = True):

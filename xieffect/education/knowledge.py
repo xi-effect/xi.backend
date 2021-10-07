@@ -3,8 +3,7 @@ from typing import List, Dict, Optional
 from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
-from componets import jwt_authorizer, database_searcher, argument_parser, lister
-from componets import counter_parser, doc_message_response, doc_success_response
+from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser, a_response
 from education.elements import Module, Page, SortType
 from education.sessions import ModuleFilterSession
 from users import User
@@ -24,10 +23,10 @@ report_parser.add_argument("message", required=False)
 
 @education_namespace.route("/filters/")
 class FilterGetter(Resource):  # [GET] /filters/
-    @doc_message_response(education_namespace)
+    @a_response(education_namespace)
     @jwt_authorizer(User, use_session=False)
-    def get(self, user: User):
-        return {"a": user.get_filter_bind()}
+    def get(self, user: User) -> str:
+        return user.get_filter_bind()
 
 
 @modules_view_namespace.route("/")
@@ -81,29 +80,27 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True)
 
-    @doc_success_response(modules_view_namespace)
+    @a_response(modules_view_namespace)
     @jwt_authorizer(User)
     @database_searcher(Module, "module_id", check_only=True, use_session=True)
     @argument_parser(parser, ("a", "operation"), ns=modules_view_namespace)
-    def post(self, session, module_id: int, user: User, operation: str):
+    def post(self, session, module_id: int, user: User, operation: str) -> None:
         module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
         module.change_preference(session, operation)
-        return {"a": True}
 
 
 @modules_view_namespace.route("/<int:module_id>/report/")
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
-    @doc_success_response(modules_view_namespace)
+    @a_response(modules_view_namespace)
     @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Module, "module_id", "module")
     @argument_parser(report_parser, "reason", "message", ns=modules_view_namespace)
-    def post(self, module: Module, reason: str, message: str):
+    def post(self, module: Module, reason: str, message: str) -> None:
         send_discord_message(
             WebhookURLs.COMPLAINER,
             f"Появилась новая жалоба на модуль #{module.id} ({module.name})\n"
             f"Причина: {reason}" + f"\nСообщение: {message}" if message is not None else ""
         )
-        return {"a": True}
 
 
 @pages_view_namespace.route("/")
@@ -140,8 +137,7 @@ class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
 
 @modules_view_namespace.route("/reset-hidden/")
 class ShowAllModules(Resource):  # GET /modules/reset-hidden/
-    @doc_success_response(modules_view_namespace)
+    @a_response(modules_view_namespace)
     @jwt_authorizer(User, use_session=False)
-    def get(self, user: User):
+    def get(self, user: User) -> None:
         ModuleFilterSession.change_by_user(user.id, "show")
-        return {"a": True}
