@@ -25,7 +25,8 @@ class PageKind(TypeEnum):
 
 # @whooshee.register_model("name", "theme", "description")
 @register_as_searchable("name", "theme", "description")
-@create_marshal_model("main", "author_id", "author", "suspended", full=True)
+@create_marshal_model("main", "id", "name", "description", "theme", "kind", "components")
+@create_marshal_model("short", "author", "blueprint", "components", "public", "reusable", "suspended", full=True)
 class Page(Base, Identifiable, Marshalable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author):
@@ -39,7 +40,8 @@ class Page(Base, Identifiable, Marshalable):
 
     id = Column(Integer, primary_key=True)
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
-    author = relationship("Author")
+    author_name = Column(String(100), ForeignKey("authors.pseudonym"), nullable=False)
+    author = relationship("Author", foreign_keys=[author_id])
     components = Column(JSON, nullable=False)
 
     kind = Column(EnumType(PageKind, by_name=True), nullable=False)
@@ -63,6 +65,7 @@ class Page(Base, Identifiable, Marshalable):
         entry.components = json_dumps(json_data["components"], ensure_ascii=False)
         entry.updated = datetime.utcnow()
         entry.author = author
+        # entry.author_name = author.pseudonym
         session.add(entry)
         return entry
 
