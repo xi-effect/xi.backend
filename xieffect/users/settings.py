@@ -1,12 +1,15 @@
 from flask import request, send_from_directory
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, marshal_with
 from flask_restx.reqparse import RequestParser
 
 from componets import jwt_authorizer, argument_parser, password_parser
+from componets.checkers import cool_marshal_with
 from users.database import User
 # from users.emailer import send_generated_email
 
 settings_namespace: Namespace = Namespace("settings")
+full_settings = settings_namespace.model("FullSettings", User.marshal_models["full-settings"])
+main_settings = settings_namespace.model("MainSettings", User.marshal_models["main-settings"])
 
 
 class Avatar(Resource):  # [GET|POST] /avatar/
@@ -26,8 +29,7 @@ class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
     parser.add_argument("changed", type=dict, location="json", required=True)
 
-    @jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(User.marshal_models["full-settings"], skip_none=True)
+    @cool_marshal_with(full_settings, settings_namespace, jwt_authorizer(User, use_session=False))
     def get(self, user: User):
         return user
 
@@ -38,10 +40,12 @@ class Settings(Resource):  # [GET|POST] /settings/
         return {"a": True}
 
 
+print(Settings.get.__apidoc__)
+
+
 @settings_namespace.route("/main/")
 class MainSettings(Resource):  # [GET] /settings/main/
-    @jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(User.marshal_models["main-settings"], skip_none=True)
+    @cool_marshal_with(main_settings, settings_namespace, jwt_authorizer(User, use_session=False))
     def get(self, user: User):
         return user
 
