@@ -3,7 +3,8 @@ from typing import List, Dict, Optional
 from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
-from componets import jwt_authorizer, database_searcher, argument_parser, lister, counter_parser
+from componets import jwt_authorizer, database_searcher, argument_parser, lister
+from componets import counter_parser, doc_message_response, doc_success_response
 from education.elements import Module, Page, SortType
 from education.sessions import ModuleFilterSession
 from users import User
@@ -23,6 +24,7 @@ report_parser.add_argument("message", required=False)
 
 @education_namespace.route("/filters/")
 class FilterGetter(Resource):  # [GET] /filters/
+    @doc_message_response(education_namespace)
     @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         return {"a": user.get_filter_bind()}
@@ -79,6 +81,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True)
 
+    @doc_success_response(modules_view_namespace)
     @jwt_authorizer(User)
     @database_searcher(Module, "module_id", check_only=True, use_session=True)
     @argument_parser(parser, ("a", "operation"), ns=modules_view_namespace)
@@ -90,6 +93,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
 
 @modules_view_namespace.route("/<int:module_id>/report/")
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
+    @doc_success_response(modules_view_namespace)
     @jwt_authorizer(User, None, use_session=False)
     @database_searcher(Module, "module_id", "module")
     @argument_parser(report_parser, "reason", "message", ns=modules_view_namespace)
@@ -136,6 +140,7 @@ class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
 
 @modules_view_namespace.route("/reset-hidden/")
 class ShowAllModules(Resource):  # GET /modules/reset-hidden/
+    @doc_success_response(modules_view_namespace)
     @jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         ModuleFilterSession.change_by_user(user.id, "show")

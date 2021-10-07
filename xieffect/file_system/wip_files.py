@@ -1,18 +1,21 @@
 from os import remove
 
 from flask import request, send_from_directory, redirect
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, Model
+from flask_restx.fields import Integer
 
 from authorship import Author
-from componets.checkers import jwt_authorizer
+from componets.checkers import jwt_authorizer, doc_success_response, doc_responses, ResponseDoc
 from users import User
 
 wip_images_namespace: Namespace = Namespace("wip-images", path="/wip/images/")
 images_view_namespace: Namespace = Namespace("images", path="/images/")
+image_ids_response: ResponseDoc = ResponseDoc(model=Model("Image IDs", {"author_id": Integer, "image_id": Integer}))
 
 
 @wip_images_namespace.route("/")
 class ImageAdder(Resource):  # POST /wip/images/
+    @doc_responses(wip_images_namespace, image_ids_response)
     @jwt_authorizer(Author, "author", use_session=False)
     def post(self, author: Author):
         author_id: int = author.id
@@ -28,12 +31,14 @@ class ImageProcessor(Resource):  # [GET|PUT|DELETE] /wip/images/<int:image_id>/
     def get(self, author: Author, image_id: int):
         return redirect(f"/images/{author.id}-{image_id}/")
 
+    @doc_success_response(wip_images_namespace)
     @jwt_authorizer(Author, "author", use_session=False)
     def put(self, author: Author, image_id: int):
         with open(f"files/images/{author.id}-{image_id}.png", "wb") as f:
             f.write(request.data)
         return {"a": True}
 
+    @doc_success_response(wip_images_namespace)
     @jwt_authorizer(Author, "author", use_session=False)
     def delete(self, author: Author, image_id: int):
         remove(f"files/images/{author.id}-{image_id}.png")

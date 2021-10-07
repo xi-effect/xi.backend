@@ -4,7 +4,7 @@ from flask_jwt_extended import get_jwt, jwt_required, unset_jwt_cookies
 from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
-from componets import password_parser, argument_parser, with_session
+from componets import password_parser, argument_parser, with_session, doc_success_response, doc_message_response
 from users.database import TokenBlockList, User
 # from users.emailer import send_generated_email, parse_code
 
@@ -17,6 +17,7 @@ class UserRegistration(Resource):  # [POST] /reg/
     parser.add_argument("email", required=True)
     parser.add_argument("username", required=True)
 
+    @doc_success_response(reglog_namespace)
     @with_session
     @argument_parser(parser, "email", "username", "password", ns=reglog_namespace)
     def post(self, session, email: str, username: str, password: str):
@@ -39,6 +40,7 @@ class UserLogin(Resource):  # [POST] /auth/
     parser.add_argument("email", required=True, help="email is required")
 
     @with_session
+    @doc_message_response(reglog_namespace)
     @argument_parser(parser, "email", "password", ns=reglog_namespace)
     def post(self, session, email: str, password: str):
         # print(f"Tried to login as '{email}' with password '{password}'")
@@ -57,6 +59,7 @@ class UserLogin(Resource):  # [POST] /auth/
 
 @reglog_namespace.route("/logout/")
 class UserLogout(Resource):  # [POST] /logout/
+    @doc_success_response(reglog_namespace)
     @with_session
     @jwt_required()
     def post(self, session):
@@ -68,6 +71,7 @@ class UserLogout(Resource):  # [POST] /logout/
 
 @reglog_namespace.route("/password-reset/<email>/")
 class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
+    @doc_success_response(reglog_namespace)
     @with_session
     def get(self, session, email: str):
         if not User.find_by_email_address(session, email) or email == "admin@admin.admin":
@@ -81,6 +85,7 @@ class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True)
 
+    @doc_message_response(reglog_namespace)
     @with_session
     @argument_parser(parser, "code", "password", ns=reglog_namespace)
     def post(self, session, code: str, password: str):

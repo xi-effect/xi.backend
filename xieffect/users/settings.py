@@ -2,7 +2,7 @@ from flask import request, send_from_directory
 from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
-from componets import jwt_authorizer, argument_parser, password_parser
+from componets import jwt_authorizer, argument_parser, password_parser, doc_success_response, doc_message_response
 from users.database import User
 # from users.emailer import send_generated_email
 
@@ -19,6 +19,7 @@ class Avatar(Resource):  # [GET|POST] /avatar/
     def get(self, user: User):
         return send_from_directory(r"../files/avatars", f"{user.id}.png")
 
+    @doc_success_response(other_settings_namespace)
     @jwt_authorizer(User, use_session=False)
     def post(self, user: User):
         with open(f"files/avatars/{user.id}.png", "wb") as f:
@@ -36,6 +37,7 @@ class Settings(Resource):  # [GET|POST] /settings/
     def get(self, user: User):
         return user
 
+    @doc_success_response(settings_namespace)
     @jwt_authorizer(User, use_session=False)
     @argument_parser(parser, "changed", ns=settings_namespace)  # fix with json (marshal?)
     def post(self, user: User, changed: dict):
@@ -63,6 +65,7 @@ class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", required=True)
 
+    @doc_message_response(protected_settings_namespace)
     @jwt_authorizer(User)
     @argument_parser(parser, "password", ("new-email", "new_email"), ns=settings_namespace)
     def post(self, session, user: User, password: str, new_email: str):
@@ -82,6 +85,7 @@ class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", required=True)
 
+    @doc_message_response(protected_settings_namespace)
     @jwt_authorizer(User, use_session=False)
     @argument_parser(parser, "password", ("new-password", "new_password"), ns=settings_namespace)
     def post(self, user: User, password: str, new_password: str):
