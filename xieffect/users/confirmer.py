@@ -1,4 +1,4 @@
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
 from componets import argument_parser, with_session
@@ -26,7 +26,7 @@ class EmailConfirm(Resource):  # [POST] /email-confirm/
     parser.add_argument("code", required=True)
 
     @with_session
-    @argument_parser(parser, "code")
+    @argument_parser(parser, "code", ns=Namespace("none"))
     def post(self, code: str):
         # email = parse_code(code, "confirm")
         # if email is None:

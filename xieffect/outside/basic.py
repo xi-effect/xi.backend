@@ -17,7 +17,7 @@ class HelloWorld(Resource):
         return {"hello": "word"}
 
     @jwt_authorizer(User, use_session=False)
-    @argument_parser(parser, "test")
+    @argument_parser(parser, "test", ns=basic_namespace)
     def post(self, test: str, user: User):
         print(f"Got {test} in the field 'test', said hello")
         print(f"User, who asked was {user.email}")

@@ -1,12 +1,14 @@
 from flask import Response, jsonify
 from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_jwt_extended import get_jwt, jwt_required, unset_jwt_cookies
-from flask_restx import Resource
+from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
 from componets import password_parser, argument_parser, with_session
 from users.database import TokenBlockList, User
 # from users.emailer import send_generated_email, parse_code
+
+reglog_namespace: Namespace = Namespace("reglog", path="/")
 
 
 class UserRegistration(Resource):  # [POST] /reg/
@@ -15,7 +17,7 @@ class UserRegistration(Resource):  # [POST] /reg/
     parser.add_argument("username", required=True)
 
     @with_session
-    @argument_parser(parser, "email", "username", "password")
+    @argument_parser(parser, "email", "username", "password", ns=reglog_namespace)
     def post(self, session, email: str, username: str, password: str):
         user: User = User.create(session, email, username, password)
         if not user:
@@ -35,7 +37,7 @@ class UserLogin(Resource):  # [POST] /auth/
     parser.add_argument("email", required=True, help="email is required")
 
     @with_session
-    @argument_parser(parser, "email", "password")
+    @argument_parser(parser, "email", "password", ns=reglog_namespace)
     def post(self, session, email: str, password: str):
         # print(f"Tried to login as '{email}' with password '{password}'")
 
@@ -75,7 +77,7 @@ class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
     parser.add_argument("code", required=True)
 
     @with_session
-    @argument_parser(parser, "code", "password")
+    @argument_parser(parser, "code", "password", ns=reglog_namespace)
     def post(self, session, code: str, password: str):
         # email = parse_code(code, "pass")
         # if email is None:

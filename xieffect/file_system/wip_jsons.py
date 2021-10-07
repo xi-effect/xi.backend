@@ -1,3 +1,4 @@
+from functools import wraps
 from json import load
 from typing import Type
 
@@ -12,6 +13,7 @@ from .keeper import JSONFile, WIPModule, WIPPage
 
 def file_getter(type_only: bool = True, use_session: bool = True, use_author: bool = False):
     def file_getter_wrapper(function):
+        @wraps(function)
         @jwt_authorizer(Author, "author")
         def get_file_or_type(*args, **kwargs):
             session = kwargs.pop("session")
