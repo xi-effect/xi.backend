@@ -16,7 +16,7 @@ from .keeper import JSONFile, WIPModule, WIPPage
 def file_getter(type_only: bool = True, use_session: bool = True, use_author: bool = False):
     def file_getter_wrapper(function):
         @wraps(function)
-        @jwt_authorizer(Author, "author")
+        @jwt_authorizer(wip_json_file_namespace, Author, "author")
         def get_file_or_type(*args, **kwargs):
             session = kwargs.pop("session")
             result: Type[JSONFile]
@@ -63,8 +63,8 @@ class FileLister(Resource):  # [POST] /wip/<file_type>/index/
 
 @wip_json_file_namespace.route("/")
 class FileCreator(Resource):  # [POST] /wip/<file_type>/
-    @file_getter()
     @doc_responses(wip_json_file_namespace, ResponseDoc(model=Model("ID Response", {"id": Integer})))
+    @file_getter()
     def post(self, session, author: Author, file_type: Type[JSONFile]):
         result: file_type = file_type.create_from_json(session, author, request.get_json())
         # for CATFile  result: file_type = file_type.create_with_file(author, request.get_data())

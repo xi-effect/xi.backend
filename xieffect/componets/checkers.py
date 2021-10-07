@@ -88,18 +88,20 @@ def a_response(ns: RestXNamespace):
         is_bool = return_type is None or issubclass(return_type, bool)
 
         @wraps(function)
-        @doc_responses(ns, success_response if is_bool else message_response)
         def bool_a_response_inner(*args, **kwargs):
             result = function(*args, **kwargs)
             return {"a": True if return_type is None else result}
 
-        return bool_a_response_inner
+        return ns.response(*(success_response if is_bool else message_response).get_args())(bool_a_response_inner)
 
     return bool_a_response_wrapper
 
 
-def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "user", use_session: bool = True):
+def jwt_authorizer(ns: RestXNamespace, role: Type[UserRole],
+                   result_filed_name: Optional[str] = "user", use_session: bool = True):
     def authorizer_wrapper(function):
+        response_code: int = 401 if role is UserRole.default_role else 403
+
         @wraps(function)
         @jwt_required()
         @with_session
@@ -107,7 +109,7 @@ def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "use
             session = kwargs["session"]
             result: role = role.find_by_id(session, get_jwt_identity())
             if result is None:
-                return {"a": role.not_found_text}, 401 if role is UserRole.default_role else 403
+                return {"a": role.not_found_text}, response_code
             else:
                 if result_filed_name is not None:
                     kwargs[result_filed_name] = result
@@ -115,12 +117,12 @@ def jwt_authorizer(role: Type[UserRole], result_filed_name: Optional[str] = "use
                     kwargs.pop("session")
                 return function(*args, **kwargs)
 
-        return authorizer_inner
+        return ns.response(*ResponseDoc.error_response(response_code, role.not_found_text).get_args())(authorizer_inner)
 
     return authorizer_wrapper
 
 
-def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
+def database_searcher(ns: RestXNamespace, identifiable: Type[Identifiable], input_field_name: str,
                       result_filed_name: Optional[str] = None, check_only: bool = False, use_session: bool = False):
     def searcher_wrapper(function):
         error_response: tuple = {"a": identifiable.not_found_text}, 404
@@ -147,10 +149,8 @@ def database_searcher(identifiable: Type[Identifiable], input_field_name: str,
             else:
                 return function(*args, **kwargs)
 
-        if check_only:
-            return checker_inner
-        else:
-            return searcher_inner
+        result = checker_inner if check_only else searcher_inner
+        return ns.response(*ResponseDoc.error_response(404, identifiable.not_found_text).get_args())(result)
 
     return searcher_wrapper
 

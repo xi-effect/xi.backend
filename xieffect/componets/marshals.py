@@ -62,6 +62,10 @@ class ResponseDoc:
     description: str = None
     model: Optional[Model] = None
 
+    @classmethod
+    def error_response(cls, code: int, description: str):
+        return cls(code, description, Model("Message Response", {"a": StringField}))
+
     def register_model(self, ns: Namespace):
         if self.model is not None:
             self.model = ns.model(self.model.name, self.model)

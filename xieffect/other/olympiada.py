@@ -38,7 +38,7 @@ def check_one(inp: str, out: str) -> ResultCodes:
 
 @oct_namespace.route("/new/")
 class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
-    @jwt_authorizer(User)
+    @jwt_authorizer(oct_namespace, User)
     def post(self, session, task_name: str, user: User):
         if not TestPoint.find_by_task(session, task_name):
             return {"a": "Task doesn't exist"}
@@ -68,7 +68,7 @@ class SubmitTask(Resource):  # [POST] /tasks/<task_name>/attempts/new/
 
 @oct_namespace.route("/all/")
 class GetTaskSummary(Resource):  # [GET] /tasks/<task_name>/attempts/all/
-    @jwt_authorizer(User)
+    @jwt_authorizer(oct_namespace, User)
     def get(self, session, task_name: str, user: User):
         if not TestPoint.find_by_task(session, task_name):
             return {"a": "Task doesn't exist"}
