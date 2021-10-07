@@ -38,7 +38,7 @@ column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
 def create_marshal_model(model_name: str, *fields: str, full: bool = False):
     def create_marshal_model_wrapper(cls):
         cls.marshal_models[model_name] = {
-            column.name.replace("_", "-"): column_to_field[supported_type]
+            column.name.replace("_", "-"): column_to_field[supported_type](attribute=column.name)
             for column in cls.__table__.columns
             if (column.name in fields) != full
             for supported_type in column_to_field.keys()
