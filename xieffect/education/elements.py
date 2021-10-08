@@ -11,7 +11,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Pi
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable
+from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFiledDef
 from componets.checkers import first_or_none, register_as_searchable
 from education.sessions import ModuleFilterSession as MFS
 from main import Base, Session  # , whooshee
@@ -40,7 +40,6 @@ class Page(Base, Identifiable, Marshalable):
 
     id = Column(Integer, primary_key=True)
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
-    author_name = Column(String(100), ForeignKey("authors.pseudonym"), nullable=False)
     author = relationship("Author", foreign_keys=[author_id])
     components = Column(JSON, nullable=False)
 
@@ -57,6 +56,8 @@ class Page(Base, Identifiable, Marshalable):
     views = Column(Integer, nullable=False, default=0)
     updated = Column(DateTime, nullable=False)
 
+    author_name: LambdaFiledDef = LambdaFiledDef("short", "author_name", str, lambda page: page.author.pseudonym)
+
     @classmethod
     def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
         json_data["kind"] = PageKind.from_string(json_data["kind"])
@@ -65,7 +66,6 @@ class Page(Base, Identifiable, Marshalable):
         entry.components = json_dumps(json_data["components"], ensure_ascii=False)
         entry.updated = datetime.utcnow()
         entry.author = author
-        entry.author_name = author.pseudonym
         session.add(entry)
         return entry
 
