@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from json import loads as json_loads
-from typing import Type, Dict, Tuple, Union, Optional
+from typing import Type, Dict, Tuple, Union, Optional, Callable
 
 from flask_restx import Model, Namespace
 from flask_restx.fields import Raw as RawField, Boolean as BooleanField, Integer as IntegerField, String as StringField
@@ -27,14 +27,36 @@ class JSONLoadableField(StringField):
         return json_loads(value)
 
 
+type_to_field: Dict[type, Type[RawField]] = {
+    bool: BooleanField,
+    int: IntegerField,
+    str: StringField,
+}
+
 column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
     Integer: IntegerField,
     String: StringField,
     Boolean: BooleanField,
     JSON: JSONLoadableField,
     DateTime: DateTimeField,
-    EnumType: EnumField
+    EnumType: EnumField,
 }
+
+
+@dataclass()
+class LambdaFiledDef:
+    model_name: str
+    field_name: str
+    field_type: type
+    attribute: Union[str, Callable]
+
+    def to_field(self):
+        field_type: Type[RawField] = RawField
+        for supported_type in type_to_field:
+            if issubclass(self.field_type, supported_type):
+                field_type = type_to_field[supported_type]
+                break
+        return field_type(attribute=self.field_name if self.attribute is None else self.attribute)
 
 
 def create_marshal_model(model_name: str, *fields: str, full: bool = False):
@@ -46,6 +68,13 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False):
             for supported_type in column_to_field.keys()
             if isinstance(column.type, supported_type)
         }
+
+        cls.marshal_models[model_name].update({
+            field_name.replace("_", "-"): field.to_field()
+            for field_name, field_type in cls.__dict__.get('__annotations__', {}).items()
+            if issubclass(field_type, LambdaFiledDef)
+            if (field := getattr(cls, field_name)).model_name == model_name
+        })
 
         return cls
 
