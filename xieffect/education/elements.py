@@ -26,7 +26,7 @@ class PageKind(TypeEnum):
 # @whooshee.register_model("name", "theme", "description")
 @register_as_searchable("name", "theme", "description")
 @create_marshal_model("main", "id", "name", "description", "theme", "kind", "components")
-@create_marshal_model("short", "author", "blueprint", "components", "public", "reusable", "suspended", full=True)
+@create_marshal_model("short", "id", "author_id", "kind", "name", "theme", "description", "views", "updated")
 class Page(Base, Identifiable, Marshalable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author):

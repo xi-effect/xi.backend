@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime
 from json import loads as json_loads
@@ -61,7 +62,7 @@ class LambdaFiledDef:
 
 def create_marshal_model(model_name: str, *fields: str, full: bool = False):
     def create_marshal_model_wrapper(cls):
-        cls.marshal_models[model_name] = {
+        model_dict = {
             column.name.replace("_", "-"): column_to_field[supported_type](attribute=column.name)
             for column in cls.__table__.columns
             if (column.name in fields) != full
@@ -69,12 +70,16 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False):
             if isinstance(column.type, supported_type)
         }
 
-        cls.marshal_models[model_name].update({
+        model_dict.update({
             field_name.replace("_", "-"): field.to_field()
             for field_name, field_type in cls.__dict__.get('__annotations__', {}).items()
             if issubclass(field_type, LambdaFiledDef)
             if (field := getattr(cls, field_name)).model_name == model_name
         })
+
+        cls.marshal_models[model_name] = OrderedDict(sorted(model_dict.items()))
+        if "id" in cls.marshal_models[model_name].keys():
+            cls.marshal_models[model_name].move_to_end("id", last=False)
 
         return cls
 
@@ -82,7 +87,7 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False):
 
 
 class Marshalable:
-    marshal_models: Dict[str, Dict[str, Type[RawField]]] = {}
+    marshal_models: Dict[str, OrderedDict[str, Type[RawField]]] = {}
 
 
 @dataclass()
