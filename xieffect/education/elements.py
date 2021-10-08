@@ -56,7 +56,7 @@ class Page(Base, Identifiable, Marshalable):
     views = Column(Integer, nullable=False, default=0)
     updated = Column(DateTime, nullable=False)
 
-    author_name: LambdaFiledDef = LambdaFiledDef("short", "author_name", str, lambda page: page.author.pseudonym)
+    author_name: LambdaFiledDef = LambdaFiledDef("short", str, lambda page: page.author.pseudonym)
 
     @classmethod
     def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):

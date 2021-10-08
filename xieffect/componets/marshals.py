@@ -47,7 +47,6 @@ column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
 @dataclass()
 class LambdaFiledDef:
     model_name: str
-    field_name: str
     field_type: type
     attribute: Union[str, Callable]
 
@@ -57,7 +56,7 @@ class LambdaFiledDef:
             if issubclass(self.field_type, supported_type):
                 field_type = type_to_field[supported_type]
                 break
-        return field_type(attribute=self.field_name if self.attribute is None else self.attribute)
+        return field_type(attribute=self.attribute)
 
 
 def create_marshal_model(model_name: str, *fields: str, full: bool = False):
