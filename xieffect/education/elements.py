@@ -174,7 +174,9 @@ class SortType(str, TypeEnum):
 
 
 @register_as_searchable("name", "description")
-@create_marshal_model("short", "id", "name", "author_id", "image_id")
+@create_marshal_model("module-full", "theme", "difficulty", "category", "type",
+                      "description", "views", "created", inherit="module-short")
+@create_marshal_model("module-short", "id", "name", "author_id", "image_id")
 class Module(Base, Identifiable, Marshalable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author):
@@ -348,15 +350,6 @@ class Module(Base, Identifiable, Marshalable):
 
     def get_any_point(self, session: Session) -> Point:
         return Point.find_by_ids(session, self.id, randint(1, self.length))
-
-    def to_json(self, session: Session, user_id: int = None) -> dict:
-        result: dict = {"id": self.id, "name": self.name, "author-id": self.author_id, "image-id": self.image_id}
-        if user_id is not None:
-            result.update(MFS.find_json(session, user_id, self.id))
-        result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,
-                       "type": self.type.to_string(), "description": self.description,
-                       "views": self.views, "created": self.created.isoformat()})
-        return result
 
     def delete(self, session: Session):
         for point in Point.get_module_points(session, self.id):

@@ -4,12 +4,13 @@ from typing import Optional, Dict, List, Union
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime
 
-from componets import Identifiable
+from componets import Identifiable, LambdaFieldDef, create_marshal_model, Marshalable
 from componets.checkers import first_or_none
 from main import Base, Session
 
 
-class ModuleFilterSession(Base):
+@create_marshal_model("mfs", "started", "starred", "pinned", use_defaults=True)
+class ModuleFilterSession(Base, Marshalable):
     __tablename__ = "module-filter-sessions"
     not_found_text = "Session not found"
 
@@ -24,11 +25,15 @@ class ModuleFilterSession(Base):
     last_visited = Column(DateTime, nullable=True)  # None for not visited
     last_changed = Column(DateTime, nullable=True)
 
+    visited: LambdaFieldDef = \
+        LambdaFieldDef("mfs", datetime, lambda mfs: mfs.last_visited if mfs.started else datetime.min)
+
     @classmethod
     def create(cls, session: Session, user_id: int, module_id: int):
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
-        new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())
+        # parameter check freaks out for no reason \/ \/ \/
+        new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())  # noqa
         session.add(new_entry)
         return new_entry
 
@@ -71,18 +76,6 @@ class ModuleFilterSession(Base):
 
     def is_valuable(self) -> bool:
         return self.hidden or self.pinned or self.starred or self.started
-
-    def to_json(self) -> Dict[str, Union[str, bool]]:
-        result: Dict[str, Union[str, bool]] = {
-            "hidden": self.hidden, "pinned": self.pinned,
-            "starred": self.starred, "started": self.started
-        }
-        if self.started:
-            result["visited"] = self.last_visited.isoformat()
-        return result
-
-    def get_visit_date(self) -> float:
-        return self.last_visited.timestamp() if self.last_visited is not None else -1
 
     def visit_now(self) -> None:  # auto-commit
         self.last_visited = datetime.utcnow()
