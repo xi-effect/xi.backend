@@ -7,7 +7,6 @@ from componets import Namespace, counter_parser, unite_models
 from education.elements import Module, Page, SortType
 from education.sessions import ModuleFilterSession
 from users import User
-from webhooks import send_discord_message, WebhookURLs
 
 
 education_namespace: Namespace = Namespace("modules", path="/")
@@ -99,11 +98,7 @@ class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
     @modules_view_namespace.database_searcher(Module, "module_id", "module")
     @modules_view_namespace.argument_parser(report_parser, "reason", "message")
     def post(self, module: Module, reason: str, message: str) -> None:
-        send_discord_message(
-            WebhookURLs.COMPLAINER,
-            f"Появилась новая жалоба на модуль #{module.id} ({module.name})\n"
-            f"Причина: {reason}" + f"\nСообщение: {message}" if message is not None else ""
-        )
+        pass
 
 
 @pages_view_namespace.route("/")
