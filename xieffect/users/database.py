@@ -5,7 +5,7 @@ from sqlalchemy import Column, Sequence, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
-from componets import UserRole, create_marshal_model, Marshalable, LambdaFiledDef
+from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
 from componets.checkers import first_or_none
 from main import Base, Session
 
@@ -63,8 +63,8 @@ class User(Base, UserRole, Marshalable):
     author = relationship("Author", backref="user", uselist=False)
     moderator = relationship("Moderator", backref="user", uselist=False)
 
-    author_status: LambdaFiledDef = LambdaFiledDef("role-settings", str, lambda user: user.get_author_status())
-    moderator_status: LambdaFiledDef = LambdaFiledDef("role-settings", bool, lambda user: user.moderator is not None)
+    author_status: LambdaFieldDef = LambdaFieldDef("role-settings", str, lambda user: user.get_author_status())
+    moderator_status: LambdaFieldDef = LambdaFieldDef("role-settings", bool, lambda user: user.moderator is not None)
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):

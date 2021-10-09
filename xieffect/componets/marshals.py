@@ -45,7 +45,7 @@ column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
 
 
 @dataclass()
-class LambdaFiledDef:
+class LambdaFieldDef:
     model_name: str
     field_type: type
     attribute: Union[str, Callable]
@@ -72,7 +72,7 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False):
         model_dict.update({
             field_name.replace("_", "-"): field.to_field()
             for field_name, field_type in cls.__dict__.get('__annotations__', {}).items()
-            if issubclass(field_type, LambdaFiledDef)
+            if issubclass(field_type, LambdaFieldDef)
             if (field := getattr(cls, field_name)).model_name == model_name
         })
 

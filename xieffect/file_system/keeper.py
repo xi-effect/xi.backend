@@ -7,7 +7,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Text
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable, TypeEnum, create_marshal_model, LambdaFiledDef, Marshalable
+from componets import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable
 from componets.checkers import first_or_none
 from education import PageKind, ModuleType
 from main import Base, Session
@@ -110,7 +110,7 @@ class WIPPage(JSONFile, Marshalable):
 
     page = relationship("Page", backref="wip", uselist=False, cascade="all, delete")
 
-    views: LambdaFiledDef = LambdaFiledDef("main", int,
+    views: LambdaFieldDef = LambdaFieldDef("main", int,
                                            lambda wip_page: wip_page.get_views())
 
     def update_metadata(self, json_data: dict) -> None:

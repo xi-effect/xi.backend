@@ -11,7 +11,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Pi
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFiledDef
+from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef
 from componets.checkers import first_or_none, register_as_searchable
 from education.sessions import ModuleFilterSession as MFS
 from main import Base, Session  # , whooshee
@@ -56,7 +56,7 @@ class Page(Base, Identifiable, Marshalable):
     views = Column(Integer, nullable=False, default=0)
     updated = Column(DateTime, nullable=False)
 
-    author_name: LambdaFiledDef = LambdaFiledDef("short", str, lambda page: page.author.pseudonym)
+    author_name: LambdaFieldDef = LambdaFieldDef("short", str, lambda page: page.author.pseudonym)
 
     @classmethod
     def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
