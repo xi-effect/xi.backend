@@ -11,6 +11,7 @@ other_settings_namespace: Namespace = Namespace("avatar-settings", path="/")  # 
 protected_settings_namespace: Namespace = Namespace("protected-settings", path="/")
 full_settings = settings_namespace.model("FullSettings", User.marshal_models["full-settings"])
 main_settings = settings_namespace.model("MainSettings", User.marshal_models["main-settings"])
+role_settings = settings_namespace.model("RoleSettings", User.marshal_models["role-settings"])
 
 
 @other_settings_namespace.route("/avatar/")
@@ -53,9 +54,10 @@ class MainSettings(Resource):  # [GET] /settings/main/
 
 @settings_namespace.route("/roles/")
 class RoleSettings(Resource):  # [GET] /settings/roles/
-    @settings_namespace.jwt_authorizer(User)
-    def get(self, session, user: User):
-        return user.get_role_settings(session)
+    @settings_namespace.jwt_authorizer(User, use_session=False)
+    @settings_namespace.marshal_with(role_settings, skip_none=True)
+    def get(self, user: User):
+        return user
 
 
 @protected_settings_namespace.route("/email-change/")

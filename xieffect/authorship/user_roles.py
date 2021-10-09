@@ -1,17 +1,18 @@
-from sqlalchemy import Column, select
+from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from componets import UserRole
 from componets.checkers import first_or_none
 from main import Base, Session
+from users import User
 
 
 class Author(Base, UserRole):
     __tablename__ = "authors"
     not_found_text = "Author does not exist"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey(User.id), primary_key=True)
     pseudonym = Column(String(100), nullable=False)
     banned = Column(Boolean, nullable=False, default=False)
     last_image_id = Column(Integer, nullable=False, default=0)
@@ -19,8 +20,9 @@ class Author(Base, UserRole):
     modules = relationship("Module", backref="authors")
 
     @classmethod
-    def create(cls, session: Session, user):  # User class
-        new_entry = cls(id=user.id, pseudonym=user.username)
+    def create(cls, session: Session, user: User):  # User class
+        new_entry = cls(pseudonym=user.username)
+        user.author = new_entry
         session.add(new_entry)
         return new_entry
 
@@ -39,7 +41,7 @@ class Author(Base, UserRole):
 
     @classmethod
     def initialize(cls, session: Session, user) -> bool:  # User class
-        author = cls.find_by_id(session, user)
+        author = cls.find_or_create(session, user)
         return not author.banned
 
     def get_next_image_id(self):  # auto-commit
@@ -51,16 +53,17 @@ class Moderator(Base, UserRole):
     __tablename__ = "moderators"
     not_found_text = "Permission denied"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey(User.id), primary_key=True)
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
-    def create(cls, session: Session, user_id: int) -> bool:
-        if cls.find_by_id(session, user_id):
+    def create(cls, session: Session, user: User) -> bool:
+        if cls.find_by_id(session, user.id):
             return False
-        new_entry = cls(id=user_id)
+        new_entry = cls()
+        user.moderator = new_entry
         session.add(new_entry)
         return True
