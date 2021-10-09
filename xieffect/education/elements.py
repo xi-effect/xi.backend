@@ -42,7 +42,7 @@ class Page(Base, Identifiable, Marshalable):
 
     id = Column(Integer, ForeignKey("wip-pages.id"), primary_key=True)
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
-    author = relationship("Author", foreign_keys=[author_id])
+    author = relationship("Author")
     components = Column(JSON, nullable=False)
 
     kind = Column(EnumType(PageKind, by_name=True), nullable=False)
@@ -298,6 +298,13 @@ class Module(Base, Identifiable, Marshalable):
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls._create(session, json_data, author)
+
+    @classmethod
+    def find_with_relation(cls, session: Session, module_id: int, user_id: int):
+        stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns)
+        stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id))
+        result = session.execute(stmt.filter(cls.id == module_id).limit(1)).all()
+        return result[0] if len(result) else None
 
     @classmethod
     def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]], search: str,

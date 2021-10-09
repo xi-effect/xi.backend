@@ -73,10 +73,11 @@ class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
 @modules_view_namespace.route("/<int:module_id>/")
 class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
     @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.database_searcher(Module, "module_id", "module", use_session=True)
-    def get(self, session, user: User, module: Module):
-        ModuleFilterSession.find_or_create(session, user.id, module.id).visit_now()
-        return module.to_json(session, user.id)
+    @modules_view_namespace.database_searcher(Module, "module_id", "module", use_session=True, check_only=True)
+    @modules_view_namespace.marshal_with(module_index_json, skip_none=True)
+    def get(self, session, user: User, module_id: int):  # add task!!!!
+        ModuleFilterSession.find_or_create(session, user.id, module_id).visit_now()
+        return Module.find_with_relation(session, module_id, user.id)
 
 
 @modules_view_namespace.route("/<int:module_id>/preference/")
