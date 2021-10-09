@@ -2,10 +2,10 @@ from typing import Dict, Union
 
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
-from authorship import Moderator, Author
-from componets import UserRole, create_marshal_model, Marshalable
+from componets import UserRole, create_marshal_model, Marshalable, LambdaFiledDef
 from componets.checkers import first_or_none
 from main import Base, Session
 
@@ -27,6 +27,7 @@ class TokenBlockList(Base):
 
 @create_marshal_model("main-settings", "username", "dark_theme", "language")
 @create_marshal_model("full-settings", "filter_bind", "password", "id", full=True)
+@create_marshal_model("role-settings")
 class User(Base, UserRole, Marshalable):
     __tablename__ = "users"
     not_found_text = "User does not exist"
@@ -57,6 +58,13 @@ class User(Base, UserRole, Marshalable):
 
     # Education data:
     filter_bind = Column(String(10), nullable=True)
+
+    # Role-related:  # need to redo user_roles with relations
+    author = relationship("Author", backref="user", uselist=False)
+    moderator = relationship("Moderator", backref="user", uselist=False)
+
+    author_status: LambdaFiledDef = LambdaFiledDef("role-settings", str, lambda user: user.get_author_status())
+    moderator_status: LambdaFiledDef = LambdaFiledDef("role-settings", bool, lambda user: user.moderator is not None)
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int):
@@ -102,12 +110,8 @@ class User(Base, UserRole, Marshalable):
         if "patronymic" in new_values.keys():
             self.patronymic = new_values["patronymic"]
 
-    def get_role_settings(self, session: Session) -> Dict[str, str]:
-        return {
-            "moderator": Moderator.find_by_id(session, self.id) is not None,
-            "author": "not-yet" if (author := Author.find_by_id(session, self.id, include_banned=True)
-                                    ) is None else "banned" if author.banned else "current"
-        }
+    def get_author_status(self):
+        return "not-yet" if self.author is None else "banned" if self.author.banned else "current"
 
     def get_filter_bind(self) -> str:
         return self.filter_bind
