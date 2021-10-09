@@ -10,7 +10,8 @@ from users import User
 
 wip_images_namespace: Namespace = Namespace("wip-images", path="/wip/images/")
 images_view_namespace: Namespace = Namespace("images", path="/images/")
-image_ids_response: ResponseDoc = ResponseDoc(model=Model("Image IDs", {"author_id": Integer, "image_id": Integer}))
+image_ids_fields: dict = {"author-id": Integer(attribute="author_id"), "image-id": Integer(attribute="image_id")}
+image_ids_response: ResponseDoc = ResponseDoc(model=Model("Image IDs", image_ids_fields))
 
 
 @wip_images_namespace.route("/")
