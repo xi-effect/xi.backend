@@ -173,7 +173,8 @@ class SortType(str, TypeEnum):
 
 
 @register_as_searchable("name", "description")
-class Module(Base, Identifiable):
+@create_marshal_model("short", "id", "name", "author_id", "image_id")
+class Module(Base, Identifiable, Marshalable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author):
         if Module.find_by_id(session, 0):
@@ -347,11 +348,8 @@ class Module(Base, Identifiable):
     def get_any_point(self, session: Session) -> Point:
         return Point.find_by_ids(session, self.id, randint(1, self.length))
 
-    def to_short_json(self) -> dict:
-        return {"id": self.id, "name": self.name, "author-id": self.author_id, "image-id": self.image_id}
-
     def to_json(self, session: Session, user_id: int = None) -> dict:
-        result: dict = self.to_short_json()
+        result: dict = {"id": self.id, "name": self.name, "author-id": self.author_id, "image-id": self.image_id}
         if user_id is not None:
             result.update(MFS.find_json(session, user_id, self.id))
         result.update({"theme": self.theme, "difficulty": self.difficulty, "category": self.category,

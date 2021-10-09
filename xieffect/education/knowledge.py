@@ -17,6 +17,9 @@ pages_view_namespace: Namespace = Namespace("pages")
 page_view_json = pages_view_namespace.model("Page", Page.marshal_models["main"])
 short_page_json = pages_view_namespace.model("ShortPage", Page.marshal_models["short"])
 
+module_view_json = None
+short_module_json = modules_view_namespace.model("ShortModule", Module.marshal_models["short"])
+
 report_parser: RequestParser = RequestParser()
 report_parser.add_argument("reason", required=True)
 report_parser.add_argument("message", required=False)
@@ -61,10 +64,10 @@ class ModuleLister(Resource):  # [POST] /modules/
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(counter_parser, "counter")
+    @modules_view_namespace.marshal_list_with(short_module_json, skip_none=True)
     @modules_view_namespace.lister(12)
     def post(self, session, user: User, start: int, finish: int) -> list:
-        return [module.to_short_json()
-                for module in Module.get_hidden_module_list(session, user.id, start, finish - start)]
+        return Module.get_hidden_module_list(session, user.id, start, finish - start)
 
 
 @modules_view_namespace.route("/<int:module_id>/")
