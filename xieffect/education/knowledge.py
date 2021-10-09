@@ -14,8 +14,8 @@ education_namespace: Namespace = Namespace("modules", path="/")
 modules_view_namespace: Namespace = Namespace("modules")
 pages_view_namespace: Namespace = Namespace("pages")
 
-page_view_json = pages_view_namespace.model("Page", Page.marshal_models["main"])
-short_page_json = pages_view_namespace.model("ShortPage", Page.marshal_models["short"])
+page_view_json = pages_view_namespace.model("Page", Page.marshal_models["page-main"])
+short_page_json = pages_view_namespace.model("ShortPage", Page.marshal_models["page-short"])
 
 module_view_json = None
 short_module_json = modules_view_namespace.model("ShortModule", Module.marshal_models["short"])
