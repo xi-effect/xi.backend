@@ -1,7 +1,7 @@
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace
+from componets import Namespace, ResponseDoc
 from main import versions
 from users import User
 
@@ -26,6 +26,7 @@ class HelloWorld(Resource):
 
 @basic_namespace.route("/status/")
 class ServerMessenger(Resource):
+    @basic_namespace.doc_responses(ResponseDoc(description="Message about server status"))
     def get(self):
         return {"type": 2, "text": "Version: " + versions["API"]}
 
