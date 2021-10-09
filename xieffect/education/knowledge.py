@@ -3,7 +3,7 @@ from typing import Dict, Optional
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, counter_parser
+from componets import Namespace, counter_parser, unite_models
 from education.elements import Module, Page, SortType
 from education.sessions import ModuleFilterSession
 from users import User
@@ -17,8 +17,9 @@ pages_view_namespace: Namespace = Namespace("pages")
 page_view_json = pages_view_namespace.model("Page", Page.marshal_models["page-main"])
 short_page_json = pages_view_namespace.model("ShortPage", Page.marshal_models["page-short"])
 
-module_view_json = None
-short_module_json = modules_view_namespace.model("ShortModule", Module.marshal_models["short"])
+module_index_json = modules_view_namespace.model("IndexModule", unite_models(
+    ModuleFilterSession.marshal_models["mfs"], Module.marshal_models["module-full"]))
+short_module_json = modules_view_namespace.model("ShortModule", Module.marshal_models["module-short"])
 
 report_parser: RequestParser = RequestParser()
 report_parser.add_argument("reason", required=True)
@@ -42,6 +43,7 @@ class ModuleLister(Resource):  # [POST] /modules/
 
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(parser, "counter", "filters", "sort", "search")
+    @modules_view_namespace.marshal_list_with(module_index_json, skip_none=False)
     @modules_view_namespace.lister(12)
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
         try:
