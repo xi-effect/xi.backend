@@ -5,6 +5,7 @@ from random import randint
 from typing import Dict, List, Optional, Union
 
 from sqlalchemy import Column, ForeignKey, select, and_, or_
+from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType, Text
@@ -300,12 +301,19 @@ class Module(Base, Identifiable, Marshalable):
 
     @classmethod
     def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]], search: str,
-                        sort: SortType, user_id: int, offset: int, limit: int) -> list:
+                        sort: SortType, user_id: int, offset: int, limit: int) -> List[Row]:
 
         # print(filters, search, sort)
         # print([(mfs.module_id, mfs.user_id, mfs.to_json()) for mfs in session.execute(select(MFS)).scalars().all()])
 
-        stmt: Select = select(cls) if search is None or len(search) < 3 else cls.search_stmt(search)
+        stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns)
+
+        # print(len(session.execute(stmt).all()), stmt)
+
+        if search is not None and len(search) > 2:
+            stmt = cls.search_stmt(search, stmt=stmt)
+
+        # print(len(session.execute(stmt).scalars().all()), stmt)
 
         global_filter: Optional[str] = None
         if filters is not None:
@@ -313,16 +321,16 @@ class Module(Base, Identifiable, Marshalable):
                 global_filter = filters.pop("global")
             stmt = stmt.filter_by(**filters)
 
-        # print(len(session.execute(stmt).scalars().all()))
+        # print(len(session.execute(stmt).scalars().all()), stmt)
 
         stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id))
         # if session exists for another user, would it pick it up???
 
-        # print(len(session.execute(stmt).scalars().all()))
+        # print(len(session.execute(stmt).all()))
 
         stmt = stmt.filter(or_(MFS.hidden != True, MFS.hidden.is_(None)))
 
-        # print(len(session.execute(stmt).scalars().all()))
+        # print(len(session.execute(stmt).scalars().all()), stmt)
 
         if global_filter is not None:
             stmt = stmt.filter_by(**{global_filter: True})
@@ -334,10 +342,11 @@ class Module(Base, Identifiable, Marshalable):
         elif sort == SortType.VISIT_DATE:
             stmt = stmt.order_by(MFS.last_visited.desc())
 
-        # print(len(session.execute(stmt.offset(offset).limit(limit)).scalars().all()))
+        # print(len(session.execute(stmt.offset(offset).limit(limit)).scalars().all()), stmt)
         # print(stmt)
+        # print(session.execute(stmt.offset(offset).limit(limit)).first())
 
-        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
+        return session.execute(stmt.offset(offset).limit(limit)).all()
 
     @classmethod
     def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int):

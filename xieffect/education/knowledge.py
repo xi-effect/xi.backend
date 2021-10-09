@@ -55,9 +55,7 @@ class ModuleLister(Resource):  # [POST] /modules/
             user.set_filter_bind()
         user_id: int = user.id
 
-        result: List[Module] = Module.get_module_list(session, filters, search, sort, user_id, start, finish - start)
-
-        return [x.to_json(session, user_id) for x in result]
+        return Module.get_module_list(session, filters, search, sort, user_id, start, finish - start)
 
 
 @modules_view_namespace.route("/hidden/")
