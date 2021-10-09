@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Dict, List, Union
+from typing import Optional
 
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime
@@ -47,26 +47,6 @@ class ModuleFilterSession(Base, Marshalable):
         if entry is None:
             return cls.create(session, user_id, module_id)
         return entry
-
-    @classmethod
-    def find_json(cls, session: Session, user_id: int, module_id: int) -> Dict[str, bool]:
-        entry: cls = cls.find_by_ids(session, user_id, module_id)
-        if entry is None:
-            return dict.fromkeys(("hidden", "pinned", "starred", "started"), False)
-        return entry.to_json()
-
-    @classmethod
-    def find_visit_date(cls, session: Session, user_id: int, module_id: int) -> float:
-        entry: cls = cls.find_by_ids(session, user_id, module_id)
-        if entry is None:
-            return -1
-        return entry.get_visit_date()
-
-    @classmethod
-    def get_hidden_ids_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> List[int]:
-        return session.execute(
-            select(cls.module_id).filter_by(user_id=user_id, hidden=True).offset(offset).limit(limit)
-        ).scalars().all()
 
     @classmethod
     def change_preference_by_user(cls, session: Session, user_id: int, operation: str, **params) -> None:

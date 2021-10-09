@@ -142,6 +142,6 @@ class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
 @modules_view_namespace.route("/reset-hidden/")
 class ShowAllModules(Resource):  # GET /modules/reset-hidden/
     @modules_view_namespace.a_response()
-    @modules_view_namespace.jwt_authorizer(User, use_session=False)
-    def get(self, user: User) -> None:
-        ModuleFilterSession.change_by_user(user.id, "show")
+    @modules_view_namespace.jwt_authorizer(User)
+    def get(self, session, user: User) -> None:
+        ModuleFilterSession.change_preference_by_user(session, user.id, "show")
