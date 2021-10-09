@@ -43,8 +43,7 @@ class ModuleLister(Resource):  # [POST] /modules/
 
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(parser, "counter", "filters", "sort", "search")
-    @modules_view_namespace.marshal_list_with(module_index_json, skip_none=False)
-    @modules_view_namespace.lister(12)
+    @modules_view_namespace.lister(12, module_index_json)
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
@@ -64,8 +63,7 @@ class ModuleLister(Resource):  # [POST] /modules/
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(counter_parser, "counter")
-    @modules_view_namespace.marshal_list_with(short_module_json, skip_none=True)
-    @modules_view_namespace.lister(12)
+    @modules_view_namespace.lister(12, short_module_json)
     def post(self, session, user: User, start: int, finish: int) -> list:
         return Module.get_hidden_module_list(session, user.id, start, finish - start)
 
@@ -115,8 +113,7 @@ class PageLister(Resource):  # POST /pages/
 
     @pages_view_namespace.jwt_authorizer(User, None)
     @pages_view_namespace.argument_parser(parser, "search", "counter")
-    @pages_view_namespace.marshal_list_with(short_page_json, skip_none=True)
-    @pages_view_namespace.lister(50)
+    @pages_view_namespace.lister(50, short_page_json)
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
         return Page.search(session, search, start, finish - start)
 

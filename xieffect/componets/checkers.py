@@ -169,10 +169,10 @@ class Namespace(RestXNamespace):
 
         return argument_wrapper
 
-    @staticmethod
-    def lister(per_request: int):
+    def lister(self, per_request: int, marshal_model, skip_none: bool = True, **kwargs):
         def lister_wrapper(function):
             @wraps(function)
+            @self.marshal_list_with(marshal_model, skip_none=skip_none, **kwargs)
             def lister_inner(*args, **kwargs):
                 counter: int = kwargs.pop("counter") * per_request
                 kwargs["start"] = counter
