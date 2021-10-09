@@ -6,6 +6,7 @@ from typing import Type, Dict, Tuple, Union, Optional, Callable
 
 from flask_restx import Model, Namespace
 from flask_restx.fields import Raw as RawField, Boolean as BooleanField, Integer as IntegerField, String as StringField
+from sqlalchemy import Column, Sequence
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import Boolean, Integer, String, JSON, DateTime
 from sqlalchemy_enum34 import EnumType
@@ -44,6 +45,13 @@ column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
 }
 
 
+def create_field(field_type: Type[RawField], column: Column, ignore_defaults: bool = True):
+    if ignore_defaults or column.default is None or column.nullable or isinstance(column.default, Sequence):
+        return field_type(attribute=column.name)
+    else:
+        return field_type(attribute=column.name, default=column.default.arg)
+
+
 @dataclass()
 class LambdaFieldDef:
     model_name: str
@@ -59,15 +67,18 @@ class LambdaFieldDef:
         return field_type(attribute=self.attribute)
 
 
-def create_marshal_model(model_name: str, *fields: str, full: bool = False):
+def create_marshal_model(model_name: str, *fields: str, full: bool = False,
+                         inherit: Optional[str] = None, use_defaults: bool = False):
     def create_marshal_model_wrapper(cls):
-        model_dict = {
-            column.name.replace("_", "-"): column_to_field[supported_type](attribute=column.name)
+        model_dict = {} if inherit is None else cls.marshal_models[inherit].copy()
+
+        model_dict.update({
+            column.name.replace("_", "-"): create_field(column_to_field[supported_type], column, not use_defaults)
             for column in cls.__table__.columns
             if (column.name in fields) != full
             for supported_type in column_to_field.keys()
             if isinstance(column.type, supported_type)
-        }
+        })
 
         model_dict.update({
             field_name.replace("_", "-"): field.to_field()
