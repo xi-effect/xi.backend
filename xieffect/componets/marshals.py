@@ -33,6 +33,7 @@ type_to_field: Dict[type, Type[RawField]] = {
     bool: BooleanField,
     int: IntegerField,
     str: StringField,
+    datetime: DateTimeField,
 }
 
 column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
@@ -98,6 +99,16 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False,
 
 class Marshalable:
     marshal_models: Dict[str, OrderedDict[str, Type[RawField]]] = {}
+
+
+def unite_models(*models):
+    model_dict: OrderedDict = OrderedDict()
+    for model in models:
+        model_dict.update(model)
+    model_dict = OrderedDict(sorted(model_dict.items()))
+    if "id" in model_dict.keys():
+        model_dict.move_to_end("id", last=False)
+    return model_dict
 
 
 @dataclass()

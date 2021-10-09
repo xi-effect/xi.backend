@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import Dict, Optional
 
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
