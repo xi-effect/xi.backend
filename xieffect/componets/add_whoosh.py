@@ -1,5 +1,6 @@
 from sqlalchemy import select, event
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql import Select
 from whooshalchemy import Searcher as SearcherBase, IndexService as IndexServiceBase
 
 
@@ -12,9 +13,11 @@ class IndexService(IndexServiceBase):
 
 
 class Searcher(SearcherBase):
-    def __call__(self, query, limit=None):
+    def __call__(self, query, limit=None, stmt: Select = None):
         results = self.index.searcher().search(self.parser.parse(query))
         keys = [x[self.primary] for x in results]
         primary_column = getattr(self.model_class, self.primary)
 
-        return select(self.model_class).filter(primary_column.in_(keys))
+        if stmt is None:
+            stmt = select(self.model_class)
+        return stmt.filter(primary_column.in_(keys))
