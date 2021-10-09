@@ -7,8 +7,8 @@ from users.database import User
 # from users.emailer import send_generated_email
 
 settings_namespace: Namespace = Namespace("settings")
-other_settings_namespace: Namespace = Namespace("avatar-settings", path="/")  # redo (unite with settings_namespace)
-protected_settings_namespace: Namespace = Namespace("protected-settings", path="/")
+other_settings_namespace: Namespace = Namespace("settings", path="/")  # redo (unite with settings_namespace)
+protected_settings_namespace: Namespace = Namespace("settings", path="/")
 full_settings = settings_namespace.model("FullSettings", User.marshal_models["full-settings"])
 main_settings = settings_namespace.model("MainSettings", User.marshal_models["main-settings"])
 role_settings = settings_namespace.model("RoleSettings", User.marshal_models["role-settings"])
