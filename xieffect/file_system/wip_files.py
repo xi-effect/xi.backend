@@ -10,8 +10,7 @@ from users import User
 
 wip_images_namespace: Namespace = Namespace("wip-images", path="/wip/images/")
 images_view_namespace: Namespace = Namespace("images", path="/images/")
-image_ids_fields: dict = {"author-id": Integer(attribute="author_id"), "image-id": Integer(attribute="image_id")}
-image_ids_response: ResponseDoc = ResponseDoc(model=Model("Image IDs", image_ids_fields))
+image_ids_response: ResponseDoc = ResponseDoc(model=Model("Image IDs", {"author-id": Integer, "image-id": Integer}))
 
 
 @wip_images_namespace.route("/")
@@ -23,7 +22,7 @@ class ImageAdder(Resource):  # POST /wip/images/
         image_id: int = author.get_next_image_id()
         with open(f"../files/images/{author_id}-{image_id}.png", "wb") as f:
             f.write(request.data)
-        return {"author_id": author_id, "image_id": image_id}
+        return {"author-id": author_id, "image-id": image_id}
 
 
 @wip_images_namespace.route("/<int:image_id>/")
