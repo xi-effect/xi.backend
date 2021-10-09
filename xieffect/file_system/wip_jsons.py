@@ -12,6 +12,32 @@ from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 
 
+wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_type>/")
+wip_index_namespace: Namespace = Namespace("wip-files", path="/wip/")
+wip_short_page_json = wip_index_namespace.model("WIPPageShort", WIPPage.marshal_models["main"])
+wip_short_module_json = wip_index_namespace.model("WIPModuleShort", WIPModule.marshal_models["main"])
+
+
+@wip_index_namespace.route("/modules/index/")
+class WIPModuleLister(Resource):  # [POST] /wip/modules/index/
+    @wip_index_namespace.jwt_authorizer(Author, "author")
+    @wip_index_namespace.argument_parser(counter_parser, "counter")
+    @wip_index_namespace.marshal_list_with(wip_short_module_json)
+    @wip_index_namespace.lister(50)
+    def post(self, session, author: Author, start: int, finish: int):
+        return WIPModule.find_by_owner(session, author, start, finish - start)
+
+
+@wip_index_namespace.route("/pages/index/")
+class WIPPageLister(Resource):  # [POST] /wip/pages/index/
+    @wip_index_namespace.jwt_authorizer(Author, "author")
+    @wip_index_namespace.argument_parser(counter_parser, "counter")
+    @wip_index_namespace.marshal_list_with(wip_short_page_json)
+    @wip_index_namespace.lister(50)
+    def post(self, session, author: Author, start: int, finish: int):
+        return WIPPage.find_by_owner(session, author, start, finish - start)
+
+
 def file_getter(type_only: bool = True, use_session: bool = True, use_author: bool = False):
     def file_getter_wrapper(function):
         @wraps(function)
@@ -46,18 +72,6 @@ def file_getter(type_only: bool = True, use_session: bool = True, use_author: bo
         return get_file_or_type
 
     return file_getter_wrapper
-
-
-wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_type>/")
-
-
-@wip_json_file_namespace.route("/index/")
-class FileLister(Resource):  # [POST] /wip/<file_type>/index/
-    @file_getter()
-    @wip_json_file_namespace.argument_parser(counter_parser, "counter")
-    @wip_json_file_namespace.lister(50)
-    def post(self, session, file_type: Type[JSONFile], author: Author, start: int, finish: int):
-        return [x.get_metadata(session) for x in file_type.find_by_owner(session, author, start, finish - start)]
 
 
 @wip_json_file_namespace.route("/")

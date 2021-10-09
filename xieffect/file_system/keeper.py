@@ -1,15 +1,15 @@
 from json import dump, load
 from os import remove
-from typing import Dict, Union, Type
 
 from sqlalchemy import Column, Sequence, select
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
-from componets import Identifiable, TypeEnum
+from componets import Identifiable, TypeEnum, create_marshal_model, LambdaFiledDef, Marshalable
 from componets.checkers import first_or_none
-from education import PageKind, Page, ModuleType, Module
+from education import PageKind, ModuleType
 from main import Base, Session
 
 
@@ -69,7 +69,6 @@ class CATFile(Base, Identifiable):
 class JSONFile(CATFile):
     __abstract__ = True
     mimetype: str = "json"
-    public_type: Type[Identifiable] = None
 
     @classmethod
     def create_from_json(cls, session: Session, owner: Author, json_data: dict):
@@ -90,16 +89,9 @@ class JSONFile(CATFile):
     def update_metadata(self, json_data: dict) -> None:
         raise NotImplementedError
 
-    def get_metadata(self, session: Session) -> dict:
-        raise NotImplementedError
 
-    def delete(self, session: Session):
-        if (public_file := self.public_type.find_by_id(session, self.id)) is not None:
-            public_file.delete(session)
-        super().delete(session)
-
-
-class WIPPage(JSONFile):
+@create_marshal_model("main", "id", "kind", "name", "theme", "description", "status")
+class WIPPage(JSONFile, Marshalable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author):
         for i in range(1, 4):
@@ -109,7 +101,6 @@ class WIPPage(JSONFile):
     __tablename__ = "wip-pages"
     not_found_text = "Page not found"
     directory: str = "../files/tfs/wip-pages/"
-    public_type: Type[Identifiable] = Page
 
     kind = Column(EnumType(PageKind, by_name=True), nullable=False)
 
@@ -117,23 +108,26 @@ class WIPPage(JSONFile):
     theme = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
 
+    page = relationship("Page", backref="wip", uselist=False, cascade="all, delete")
+
+    views: LambdaFiledDef = LambdaFiledDef("main", int,
+                                           lambda wip_page: wip_page.get_views())
+
     def update_metadata(self, json_data: dict) -> None:
         self.kind = PageKind.from_string(json_data["kind"])
         self.name = json_data["name"]
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
-    def get_metadata(self, session: Session) -> dict:
-        return {"id": self.id, "kind": self.kind.to_string(), "name": self.name, "theme": self.theme,
-                "description": self.description, "status": self.status.to_string(),
-                "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
+    def get_views(self):
+        return None if self.page is None else self.page.views
 
 
-class WIPModule(JSONFile):
+@create_marshal_model("main", "id", "name", "type", "theme", "category", "difficulty", "description", "status")
+class WIPModule(JSONFile, Marshalable):
     __tablename__ = "wip-modules"
     not_found_text = "Module not found"
     directory: str = "../files/tfs/wip-modules/"
-    public_type: Type[Identifiable] = Module
 
     # Essentials:
     type = Column(EnumType(ModuleType, by_name=True), nullable=False)
@@ -145,6 +139,8 @@ class WIPModule(JSONFile):
     category = Column(String(20), nullable=False)
     difficulty = Column(String(20), nullable=False)
 
+    module = relationship("Module", backref="wip", uselist=False, cascade="all, delete")
+
     def update_metadata(self, json_data: dict) -> None:
         self.type = ModuleType.from_string(json_data["type"])
         self.name = json_data["name"]
@@ -154,8 +150,5 @@ class WIPModule(JSONFile):
         self.category = json_data["category"]
         self.difficulty = json_data["difficulty"]
 
-    def get_metadata(self, session: Session) -> Dict[str, Union[int, str]]:
-        return {"id": self.id, "name": self.name, "type": self.type.to_string(),
-                "theme": self.theme, "category": self.category, "difficulty": self.difficulty,
-                "description": self.description, "status": self.status.to_string(),
-                "views": page.views if (page := Page.find_by_id(session, self.id)) is not None else None}
+    def get_views(self):
+        return None if self.module is None else self.module.views

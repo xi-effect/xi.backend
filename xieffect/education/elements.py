@@ -38,7 +38,7 @@ class Page(Base, Identifiable, Marshalable):
     not_found_text = "Page not found"
     directory = "files/tfs/cat-pages/"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey("wip-pages.id"), primary_key=True)
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
     author = relationship("Author", foreign_keys=[author_id])
     components = Column(JSON, nullable=False)
@@ -229,7 +229,7 @@ class Module(Base, Identifiable):
     not_found_text = "Module not found"
 
     # Essentials
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, ForeignKey("wip-modules.id"), primary_key=True)
     length = Column(Integer, nullable=False)  # the amount of schedule or map points
     type = Column(EnumType(ModuleType, by_name=True), nullable=False)
 
