@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Type, Optional, Union, Tuple, Callable, Any
+from typing import Type, Optional, Union, Callable, Any
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace as RestXNamespace
@@ -152,16 +152,11 @@ class Namespace(RestXNamespace):
 
         return searcher_wrapper
 
-    def argument_parser(self, parser: RequestParser, *arg_names: Union[str, Tuple[str, str]]):
+    def argument_parser(self, parser: RequestParser):
         def argument_wrapper(function):
             @wraps(function)
             def argument_inner(*args, **kwargs):
-                data: dict = parser.parse_args()
-                for arg_name in arg_names:
-                    if isinstance(arg_name, str):
-                        kwargs[arg_name] = data[arg_name]
-                    else:
-                        kwargs[arg_name[1]] = data[arg_name[0]]
+                kwargs.update(parser.parse_args())
                 return function(*args, **kwargs)
 
             return self.expect(parser)(argument_inner)

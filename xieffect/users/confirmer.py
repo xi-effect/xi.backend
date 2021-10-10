@@ -32,7 +32,7 @@ class EmailConfirm(Resource):  # [POST] /email-confirm/
 
     @email_namespace.doc_responses(message_response)
     @with_session
-    @email_namespace.argument_parser(parser, "code")
+    @email_namespace.argument_parser(parser)
     def post(self, code: str):
         # email = parse_code(code, "confirm")
         # if email is None:

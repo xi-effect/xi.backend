@@ -19,7 +19,7 @@ class UserRegistration(Resource):  # [POST] /reg/
 
     @reglog_namespace.doc_responses(success_response)
     @with_session
-    @reglog_namespace.argument_parser(parser, "email", "username", "password")
+    @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, username: str, password: str):
         user: User = User.create(session, email, username, password)
         if not user:
@@ -37,11 +37,11 @@ class UserRegistration(Resource):  # [POST] /reg/
 @reglog_namespace.route("/auth/")
 class UserLogin(Resource):  # [POST] /auth/
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("email", required=True, help="email is required")
+    parser.add_argument("email", required=True)
 
     @with_session
     @reglog_namespace.doc_responses(message_response)
-    @reglog_namespace.argument_parser(parser, "email", "password")
+    @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, password: str):
         # print(f"Tried to login as '{email}' with password '{password}'")
 
@@ -84,7 +84,7 @@ class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
 
     @reglog_namespace.a_response()
     @with_session
-    @reglog_namespace.argument_parser(parser, "code", "password")
+    @reglog_namespace.argument_parser(parser)
     def post(self, session, code: str, password: str) -> str:
         # email = parse_code(code, "pass")
         # if email is None:

@@ -41,7 +41,7 @@ class ModuleLister(Resource):  # [POST] /modules/
     parser.add_argument("sort", required=False, choices=SortType.get_all_field_names())
 
     @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.argument_parser(parser, "counter", "filters", "sort", "search")
+    @modules_view_namespace.argument_parser(parser)
     @modules_view_namespace.lister(12, module_index_json)
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
         try:
@@ -61,7 +61,7 @@ class ModuleLister(Resource):  # [POST] /modules/
 @modules_view_namespace.route("/hidden/")
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.argument_parser(counter_parser, "counter")
+    @modules_view_namespace.argument_parser(counter_parser)
     @modules_view_namespace.lister(12, short_module_json)
     def post(self, session, user: User, start: int, finish: int) -> list:
         return Module.get_hidden_module_list(session, user.id, start, finish - start)
@@ -80,12 +80,12 @@ class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
 @modules_view_namespace.route("/<int:module_id>/preference/")
 class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference/
     parser: RequestParser = RequestParser()
-    parser.add_argument("a", required=True, choices=PreferenceOperation.get_all_field_names())
+    parser.add_argument("a", required=True, dest="operation", choices=PreferenceOperation.get_all_field_names())
 
     @modules_view_namespace.a_response()
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.database_searcher(Module, "module_id", check_only=True, use_session=True)
-    @modules_view_namespace.argument_parser(parser, ("a", "operation"))
+    @modules_view_namespace.argument_parser(parser)
     def post(self, session, module_id: int, user: User, operation: str) -> None:
         module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
         module.change_preference(session, PreferenceOperation.from_string(operation))
@@ -96,7 +96,7 @@ class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
     @modules_view_namespace.a_response()
     @modules_view_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
     @modules_view_namespace.database_searcher(Module, "module_id", "module")
-    @modules_view_namespace.argument_parser(report_parser, "reason", "message")
+    @modules_view_namespace.argument_parser(report_parser)
     def post(self, module: Module, reason: str, message: str) -> None:
         pass
 
@@ -107,7 +107,7 @@ class PageLister(Resource):  # POST /pages/
     parser.add_argument("search", required=False)
 
     @pages_view_namespace.jwt_authorizer(User, chek_only=True)
-    @pages_view_namespace.argument_parser(parser, "search", "counter")
+    @pages_view_namespace.argument_parser(parser)
     @pages_view_namespace.lister(50, short_page_json)
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
         return Page.search(session, search, start, finish - start)
@@ -127,7 +127,7 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
 class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
     @pages_view_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
     @pages_view_namespace.database_searcher(Page, "page_id", "page")
-    @pages_view_namespace.argument_parser(report_parser, "reason", "message")
+    @pages_view_namespace.argument_parser(report_parser)
     def post(self, page: Page, reason: str, message: str):
         pass
 

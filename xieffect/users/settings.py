@@ -2,7 +2,7 @@ from flask import request, send_from_directory
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, password_parser
+from componets import Namespace, password_parser, ResponseDoc
 from users.database import User
 # from users.emailer import send_generated_email
 
@@ -16,6 +16,7 @@ role_settings = settings_namespace.model("RoleSettings", User.marshal_models["ro
 
 @other_settings_namespace.route("/avatar/")
 class Avatar(Resource):  # [GET|POST] /avatar/
+    @other_settings_namespace.doc_responses(ResponseDoc(404, "Avatar not found"))
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
     def get(self, user: User):
         return send_from_directory(r"../files/avatars", f"{user.id}.png")
@@ -39,7 +40,7 @@ class Settings(Resource):  # [GET|POST] /settings/
 
     @settings_namespace.a_response()
     @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.argument_parser(parser, "changed")  # fix with json (marshal?)
+    @settings_namespace.argument_parser(parser)  # fix with json (marshal?)
     def post(self, user: User, changed: dict) -> None:
         user.change_settings(changed)
 
@@ -63,11 +64,11 @@ class RoleSettings(Resource):  # [GET] /settings/roles/
 @protected_settings_namespace.route("/email-change/")
 class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("new-email", required=True)
+    parser.add_argument("new-email", dest="new_email", required=True)
 
     @protected_settings_namespace.a_response()
     @protected_settings_namespace.jwt_authorizer(User)
-    @protected_settings_namespace.argument_parser(parser, "password", ("new-email", "new_email"))
+    @protected_settings_namespace.argument_parser(parser)
     def post(self, session, user: User, password: str, new_email: str) -> str:
         if not User.verify_hash(password, user.password):
             return "Wrong password"
@@ -83,11 +84,11 @@ class EmailChanger(Resource):  # [POST] /email-change/
 @protected_settings_namespace.route("/password-change/")
 class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("new-password", required=True)
+    parser.add_argument("new-password", dest="new_password", required=True)
 
     @protected_settings_namespace.a_response()
     @protected_settings_namespace.jwt_authorizer(User, use_session=False)
-    @protected_settings_namespace.argument_parser(parser, "password", ("new-password", "new_password"))
+    @protected_settings_namespace.argument_parser(parser)
     def post(self, user: User, password: str, new_password: str) -> str:
         if User.verify_hash(password, user.password):
             user.change_password(new_password)
