@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime
@@ -55,11 +57,20 @@ def create_field(field_type: Type[RawField], column: Column, ignore_defaults: bo
 
 @dataclass()
 class LambdaFieldDef:
+    """
+    A field to be used in create_marshal_model, which can't be described as a :class:`Column`.
+
+    - model_name — global name of the model to connect the field to.
+    - field_type — field's return type (:class:`bool`, :class:`int`, :class:`str` or :class:`datetime`).
+    - attribute — the attribute to pass to the field's keyword argument ``attribute``.
+      can be a :class:`Callable` that uses models pre-marshalled version.
+    """
+
     model_name: str
     field_type: type
     attribute: Union[str, Callable]
 
-    def to_field(self):
+    def to_field(self) -> Union[Type[RawField], RawField]:
         field_type: Type[RawField] = RawField
         for supported_type in type_to_field:
             if issubclass(self.field_type, supported_type):
@@ -70,6 +81,18 @@ class LambdaFieldDef:
 
 def create_marshal_model(model_name: str, *fields: str, full: bool = False,
                          inherit: Optional[str] = None, use_defaults: bool = False):
+    """
+    - Adds a marshal model to a database object, marked as :class:`Marshalable`.
+    - Automatically adds all :class:`LambdaFieldDef`-marked class fields to the model.
+    - Sorts modules keys by alphabet and puts ``id`` field on top if present.
+
+    :param model_name: the **global** name for the new model or model to be overwritten.
+    :param fields: filed names of columns to be added to the model.
+    :param full: reverts column filtration. Includes all field by default, except for ones provided in *fields argument.
+    :param inherit: model name to inherit fields from.
+    :param use_defaults: whether or not to describe columns' defaults in the model.
+    """
+
     def create_marshal_model_wrapper(cls):
         model_dict = {} if inherit is None else cls.marshal_models[inherit].copy()
 
@@ -98,10 +121,20 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False,
 
 
 class Marshalable:
+    """ Marker-class for classes that can be decorated with ``create_marshal_model`` """
     marshal_models: Dict[str, OrderedDict[str, Type[RawField]]] = {}
 
 
-def unite_models(*models):
+def unite_models(*models: Dict[str, Union[Type[RawField], RawField]]):
+    """
+    - Unites several field dicts (models) into one.
+    - If some fields are present in more than one model, the last encounter will be used.
+    - Sorts modules keys by alphabet and puts ``id`` field on top if present.
+
+    :param models: models to unite
+    :return: united model with all fields
+    """
+
     model_dict: OrderedDict = OrderedDict()
     for model in models:
         model_dict.update(model)
@@ -113,12 +146,15 @@ def unite_models(*models):
 
 @dataclass()
 class ResponseDoc:
+    """ Dataclass to keep the response description is one place """
+
     code: int = 200
     description: str = None
     model: Optional[Model] = None
 
     @classmethod
-    def error_response(cls, code: int, description: str):
+    def error_response(cls, code: int, description: str) -> ResponseDoc:
+        """ Creates an instance of an :class:`ResponseDoc` with a message response model for the response body """
         return cls(code, description, Model("Message Response", {"a": StringField}))
 
     def register_model(self, ns: Namespace):
@@ -132,4 +168,6 @@ class ResponseDoc:
 
 
 success_response: ResponseDoc = ResponseDoc(model=Model("Default Response", {"a": BooleanField}))
+""" Default success response representation ({"a": :class:`bool`}) """
 message_response: ResponseDoc = ResponseDoc(model=Model("Message Response", {"a": StringField}))
+""" Default message response representation ({"a": :class:`str`}) """
