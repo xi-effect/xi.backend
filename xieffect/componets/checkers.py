@@ -92,12 +92,13 @@ class Namespace(RestXNamespace):
             return_type: Type = getattr(function, "__annotations__")["return"]
             is_bool = return_type is None or issubclass(return_type, bool)
 
+            @self.response(*(success_response if is_bool else message_response).get_args())
             @wraps(function)
             def bool_a_response_inner(*args, **kwargs):
                 result = function(*args, **kwargs)
                 return {"a": True if return_type is None else result}
 
-            return self.response(*(success_response if is_bool else message_response).get_args())(bool_a_response_inner)
+            return bool_a_response_inner
 
         return bool_a_response_wrapper
 
@@ -159,12 +160,13 @@ class Namespace(RestXNamespace):
 
     def argument_parser(self, parser: RequestParser):
         def argument_wrapper(function):
+            @self.expect(parser)
             @wraps(function)
             def argument_inner(*args, **kwargs):
                 kwargs.update(parser.parse_args())
                 return function(*args, **kwargs)
 
-            return self.expect(parser)(argument_inner)
+            return argument_inner
 
         return argument_wrapper
 
