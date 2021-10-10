@@ -155,7 +155,6 @@ class Namespace(RestXNamespace):
     def argument_parser(self, parser: RequestParser, *arg_names: Union[str, Tuple[str, str]]):
         def argument_wrapper(function):
             @wraps(function)
-            @self.expect(parser)
             def argument_inner(*args, **kwargs):
                 data: dict = parser.parse_args()
                 for arg_name in arg_names:
@@ -165,7 +164,7 @@ class Namespace(RestXNamespace):
                         kwargs[arg_name[1]] = data[arg_name[0]]
                 return function(*args, **kwargs)
 
-            return argument_inner
+            return self.expect(parser)(argument_inner)
 
         return argument_wrapper
 
