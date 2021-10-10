@@ -4,8 +4,8 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, counter_parser, unite_models
-from education.elements import Module, Page, SortType
-from education.sessions import ModuleFilterSession
+from .elements import Module, Page, SortType
+from .sessions import ModuleFilterSession, PreferenceOperation
 from users import User
 
 
@@ -38,7 +38,7 @@ class ModuleLister(Resource):  # [POST] /modules/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("filters", type=dict, required=False)
     parser.add_argument("search", required=False)
-    parser.add_argument("sort", required=False)
+    parser.add_argument("sort", required=False, choices=SortType.get_all_field_names())
 
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(parser, "counter", "filters", "sort", "search")
@@ -80,7 +80,7 @@ class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
 @modules_view_namespace.route("/<int:module_id>/preference/")
 class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference/
     parser: RequestParser = RequestParser()
-    parser.add_argument("a", required=True)
+    parser.add_argument("a", required=True, choices=PreferenceOperation.get_all_field_names())
 
     @modules_view_namespace.a_response()
     @modules_view_namespace.jwt_authorizer(User)
@@ -88,7 +88,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     @modules_view_namespace.argument_parser(parser, ("a", "operation"))
     def post(self, session, module_id: int, user: User, operation: str) -> None:
         module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
-        module.change_preference(session, operation)
+        module.change_preference(session, PreferenceOperation.from_string(operation))
 
 
 @modules_view_namespace.route("/<int:module_id>/report/")
@@ -137,4 +137,4 @@ class ShowAllModules(Resource):  # GET /modules/reset-hidden/
     @modules_view_namespace.a_response()
     @modules_view_namespace.jwt_authorizer(User)
     def get(self, session, user: User) -> None:
-        ModuleFilterSession.change_preference_by_user(session, user.id, "show")
+        ModuleFilterSession.change_preference_by_user(session, user.id, PreferenceOperation.SHOW)

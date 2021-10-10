@@ -4,9 +4,18 @@ from typing import Optional
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime
 
-from componets import Identifiable, LambdaFieldDef, create_marshal_model, Marshalable
+from componets import Identifiable, LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
 from componets.checkers import first_or_none
 from main import Base, Session
+
+
+class PreferenceOperation(TypeEnum):
+    HIDE = 0
+    SHOW = 1
+    STAR = 2
+    UNSTAR = 3
+    PIN = 4
+    UNPIN = 5
 
 
 @create_marshal_model("mfs", "started", "starred", "pinned", use_defaults=True)
@@ -49,9 +58,9 @@ class ModuleFilterSession(Base, Marshalable):
         return entry
 
     @classmethod
-    def change_preference_by_user(cls, session: Session, user_id: int, operation: str, **params) -> None:
+    def change_preference_by_user(cls, session: Session, user_id: int, operation: PreferenceOperation) -> None:
         filter_session: cls
-        for filter_session in cls.query.filter_by(user_id=user_id, **params).all():
+        for filter_session in cls.query.filter_by(user_id=user_id).all():
             filter_session.change_preference(session, operation)
 
     def is_valuable(self) -> bool:
@@ -64,18 +73,18 @@ class ModuleFilterSession(Base, Marshalable):
     def note_change(self) -> None:  # auto-commit
         self.last_changed = datetime.utcnow()
 
-    def change_preference(self, session: Session, operation: str) -> None:
-        if operation == "hide":
+    def change_preference(self, session: Session, operation: PreferenceOperation) -> None:
+        if operation == PreferenceOperation.HIDE:
             self.hidden = True
-        elif operation == "show":
+        elif operation == PreferenceOperation.SHOW:
             self.hidden = False
-        elif operation == "star":
+        elif operation == PreferenceOperation.STAR:
             self.starred = True
-        elif operation == "unstar":
+        elif operation == PreferenceOperation.UNSTAR:
             self.starred = False
-        elif operation == "pin":
+        elif operation == PreferenceOperation.PIN:
             self.pinned = True
-        elif operation == "unpin":
+        elif operation == PreferenceOperation.UNPIN:
             self.pinned = False
         if not (self.is_valuable()):
             session.delete(self)

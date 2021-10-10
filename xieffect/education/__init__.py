@@ -2,4 +2,6 @@ from .knowledge import education_namespace, pages_view_namespace, modules_view_n
 
 from .interaction import interaction_namespace
 
-from .elements import Page, Module, ModuleType, PageKind
+from .elements import Page, Module, ModuleType, PageKind, SortType
+
+from .sessions import ModuleFilterSession, PreferenceOperation
