@@ -96,7 +96,7 @@ class Namespace(RestXNamespace):
 
         return bool_a_response_wrapper
 
-    def jwt_authorizer(self, role: Type[UserRole], result_filed_name: Optional[str] = "user", use_session: bool = True):
+    def jwt_authorizer(self, role: Type[UserRole], chek_only: bool = False, use_session: bool = True):
         def authorizer_wrapper(function):
             response_code: int = 401 if role is UserRole.default_role else 403
 
@@ -109,8 +109,8 @@ class Namespace(RestXNamespace):
                 if result is None:
                     return {"a": role.not_found_text}, response_code
                 else:
-                    if result_filed_name is not None:
-                        kwargs[result_filed_name] = result
+                    if not chek_only:
+                        kwargs[role.__name__.lower()] = result
                     if not use_session:
                         kwargs.pop("session")
                     return function(*args, **kwargs)

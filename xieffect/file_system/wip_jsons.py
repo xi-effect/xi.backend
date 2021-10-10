@@ -20,7 +20,7 @@ wip_short_module_json = wip_index_namespace.model("WIPModuleShort", WIPModule.ma
 
 @wip_index_namespace.route("/modules/index/")
 class WIPModuleLister(Resource):  # [POST] /wip/modules/index/
-    @wip_index_namespace.jwt_authorizer(Author, "author")
+    @wip_index_namespace.jwt_authorizer(Author)
     @wip_index_namespace.argument_parser(counter_parser, "counter")
     @wip_index_namespace.lister(50, wip_short_module_json, skip_none=False)
     def post(self, session, author: Author, start: int, finish: int):
@@ -29,7 +29,7 @@ class WIPModuleLister(Resource):  # [POST] /wip/modules/index/
 
 @wip_index_namespace.route("/pages/index/")
 class WIPPageLister(Resource):  # [POST] /wip/pages/index/
-    @wip_index_namespace.jwt_authorizer(Author, "author")
+    @wip_index_namespace.jwt_authorizer(Author)
     @wip_index_namespace.argument_parser(counter_parser, "counter")
     @wip_index_namespace.lister(50, wip_short_page_json, skip_none=False)
     def post(self, session, author: Author, start: int, finish: int):
@@ -39,7 +39,7 @@ class WIPPageLister(Resource):  # [POST] /wip/pages/index/
 def file_getter(type_only: bool = True, use_session: bool = True, use_author: bool = False):
     def file_getter_wrapper(function):
         @wraps(function)
-        @wip_json_file_namespace.jwt_authorizer(Author, "author")
+        @wip_json_file_namespace.jwt_authorizer(Author)
         def get_file_or_type(*args, **kwargs):
             session = kwargs.pop("session")
             result: Type[JSONFile]
