@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Type, Optional, Union, Callable, Any
+from typing import Type, Optional, Union, Callable, Any, List
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace as RestXNamespace
@@ -73,6 +73,11 @@ def with_auto_session(function):
 
 
 class Namespace(RestXNamespace):
+    auth_errors: List[ResponseDoc] = [
+        ResponseDoc(401, "JWTError", message_response.model),
+        ResponseDoc(422, "InvalidJWT", message_response.model)
+    ]
+
     def doc_responses(self, *responses: ResponseDoc):
         def doc_responses_wrapper(function):
             for response in responses:
@@ -100,6 +105,7 @@ class Namespace(RestXNamespace):
         def authorizer_wrapper(function):
             response_code: int = 401 if role is UserRole.default_role else 403
 
+            @self.doc_responses(*self.auth_errors, ResponseDoc.error_response(response_code, role.not_found_text))
             @wraps(function)
             @jwt_required()
             @with_session
@@ -115,8 +121,7 @@ class Namespace(RestXNamespace):
                         kwargs.pop("session")
                     return function(*args, **kwargs)
 
-            return self.response(
-                *ResponseDoc.error_response(response_code, role.not_found_text).get_args())(authorizer_inner)
+            return authorizer_inner
 
         return authorizer_wrapper
 
