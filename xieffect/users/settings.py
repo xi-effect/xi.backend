@@ -84,7 +84,7 @@ class EmailChanger(Resource):  # [POST] /email-change/
 @protected_settings_namespace.route("/password-change/")
 class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("new-password", dest="new_password", required=True, help="Password to be used by user in future")
+    parser.add_argument("new-password", dest="new_password", required=True, help="Password that will be used in future")
 
     @protected_settings_namespace.a_response()
     @protected_settings_namespace.jwt_authorizer(User, use_session=False)

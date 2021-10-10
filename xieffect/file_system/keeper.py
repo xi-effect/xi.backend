@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from json import dump, load
 from os import remove
+from typing import Optional
 
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.orm import relationship
@@ -30,38 +33,38 @@ class CATFile(Base, Identifiable):
     status = Column(EnumType(WIPStatus, by_name=True), nullable=False)
 
     @classmethod
-    def _create(cls, owner: Author):
+    def _create(cls, owner: Author) -> CATFile:
         return cls(owner=owner.id, status=WIPStatus.WIP)
 
     @classmethod
-    def create(cls, session: Session, owner: Author):
+    def create(cls, session: Session, owner: Author) -> CATFile:
         entry: cls = cls.create(session, owner)
         session.add(entry)
         return entry
 
     @classmethod
-    def create_with_file(cls, session: Session, owner: Author, data: bytes):
+    def create_with_file(cls, session: Session, owner: Author, data: bytes) -> CATFile:
         entry: cls = cls._create(owner)
         entry.update(data)
         session.add(entry)
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int) -> Optional[CATFile]:
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
-    def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list:
+    def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list[CATFile]:
         return session.execute(select(cls).where(cls.owner == owner.id).offset(start).limit(limit)).scalars().all()
 
     def get_link(self) -> str:
         return f"{self.directory}/{self.id}" + f".{self.mimetype}" if self.mimetype != "" else ""
 
-    def update(self, data: bytes):
+    def update(self, data: bytes) -> None:
         with open(self.get_link(), "wb") as f:
             f.write(data)
 
-    def delete(self, session: Session):
+    def delete(self, session: Session) -> None:
         remove(self.get_link())
         session.delete(self)
 
@@ -71,7 +74,7 @@ class JSONFile(CATFile):
     mimetype: str = "json"
 
     @classmethod
-    def create_from_json(cls, session: Session, owner: Author, json_data: dict):
+    def create_from_json(cls, session: Session, owner: Author, json_data: dict) -> CATFile:
         if "id" not in json_data.keys() or (entry := cls.find_by_id(session, json_data["id"])) is None:
             entry: cls = cls._create(owner)
             entry.update_json(session, json_data)
@@ -93,7 +96,7 @@ class JSONFile(CATFile):
 @create_marshal_model("main", "id", "kind", "name", "theme", "description", "status")
 class WIPPage(JSONFile, Marshalable):
     @staticmethod
-    def create_test_bundle(session: Session, author: Author):
+    def create_test_bundle(session: Session, author: Author) -> None:
         for i in range(1, 4):
             with open(f"../files/tfs/test/{i}.json", "rb") as f:
                 WIPPage.create_from_json(session, author, load(f))
@@ -119,7 +122,7 @@ class WIPPage(JSONFile, Marshalable):
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
-    def get_views(self):
+    def get_views(self) -> Optional[int]:
         return None if self.page is None else self.page.views
 
 
@@ -150,5 +153,5 @@ class WIPModule(JSONFile, Marshalable):
         self.category = json_data["category"]
         self.difficulty = json_data["difficulty"]
 
-    def get_views(self):
+    def get_views(self) -> Optional[int]:
         return None if self.module is None else self.module.views

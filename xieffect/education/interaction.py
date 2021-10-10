@@ -15,7 +15,7 @@ def redirected_to_pages(func):  # session related parts have to be redone!!!!!!!
     return inner_redirected_to_pages
 
 
-interaction_namespace: Namespace = Namespace("interaction", path="")
+interaction_namespace: Namespace = Namespace("interaction", path="/")
 
 
 # module_type: ModuleType = ModuleType(module.type)
