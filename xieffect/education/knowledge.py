@@ -36,9 +36,9 @@ class FilterGetter(Resource):  # [GET] /filters/
 @modules_view_namespace.route("/")
 class ModuleLister(Resource):  # [POST] /modules/
     parser: RequestParser = counter_parser.copy()
-    parser.add_argument("filters", type=dict, required=False)
-    parser.add_argument("search", required=False)
-    parser.add_argument("sort", required=False, choices=SortType.get_all_field_names())
+    parser.add_argument("filters", type=dict, required=False, help="A dict of filters to be used")
+    parser.add_argument("search", required=False, help="Search query (done with whoosh search)")
+    parser.add_argument("sort", required=False, choices=SortType.get_all_field_names(), help="Defines item order")
 
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(parser)
@@ -104,7 +104,7 @@ class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
 @pages_view_namespace.route("/")
 class PageLister(Resource):  # POST /pages/
     parser: RequestParser = counter_parser.copy()
-    parser.add_argument("search", required=False)
+    parser.add_argument("search", required=False, help="Search query (done with whoosh search)")
 
     @pages_view_namespace.jwt_authorizer(User, chek_only=True)
     @pages_view_namespace.argument_parser(parser)

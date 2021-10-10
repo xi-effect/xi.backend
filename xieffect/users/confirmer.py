@@ -28,7 +28,7 @@ class EmailSender(Resource):  # [POST] /email/<email>/
 @email_namespace.route("/email-confirm/")  # redo?
 class EmailConfirm(Resource):  # [POST] /email-confirm/
     parser: RequestParser = RequestParser()
-    parser.add_argument("code", required=True)
+    parser.add_argument("code", required=True, help="Code sent in the email")
 
     @email_namespace.doc_responses(message_response)
     @with_session

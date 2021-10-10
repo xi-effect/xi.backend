@@ -31,7 +31,7 @@ class Avatar(Resource):  # [GET|POST] /avatar/
 @settings_namespace.route("/")
 class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
-    parser.add_argument("changed", type=dict, location="json", required=True)
+    parser.add_argument("changed", type=dict, location="json", required=True, help="A dict of changed settings")
 
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(full_settings, skip_none=True)
@@ -64,7 +64,7 @@ class RoleSettings(Resource):  # [GET] /settings/roles/
 @protected_settings_namespace.route("/email-change/")
 class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("new-email", dest="new_email", required=True)
+    parser.add_argument("new-email", dest="new_email", required=True, help="Email to be connected to the user")
 
     @protected_settings_namespace.a_response()
     @protected_settings_namespace.jwt_authorizer(User)
@@ -77,14 +77,14 @@ class EmailChanger(Resource):  # [POST] /email-change/
             return "Email in use"
 
         # send_generated_email(new_email, "confirm", "registration-email.html")
-        user.change_email(session, new_email)
+        user.change_email(session, new_email)  # close all other JWT sessions
         return "Success"
 
 
 @protected_settings_namespace.route("/password-change/")
 class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("new-password", dest="new_password", required=True)
+    parser.add_argument("new-password", dest="new_password", required=True, help="Password to be used by user in future")
 
     @protected_settings_namespace.a_response()
     @protected_settings_namespace.jwt_authorizer(User, use_session=False)

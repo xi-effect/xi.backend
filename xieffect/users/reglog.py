@@ -13,9 +13,9 @@ reglog_namespace: Namespace = Namespace("reglog", path="/")
 
 @reglog_namespace.route("/reg/")
 class UserRegistration(Resource):  # [POST] /reg/
-    parser = password_parser.copy()
-    parser.add_argument("email", required=True)
-    parser.add_argument("username", required=True)
+    parser: RequestParser = password_parser.copy()
+    parser.add_argument("email", required=True, help="Email to be connected to new user's account")
+    parser.add_argument("username", required=True, help="Username to be assigned to new user's account")
 
     @reglog_namespace.doc_responses(success_response)
     @with_session
@@ -37,7 +37,7 @@ class UserRegistration(Resource):  # [POST] /reg/
 @reglog_namespace.route("/auth/")
 class UserLogin(Resource):  # [POST] /auth/
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("email", required=True)
+    parser.add_argument("email", required=True, help="User's email")
 
     @with_session
     @reglog_namespace.doc_responses(message_response)
@@ -80,7 +80,7 @@ class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
 @reglog_namespace.route("/password-reset/confirm/")
 class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("code", required=True)
+    parser.add_argument("code", required=True, help="Code sent in the email")
 
     @reglog_namespace.a_response()
     @with_session
