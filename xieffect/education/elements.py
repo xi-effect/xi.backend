@@ -258,7 +258,7 @@ class Module(Base, Identifiable, Marshalable):
 
     image_id = Column(Integer, nullable=True)
 
-    author_name: LambdaFieldDef = LambdaFieldDef("module-short", str, lambda page: page.author.pseudonym)
+    author_name: LambdaFieldDef = LambdaFieldDef("module-short", str, lambda module: module.pseudonym)
 
     @classmethod
     def __create(cls, session: Session, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
@@ -303,7 +303,7 @@ class Module(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_with_relation(cls, session: Session, module_id: int, user_id: int):
-        stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns)
+        stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns, Author.pseudonym)
         stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id))
         result = session.execute(stmt.filter(cls.id == module_id).limit(1)).all()
         return result[0] if len(result) else None
@@ -315,7 +315,7 @@ class Module(Base, Identifiable, Marshalable):
         # print(filters, search, sort)
         # print([(mfs.module_id, mfs.user_id, mfs.to_json()) for mfs in session.execute(select(MFS)).scalars().all()])
 
-        stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns)
+        stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns, Author.pseudonym)
 
         # print(len(session.execute(stmt).all()), stmt)
 
@@ -359,12 +359,13 @@ class Module(Base, Identifiable, Marshalable):
 
     @classmethod
     def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int):
-        stmt: Select = select(cls).join(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == True))
+        stmt: Select = select(*cls.__table__.columns, Author.pseudonym)
+        stmt = stmt.join(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == True))
         stmt = stmt.order_by(MFS.last_changed.desc())
         # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
         #         for mfs in session.execute(select(MFS)).scalars().all() if mfs.hidden], sep="\n")
         # print(stmt)
-        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
+        return session.execute(stmt.offset(offset).limit(limit)).all()
 
     def get_any_point(self, session: Session) -> Point:
         return Point.find_by_ids(session, self.id, randint(1, self.length))
