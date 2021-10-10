@@ -258,6 +258,8 @@ class Module(Base, Identifiable, Marshalable):
 
     image_id = Column(Integer, nullable=True)
 
+    author_name: LambdaFieldDef = LambdaFieldDef("module-short", str, lambda page: page.author.pseudonym)
+
     @classmethod
     def __create(cls, session: Session, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
                  category: str, difficulty: str, popularity: int, author: Author, creation_date: datetime = None):
