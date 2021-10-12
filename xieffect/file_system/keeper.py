@@ -93,7 +93,7 @@ class JSONFile(CATFile):
         raise NotImplementedError
 
 
-@create_marshal_model("main", "id", "kind", "name", "theme", "description", "status")
+@create_marshal_model("wip-page", "id", "kind", "name", "theme", "description", "status")
 class WIPPage(JSONFile, Marshalable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author) -> None:
@@ -126,7 +126,7 @@ class WIPPage(JSONFile, Marshalable):
         return None if self.page is None else self.page.views
 
 
-@create_marshal_model("main", "id", "name", "type", "theme", "category", "difficulty", "description", "status")
+@create_marshal_model("wip-module", "id", "name", "type", "theme", "category", "difficulty", "description", "status")
 class WIPModule(JSONFile, Marshalable):
     __tablename__ = "wip-modules"
     not_found_text = "Module not found"

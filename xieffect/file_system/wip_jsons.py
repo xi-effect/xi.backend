@@ -14,8 +14,8 @@ from .keeper import JSONFile, WIPModule, WIPPage
 
 wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_type>/")
 wip_index_namespace: Namespace = Namespace("wip-files", path="/wip/")
-wip_short_page_json = wip_index_namespace.model("WIPPageShort", WIPPage.marshal_models["main"])
-wip_short_module_json = wip_index_namespace.model("WIPModuleShort", WIPModule.marshal_models["main"])
+wip_short_page_json = wip_index_namespace.model("WIPPageShort", WIPPage.marshal_models["wip-page"])
+wip_short_module_json = wip_index_namespace.model("WIPModuleShort", WIPModule.marshal_models["wip-module"])
 
 
 @wip_index_namespace.route("/modules/index/")
