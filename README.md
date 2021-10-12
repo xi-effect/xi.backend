@@ -12,6 +12,7 @@
 3. Проверить доступность [http://localhost:5000/doc/](http://localhost:5000/doc/). Затем `api.py` можно останавливать
 4. Создать конфигурацию `pytest` для папки `xieffect`. Также поменять working directory на `path/to/project/xieffect`. Проверить, что всё работает
 
+
 ### GIT
 1. Никогда не работать в ветках `master` или `prod`
 2. Создавать ответвления (feature-branches) от `prod` для работы над проектом
