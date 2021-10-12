@@ -27,7 +27,7 @@ class Author(Base, UserRole):
         return new_entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False):
+    def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False) -> "Author":
         return first_or_none(session.execute(
             select(cls).where(cls.id == entry_id) if include_banned
             else select(cls).where(cls.id == entry_id, cls.banned == False)
@@ -67,3 +67,15 @@ class Moderator(Base, UserRole):
         user.moderator = new_entry
         session.add(new_entry)
         return True
+
+    def ban(cls, user: User):
+        user_id = user.id
+        if user_id == Author.id:
+            if Author.banned == False:
+                Author.banned = True
+
+    def unban(cls, user: User):
+        user_id = user.id
+        if user_id == Author.id:
+            if Author.banned == True:
+                Author.banned = False
