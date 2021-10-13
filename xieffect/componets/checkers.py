@@ -107,11 +107,6 @@ class Namespace(RestXNamespace):
     modifying responses and automatic updating Swagger documentation where possible
     """
 
-    auth_errors: List[ResponseDoc] = [
-        ResponseDoc(401, "JWTError", message_response.model),
-        ResponseDoc(422, "InvalidJWT", message_response.model)
-    ]
-
     def argument_parser(self, parser: RequestParser):
         """
         - Parses request parameters and adds them to kwargs used to call the decorated function.
@@ -177,10 +172,15 @@ class Namespace(RestXNamespace):
         :param use_session: (default: True) whether or not to pass the session to the decorated function
         """
 
+        auth_errors: List[ResponseDoc] = [
+            ResponseDoc(401, "JWTError", message_response.model),
+            ResponseDoc(422, "InvalidJWT", message_response.model)
+        ]
+
         def authorizer_wrapper(function):
             error_code: int = 401 if role is UserRole.default_role else 403
 
-            @self.doc_responses(*self.auth_errors, ResponseDoc.error_response(error_code, role.not_found_text))
+            @self.doc_responses(*auth_errors, ResponseDoc.error_response(error_code, role.not_found_text))
             @self.doc(security="jwt")
             @wraps(function)
             @jwt_required()
