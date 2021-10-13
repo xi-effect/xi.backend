@@ -59,14 +59,14 @@ class ModuleProgresser(Resource):
 @interaction_namespace.route("/points/<int:point_id>/")
 class ModuleNavigator(Resource):
     @redirected_to_pages("direct navigation", ModuleType.TEST, ModuleType.THEORY_BLOCK)
-    def get(self, user: User, module: Module, module_type: ModuleType, point_id: int) -> int:
+    def get(self, session, user: User, module: Module, module_type: ModuleType, point_id: int) -> int:
         """ Endpoint for navigating a Theory Block or Test """
 
         if module_type == ModuleType.TEST:
-            return 3
+            return TestModuleSession.find_or_create(session, user.id, module.id).get_task(session, point_id)
 
         elif module_type == ModuleType.THEORY_BLOCK:
-            return 1
+            return Point.find_and_execute(session, module.id, point_id)
 
 
 @interaction_namespace.route("/points/<int:point_id>/reply/")
