@@ -112,53 +112,22 @@ class Namespace(RestXNamespace):
         ResponseDoc(422, "InvalidJWT", message_response.model)
     ]
 
-    @staticmethod
-    def file_param_doc(field_name: str):
-        return {
-            "params": {field_name: {"in": "formData", "type": "file"}},
-            "consumes": "multipart/form-data"
-        }
-
-    def doc_responses(self, *responses: ResponseDoc):
+    def argument_parser(self, parser: RequestParser):
         """
-        Adds responses to the documentation. **Affects docs only!**
-
-        :param responses: all responses to document. Models inside are registered automatically.
+        - Parses request parameters and adds them to kwargs used to call the decorated function.
+        - Automatically updates endpoint's parameters with arguments from the parser.
         """
 
-        def doc_responses_wrapper(function):
-            for response in responses:
-                response.register_model(self)
-                function = self.response(*response.get_args())(function)
-            return function
-
-        return doc_responses_wrapper
-
-    def doc_file_param(self, field_name: str):  # redo...
-        def doc_file_param_wrapper(function):
-            return self.doc(**self.file_param_doc(field_name))(function)
-
-        return doc_file_param_wrapper
-
-    def a_response(self):
-        """
-        - Wraps Resource's method return with ``{"a": <something>}`` response and updates documentation.
-        - Defines response type automatically by looking at method's return type annotation.
-        """
-
-        def a_response_wrapper(function):
-            return_type: Type = getattr(function, "__annotations__")["return"]
-            is_bool = return_type is None or issubclass(return_type, bool)
-
-            @self.response(*(success_response if is_bool else message_response).get_args())
+        def argument_wrapper(function):
+            @self.expect(parser)
             @wraps(function)
-            def a_response_inner(*args, **kwargs):
-                result = function(*args, **kwargs)
-                return {"a": True if return_type is None else result}
+            def argument_inner(*args, **kwargs):
+                kwargs.update(parser.parse_args())
+                return function(*args, **kwargs)
 
-            return a_response_inner
+            return argument_inner
 
-        return a_response_wrapper
+        return argument_wrapper
 
     @staticmethod
     def _database_searcher(identifiable: Type[Identifiable], input_field_name: str,
@@ -172,6 +141,32 @@ class Namespace(RestXNamespace):
             if not check_only and result_filed_name is not None:
                 kwargs[result_filed_name] = result
             return callback(*args, **kwargs)
+
+    def database_searcher(self, identifiable: Type[Identifiable], input_field_name: str,
+                          result_filed_name: Optional[str] = None, check_only: bool = False, use_session: bool = False):
+        """
+        - Uses incoming id argument to find something :class:`Identifiable` in the database.
+        - If the entity wasn't found, will return a 404 response, which is documented automatically.
+        - Can pass (entity's id or entity) and session objects to the decorated function.
+
+        :param identifiable: identifiable to search for
+        :param input_field_name: field name were the entity's id is held. This field will be gone if not check_only
+        :param result_filed_name: the name of field to pass the entity to. If None, doesn't pass anything
+        :param check_only: (default: False) if True, checks if entity exists and passes id to the decorated function
+        :param use_session: (default: False) whether or not to pass the session to the decorated function
+        """
+
+        def searcher_wrapper(function):
+            @self.response(*ResponseDoc.error_response(404, identifiable.not_found_text).get_args())
+            @wraps(function)
+            @with_session
+            def searcher_inner(*args, **kwargs):
+                return self._database_searcher(identifiable, input_field_name, result_filed_name, check_only,
+                                               use_session, 404, function, *args, **kwargs)
+
+            return searcher_inner
+
+        return searcher_wrapper
 
     def jwt_authorizer(self, role: Type[UserRole], check_only: bool = False, use_session: bool = True):
         """
@@ -203,48 +198,49 @@ class Namespace(RestXNamespace):
 
         return authorizer_wrapper
 
-    def database_searcher(self, identifiable: Type[Identifiable], input_field_name: str,
-                          result_filed_name: Optional[str] = None, check_only: bool = False, use_session: bool = False):
-        """
-        - Uses incoming id argument to find something :class:`Identifiable` in the database.
-        - If the entity wasn't found, will return a 404 response, which is documented automatically.
-        - Can pass (entity's id or entity) and session objects to the decorated function.
+    def doc_file_param(self, field_name: str):  # redo...
+        def doc_file_param_wrapper(function):
+            return self.doc(**{
+                "params": {field_name: {"in": "formData", "type": "file"}},
+                "consumes": "multipart/form-data"
+            })(function)
 
-        :param identifiable: identifiable to search for
-        :param input_field_name: field name were the entity's id is held. This field will be gone if not check_only
-        :param result_filed_name: the name of field to pass the entity to. If None, doesn't pass anything
-        :param check_only: (default: False) if True, checks if entity exists and passes id to the decorated function
-        :param use_session: (default: False) whether or not to pass the session to the decorated function
+        return doc_file_param_wrapper
+
+    def doc_responses(self, *responses: ResponseDoc):
+        """
+        Adds responses to the documentation. **Affects docs only!**
+
+        :param responses: all responses to document. Models inside are registered automatically.
         """
 
-        def searcher_wrapper(function):
-            @self.response(*ResponseDoc.error_response(404, identifiable.not_found_text).get_args())
+        def doc_responses_wrapper(function):
+            for response in responses:
+                response.register_model(self)
+                function = self.response(*response.get_args())(function)
+            return function
+
+        return doc_responses_wrapper
+
+    def a_response(self):
+        """
+        - Wraps Resource's method return with ``{"a": <something>}`` response and updates documentation.
+        - Defines response type automatically by looking at method's return type annotation.
+        """
+
+        def a_response_wrapper(function):
+            return_type: Type = getattr(function, "__annotations__")["return"]
+            is_bool = return_type is None or issubclass(return_type, bool)
+
+            @self.response(*(success_response if is_bool else message_response).get_args())
             @wraps(function)
-            @with_session
-            def searcher_inner(*args, **kwargs):
-                return self._database_searcher(identifiable, input_field_name, result_filed_name, check_only,
-                                               use_session, 404, function, *args, **kwargs)
+            def a_response_inner(*args, **kwargs):
+                result = function(*args, **kwargs)
+                return {"a": True if return_type is None else result}
 
-            return searcher_inner
+            return a_response_inner
 
-        return searcher_wrapper
-
-    def argument_parser(self, parser: RequestParser):
-        """
-        - Parses request parameters and adds them to kwargs used to call the decorated function.
-        - Automatically updates endpoint's parameters with arguments from the parser.
-        """
-
-        def argument_wrapper(function):
-            @self.expect(parser)
-            @wraps(function)
-            def argument_inner(*args, **kwargs):
-                kwargs.update(parser.parse_args())
-                return function(*args, **kwargs)
-
-            return argument_inner
-
-        return argument_wrapper
+        return a_response_wrapper
 
     def lister(self, per_request: int, marshal_model, skip_none: bool = True, **kwargs):
         """
