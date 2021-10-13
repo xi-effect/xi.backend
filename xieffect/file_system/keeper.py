@@ -113,7 +113,7 @@ class WIPPage(JSONFile, Marshalable):
 
     page = relationship("Page", backref="wip", uselist=False, cascade="all, delete")
 
-    views: LambdaFieldDef = LambdaFieldDef("main", int,
+    views: LambdaFieldDef = LambdaFieldDef("wip-page", int,
                                            lambda wip_page: wip_page.get_views())
 
     def update_metadata(self, json_data: dict) -> None:
@@ -143,6 +143,9 @@ class WIPModule(JSONFile, Marshalable):
     difficulty = Column(String(20), nullable=False)
 
     module = relationship("Module", backref="wip", uselist=False, cascade="all, delete")
+
+    views: LambdaFieldDef = LambdaFieldDef("wip-module", int,
+                                           lambda wip_module: wip_module.get_views())
 
     def update_metadata(self, json_data: dict) -> None:
         self.type = ModuleType.from_string(json_data["type"])

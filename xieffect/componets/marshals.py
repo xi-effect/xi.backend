@@ -4,7 +4,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime
 from json import loads as json_loads
-from typing import Type, Dict, Tuple, Union, Optional, Callable
+from typing import Type, Dict, Tuple, Union, Optional, Callable, get_type_hints
 
 from flask_restx import Model, Namespace
 from flask_restx.fields import Raw as RawField, Boolean as BooleanField, Integer as IntegerField, String as StringField
@@ -106,7 +106,7 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False,
 
         model_dict.update({
             field_name.replace("_", "-"): field.to_field()
-            for field_name, field_type in cls.__dict__.get("__annotations__", {}).items()
+            for field_name, field_type in get_type_hints(cls).items()
             if isinstance(field_type, type) and issubclass(field_type, LambdaFieldDef)
             if (field := getattr(cls, field_name)).model_name == model_name
         })
