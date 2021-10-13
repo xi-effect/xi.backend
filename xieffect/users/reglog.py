@@ -26,6 +26,8 @@ class UserRegistration(Resource):  # [POST] /reg/
     @add_sets_cookie_response
     @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, username: str, password: str):
+        """ Creates a new user if email is not used already, logs in automatically """
+
         user: User = User.create(session, email, username, password)
         if not user:
             return {"a": False}
@@ -48,6 +50,8 @@ class UserLogin(Resource):  # [POST] /auth/
     @add_sets_cookie_response
     @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, password: str):
+        """ Tries to log in with credentials given """
+
         # print(f"Tried to login as '{email}' with password '{password}'")
 
         user: User = User.find_by_email_address(session, email)
@@ -68,6 +72,7 @@ class UserLogout(Resource):  # [POST] /logout/
     @add_unsets_cookie_response
     @jwt_required()
     def post(self, session):
+        """ Logs the user out, blocks the token """
         response = jsonify({"a": True})
         TokenBlockList.add_by_jti(session, get_jwt()["jti"])
         unset_jwt_cookies(response)
@@ -79,6 +84,7 @@ class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
     @reglog_namespace.a_response()
     @with_session
     def get(self, session, email: str) -> bool:
+        """ First step of resetting password, tries sending a password-reset email by the address given """
         return User.find_by_email_address(session, email) is not None and email != "admin@admin.admin"
 
 
@@ -91,6 +97,8 @@ class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
     @with_session
     @reglog_namespace.argument_parser(parser)
     def post(self, session, code: str, password: str) -> str:
+        """ Second step of resetting password, sets the new password if code is correct """
+
         # email = parse_code(code, "pass")
         # if email is None:
         #     return "Code error"

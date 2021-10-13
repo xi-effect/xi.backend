@@ -29,6 +29,7 @@ class FilterGetter(Resource):  # [GET] /filters/
     @education_namespace.a_response()
     @education_namespace.jwt_authorizer(User, use_session=False)
     def get(self, user: User) -> str:
+        """ Gets user's saved global filter. Deprecated? """
         return user.get_filter_bind()
 
 
@@ -55,6 +56,7 @@ class ModuleLister(Resource):  # [POST] /modules/
     @modules_view_namespace.argument_parser(parser)
     @modules_view_namespace.lister(12, module_index_json)
     def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
+        """ Lists index of modules with metadata & user's relation """
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
         except ValueError:
@@ -75,6 +77,7 @@ class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @modules_view_namespace.argument_parser(counter_parser)
     @modules_view_namespace.lister(12, short_module_json)
     def post(self, session, user: User, start: int, finish: int) -> list:
+        """ Lists short metadata for hidden modules """
         return Module.get_hidden_module_list(session, user.id, start, finish - start)
 
 
@@ -84,6 +87,7 @@ class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
     @modules_view_namespace.database_searcher(Module, use_session=True, check_only=True)
     @modules_view_namespace.marshal_with(module_index_json, skip_none=True)
     def get(self, session, user: User, module_id: int):  # add task!!!!
+        """ Returns module's full metadata & some user relation """
         ModuleFilterSession.find_or_create(session, user.id, module_id).visit_now()
         return Module.find_with_relation(session, module_id, user.id)
 
@@ -98,6 +102,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     @modules_view_namespace.database_searcher(Module, check_only=True, use_session=True)
     @modules_view_namespace.argument_parser(parser)
     def post(self, session, module_id: int, user: User, operation: str) -> None:
+        """ Changes user relation to some module """
         module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
         module.change_preference(session, PreferenceOperation.from_string(operation))
 
@@ -121,6 +126,7 @@ class PageLister(Resource):  # POST /pages/
     @pages_view_namespace.argument_parser(parser)
     @pages_view_namespace.lister(50, short_page_json)
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
+        """ Lists index of pages with metadata only """
         return Page.search(session, search, start, finish - start)
 
 
@@ -130,6 +136,7 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
     @pages_view_namespace.database_searcher(Page)
     @pages_view_namespace.marshal_with(page_view_json, skip_none=True)
     def get(self, page: Page):  # add some access checks
+        """ Returns module's full metadata & content """
         page.view()
         return page
 
@@ -148,4 +155,5 @@ class ShowAllModules(Resource):  # GET /modules/reset-hidden/
     @modules_view_namespace.a_response()
     @modules_view_namespace.jwt_authorizer(User)
     def get(self, session, user: User) -> None:
+        """ TEST-ONLY, marks all modules as shown """
         ModuleFilterSession.change_preference_by_user(session, user.id, PreferenceOperation.SHOW)
