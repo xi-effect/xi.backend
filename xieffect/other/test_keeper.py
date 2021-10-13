@@ -1,13 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
 from math import sqrt, ceil
 from random import randint
-from typing import Dict
+from typing import Dict, Optional
 
 from sqlalchemy import Column, select
 from sqlalchemy.sql.sqltypes import Integer, String, DateTime, Text
 
 from main import Base, Session
+from componets.checkers import first_or_none
 
 
 class ResultCodes(Enum):
@@ -68,15 +71,16 @@ class TestPoint(Base):
     points = Column(Integer, nullable=False)
 
     @classmethod
-    def find_by_task(cls, session: Session, task_name: str) -> list:
+    def find_by_task(cls, session: Session, task_name: str) -> list[TestPoint]:
         return session.execute(select(cls).where(cls.task_name == task_name)).scalars().all()
 
     @classmethod
-    def find_exact(cls, session: Session, task_name: str, test_id: int):
-        return session.execute(select(cls).where(cls.task_name == task_name, cls.test_id == test_id)).first()
+    def find_exact(cls, session: Session, task_name: str, test_id: int) -> Optional[TestPoint]:
+        return first_or_none(session.execute(select(cls).where(cls.task_name == task_name, cls.test_id == test_id)))
 
     @classmethod
-    def create(cls, session: Session, task_name: str, test_id: int, inp: str, out: str, points: int):
+    def create(cls, session: Session, task_name: str, test_id: int, inp: str,
+               out: str, points: int) -> Optional[TestPoint]:
         if cls.find_exact(session, task_name, test_id):
             return None
         new_test_point = cls(task_name=task_name, test_id=test_id, input=inp, output=out, points=points)
@@ -106,17 +110,17 @@ class UserSubmissions(Base):
     failed = Column(Integer, nullable=False)
 
     @classmethod
-    def find_group(cls, session: Session, user_id: str, task_name: str) -> list:
+    def find_group(cls, session: Session, user_id: str, task_name: str) -> list[UserSubmissions]:
         return session.execute(select(cls).where(cls.user_id == user_id, cls.task_name == task_name)).scalars().all()
 
     @classmethod
-    def find_exact(cls, session: Session, user_id: str, task_name: str, submission_id: int):
+    def find_exact(cls, session: Session, user_id: str, task_name: str, submission_id: int) -> list[UserSubmissions]:
         return session.execute(select(cls).where(
             cls.user_id == user_id, cls.task_name == task_name, cls.id == submission_id)).scalars().all()
 
     @classmethod
     def create(cls, session: Session, user_id: str, task_name: str, submission_id: int, code: int, points: int,
-               failed: int):
+               failed: int) -> Optional[UserSubmissions]:
         if cls.find_exact(session, user_id, task_name, submission_id):
             return None
         new_submission = cls(user_id=user_id, task_name=task_name, code=code,
@@ -125,7 +129,8 @@ class UserSubmissions(Base):
         return new_submission
 
     @classmethod
-    def create_next(cls, session: Session, user_id: str, task_name: str, code: int, points: int, failed: int):
+    def create_next(cls, session: Session, user_id: str, task_name: str, code: int,
+                    points: int, failed: int) -> Optional[UserSubmissions]:
         temp: list = cls.find_group(session, user_id, task_name)
         current_id: int = 0
         if len(temp):

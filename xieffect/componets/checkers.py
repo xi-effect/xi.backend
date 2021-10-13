@@ -31,23 +31,22 @@ class Identifiable:
         raise NotImplementedError
 
 
-class UserRole:
+class UserRole(Identifiable):
     """
     An interface to mark database classes as user roles, that can be used for authorization.
 
     Used in :ref:`.Namespace.jwt_authorizer`
     """
 
-    not_found_text: str = ""
-    """ Customizable error message to be used for missing users or if access is denied """
     default_role = None
-
-    def __init__(self, **kwargs):
-        pass
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[UserRole]:
         raise NotImplementedError
+
+
+def get_or_pop(dictionary: dict, key, keep: bool = False):
+    return dictionary[key] if keep else dictionary.pop(key)
 
 
 def first_or_none(result: Result) -> Optional[Any]:
@@ -108,10 +107,101 @@ class Namespace(RestXNamespace):
     modifying responses and automatic updating Swagger documentation where possible
     """
 
-    auth_errors: List[ResponseDoc] = [
-        ResponseDoc(401, "JWTError", message_response.model),
-        ResponseDoc(422, "InvalidJWT", message_response.model)
-    ]
+    def argument_parser(self, parser: RequestParser):
+        """
+        - Parses request parameters and adds them to kwargs used to call the decorated function.
+        - Automatically updates endpoint's parameters with arguments from the parser.
+        """
+
+        def argument_wrapper(function):
+            @self.expect(parser)
+            @wraps(function)
+            def argument_inner(*args, **kwargs):
+                kwargs.update(parser.parse_args())
+                return function(*args, **kwargs)
+
+            return argument_inner
+
+        return argument_wrapper
+
+    @staticmethod
+    def _database_searcher(identifiable: Type[Identifiable], check_only: bool, no_id: bool,
+                           use_session: bool, error_code: int, callback, *args, **kwargs):
+        session = get_or_pop(kwargs, "session", use_session)
+        target_id: int = get_or_pop(kwargs, identifiable.__name__.lower() + "_id", check_only and not no_id)
+        if (result := identifiable.find_by_id(session, target_id)) is None:
+            return {"a": identifiable.not_found_text}, error_code
+        else:
+            if not check_only:
+                kwargs[identifiable.__name__.lower()] = result
+            return callback(*args, **kwargs)
+
+    def database_searcher(self, identifiable: Type[Identifiable], check_only: bool = False, use_session: bool = False):
+        """
+        - Uses incoming id argument to find something :class:`Identifiable` in the database.
+        - If the entity wasn't found, will return a 404 response, which is documented automatically.
+        - Can pass (entity's id or entity) and session objects to the decorated function.
+
+        :param identifiable: identifiable to search for
+        :param check_only: (default: False) if True, checks if entity exists and passes id to the decorated function
+        :param use_session: (default: False) whether or not to pass the session to the decorated function
+        """
+
+        def searcher_wrapper(function):
+            @self.response(*ResponseDoc.error_response(404, identifiable.not_found_text).get_args())
+            @wraps(function)
+            @with_session
+            def searcher_inner(*args, **kwargs):
+                return self._database_searcher(
+                    identifiable, check_only, False, use_session, 404, function, *args, **kwargs)
+
+            return searcher_inner
+
+        return searcher_wrapper
+
+    def jwt_authorizer(self, role: Type[UserRole], check_only: bool = False, use_session: bool = True):
+        """
+        - Authorizes user by JWT-token.
+        - If token is missing or is not processable, falls back on flask-jwt-extended error handlers.
+        - If user doesn't exist or doesn't have the role required, sends the corresponding response.
+        - All error responses are added to the documentation automatically.
+        - Can pass user and session objects to the decorated function.
+
+        :param role: role to expect
+        :param check_only: (default: False) if True, user object won't be passed to the decorated function
+        :param use_session: (default: True) whether or not to pass the session to the decorated function
+        """
+
+        auth_errors: List[ResponseDoc] = [
+            ResponseDoc(401, "JWTError", message_response.model),
+            ResponseDoc(422, "InvalidJWT", message_response.model)
+        ]
+
+        def authorizer_wrapper(function):
+            error_code: int = 401 if role is UserRole.default_role else 403
+
+            @self.doc_responses(*auth_errors, ResponseDoc.error_response(error_code, role.not_found_text))
+            @self.doc(security="jwt")
+            @wraps(function)
+            @jwt_required()
+            @with_session
+            def authorizer_inner(*args, **kwargs):
+                kwargs[role.__name__.lower() + "_id"] = get_jwt_identity()
+                return self._database_searcher(
+                    role, check_only, True, use_session, error_code, function, *args, **kwargs)
+
+            return authorizer_inner
+
+        return authorizer_wrapper
+
+    def doc_file_param(self, field_name: str):  # redo...
+        def doc_file_param_wrapper(function):
+            return self.doc(**{
+                "params": {field_name: {"in": "formData", "type": "file"}},
+                "consumes": "multipart/form-data"
+            })(function)
+
+        return doc_file_param_wrapper
 
     def doc_responses(self, *responses: ResponseDoc):
         """
@@ -147,103 +237,6 @@ class Namespace(RestXNamespace):
             return a_response_inner
 
         return a_response_wrapper
-
-    def jwt_authorizer(self, role: Type[UserRole], chek_only: bool = False, use_session: bool = True):
-        """
-        - Authorizes user by JWT-token.
-        - If token is missing or is not processable, falls back on flask-jwt-extended error handlers.
-        - If user doesn't exist or doesn't have the role required, sends the corresponding response.
-        - All error responses are added to the documentation automatically.
-        - Can pass user and session objects to the decorated function.
-
-        :param role: role to expect
-        :param chek_only: (default: False) if True, user object won't be passed to the decorated function
-        :param use_session: (default: True) whether or not to pass the session to the decorated function
-        """
-
-        def authorizer_wrapper(function):
-            response_code: int = 401 if role is UserRole.default_role else 403
-
-            @self.doc_responses(*self.auth_errors, ResponseDoc.error_response(response_code, role.not_found_text))
-            @wraps(function)
-            @jwt_required()
-            @with_session
-            def authorizer_inner(*args, **kwargs):
-                session = kwargs["session"]
-                result: role = role.find_by_id(session, get_jwt_identity())
-                if result is None:
-                    return {"a": role.not_found_text}, response_code
-                else:
-                    if not chek_only:
-                        kwargs[role.__name__.lower()] = result
-                    if not use_session:
-                        kwargs.pop("session")
-                    return function(*args, **kwargs)
-
-            return authorizer_inner
-
-        return authorizer_wrapper
-
-    def database_searcher(self, identifiable: Type[Identifiable], input_field_name: str,
-                          result_filed_name: Optional[str] = None, check_only: bool = False, use_session: bool = False):
-        """
-        - Uses incoming id argument to find something :class:`Identifiable` in the database.
-        - If the entity wasn't found, will return a 404 response, which is documented automatically.
-        - Can pass (entity's id or entity) and session objects to the decorated function.
-
-        :param identifiable: identifiable to search for
-        :param input_field_name: field name were the entity's id is held. This field will be gone if not check_only
-        :param result_filed_name: the name of field to pass the entity to. If None, doesn't pass anything
-        :param check_only: (default: False) if True, checks if entity exists and passes id to the decorated function
-        :param use_session: (default: False) whether or not to pass the session to the decorated function
-        """
-
-        def searcher_wrapper(function):
-            error_response: tuple = {"a": identifiable.not_found_text}, 404
-
-            @wraps(function)
-            @with_session
-            def searcher_inner(*args, **kwargs):
-                session = kwargs["session"] if use_session else kwargs.pop("session")
-                target_id: int = kwargs.pop(input_field_name)
-                result: identifiable = identifiable.find_by_id(session, target_id)
-                if result is None:
-                    return error_response
-                else:
-                    if result_filed_name is not None:
-                        kwargs[result_filed_name] = result
-                    return function(*args, **kwargs)
-
-            @wraps(function)
-            @with_session
-            def checker_inner(*args, **kwargs):
-                session = kwargs["session"] if use_session else kwargs.pop("session")
-                if identifiable.find_by_id(session, kwargs[input_field_name]) is None:
-                    return error_response
-                else:
-                    return function(*args, **kwargs)
-
-            result = checker_inner if check_only else searcher_inner
-            return self.response(*ResponseDoc.error_response(404, identifiable.not_found_text).get_args())(result)
-
-        return searcher_wrapper
-
-    def argument_parser(self, parser: RequestParser):
-        """
-        - Parses request parameters and adds them to kwargs used to call the decorated function.
-        - Automatically updates endpoint's parameters with arguments from the parser.
-        """
-
-        def argument_wrapper(function):
-            @self.expect(parser)
-            @wraps(function)
-            def argument_inner(*args, **kwargs):
-                kwargs.update(parser.parse_args())
-                return function(*args, **kwargs)
-
-            return argument_inner
-
-        return argument_wrapper
 
     def lister(self, per_request: int, marshal_model, skip_none: bool = True, **kwargs):
         """

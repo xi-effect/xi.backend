@@ -16,32 +16,50 @@ role_settings = settings_namespace.model("RoleSettings", User.marshal_models["ro
 
 @other_settings_namespace.route("/avatar/")
 class Avatar(Resource):  # [GET|POST] /avatar/
+    @other_settings_namespace.response(200, "PNG image as a byte string")
     @other_settings_namespace.doc_responses(ResponseDoc(404, "Avatar not found"))
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
     def get(self, user: User):
+        """ Loads user's own avatar """
         return send_from_directory(r"../files/avatars", f"{user.id}.png")
 
     @other_settings_namespace.a_response()
+    @other_settings_namespace.doc_file_param("image")
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
     def post(self, user: User) -> None:
+        """ Overwrites user's own avatar """
         with open(f"files/avatars/{user.id}.png", "wb") as f:
             f.write(request.data)
+
+
+def changed(value):
+    return dict(value)
+
+
+changed.__schema__ = {
+    "type": "object",
+    "format": "changed",
+    "example": '{"dark-theme": true | false, ' +
+               ", ".join(f'"{key}": ""' for key in ["username", "language", "name", "surname", "patronymic"]) + "}"
+}
 
 
 @settings_namespace.route("/")
 class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
-    parser.add_argument("changed", type=dict, location="json", required=True, help="A dict of changed settings")
+    parser.add_argument("changed", type=changed, required=True, help="A dict of changed settings")
 
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(full_settings, skip_none=True)
     def get(self, user: User):
+        """ Loads user's own full settings """
         return user
 
     @settings_namespace.a_response()
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.argument_parser(parser)  # fix with json (marshal?)
     def post(self, user: User, changed: dict) -> None:
+        """ Overwrites values in user's settings with ones form payload """
         user.change_settings(changed)
 
 
@@ -50,6 +68,7 @@ class MainSettings(Resource):  # [GET] /settings/main/
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(main_settings, skip_none=True)
     def get(self, user: User):
+        """ Loads user's own main settings (username, dark-theme and language) """
         return user
 
 
@@ -58,6 +77,7 @@ class RoleSettings(Resource):  # [GET] /settings/roles/
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(role_settings, skip_none=True)
     def get(self, user: User):
+        """ Loads user's own role settings (author, moderator) """
         return user
 
 
@@ -70,6 +90,8 @@ class EmailChanger(Resource):  # [POST] /email-change/
     @protected_settings_namespace.jwt_authorizer(User)
     @protected_settings_namespace.argument_parser(parser)
     def post(self, session, user: User, password: str, new_email: str) -> str:
+        """ Verifies user's password and changes user's email to a new one """
+
         if not User.verify_hash(password, user.password):
             return "Wrong password"
 
@@ -90,6 +112,8 @@ class PasswordChanger(Resource):  # [POST] /password-change/
     @protected_settings_namespace.jwt_authorizer(User, use_session=False)
     @protected_settings_namespace.argument_parser(parser)
     def post(self, user: User, password: str, new_password: str) -> str:
+        """ Verifies user's password and changes it to a new one """
+
         if User.verify_hash(password, user.password):
             user.change_password(new_password)
             return "Success"

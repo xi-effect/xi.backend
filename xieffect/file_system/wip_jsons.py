@@ -24,6 +24,7 @@ class WIPModuleLister(Resource):  # [POST] /wip/modules/index/
     @wip_index_namespace.argument_parser(counter_parser)
     @wip_index_namespace.lister(50, wip_short_module_json, skip_none=False)
     def post(self, session, author: Author, start: int, finish: int):
+        """ Lists all Author's wip-modules' metadata for author studio """
         return WIPModule.find_by_owner(session, author, start, finish - start)
 
 
@@ -33,6 +34,7 @@ class WIPPageLister(Resource):  # [POST] /wip/pages/index/
     @wip_index_namespace.argument_parser(counter_parser)
     @wip_index_namespace.lister(50, wip_short_page_json, skip_none=False)
     def post(self, session, author: Author, start: int, finish: int):
+        """ Lists all Author's wip-pages' metadata for author studio """
         return WIPPage.find_by_owner(session, author, start, finish - start)
 
 
@@ -74,9 +76,11 @@ def file_getter(type_only: bool = True, use_session: bool = True, use_author: bo
 
 @wip_json_file_namespace.route("/")
 class FileCreator(Resource):  # [POST] /wip/<file_type>/
+    @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @file_getter()
     def post(self, session, author: Author, file_type: Type[JSONFile]):
+        """ Creates a new wip-file, saves its contents and adds its metadata to index """
         result: file_type = file_type.create_from_json(session, author, request.get_json())
         # for CATFile  result: file_type = file_type.create_with_file(author, request.get_data())
         return {"id": result.id}
@@ -84,8 +88,10 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 
 @wip_json_file_namespace.route("/<int:file_id>/")
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
+    @wip_json_file_namespace.response(200, "JSON-file of the file type")
     @file_getter(type_only=False, use_session=False)
     def get(self, file: JSONFile):
+        """ Loads author's wip-file's full contents """
         with open(file.get_link(), "rb") as f:
             result = load(f)
         return result
@@ -94,15 +100,19 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     # def get(self, file_type: Type[CATFile], file_id: int):
     #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
 
+    @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.a_response()
     @file_getter(type_only=False)
     def put(self, session, file: JSONFile) -> None:
+        """ Overwrites author's wip-file's contents and modifies index accordingly """
         file.update_json(session, request.get_json())
         # file.update(request.get_data())
 
+    @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.a_response()
     @file_getter(type_only=False)
     def delete(self, session, file: JSONFile) -> None:
+        """ Deletes author's wip-file's contents and erases its metadata form the index """
         file.delete(session)
 
 
@@ -111,8 +121,9 @@ class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publicatio
     @wip_json_file_namespace.a_response()
     @file_getter(type_only=False, use_session=True, use_author=True)
     def post(self, session, file: JSONFile, author: Author) -> str:
+        """ Validates and then publishes author's wip-file """
         with open(file.get_link(), "rb") as f:
             content: dict = load(f)
             content["id"] = file.id  # just making sure
             result: bool = (Page if type(file) == WIPPage else Module).create(session, content, author) is None
-        return "File already exists" if result else "Success"
+        return "File already exists" if result else "Success"  # redo!!!

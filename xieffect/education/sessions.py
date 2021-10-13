@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional
 
@@ -38,7 +40,7 @@ class ModuleFilterSession(Base, Marshalable):
         LambdaFieldDef("mfs", datetime, lambda mfs: mfs.last_visited if mfs.started else datetime.min)
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int):
+    def create(cls, session: Session, user_id: int, module_id: int) -> Optional[ModuleFilterSession]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
         # parameter check freaks out for no reason \/ \/ \/
@@ -47,11 +49,11 @@ class ModuleFilterSession(Base, Marshalable):
         return new_entry
 
     @classmethod
-    def find_by_ids(cls, session: Session, user_id: int, module_id: int):
+    def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Optional[ModuleFilterSession]:
         return first_or_none(session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)))
 
     @classmethod
-    def find_or_create(cls, session: Session, user_id: int, module_id: int):  # check if ever used
+    def find_or_create(cls, session: Session, user_id: int, module_id: int) -> ModuleFilterSession:
         entry = cls.find_by_ids(session, user_id, module_id)
         if entry is None:
             return cls.create(session, user_id, module_id)
@@ -102,19 +104,19 @@ class BaseModuleSession(Base, Identifiable):
     module_id = Column(Integer, nullable=False)  # MB replace with relationship
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int):
+    def create(cls, session: Session, user_id: int, module_id: int) -> BaseModuleSession:
         raise NotImplementedError
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int) -> Optional[BaseModuleSession]:
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
-    def find_by_ids(cls, session: Session, user_id: int, module_id: int):
+    def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Optional[BaseModuleSession]:
         return first_or_none(session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)))
 
     @classmethod
-    def find_or_create(cls, session: Session, user_id: int, module_id: int):
+    def find_or_create(cls, session: Session, user_id: int, module_id: int) -> BaseModuleSession:
         entry = cls.find_by_ids(session, user_id, module_id)
         if entry is None:
             return cls.create(session, user_id, module_id)
@@ -126,7 +128,8 @@ class StandardModuleSession(BaseModuleSession):
     progress = Column(Integer, nullable=False, default=0)
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int, progress: int = 0):
+    def create(cls, session: Session, user_id: int, module_id: int,
+               progress: int = 0) -> Optional[StandardModuleSession]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
         new_entry = cls(user_id=user_id, module_id=module_id, progress=progress)
@@ -134,7 +137,8 @@ class StandardModuleSession(BaseModuleSession):
         return new_entry
 
     @classmethod
-    def find_or_create_with_progress(cls, session: Session, user_id: int, module_id: int, progress: int):
+    def find_or_create_with_progress(cls, session: Session, user_id: int, module_id: int,
+                                     progress: int) -> StandardModuleSession:
         entry: cls = cls.find_by_ids(session, user_id, module_id)
         if entry is None:
             entry = cls.create(session, user_id, module_id, progress)
@@ -143,7 +147,7 @@ class StandardModuleSession(BaseModuleSession):
         return entry
 
     @classmethod
-    def set_progress_by_ids(cls, session: Session, user_id: int, module_id: int, progress: int):
+    def set_progress_by_ids(cls, session: Session, user_id: int, module_id: int, progress: int) -> None:
         if progress != -1:  # module is not completed
             cls.find_or_create_with_progress(session, user_id, module_id, progress)
             return
@@ -173,13 +177,13 @@ class TestModuleSession(BaseModuleSession):
     pass  # keeps test instance (one to many) in keeper.py
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int):
+    def create(cls, session: Session, user_id: int, module_id: int) -> TestModuleSession:
         pass
 
     def get_task(self, task_id: int) -> dict:
         pass
 
-    def set_reply(self, session: Session, task_id: int, reply):
+    def set_reply(self, session: Session, task_id: int, reply) -> None:
         pass
 
     def collect_results(self) -> dict:

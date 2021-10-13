@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from datetime import datetime
 from json import dumps as json_dumps, load
 from pickle import dumps, loads
 from random import randint
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 
 from sqlalchemy import Column, ForeignKey, select, and_, or_
 from sqlalchemy.engine import Row
@@ -61,7 +63,7 @@ class Page(Base, Identifiable, Marshalable):
     author_name: LambdaFieldDef = LambdaFieldDef("page-short", str, lambda page: page.author.pseudonym)
 
     @classmethod
-    def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
+    def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author) -> Page:
         json_data["kind"] = PageKind.from_string(json_data["kind"])
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
@@ -72,19 +74,17 @@ class Page(Base, Identifiable, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Page]:
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
-    def create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
+    def create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Page]:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls._create(session, json_data, author)
 
     @classmethod
-    def create_or_update(cls, session: Session,
-                         json_data: Dict[str, Union[str, int, bool, list]],
-                         author: Author = None):
+    def create_or_update(cls, session: Session, json_data: Dict[str, Any], author: Author = None) -> Page:
         entry: cls
         if (entry := cls.find_by_id(session, json_data["id"])) is None:
             return cls._create(session, json_data, author)
@@ -94,19 +94,16 @@ class Page(Base, Identifiable, Marshalable):
             cls._create(session, json_data, author)
 
     @classmethod
-    def get_page_of_pages(cls, session: Session, start: int, limit: int) -> list:
-        return session.execute(select(cls).offset(start).limit(limit)).scalars().all()
+    def search(cls, session: Session, search: Optional[str], start: int, limit: int) -> list[Page]:
+        stmt: Select = select(cls).filter_by(public=True).offset(start).limit(limit)
+        if search is not None and len(search) > 2:  # redo all search with pagination!!!
+            stmt = cls.search_stmt(search, stmt=stmt)
+        return session.execute(stmt).scalars().all()
 
-    @classmethod
-    def search(cls, session: Session, search: Optional[str], start: int, limit: int) -> list:
-        if search is None or len(search) < 3:  # redo all search with pagination!!!
-            return cls.get_page_of_pages(session, start, limit)
-        return session.execute(cls.search_stmt(search).offset(start).limit(limit)).scalars().all()
-
-    def view(self):  # auto-commit
+    def view(self) -> None:  # auto-commit
         self.views += 1
 
-    def delete(self, session: Session):
+    def delete(self, session: Session) -> None:
         session.delete(self)
 
 
@@ -125,7 +122,7 @@ class Point(Base):
     data = Column(PickleType, nullable=False)  # do a relation!
 
     @classmethod
-    def __create(cls, session: Session, module_id: int, point_id: int, point_type: int, data: List[int]):
+    def __create(cls, session: Session, module_id: int, point_id: int, point_type: int, data: List[int]) -> int:
         if cls.find_by_ids(session, module_id, point_id):
             return False
         new_point = cls(module_id=module_id, point_id=point_id, type=point_type, data=dumps(data))
@@ -133,12 +130,12 @@ class Point(Base):
         return True
 
     @classmethod
-    def create_all(cls, session: Session, module_id: int, json_data: List[Dict[str, Union[str, int, list]]]):
+    def create_all(cls, session: Session, module_id: int, json_data: List[Dict[str, Union[str, int, list]]]) -> None:
         for i in range(len(json_data)):
             cls.__create(session, module_id, i, PointType.from_string(json_data[i]["type"]), json_data[i]["pages"])
 
     @classmethod
-    def find_by_ids(cls, session: Session, module_id: int, point_id: int):
+    def find_by_ids(cls, session: Session, module_id: int, point_id: int) -> Optional[Point]:
         return first_or_none(session.execute(select(cls).where(cls.module_id == module_id, cls.point_id == point_id)))
 
     @classmethod
@@ -147,7 +144,7 @@ class Point(Base):
         return entry.execute()
 
     @classmethod
-    def get_module_points(cls, session: Session, module_id: int):
+    def get_module_points(cls, session: Session, module_id: int) -> list[Point]:
         return session.execute(select(cls).where(cls.module_id == module_id)).scalars().all()
 
     def execute(self) -> int:
@@ -157,7 +154,7 @@ class Point(Base):
         else:  # Theory
             pass
 
-    def delete(self, session: Session):
+    def delete(self, session: Session) -> None:
         session.delete(self)
 
 
@@ -273,7 +270,7 @@ class Module(Base, Identifiable, Marshalable):
         return True
 
     @classmethod
-    def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
+    def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author) -> Module:
         json_data["type"] = ModuleType.from_string(json_data["type"])
         json_data["length"] = len(json_data["points"])
 
@@ -292,17 +289,17 @@ class Module(Base, Identifiable, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, module_id: int):
+    def find_by_id(cls, session: Session, module_id: int) -> Optional[Module]:
         return first_or_none(session.execute(select(cls).where(cls.id == module_id)))
 
     @classmethod
-    def create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author):
+    def create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Module]:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls._create(session, json_data, author)
 
     @classmethod
-    def find_with_relation(cls, session: Session, module_id: int, user_id: int):
+    def find_with_relation(cls, session: Session, module_id: int, user_id: int) -> Optional[Row]:
         stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns, Author.pseudonym)
         stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id))
         result = session.execute(stmt.filter(cls.id == module_id).limit(1)).all()
@@ -358,7 +355,7 @@ class Module(Base, Identifiable, Marshalable):
         return session.execute(stmt.offset(offset).limit(limit)).all()
 
     @classmethod
-    def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int):
+    def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int) -> list[Row]:
         stmt: Select = select(*cls.__table__.columns, Author.pseudonym)
         stmt = stmt.join(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == True))
         stmt = stmt.order_by(MFS.last_changed.desc())
@@ -370,7 +367,7 @@ class Module(Base, Identifiable, Marshalable):
     def get_any_point(self, session: Session) -> Point:
         return Point.find_by_ids(session, self.id, randint(1, self.length))
 
-    def delete(self, session: Session):
+    def delete(self, session: Session) -> None:
         for point in Point.get_module_points(session, self.id):
             point.delete(session)
         session.delete(self)
