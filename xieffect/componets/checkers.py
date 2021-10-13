@@ -112,6 +112,13 @@ class Namespace(RestXNamespace):
         ResponseDoc(422, "InvalidJWT", message_response.model)
     ]
 
+    @staticmethod
+    def file_param_doc(field_name: str):
+        return {
+            "params": {field_name: {"in": "formData", "type": "file"}},
+            "consumes": "multipart/form-data"
+        }
+
     def doc_responses(self, *responses: ResponseDoc):
         """
         Adds responses to the documentation. **Affects docs only!**
@@ -126,6 +133,12 @@ class Namespace(RestXNamespace):
             return function
 
         return doc_responses_wrapper
+
+    def doc_file_param(self, field_name: str):  # redo...
+        def doc_file_param_wrapper(function):
+            return self.doc(**self.file_param_doc(field_name))(function)
+
+        return doc_file_param_wrapper
 
     def a_response(self):
         """

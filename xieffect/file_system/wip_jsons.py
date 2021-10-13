@@ -74,6 +74,7 @@ def file_getter(type_only: bool = True, use_session: bool = True, use_author: bo
 
 @wip_json_file_namespace.route("/")
 class FileCreator(Resource):  # [POST] /wip/<file_type>/
+    @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @file_getter()
     def post(self, session, author: Author, file_type: Type[JSONFile]):
@@ -84,6 +85,7 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 
 @wip_json_file_namespace.route("/<int:file_id>/")
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
+    @wip_json_file_namespace.response(200, "JSON-file of the file type")
     @file_getter(type_only=False, use_session=False)
     def get(self, file: JSONFile):
         with open(file.get_link(), "rb") as f:
@@ -94,12 +96,14 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     # def get(self, file_type: Type[CATFile], file_id: int):
     #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
 
+    @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.a_response()
     @file_getter(type_only=False)
     def put(self, session, file: JSONFile) -> None:
         file.update_json(session, request.get_json())
         # file.update(request.get_data())
 
+    @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.a_response()
     @file_getter(type_only=False)
     def delete(self, session, file: JSONFile) -> None:

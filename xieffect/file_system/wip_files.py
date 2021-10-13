@@ -15,6 +15,7 @@ image_ids_response: ResponseDoc = ResponseDoc(model=Model("Image IDs", {"author-
 
 @wip_images_namespace.route("/")
 class ImageAdder(Resource):  # POST /wip/images/
+    @wip_images_namespace.doc_file_param("image")
     @wip_images_namespace.doc_responses(image_ids_response)
     @wip_images_namespace.jwt_authorizer(Author, use_session=False)
     def post(self, author: Author):
@@ -27,11 +28,13 @@ class ImageAdder(Resource):  # POST /wip/images/
 
 @wip_images_namespace.route("/<int:image_id>/")
 class ImageProcessor(Resource):  # [GET|PUT|DELETE] /wip/images/<int:image_id>/
+    @wip_images_namespace.response(302, "Redirect to /images/{author_id}-{image_id}/")
     @wip_images_namespace.jwt_authorizer(Author, use_session=False)
     def get(self, author: Author, image_id: int):
         return redirect(f"/images/{author.id}-{image_id}/")
 
     @wip_images_namespace.a_response()
+    @wip_images_namespace.doc_file_param("image")
     @wip_images_namespace.jwt_authorizer(Author, use_session=False)
     def put(self, author: Author, image_id: int) -> None:
         with open(f"../files/images/{author.id}-{image_id}.png", "wb") as f:
@@ -43,8 +46,9 @@ class ImageProcessor(Resource):  # [GET|PUT|DELETE] /wip/images/<int:image_id>/
         remove(f"../files/images/{author.id}-{image_id}.png")
 
 
-@images_view_namespace.route("/<image_id>/")
+@images_view_namespace.route("/<int:author_id>-<int:image_id>/")
 class ImageViewer(Resource):  # GET /images/<image_id>/
-    @images_view_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
-    def get(self, image_id: str):
-        return send_from_directory("../files/images/", image_id + ".png")
+    @images_view_namespace.response(200, "PNG image as a byte string")
+    @images_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
+    def get(self, author_id: int, image_id: int):
+        return send_from_directory("../files/images/", f"{author_id}-{image_id}.png")
