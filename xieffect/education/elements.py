@@ -94,14 +94,11 @@ class Page(Base, Identifiable, Marshalable):
             cls._create(session, json_data, author)
 
     @classmethod
-    def get_page_of_pages(cls, session: Session, start: int, limit: int) -> list:
-        return session.execute(select(cls).offset(start).limit(limit)).scalars().all()
-
-    @classmethod
-    def search(cls, session: Session, search: Optional[str], start: int, limit: int) -> list:
-        if search is None or len(search) < 3:  # redo all search with pagination!!!
-            return cls.get_page_of_pages(session, start, limit)
-        return session.execute(cls.search_stmt(search).offset(start).limit(limit)).scalars().all()
+    def search(cls, session: Session, search: Optional[str], start: int, limit: int) -> list[Page]:
+        stmt: Select = select(cls).filter_by(public=True).offset(start).limit(limit)
+        if search is not None and len(search) > 2:  # redo all search with pagination!!!
+            stmt = cls.search_stmt(search, stmt=stmt)
+        return session.execute(stmt).scalars().all()
 
     def view(self) -> None:  # auto-commit
         self.views += 1
