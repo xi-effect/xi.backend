@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Optional
 
 from flask import redirect
 from flask_restx import Resource
@@ -25,7 +26,8 @@ def redirected_to_pages(op_name, *possible_module_types: ModuleType):
                 return {"a": f"Module of type {module_type} can't use {op_name}"}, 400
             if len(possible_module_types) > 1:
                 kwargs["module_type"] = module_type
-            return redirect(f"/pages/{function(*args, **kwargs)}/")
+            result: Optional[bool] = function(*args, **kwargs)
+            return {"a": "You have reached the end"} if result is None else redirect(f"/pages/{result}/")
 
         return redirected_to_pages_inner
 
@@ -37,12 +39,18 @@ interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:
 
 @interaction_namespace.route("/next/")
 class ModuleProgresser(Resource):
+    @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "You have reached the end"))
     @redirected_to_pages("linear progression", ModuleType.STANDARD, ModuleType.PRACTICE_BLOCK)
-    def post(self, session, user: User, module: Module, module_type: ModuleType) -> int:
+    def post(self, session, user: User, module: Module, module_type: ModuleType) -> Optional[int]:
         if module_type == ModuleType.STANDARD:
-            return 1
+            module_session: StandardModuleSession = StandardModuleSession.find_or_create(session, user.id, module.id)
+            module_session.progress += 1
+            if module_session.progress >= module.length:
+                module_session.delete(session)
+                return None
+            return Point.find_and_execute(session, module.id, module_session.progress)
         elif module_type == ModuleType.PRACTICE_BLOCK:
-            return 2
+            return module.execute_random_point(session)
 
 
 @interaction_namespace.route("/points/<int:point_id>/")
