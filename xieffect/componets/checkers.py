@@ -130,28 +130,24 @@ class Namespace(RestXNamespace):
         return argument_wrapper
 
     @staticmethod
-    def _database_searcher(identifiable: Type[Identifiable], input_field_name: str,
-                           result_filed_name: Optional[str], check_only: bool,
+    def _database_searcher(identifiable: Type[Identifiable], check_only: bool, no_id: bool,
                            use_session: bool, error_code: int, callback, *args, **kwargs):
         session = get_or_pop(kwargs, "session", use_session)
-        target_id: int = get_or_pop(kwargs, input_field_name, check_only)
+        target_id: int = get_or_pop(kwargs, identifiable.__name__.lower() + "_id", check_only and not no_id)
         if (result := identifiable.find_by_id(session, target_id)) is None:
             return {"a": identifiable.not_found_text}, error_code
         else:
-            if not check_only and result_filed_name is not None:
-                kwargs[result_filed_name] = result
+            if not check_only:
+                kwargs[identifiable.__name__.lower()] = result
             return callback(*args, **kwargs)
 
-    def database_searcher(self, identifiable: Type[Identifiable], input_field_name: str,
-                          result_filed_name: Optional[str] = None, check_only: bool = False, use_session: bool = False):
+    def database_searcher(self, identifiable: Type[Identifiable], check_only: bool = False, use_session: bool = False):
         """
         - Uses incoming id argument to find something :class:`Identifiable` in the database.
         - If the entity wasn't found, will return a 404 response, which is documented automatically.
         - Can pass (entity's id or entity) and session objects to the decorated function.
 
         :param identifiable: identifiable to search for
-        :param input_field_name: field name were the entity's id is held. This field will be gone if not check_only
-        :param result_filed_name: the name of field to pass the entity to. If None, doesn't pass anything
         :param check_only: (default: False) if True, checks if entity exists and passes id to the decorated function
         :param use_session: (default: False) whether or not to pass the session to the decorated function
         """
@@ -161,8 +157,8 @@ class Namespace(RestXNamespace):
             @wraps(function)
             @with_session
             def searcher_inner(*args, **kwargs):
-                return self._database_searcher(identifiable, input_field_name, result_filed_name, check_only,
-                                               use_session, 404, function, *args, **kwargs)
+                return self._database_searcher(
+                    identifiable, check_only, False, use_session, 404, function, *args, **kwargs)
 
             return searcher_inner
 
@@ -190,9 +186,9 @@ class Namespace(RestXNamespace):
             @jwt_required()
             @with_session
             def authorizer_inner(*args, **kwargs):
-                kwargs["id"] = get_jwt_identity()
-                return self._database_searcher(role, "id", None if check_only else role.__name__.lower(), False,
-                                               use_session, error_code, function, *args, **kwargs)
+                kwargs[role.__name__.lower() + "_id"] = get_jwt_identity()
+                return self._database_searcher(
+                    role, check_only, True, use_session, error_code, function, *args, **kwargs)
 
             return authorizer_inner
 
