@@ -1,4 +1,6 @@
-from typing import Dict, Union
+from __future__ import annotations
+
+from typing import Dict, Union, Optional
 
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select
@@ -17,11 +19,11 @@ class TokenBlockList(Base):
     jti = Column(String(36), nullable=False)
 
     @classmethod
-    def find_by_jti(cls, session: Session, jti):
+    def find_by_jti(cls, session: Session, jti) -> TokenBlockList:
         return first_or_none(session.execute(select(cls).where(cls.jti == jti)))
 
     @classmethod
-    def add_by_jti(cls, session: Session, jti):
+    def add_by_jti(cls, session: Session, jti) -> None:
         session.add(cls(jti=jti))
 
 
@@ -33,11 +35,11 @@ class User(Base, UserRole, Marshalable):
     not_found_text = "User does not exist"
 
     @staticmethod
-    def generate_hash(password):
+    def generate_hash(password) -> str:
         return sha256.hash(password)
 
     @staticmethod
-    def verify_hash(password, hashed):
+    def verify_hash(password, hashed) -> bool:
         return sha256.verify(password, hashed)
 
     # Vital:
@@ -67,23 +69,23 @@ class User(Base, UserRole, Marshalable):
     moderator_status: LambdaFieldDef = LambdaFieldDef("role-settings", bool, lambda user: user.moderator is not None)
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
-    def find_by_email_address(cls, session: Session, email):
+    def find_by_email_address(cls, session: Session, email) -> Optional[User]:
         # send_generated_email(email, "pass", "password-reset-email.html")
         return first_or_none(session.execute(select(cls).where(cls.email == email)))
 
     @classmethod
-    def create(cls, session: Session, email: str, username: str, password: str):
+    def create(cls, session: Session, email: str, username: str, password: str) -> Optional[User]:
         if cls.find_by_email_address(session, email):
             return None
         new_user = cls(email=email, password=cls.generate_hash(password), username=username)
         session.add(new_user)
         return new_user
 
-    def confirm_email(self):  # auto-commit
+    def confirm_email(self) -> None:  # auto-commit
         self.email_confirmed = True
 
     def change_email(self, session: Session, new_email: str) -> bool:
@@ -93,10 +95,10 @@ class User(Base, UserRole, Marshalable):
         self.email_confirmed = False
         return True
 
-    def change_password(self, new_password: str):  # auto-commit
+    def change_password(self, new_password: str) -> None:  # auto-commit
         self.password = User.generate_hash(new_password)
 
-    def change_settings(self, new_values: Dict[str, Union[str, int, bool]]):  # auto-commit
+    def change_settings(self, new_values: Dict[str, Union[str, int, bool]]) -> None:  # auto-commit
         if "username" in new_values.keys():
             self.username = new_values["username"]
         if "dark-theme" in new_values.keys():
@@ -110,7 +112,7 @@ class User(Base, UserRole, Marshalable):
         if "patronymic" in new_values.keys():
             self.patronymic = new_values["patronymic"]
 
-    def get_author_status(self):
+    def get_author_status(self) -> str:
         return "not-yet" if self.author is None else "banned" if self.author.banned else "current"
 
     def get_filter_bind(self) -> str:

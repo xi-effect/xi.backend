@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Optional
+
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
@@ -20,31 +24,31 @@ class Author(Base, UserRole):
     modules = relationship("Module", backref="authors")
 
     @classmethod
-    def create(cls, session: Session, user: User):  # User class
+    def create(cls, session: Session, user: User) -> Author:
         new_entry = cls(pseudonym=user.username)
         user.author = new_entry
         session.add(new_entry)
         return new_entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False):
+    def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False) -> Optional[Author]:
         return first_or_none(session.execute(
             select(cls).where(cls.id == entry_id) if include_banned
             else select(cls).where(cls.id == entry_id, cls.banned == False)
         ))
 
     @classmethod
-    def find_or_create(cls, session: Session, user):  # User class
+    def find_or_create(cls, session: Session, user) -> Author:
         if (author := cls.find_by_id(session, user.id, True)) is None:
             author = cls.create(session, user)
         return author
 
     @classmethod
-    def initialize(cls, session: Session, user) -> bool:  # User class
+    def initialize(cls, session: Session, user: User) -> bool:
         author = cls.find_or_create(session, user)
         return not author.banned
 
-    def get_next_image_id(self):  # auto-commit
+    def get_next_image_id(self) -> int:  # auto-commit
         self.last_image_id += 1
         return self.last_image_id
 
@@ -56,7 +60,7 @@ class Moderator(Base, UserRole):
     id = Column(Integer, ForeignKey(User.id), primary_key=True)
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int):
+    def find_by_id(cls, session: Session, entry_id: int) -> Moderator:
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
