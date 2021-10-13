@@ -172,7 +172,8 @@ class SortType(str, TypeEnum):
 
 
 @register_as_searchable("name", "description")
-@create_marshal_model("module-full", "theme", "difficulty", "category", "type",
+@create_marshal_model("module-meta", "map", "timer", inherit="module-index")
+@create_marshal_model("module-index", "theme", "difficulty", "category", "type",
                       "description", "views", "created", inherit="module-short")
 @create_marshal_model("module-short", "id", "name", "author_id", "image_id")
 class Module(Base, Identifiable, Marshalable):
@@ -230,10 +231,14 @@ class Module(Base, Identifiable, Marshalable):
     __tablename__ = "modules"
     not_found_text = "Module not found"
 
-    # Essentials
+    # Essentials:
     id = Column(Integer, ForeignKey("wip-modules.id"), primary_key=True)
     length = Column(Integer, nullable=False)  # the amount of schedule or map points
     type = Column(EnumType(ModuleType, by_name=True), nullable=False)
+
+    # Type-dependent:
+    map = Column(JSON, nullable=True)
+    timer = Column(Integer, nullable=True)
 
     # Searchable:
     name = Column(Text, nullable=False)
@@ -278,6 +283,8 @@ class Module(Base, Identifiable, Marshalable):
                                                             "theme", "category", "difficulty")})
         if "image-id" in json_data.keys():
             entry.image_id = json_data["image-id"]
+        if "map" in json_data.keys():
+            entry.map = json_dumps(json_data["map"], ensure_ascii=False)
         entry.created = datetime.utcnow()
         entry.author = author
 

@@ -15,9 +15,11 @@ pages_view_namespace: Namespace = Namespace("pages")
 page_view_json = pages_view_namespace.model("Page", Page.marshal_models["page-main"])
 short_page_json = pages_view_namespace.model("ShortPage", Page.marshal_models["page-short"])
 
-module_index_json = modules_view_namespace.model("IndexModule", unite_models(
-    ModuleFilterSession.marshal_models["mfs"], Module.marshal_models["module-full"]))
 short_module_json = modules_view_namespace.model("ShortModule", Module.marshal_models["module-short"])
+module_index_json = modules_view_namespace.model("IndexModule", unite_models(
+    ModuleFilterSession.marshal_models["mfs-full"], Module.marshal_models["module-index"]))
+module_view_json = modules_view_namespace.model("Module", unite_models(
+    ModuleFilterSession.marshal_models["mfs-full"], Module.marshal_models["module-meta"]))
 
 report_parser: RequestParser = RequestParser()
 report_parser.add_argument("reason", required=True)
@@ -60,7 +62,7 @@ class ModuleLister(Resource):  # [POST] /modules/
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
         except ValueError:
-            return {"a": f"Sorting '{sort}' is not supported"}, 406
+            return {"a": f"Sorting '{sort}' is not supported"}, 400
 
         if filters is not None and "global" in filters.keys():
             user.set_filter_bind(filters["global"])
@@ -85,8 +87,8 @@ class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
 class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.database_searcher(Module, use_session=True, check_only=True)
-    @modules_view_namespace.marshal_with(module_index_json, skip_none=True)
-    def get(self, session, user: User, module_id: int):  # add task!!!!
+    @modules_view_namespace.marshal_with(module_view_json, skip_none=True)
+    def get(self, session, user: User, module_id: int):
         """ Returns module's full metadata & some user relation """
         ModuleFilterSession.find_or_create(session, user.id, module_id).visit_now()
         return Module.find_with_relation(session, module_id, user.id)

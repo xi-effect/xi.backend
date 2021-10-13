@@ -20,7 +20,7 @@ class PreferenceOperation(TypeEnum):
     UNPIN = 5
 
 
-@create_marshal_model("mfs", "started", "starred", "pinned", use_defaults=True)
+@create_marshal_model("mfs-full", "started", "starred", "pinned", use_defaults=True)
 class ModuleFilterSession(Base, Marshalable):
     __tablename__ = "module-filter-sessions"
     not_found_text = "Session not found"
