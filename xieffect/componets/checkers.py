@@ -148,7 +148,7 @@ class Namespace(RestXNamespace):
 
         return a_response_wrapper
 
-    def jwt_authorizer(self, role: Type[UserRole], chek_only: bool = False, use_session: bool = True):
+    def jwt_authorizer(self, role: Type[UserRole], check_only: bool = False, use_session: bool = True):
         """
         - Authorizes user by JWT-token.
         - If token is missing or is not processable, falls back on flask-jwt-extended error handlers.
@@ -157,7 +157,7 @@ class Namespace(RestXNamespace):
         - Can pass user and session objects to the decorated function.
 
         :param role: role to expect
-        :param chek_only: (default: False) if True, user object won't be passed to the decorated function
+        :param check_only: (default: False) if True, user object won't be passed to the decorated function
         :param use_session: (default: True) whether or not to pass the session to the decorated function
         """
 

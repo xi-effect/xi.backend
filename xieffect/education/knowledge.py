@@ -94,7 +94,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
 @modules_view_namespace.route("/<int:module_id>/report/")
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
     @modules_view_namespace.a_response()
-    @modules_view_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
+    @modules_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @modules_view_namespace.database_searcher(Module, "module_id", "module")
     @modules_view_namespace.argument_parser(report_parser)
     def post(self, module: Module, reason: str, message: str) -> None:
@@ -106,7 +106,7 @@ class PageLister(Resource):  # POST /pages/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("search", required=False, help="Search query (done with whoosh search)")
 
-    @pages_view_namespace.jwt_authorizer(User, chek_only=True)
+    @pages_view_namespace.jwt_authorizer(User, check_only=True)
     @pages_view_namespace.argument_parser(parser)
     @pages_view_namespace.lister(50, short_page_json)
     def post(self, session, search: Optional[str], start: int, finish: int) -> list:
@@ -115,7 +115,7 @@ class PageLister(Resource):  # POST /pages/
 
 @pages_view_namespace.route("/<int:page_id>/")
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
-    @pages_view_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
+    @pages_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @pages_view_namespace.database_searcher(Page, "page_id", "page")
     @pages_view_namespace.marshal_with(page_view_json, skip_none=True)
     def get(self, page: Page):  # add some access checks
@@ -125,7 +125,7 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
 
 @pages_view_namespace.route("/<int:page_id>/report/")
 class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
-    @pages_view_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
+    @pages_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @pages_view_namespace.database_searcher(Page, "page_id", "page")
     @pages_view_namespace.argument_parser(report_parser)
     def post(self, page: Page, reason: str, message: str):

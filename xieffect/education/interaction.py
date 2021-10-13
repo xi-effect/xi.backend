@@ -8,7 +8,7 @@ from users import User
 
 
 def redirected_to_pages(func):  # session related parts have to be redone!!!!!!!
-    @interaction_namespace.jwt_authorizer(User, chek_only=True)
+    @interaction_namespace.jwt_authorizer(User, check_only=True)
     def inner_redirected_to_pages(*args, **kwargs):
         return redirect(f"/pages/{func(*args, **kwargs)}/")
 
@@ -48,7 +48,7 @@ class PracticeGenerator(Resource):  # GET /module/<int:module_id>/next/
 
 @interaction_namespace.route("/module/<int:module_id>/contents/")
 class TheoryContentsGetter(Resource):  # GET /module/<int:module_id>/contents/
-    @interaction_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
+    @interaction_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @interaction_namespace.database_searcher(Module, "module_id", "module")
     def get(self, module: Module):
         pass  # not done!
@@ -65,7 +65,7 @@ class TheoryNavigator(Resource):  # GET /module/<int:module_id>/points/<int:poin
 
 @interaction_namespace.route("/tests/<int:test_id>/contents/")
 class TestContentsGetter(Resource):  # GET /tests/<int:test_id>/contents/
-    @interaction_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
+    @interaction_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @interaction_namespace.database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS):
         pass  # not done!
@@ -73,7 +73,7 @@ class TestContentsGetter(Resource):  # GET /tests/<int:test_id>/contents/
 
 @interaction_namespace.route("/tests/<int:test_id>/points/<int:task_id>/")
 class TestNavigator(Resource):  # GET /tests/<int:test_id>/points/<int:task_id>/
-    @interaction_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
+    @interaction_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @interaction_namespace.database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS, task_id: int):
         return test.get_task(task_id)
@@ -81,7 +81,7 @@ class TestNavigator(Resource):  # GET /tests/<int:test_id>/points/<int:task_id>/
 
 @interaction_namespace.route("/tests/<int:test_id>/tasks/<int:task_id>/reply/")
 class TestReplySaver(Resource):  # P*T /tests/<int:test_id>/tasks/<int:task_id>/reply/
-    @interaction_namespace.jwt_authorizer(User, chek_only=True)
+    @interaction_namespace.jwt_authorizer(User, check_only=True)
     @interaction_namespace.database_searcher(TMS, "test_id", "test")
     def post(self, session, test: TMS, task_id: int, reply):
         test.set_reply(session, task_id, reply)
@@ -93,7 +93,7 @@ class TestReplySaver(Resource):  # P*T /tests/<int:test_id>/tasks/<int:task_id>/
 
 @interaction_namespace.route("/tests/<int:test_id>/results/")
 class TestResultCollector(Resource):  # GET /tests/<int:test_id>/results/
-    @interaction_namespace.jwt_authorizer(User, chek_only=True, use_session=False)
+    @interaction_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @interaction_namespace.database_searcher(TMS, "test_id", "test")
     def get(self, test: TMS):
         return test.collect_results()
