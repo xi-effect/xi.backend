@@ -135,27 +135,22 @@ class Point(Base):
             cls.__create(session, module_id, i, PointType.from_string(json_data[i]["type"]), json_data[i]["pages"])
 
     @classmethod
-    def find_by_ids(cls, session: Session, module_id: int, point_id: int) -> Optional[Point]:
+    def find_by_ids(cls, session: Session, module_id: int, point_id: int) -> Optional[Point]:  # redo with __create!!!
         return first_or_none(session.execute(select(cls).where(cls.module_id == module_id, cls.point_id == point_id)))
 
     @classmethod
     def find_and_execute(cls, session: Session, module_id: int, point_id: int) -> int:
         entry: cls = cls.find_by_ids(session, module_id, point_id)
-        return entry.execute()
+        return 2  # temp
+        # if entry.type == PointType.PRACTICE:
+        #     temp: List[int] = loads(entry.data)
+        #     return temp[randint(0, len(temp) - 1)]
+        # else:  # Theory
+        #     pass
 
     @classmethod
     def get_module_points(cls, session: Session, module_id: int) -> list[Point]:
         return session.execute(select(cls).where(cls.module_id == module_id)).scalars().all()
-
-    def execute(self) -> int:
-        if self.type & 1:  # HyperBlueprint
-            temp: List[int] = loads(self.data)
-            return temp[randint(0, len(temp) - 1)]
-        else:  # Theory
-            pass
-
-    def delete(self, session: Session) -> None:
-        session.delete(self)
 
 
 class ModuleType(TypeEnum):
@@ -371,8 +366,8 @@ class Module(Base, Identifiable, Marshalable):
         # print(stmt)
         return session.execute(stmt.offset(offset).limit(limit)).all()
 
-    def get_any_point(self, session: Session) -> Point:
-        return Point.find_by_ids(session, self.id, randint(1, self.length))
+    def execute_random_point(self, session: Session) -> int:
+        return Point.find_and_execute(session, self.id, randint(1, self.length))
 
     def delete(self, session: Session) -> None:
         for point in Point.get_module_points(session, self.id):
