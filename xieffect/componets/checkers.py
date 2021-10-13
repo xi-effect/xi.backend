@@ -162,9 +162,10 @@ class Namespace(RestXNamespace):
         """
 
         def authorizer_wrapper(function):
-            response_code: int = 401 if role is UserRole.default_role else 403
+            error_code: int = 401 if role is UserRole.default_role else 403
 
-            @self.doc_responses(*self.auth_errors, ResponseDoc.error_response(response_code, role.not_found_text))
+            @self.doc_responses(*self.auth_errors, ResponseDoc.error_response(error_code, role.not_found_text))
+            @self.doc(security="jwt")
             @wraps(function)
             @jwt_required()
             @with_session

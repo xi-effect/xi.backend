@@ -4,11 +4,16 @@ from flask_jwt_extended import get_jwt, jwt_required, unset_jwt_cookies
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import password_parser, Namespace, with_session, success_response, message_response
+from componets import password_parser, Namespace, with_session, success_response
 from users.database import TokenBlockList, User
 # from users.emailer import send_generated_email, parse_code
 
 reglog_namespace: Namespace = Namespace("reglog", path="/")
+success_response.register_model(reglog_namespace)
+add_sets_cookie_response = reglog_namespace.response(*success_response.get_args(),
+                                                     headers={"SetCookie": "sets access_token_cookie"})
+add_unsets_cookie_response = reglog_namespace.response(*success_response.get_args(),
+                                                       headers={"SetCookie": "unsets access_token_cookie"})
 
 
 @reglog_namespace.route("/reg/")
@@ -17,8 +22,8 @@ class UserRegistration(Resource):  # [POST] /reg/
     parser.add_argument("email", required=True, help="Email to be connected to new user's account")
     parser.add_argument("username", required=True, help="Username to be assigned to new user's account")
 
-    @reglog_namespace.doc_responses(success_response)
     @with_session
+    @add_sets_cookie_response
     @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, username: str, password: str):
         user: User = User.create(session, email, username, password)
@@ -40,7 +45,7 @@ class UserLogin(Resource):  # [POST] /auth/
     parser.add_argument("email", required=True, help="User's email")
 
     @with_session
-    @reglog_namespace.doc_responses(message_response)
+    @add_sets_cookie_response
     @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, password: str):
         # print(f"Tried to login as '{email}' with password '{password}'")
@@ -59,8 +64,8 @@ class UserLogin(Resource):  # [POST] /auth/
 
 @reglog_namespace.route("/logout/")
 class UserLogout(Resource):  # [POST] /logout/
-    @reglog_namespace.doc_responses(success_response)
     @with_session
+    @add_unsets_cookie_response
     @jwt_required()
     def post(self, session):
         response = jsonify({"a": True})

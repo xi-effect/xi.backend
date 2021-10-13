@@ -22,7 +22,14 @@ from users import (TokenBlockList, reglog_namespace, email_namespace,
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
-api: Api = Api(app, doc="/doc/", version=versions["API"])
+authorizations = {
+    "jwt": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "access_token_cookie"
+    }
+}
+api: Api = Api(app, doc="/doc/", version=versions["API"], authorizations=authorizations)
 
 api.add_namespace(application_namespace)
 api.add_namespace(github_namespace)
