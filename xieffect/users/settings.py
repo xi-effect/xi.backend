@@ -30,10 +30,22 @@ class Avatar(Resource):  # [GET|POST] /avatar/
             f.write(request.data)
 
 
+def changed(value):
+    return dict(value)
+
+
+changed.__schema__ = {
+    "type": "object",
+    "format": "changed",
+    "example": '{"dark-theme": true | false, ' +
+               ", ".join(f'"{key}": ""' for key in ["username", "language", "name", "surname", "patronymic"]) + "}"
+}
+
+
 @settings_namespace.route("/")
 class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
-    parser.add_argument("changed", type=dict, location="json", required=True, help="A dict of changed settings")
+    parser.add_argument("changed", type=changed, required=True, help="A dict of changed settings")
 
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(full_settings, skip_none=True)

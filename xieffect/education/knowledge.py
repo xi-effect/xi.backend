@@ -4,10 +4,9 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, counter_parser, unite_models
+from users import User
 from .elements import Module, Page, SortType
 from .sessions import ModuleFilterSession, PreferenceOperation
-from users import User
-
 
 education_namespace: Namespace = Namespace("modules", path="/")
 modules_view_namespace: Namespace = Namespace("modules")
@@ -33,10 +32,22 @@ class FilterGetter(Resource):  # [GET] /filters/
         return user.get_filter_bind()
 
 
+def filters(value):
+    return dict(value)
+
+
+filters.__schema__ = {
+    "type": "object",
+    "format": "filters",
+    "example": '{"global": "pinned" | "starred" | "started", ' +
+               ", ".join(f'"{key}": ""' for key in ["theme", "category", "difficulty"]) + '}'
+}
+
+
 @modules_view_namespace.route("/")
 class ModuleLister(Resource):  # [POST] /modules/
     parser: RequestParser = counter_parser.copy()
-    parser.add_argument("filters", type=dict, required=False, help="A dict of filters to be used")
+    parser.add_argument("filters", type=filters, required=False, help="A dict of filters to be used")
     parser.add_argument("search", required=False, help="Search query (done with whoosh search)")
     parser.add_argument("sort", required=False, choices=SortType.get_all_field_names(), help="Defines item order")
 
