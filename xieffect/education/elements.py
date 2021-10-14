@@ -132,38 +132,22 @@ class Point(Base):
     point_id = Column(Integer, primary_key=True)
 
     type = Column(EnumType(PointType, by_name=True), nullable=False)
+    length = Column(Integer, nullable=False)
 
     pages = relationship("PointToPage", order_by=PointToPage.position)
 
     @classmethod
-    def create(cls, session: Session, module_id: int, point_id: int, point_type: PointType, page_ids: List[int]) -> int:
-        if cls.find_by_ids(session, module_id, point_id):
-            return False
-        new_point = cls(module_id=module_id, point_id=point_id, type=point_type)
-        new_point.pages.extend([PointToPage(position=i, page_id=page_id) for i, page_id in enumerate(page_ids)])
-        session.add(new_point)
-        return True
-
-    @classmethod
-    def create_all(cls, session: Session, module_id: int, json_data: List[Dict[str, Union[str, int, list]]]) -> None:
-        for i in range(len(json_data)):
-            cls.create(session, module_id, i, PointType.from_string(json_data[i]["type"]), json_data[i]["pages"])
-
-    @classmethod
-    def find_by_ids(cls, session: Session, module_id: int, point_id: int) -> Optional[Point]:  # redo with create!!!
-        return first_or_none(session.execute(select(cls).where(cls.module_id == module_id, cls.point_id == point_id)))
-
-    @classmethod
-    def find_and_execute(cls, session: Session, module: Module, point_id: int) -> int:
-        entry: cls = cls.find_by_ids(session, module.id, point_id)
-        if entry.type == PointType.PRACTICE:
-            return entry.pages[randint(0, len(module.length) - 1)].page_id
-        else:  # Theory
-            return entry.pages[0].page_id  # temp, redo with theory level stuff
-
-    @classmethod
-    def get_module_points(cls, session: Session, module_id: int) -> list[Point]:
-        return session.execute(select(cls).where(cls.module_id == module_id)).scalars().all()
+    def create(cls, session, module_id: int, point_id: int, point_data: Dict[str, str]) -> Point:
+        point = cls(
+            module_id=module_id, point_id=point_id, length=len(point_data["pages"]),
+            type=PointType.from_string(point_data["type"])
+        )
+        point.pages.extend([
+            PointToPage(position=i, page_id=page_id)
+            for i, page_id in enumerate(point_data["pages"])
+        ])
+        session.add(point)
+        return point
 
 
 class ModuleType(TypeEnum):
@@ -269,7 +253,7 @@ class Module(Base, Identifiable, Marshalable):
 
     # Other relations or relation-like
     image_id = Column(Integer, nullable=True)
-    points = relationship("Point", back_populates="module")
+    points = relationship("Point", back_populates="module", cascade="all, delete", order_by=Point.point_id)
 
     @classmethod
     def __create(cls, session: Session, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
@@ -297,10 +281,14 @@ class Module(Base, Identifiable, Marshalable):
         entry.created = datetime.utcnow()
         entry.author = author
 
+        entry.points.extend([
+            Point.create(session, entry.id, point_id, point_data)
+            for point_id, point_data in enumerate(json_data["points"])
+            if cls.find_by_ids(session, entry.id, point_id) is not None
+        ])
+
         session.add(entry)
         session.flush()
-
-        Point.create_all(session, entry.id, json_data["points"])
 
         return entry
 
@@ -380,10 +368,25 @@ class Module(Base, Identifiable, Marshalable):
         # print(stmt)
         return session.execute(stmt.offset(offset).limit(limit)).all()
 
-    def execute_random_point(self, session: Session) -> int:
-        return Point.find_and_execute(session, self, randint(1, self.length))
+    def execute_point(self, point_id: int = None, theory_level: float = None):
+        if point_id is None:
+            point_id = randint(1, self.length)
+
+        point: Point = self.points[point_id]
+        if point is None:
+            return None
+
+        page_position: int
+        if point.type == PointType.PRACTICE:
+            page_position = randint(0, point.length - 1)
+        elif theory_level is None:
+            page_position = 0
+        elif theory_level < 1:
+            page_position = int(theory_level * point.length)
+        else:
+            page_position = point.length - 1
+
+        return point.pages[page_position].page_id
 
     def delete(self, session: Session) -> None:
-        for point in Point.get_module_points(session, self.id):
-            point.delete(session)
         session.delete(self)

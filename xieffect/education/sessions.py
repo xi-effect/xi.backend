@@ -114,6 +114,9 @@ class StandardModuleSession(BaseModuleSession):
         session.add(new_entry)
         return new_entry
 
+    def get_theory_level(self):
+        pass
+
     def delete(self, session: Session):
         session.delete(self)
         session.flush()

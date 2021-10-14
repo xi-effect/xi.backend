@@ -1,5 +1,4 @@
 from functools import wraps
-from typing import Optional
 
 from flask import redirect
 from flask_restx import Resource
@@ -7,9 +6,8 @@ from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, ResponseDoc
 from users import User
-from .elements import Module, Point, ModuleType
+from .elements import Module, ModuleType
 from .sessions import StandardModuleSession, TestModuleSession
-
 
 interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
 
@@ -62,10 +60,10 @@ class ModuleProgresser(Resource):
             if module_session.progress >= module.length:
                 module_session.delete(session)
                 return {"a": "You have reached the end"}
-            return Point.find_and_execute(session, module, module_session.progress)
+            return module.execute_point(module_session.progress, module_session.get_theory_level())
 
         elif module_type == ModuleType.PRACTICE_BLOCK:
-            return module.execute_random_point(session)
+            return module.execute_point()
 
 
 @interaction_namespace.route("/points/<int:point_id>/")
@@ -78,7 +76,7 @@ class ModuleNavigator(Resource):
             return TestModuleSession.find_or_create(session, user.id, module.id).get_task(session, point_id)
 
         elif module_type == ModuleType.THEORY_BLOCK:
-            return Point.find_and_execute(session, module, point_id)
+            return module.execute_point(point_id)
 
 
 def with_test_session(function):
