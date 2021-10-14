@@ -5,14 +5,15 @@ from typing import Optional
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
-from typing import Optional
-from componets import UserRole, create_marshal_model
+
+from componets import UserRole, create_marshal_model, Marshalable
 from componets.checkers import first_or_none
 from main import Base, Session
 from users import User
 
-@create_marshal_model("page-author","pseudonym", "modules", inherit="page-base")
-class Author(Base, UserRole):
+
+@create_marshal_model("author-settings", "pseudonym", "banned")
+class Author(Base, UserRole, Marshalable):
     __tablename__ = "authors"
     not_found_text = "Author does not exist"
 
