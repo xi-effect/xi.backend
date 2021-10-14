@@ -6,13 +6,14 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
-from componets import UserRole
+from componets import UserRole, create_marshal_model, Marshalable
 from componets.checkers import first_or_none
 from main import Base, Session
 from users import User
 
 
-class Author(Base, UserRole):
+@create_marshal_model("author-settings", "pseudonym", "banned")
+class Author(Base, UserRole, Marshalable):
     __tablename__ = "authors"
     not_found_text = "Author does not exist"
 
@@ -38,7 +39,7 @@ class Author(Base, UserRole):
         ))
 
     @classmethod
-    def find_or_create(cls, session: Session, user) -> Author:
+    def find_or_create(cls, session: Session, user):  # User class
         if (author := cls.find_by_id(session, user.id, True)) is None:
             author = cls.create(session, user)
         return author
