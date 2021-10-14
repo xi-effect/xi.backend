@@ -62,7 +62,7 @@ class ModuleProgresser(Resource):
             if module_session.progress >= module.length:
                 module_session.delete(session)
                 return {"a": "You have reached the end"}
-            return Point.find_and_execute(session, module.id, module_session.progress)
+            return Point.find_and_execute(session, module, module_session.progress)
 
         elif module_type == ModuleType.PRACTICE_BLOCK:
             return module.execute_random_point(session)
@@ -78,7 +78,7 @@ class ModuleNavigator(Resource):
             return TestModuleSession.find_or_create(session, user.id, module.id).get_task(session, point_id)
 
         elif module_type == ModuleType.THEORY_BLOCK:
-            return Point.find_and_execute(session, module.id, point_id)
+            return Point.find_and_execute(session, module, point_id)
 
 
 def with_test_session(function):

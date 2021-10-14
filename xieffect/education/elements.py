@@ -154,14 +154,12 @@ class Point(Base):
         return first_or_none(session.execute(select(cls).where(cls.module_id == module_id, cls.point_id == point_id)))
 
     @classmethod
-    def find_and_execute(cls, session: Session, module_id: int, point_id: int) -> int:
-        entry: cls = cls.find_by_ids(session, module_id, point_id)
-        return 2  # temp
-        # if entry.type == PointType.PRACTICE:
-        #     temp: List[int] = loads(entry.data)
-        #     return temp[randint(0, len(temp) - 1)]
-        # else:  # Theory
-        #     pass
+    def find_and_execute(cls, session: Session, module: Module, point_id: int) -> int:
+        entry: cls = cls.find_by_ids(session, module.id, point_id)
+        if entry.type == PointType.PRACTICE:
+            return entry.pages[randint(0, len(module.length) - 1)].page_id
+        else:  # Theory
+            return entry.pages[0].page_id  # temp, redo with theory level stuff
 
     @classmethod
     def get_module_points(cls, session: Session, module_id: int) -> list[Point]:
@@ -193,7 +191,7 @@ class Module(Base, Identifiable, Marshalable):
             return
         Module.__create(session, 0, ModuleType.TEST, "Пробник математика ЕГЭ", 4, "math", "une",
                         "enthusiast", 2000, author, datetime(2020, 10, 22, 10, 30, 3))
-        Module.__create(session, 1, ModuleType.THEORY_BLOCK, "История: теория для ЕГЭ", 4, "history", "une",
+        Module.__create(session, 1, ModuleType.PRACTICE_BLOCK, "История: теория для ЕГЭ", 4, "history", "une",
                         "enthusiast", 1100, author, datetime(2021, 1, 2, 22, 30, 33))
         Module.__create(session, 2, ModuleType.STANDARD, "Арифметика", 4, "math", "middle-school",
                         "newbie", 100, author, datetime(2012, 10, 12, 15, 57, 2))
@@ -383,7 +381,7 @@ class Module(Base, Identifiable, Marshalable):
         return session.execute(stmt.offset(offset).limit(limit)).all()
 
     def execute_random_point(self, session: Session) -> int:
-        return Point.find_and_execute(session, self.id, randint(1, self.length))
+        return Point.find_and_execute(session, self, randint(1, self.length))
 
     def delete(self, session: Session) -> None:
         for point in Point.get_module_points(session, self.id):
