@@ -45,4 +45,4 @@ class ChangeAuthorSetting(Resource):
     def post(self, authors: Author, new_psewdonum: str) -> str:
         author: Author = authors.pseudonym
         author = new_psewdonum
-        return author
+        return True
