@@ -11,37 +11,49 @@ from .elements import Module, Point, ModuleType
 from .sessions import StandardModuleSession, TestModuleSession
 
 
-def redirected_to_pages(op_name, *possible_module_types: ModuleType):
-    responses = [ResponseDoc.error_response(400, "Unacceptable module type"),
-                 ResponseDoc(302, r"Redirect to GET /pages/\<id\>/ with generated ID")]
+interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
 
-    def redirected_to_pages_wrapper(function):
-        @interaction_namespace.doc_responses(*responses)
+
+def module_typed(op_name, *possible_module_types: ModuleType):
+    def module_typed_wrapper(function):
+        @interaction_namespace.doc_responses(ResponseDoc.error_response(400, "Unacceptable module type"))
         @interaction_namespace.jwt_authorizer(User)
         @interaction_namespace.database_searcher(Module, use_session=True)
         @wraps(function)
-        def redirected_to_pages_inner(*args, **kwargs):
+        def module_typed_inner(*args, **kwargs):
             module_type: ModuleType = kwargs["module"].type
             if module_type not in possible_module_types:
                 return {"a": f"Module of type {module_type} can't use {op_name}"}, 400
+
             if len(possible_module_types) > 1:
                 kwargs["module_type"] = module_type
-            result: Optional[bool] = function(*args, **kwargs)
-            return {"a": "You have reached the end"} if result is None else redirect(f"/pages/{result}/")
+
+            return function(*args, **kwargs)
+
+        return module_typed_inner
+
+    return module_typed_wrapper
+
+
+def redirected_to_pages(op_name, *possible_module_types: ModuleType):
+    def redirected_to_pages_wrapper(function):
+        @interaction_namespace.doc_responses(ResponseDoc(302, r"Redirect to GET /pages/\<id\>/ with generated ID"))
+        @module_typed(op_name, *possible_module_types)
+        @wraps(function)
+        def redirected_to_pages_inner(*args, **kwargs):
+            result = function(*args, **kwargs)
+            return redirect(f"/pages/{result}/") if isinstance(result, int) else result
 
         return redirected_to_pages_inner
 
     return redirected_to_pages_wrapper
 
 
-interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
-
-
 @interaction_namespace.route("/next/")
 class ModuleProgresser(Resource):
     @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "You have reached the end"))
     @redirected_to_pages("linear progression", ModuleType.STANDARD, ModuleType.PRACTICE_BLOCK)
-    def post(self, session, user: User, module: Module, module_type: ModuleType) -> Optional[int]:
+    def post(self, session, user: User, module: Module, module_type: ModuleType):
         """ Endpoint for progressing a Standard Module or Practice Block """
 
         if module_type == ModuleType.STANDARD:
@@ -49,7 +61,7 @@ class ModuleProgresser(Resource):
             module_session.progress += 1
             if module_session.progress >= module.length:
                 module_session.delete(session)
-                return None
+                return {"a": "You have reached the end"}
             return Point.find_and_execute(session, module.id, module_session.progress)
 
         elif module_type == ModuleType.PRACTICE_BLOCK:
