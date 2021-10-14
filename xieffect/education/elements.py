@@ -251,8 +251,10 @@ class Module(Base, Identifiable, Marshalable):
 
     # Author-related
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
-    author = relationship("Author")  # redo all modules for it
+    author = relationship("Author", back_populates="modules")  # redo all modules for it
+    author_name: LambdaFieldDef = LambdaFieldDef("module-short", str, lambda module: module.pseudonym)
 
+    # Other relations or relation-like
     image_id = Column(Integer, nullable=True)
 
     author_name: LambdaFieldDef = LambdaFieldDef("module-short", str, lambda module: module.pseudonym)
