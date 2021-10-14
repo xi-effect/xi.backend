@@ -6,12 +6,13 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
-from componets import UserRole
+from componets import UserRole, create_marshal_model
 from componets.checkers import first_or_none
 from main import Base, Session
 from users import User
 
-
+@create_marshal_model("page-author", "modules", inherit="page-base")
+@create_marshal_model("page-settings", "id", "pseudonym", "last_image_id")
 class Author(Base, UserRole):
     __tablename__ = "authors"
     not_found_text = "Author does not exist"
