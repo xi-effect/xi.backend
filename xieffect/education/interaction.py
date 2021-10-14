@@ -81,18 +81,35 @@ class ModuleNavigator(Resource):
             return Point.find_and_execute(session, module.id, point_id)
 
 
+def with_test_session(function):
+    @interaction_namespace.doc_responses(ResponseDoc.error_response(404, TestModuleSession.not_found_text))
+    @module_typed("reply & results functionality", ModuleType.TEST)
+    @wraps(function)
+    def with_test_session_inner(session, user: User, module: Module, *args, **kwargs):
+        test_session: TestModuleSession = TestModuleSession.find_by_ids(session, user.id, module.id)
+        if test_session is None:
+            return {"a": TestModuleSession.not_found_text}, 404
+
+        kwargs["test_session"] = test_session
+        return function(session, *args, **kwargs)
+
+    return with_test_session_inner
+
+
 @interaction_namespace.route("/points/<int:point_id>/reply/")
 class TestReplySaver(Resource):
-    @redirected_to_pages(ModuleType.TEST)
+    @with_test_session
+    @interaction_namespace.a_response()
     # @interaction_namespace.argument_parser()
-    def post(self, user: User, module: Module, point_id: int) -> int:
+    def post(self, session, test_session: TestModuleSession, point_id: int) -> None:
         """ Saves user's reply to an open test """
-        pass
+        test_session.set_reply(session, point_id, None)  # temp
 
 
 @interaction_namespace.route("/results/")
 class TestResultGetter(Resource):
-    @redirected_to_pages(ModuleType.TEST)
-    def get(self, user: User, module: Module) -> int:
+    @with_test_session
+    @interaction_namespace.doc_responses(ResponseDoc(description="Some sort of TestResults object"))
+    def get(self, session, test_session: TestModuleSession):
         """ Ends the test & returns the results / result page """
-        pass
+        return test_session.collect_results(session)

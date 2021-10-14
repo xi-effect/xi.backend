@@ -121,14 +121,19 @@ class StandardModuleSession(BaseModuleSession):
 
 class TestModuleSession(BaseModuleSession):
     __tablename__ = "test-module-sessions"
+    not_found_text = "Test session not found"
+
     pass  # keeps test instance (one to many) in keeper.py
 
     @classmethod
     def create(cls, session: Session, user_id: int, module_id: int) -> TestModuleSession:
         pass
 
+    def get_task(self, session: Session, task_id: int) -> int:
+        return 3  # temp
+
     def set_reply(self, session: Session, task_id: int, reply) -> None:
         pass
 
-    def collect_results(self) -> dict:
-        pass  # delete the session!
+    def collect_results(self, session: Session) -> dict:
+        pass  # delete the test_session!
