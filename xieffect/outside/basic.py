@@ -28,6 +28,7 @@ class HelloWorld(Resource):
 class ServerMessenger(Resource):
     @basic_namespace.doc_responses(ResponseDoc(description="Message about server status"))
     def get(self):
+        """ Want a secret?. [I managed to insert this cool link here!](https://autopilottonowhere.com) """
         return {"type": 2, "text": "Version: " + versions["API"]}
 
 
