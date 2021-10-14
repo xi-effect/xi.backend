@@ -38,12 +38,7 @@ class Author(Base, UserRole):
         ))
 
     @classmethod
-    def find_by_pseudonym(cls, session, pseudonym: str):
-        pass
-        return first_or_none(session.execute(select(cls).where(cls.pseudonym == pseudonym)))
-
-    @classmethod
-    def find_or_create(cls, session: Session, user) -> Author:
+    def find_or_create(cls, session: Session, user):  # User class
         if (author := cls.find_by_id(session, user.id, True)) is None:
             author = cls.create(session, user)
         return author
