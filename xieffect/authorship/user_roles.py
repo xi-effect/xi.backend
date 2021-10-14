@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
-
+from typing import Optional
 from componets import UserRole, create_marshal_model
 from componets.checkers import first_or_none
 from main import Base, Session
@@ -39,7 +39,7 @@ class Author(Base, UserRole):
         ))
 
     @classmethod
-    def find_by_pseudonym(cls, session, pseudonym: str) -> "Author":
+    def find_by_pseudonym(cls, session, pseudonym: str):
         pass
         return first_or_none(session.execute(select(cls).where(cls.pseudonym == pseudonym)))
 
