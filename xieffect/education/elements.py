@@ -2,15 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime
 from json import dumps as json_dumps, load
-from pickle import dumps, loads
 from random import randint
 from typing import Dict, List, Optional, Union, Any
 
-from sqlalchemy import Column, ForeignKey, select, and_, or_
+from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_, or_
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, PickleType, Text
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text
 from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
@@ -107,6 +106,19 @@ class Page(Base, Identifiable, Marshalable):
         session.delete(self)
 
 
+class PointToPage(Base):
+    __tablename__ = "points_to_pages"
+
+    __table_args__ = (ForeignKeyConstraint(("module_id", "point_id"), ("points.module_id", "points.point_id")),)
+
+    module_id = Column(Integer, primary_key=True)
+    point_id = Column(Integer, primary_key=True)
+    position = Column(Integer, nullable=False)
+
+    page_id = Column(Integer, ForeignKey("pages.id"), primary_key=True)
+    page = relationship("Page")
+
+
 class PointType(TypeEnum):
     THEORY = 0
     PRACTICE = 1
@@ -115,27 +127,30 @@ class PointType(TypeEnum):
 class Point(Base):
     __tablename__ = "points"
 
-    module_id = Column(Integer, primary_key=True)
+    module = relationship("Module", back_populates="points")
+    module_id = Column(Integer, ForeignKey("modules.id"), primary_key=True)
     point_id = Column(Integer, primary_key=True)
 
     type = Column(EnumType(PointType, by_name=True), nullable=False)
-    data = Column(PickleType, nullable=False)  # do a relation!
+
+    pages = relationship("PointToPage", order_by=PointToPage.position)
 
     @classmethod
-    def __create(cls, session: Session, module_id: int, point_id: int, point_type: int, data: List[int]) -> int:
+    def create(cls, session: Session, module_id: int, point_id: int, point_type: PointType, page_ids: List[int]) -> int:
         if cls.find_by_ids(session, module_id, point_id):
             return False
-        new_point = cls(module_id=module_id, point_id=point_id, type=point_type, data=dumps(data))
+        new_point = cls(module_id=module_id, point_id=point_id, type=point_type)
+        new_point.pages.extend([PointToPage(position=i, page_id=page_id) for i, page_id in enumerate(page_ids)])
         session.add(new_point)
         return True
 
     @classmethod
     def create_all(cls, session: Session, module_id: int, json_data: List[Dict[str, Union[str, int, list]]]) -> None:
         for i in range(len(json_data)):
-            cls.__create(session, module_id, i, PointType.from_string(json_data[i]["type"]), json_data[i]["pages"])
+            cls.create(session, module_id, i, PointType.from_string(json_data[i]["type"]), json_data[i]["pages"])
 
     @classmethod
-    def find_by_ids(cls, session: Session, module_id: int, point_id: int) -> Optional[Point]:  # redo with __create!!!
+    def find_by_ids(cls, session: Session, module_id: int, point_id: int) -> Optional[Point]:  # redo with create!!!
         return first_or_none(session.execute(select(cls).where(cls.module_id == module_id, cls.point_id == point_id)))
 
     @classmethod
@@ -256,8 +271,7 @@ class Module(Base, Identifiable, Marshalable):
 
     # Other relations or relation-like
     image_id = Column(Integer, nullable=True)
-
-    author_name: LambdaFieldDef = LambdaFieldDef("module-short", str, lambda module: module.pseudonym)
+    points = relationship("Point", back_populates="module")
 
     @classmethod
     def __create(cls, session: Session, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
