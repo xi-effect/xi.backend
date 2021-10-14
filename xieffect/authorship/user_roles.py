@@ -34,6 +34,11 @@ class Author(Base, UserRole):
         ))
 
     @classmethod
+    def find_by_pseudonym(cls, session, pseudonym: str) -> "Author":
+        pass
+        return first_or_none(session.execute(select(cls).where(cls.pseudonym == pseudonym)))
+
+    @classmethod
     def find_or_create(cls, session: Session, user):  # User class
         if (author := cls.find_by_id(session, user.id, True)) is None:
             author = cls.create(session, user)
@@ -67,15 +72,3 @@ class Moderator(Base, UserRole):
         user.moderator = new_entry
         session.add(new_entry)
         return True
-
-    def ban(cls, user: User):
-        user_id = user.id
-        if user_id == Author.id:
-            if Author.banned == False:
-                Author.banned = True
-
-    def unban(cls, user: User):
-        user_id = user.id
-        if user_id == Author.id:
-            if Author.banned == True:
-                Author.banned = False
