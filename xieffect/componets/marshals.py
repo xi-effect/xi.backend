@@ -7,7 +7,8 @@ from json import loads as json_loads
 from typing import Type, Dict, Tuple, Union, Optional, Callable, get_type_hints
 
 from flask_restx import Model, Namespace
-from flask_restx.fields import Raw as RawField, Boolean as BooleanField, Integer as IntegerField, String as StringField
+from flask_restx.fields import (Raw as RawField, Boolean as BooleanField,
+                                Integer as IntegerField, String as StringField)
 from sqlalchemy import Column, Sequence
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import Boolean, Integer, String, JSON, DateTime
@@ -26,8 +27,8 @@ class DateTimeField(StringField):
         return value.isoformat()
 
 
-class JSONLoadableField(StringField):
-    def format(self, value: str) -> str:
+class JSONLoadableField(RawField):
+    def format(self, value: str) -> list:
         return json_loads(value)
 
 
@@ -46,13 +47,6 @@ column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
     DateTime: DateTimeField,
     EnumType: EnumField,
 }
-
-
-def create_field(field_type: Type[RawField], column: Column, ignore_defaults: bool = True):
-    if ignore_defaults or column.default is None or column.nullable or isinstance(column.default, Sequence):
-        return field_type(attribute=column.name)
-    else:
-        return field_type(attribute=column.name, default=column.default.arg)
 
 
 @dataclass()
@@ -79,8 +73,7 @@ class LambdaFieldDef:
         return field_type(attribute=self.attribute)
 
 
-def create_marshal_model(model_name: str, *fields: str, full: bool = False,
-                         inherit: Optional[str] = None, use_defaults: bool = False):
+def create_marshal_model(model_name: str, *fields: str, inherit: Optional[str] = None, use_defaults: bool = False):
     """
     - Adds a marshal model to a database object, marked as :class:`Marshalable`.
     - Automatically adds all :class:`LambdaFieldDef`-marked class fields to the model.
@@ -88,18 +81,25 @@ def create_marshal_model(model_name: str, *fields: str, full: bool = False,
 
     :param model_name: the **global** name for the new model or model to be overwritten.
     :param fields: filed names of columns to be added to the model.
-    :param full: reverts column filtration. Includes all field by default, except for ones provided in *fields argument.
     :param inherit: model name to inherit fields from.
     :param use_defaults: whether or not to describe columns' defaults in the model.
     """
 
     def create_marshal_model_wrapper(cls):
+        def create_field(column: Column, column_type: Type[TypeEngine]):
+            field_type: Type[RawField] = column_to_field[column_type]
+
+            if not use_defaults or column.default is None or column.nullable or isinstance(column.default, Sequence):
+                return field_type(attribute=column.name)
+            else:
+                return field_type(attribute=column.name, default=column.default.arg)
+
         model_dict = {} if inherit is None else cls.marshal_models[inherit].copy()
 
         model_dict.update({
-            column.name.replace("_", "-"): create_field(column_to_field[supported_type], column, not use_defaults)
+            column.name.replace("_", "-"): create_field(column, supported_type)
             for column in cls.__table__.columns
-            if (column.name in fields) != full
+            if column.name in fields
             for supported_type in column_to_field.keys()
             if isinstance(column.type, supported_type)
         })

@@ -27,8 +27,9 @@ class TokenBlockList(Base):
         session.add(cls(jti=jti))
 
 
+@create_marshal_model("full-settings", "email", "email_confirmed", "name",
+                      "surname", "patronymic", inherit="main-settings")
 @create_marshal_model("main-settings", "username", "dark_theme", "language")
-@create_marshal_model("full-settings", "filter_bind", "password", "id", full=True)
 @create_marshal_model("role-settings")
 class User(Base, UserRole, Marshalable):
     __tablename__ = "users"
