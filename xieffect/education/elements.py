@@ -171,7 +171,8 @@ class SortType(str, TypeEnum):
 class Module(Base, Identifiable, Marshalable):
     @staticmethod
     def create_test_bundle(session: Session, author: Author):
-        if Module.find_by_id(session, 0):
+        if (module := Module.find_by_id(session, 0)) is not None:
+            module.map = [["test", "lol", "hello world"][i % 3] for i in range(21)]
             return
         Module.__create(session, 0, ModuleType.TEST, "Пробник математика ЕГЭ", 4, "math", "une",
                         "enthusiast", 2000, author, datetime(2020, 10, 22, 10, 30, 3))
@@ -219,6 +220,7 @@ class Module(Base, Identifiable, Marshalable):
                         "review", 2000, author, datetime(2019, 5, 13, 1, 1, 54))
         Module.__create(session, 22, ModuleType.PRACTICE_BLOCK, "Python", 4, "informatics", "clubs",
                         "newbie", 1500, author, datetime(2019, 7, 22, 22, 10, 32))
+        Module.find_by_id(session, 0).map = [["test", "lol", "hello world"][i % 3] for i in range(21)]
 
     __tablename__ = "modules"
     not_found_text = "Module not found"
