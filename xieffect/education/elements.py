@@ -113,7 +113,7 @@ class PointToPage(Base):
 
     module_id = Column(Integer, primary_key=True)
     point_id = Column(Integer, primary_key=True)
-    position = Column(Integer, nullable=False)
+    position = Column(Integer, primary_key=True)
 
     page_id = Column(Integer, ForeignKey("pages.id"), primary_key=True)
     page = relationship("Page")
@@ -169,59 +169,6 @@ class SortType(str, TypeEnum):
                       "description", "views", "created", inherit="module-short")
 @create_marshal_model("module-short", "id", "name", "author_id", "image_id")
 class Module(Base, Identifiable, Marshalable):
-    @staticmethod
-    def create_test_bundle(session: Session, author: Author):
-        if (module := Module.find_by_id(session, 0)) is not None:
-            module.map = [["test", "lol", "hello world"][i % 3] for i in range(21)]
-            return
-        Module.__create(session, 0, ModuleType.TEST, "Пробник математика ЕГЭ", 4, "math", "une",
-                        "enthusiast", 2000, author, datetime(2020, 10, 22, 10, 30, 3))
-        Module.__create(session, 1, ModuleType.PRACTICE_BLOCK, "История: теория для ЕГЭ", 4, "history", "une",
-                        "enthusiast", 1100, author, datetime(2021, 1, 2, 22, 30, 33))
-        Module.__create(session, 2, ModuleType.STANDARD, "Арифметика", 4, "math", "middle-school",
-                        "newbie", 100, author, datetime(2012, 10, 12, 15, 57, 2))
-        Module.__create(session, 3, ModuleType.PRACTICE_BLOCK, "100 упражнений по матану", 4, "math", "university",
-                        "amateur", 0, author, datetime(1999, 3, 14, 6, 10, 5))
-        Module.__create(session, 4, ModuleType.STANDARD, "English ABCs", 4, "languages", "hobby",
-                        "review", 2000, author, datetime(2019, 7, 22, 22, 10, 45))
-        Module.__create(session, 5, ModuleType.STANDARD, "Веб Дизайн", 4, "informatics", "prof-skills",
-                        "enthusiast", 2000, author, datetime(2020, 10, 22, 10, 30, 8))
-        Module.__create(session, 6, ModuleType.STANDARD, "Робототехника", 4, "informatics", "clubs",
-                        "newbie", 3100, author, datetime(2021, 1, 2, 22, 30, 33))
-        Module.__create(session, 7, ModuleType.TEST, "Архитектура XIX века", 4, "arts", "university",
-                        "expert", 5, author, datetime(2012, 6, 12, 15, 57, 0))
-        Module.__create(session, 8, ModuleType.STANDARD, "Безопасность в интернете", 4, "informatics", "university",
-                        "review", 2002, author, datetime(1999, 3, 14, 6, 10, 5))
-        Module.__create(session, 9, ModuleType.THEORY_BLOCK, "Литература", 4, "literature", "bne",
-                        "enthusiast", 300, author, datetime(2019, 7, 12, 22, 10, 40))
-        Module.__create(session, 10, ModuleType.THEORY_BLOCK, "Классическая Музыка", 4, "arts", "hobby",
-                        "enthusiast", 2000, author, datetime(2019, 3, 22, 22, 10, 40))
-        Module.__create(session, 11, ModuleType.STANDARD, "Немецкий язык", 4, "languages", "main-school",
-                        "enthusiast", 700, author, datetime(2015, 7, 22, 22, 10, 40))
-        Module.__create(session, 12, ModuleType.PRACTICE_BLOCK, "География: контурные карты", 4, "geography", "hobby",
-                        "review", 2000, author, datetime(2019, 7, 22, 22, 1, 40))
-        Module.__create(session, 13, ModuleType.STANDARD, "Геодезия", 4, "geography", "hobby",
-                        "review", 2000, author, datetime(2016, 7, 22, 2, 52, 40))
-        Module.__create(session, 14, ModuleType.STANDARD, "Океанология", 4, "geography", "hobby",
-                        "review", 2000, author, datetime(2019, 7, 22, 22, 46, 40))
-        Module.__create(session, 15, ModuleType.TEST, "Ораторское искусство", 4, "arts", "prof-skills",
-                        "amateur", 1200, author, datetime(2009, 7, 22, 22, 31, 0))
-        Module.__create(session, 16, ModuleType.THEORY_BLOCK, "Социология", 4, "social-science", "university",
-                        "review", 2000, author, datetime(2012, 6, 12, 15, 57, 0))
-        Module.__create(session, 17, ModuleType.STANDARD, "Классическая философия", 4, "philosophy", "hobby",
-                        "review", 700, author, datetime(2019, 7, 22, 22, 11, 40))
-        Module.__create(session, 18, ModuleType.STANDARD, "Физика: термодинамика", 4, "physics", "main-school",
-                        "review", 4200, author, datetime(2012, 7, 22, 2, 10, 54))
-        Module.__create(session, 19, ModuleType.PRACTICE_BLOCK, "История России", 4, "history", "hobby",
-                        "review", 270, author, datetime(2019, 7, 22, 22, 10, 24))
-        Module.__create(session, 20, ModuleType.STANDARD, "Информатика 7 класс", 4, "informatics", "middle-school",
-                        "amateur", 2000, author, datetime(2019, 7, 22, 22, 10, 12))
-        Module.__create(session, 21, ModuleType.TEST, "Литература Европы XX века", 4, "literature", "hobby",
-                        "review", 2000, author, datetime(2019, 5, 13, 1, 1, 54))
-        Module.__create(session, 22, ModuleType.PRACTICE_BLOCK, "Python", 4, "informatics", "clubs",
-                        "newbie", 1500, author, datetime(2019, 7, 22, 22, 10, 32))
-        Module.find_by_id(session, 0).map = [["test", "lol", "hello world"][i % 3] for i in range(21)]
-
     __tablename__ = "modules"
     not_found_text = "Module not found"
 
@@ -258,35 +205,30 @@ class Module(Base, Identifiable, Marshalable):
     points = relationship("Point", back_populates="module", cascade="all, delete", order_by=Point.point_id)
 
     @classmethod
-    def __create(cls, session: Session, module_id: int, module_type: ModuleType, name: str, length: int, theme: str,
-                 category: str, difficulty: str, popularity: int, author: Author, creation_date: datetime = None):
-        if creation_date is None:
-            creation_date = datetime.utcnow()
-        new_module = cls(id=module_id, type=module_type, name=name, length=length,
-                         theme=theme, category=category, difficulty=difficulty,
-                         popularity=popularity, created=creation_date)
-        new_module.author = author
-        session.add(new_module)
-        return True
+    def create(cls, session: Session, json_data: Dict[str, Any], author: Author, force: bool = False) -> Module:
+        if cls.find_by_id(session, json_data["id"]):
+            return
 
-    @classmethod
-    def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author) -> Module:
         json_data["type"] = ModuleType.from_string(json_data["type"])
         json_data["length"] = len(json_data["points"])
 
         entry: cls = cls(**{key: json_data[key] for key in ("id", "length", "type", "name", "description",
                                                             "theme", "category", "difficulty")})
-        if "image-id" in json_data.keys():
-            entry.image_id = json_data["image-id"]
+        entry.image_id = json_data.get("image-id", None)
         if "map" in json_data.keys():
             entry.map = json_dumps(json_data["map"], ensure_ascii=False)
-        entry.created = datetime.utcnow()
-        entry.author = author
 
+        if force:
+            entry.views = json_data.get("views", 0)
+        if force and "created" in json_data.keys():
+            entry.created = datetime.fromisoformat(json_data["created"])
+        else:
+            entry.created = datetime.utcnow()
+
+        entry.author = author
         entry.points.extend([
             Point.create(session, entry.id, point_id, point_data)
             for point_id, point_data in enumerate(json_data["points"])
-            if cls.find_by_ids(session, entry.id, point_id) is not None
         ])
 
         session.add(entry)
@@ -302,7 +244,7 @@ class Module(Base, Identifiable, Marshalable):
     def create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Module]:
         if cls.find_by_id(session, json_data["id"]):
             return None
-        return cls._create(session, json_data, author)
+        return cls.create(session, json_data, author)
 
     @classmethod
     def find_with_relation(cls, session: Session, module_id: int, user_id: int) -> Optional[Row]:

@@ -10,7 +10,7 @@ from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_acc
 from flask_restx import Api
 from werkzeug.exceptions import HTTPException
 
-from authorship import (Author, authors_namespace)
+from authorship import (authors_namespace)
 from componets import with_session
 from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
 from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace, wip_index_namespace)
@@ -88,30 +88,6 @@ def create_tables(session: Session):
         ]).expandtabs())
         dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
 
-    from main import db_meta
-    db_meta.create_all()
-
-    from education.elements import Module, Page
-    from file_system.keeper import WIPPage
-    from other.test_keeper import TestPoint
-    from users import User
-
-    test_user: User
-    if (test_user := User.find_by_email_address(session, "test@test.test")) is None:
-        log_stuff("status", "Database has been reset")
-        test_user = User.create(session, "test@test.test", "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
-                                "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
-    test_author = Author.find_or_create(session, test_user)
-
-    Module.create_test_bundle(session, test_author)
-    Page.create_test_bundle(session, test_author)
-    WIPPage.create_test_bundle(session, test_author)
-    TestPoint.test(session)
-
-    if User.find_by_email_address(session, "admin@admin.admin") is None:
-        User.create(session, "admin@admin.admin", "admin", "2b003f13e43546e8b416a9ff3c40bc4ba694d" +
-                    "0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe")
-
 
 @jwt.token_in_blocklist_loader
 @with_session
@@ -161,11 +137,6 @@ def invalid_token_callback(callback):
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):
     return {"a": f"unauthorized: {callback}"}, 401
-
-
-if __name__ == "__main__":  # test only
-    app.run(debug=True)
-    # app.run(debug=True, ssl_context="adhoc")
 
 # CURL:
 # remove-item alias:\curl
