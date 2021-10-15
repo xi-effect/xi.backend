@@ -241,7 +241,7 @@ class Module(Base, Identifiable, Marshalable):
         return first_or_none(session.execute(select(cls).where(cls.id == module_id)))
 
     @classmethod
-    def create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Module]:
+    def find_or_create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Module]:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls.create(session, json_data, author)

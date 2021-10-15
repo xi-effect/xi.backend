@@ -125,5 +125,5 @@ class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publicatio
         with open(file.get_link(), "rb") as f:
             content: dict = load(f)
             content["id"] = file.id  # just making sure
-            result: bool = (Page if type(file) == WIPPage else Module).create(session, content, author) is None
+            result: bool = (Page if type(file) == WIPPage else Module).find_or_create(session, content, author) is None
         return "File already exists" if result else "Success"  # redo!!!
