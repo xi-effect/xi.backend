@@ -1,11 +1,7 @@
-yeet
-venv/
 .archive
-ngrok.exe
 .idea
-/xieffect/wsgi.py
-/database/app.db
-/xieffect/app.db
-/xieffect/test/.pytest_cache
-/files/temp/*
-/files/versions-lock.json
+venv/
+xieffect/app.db
+xieffect/test/.pytest_cache
+files/temp/*
+files/versions-lock.json
