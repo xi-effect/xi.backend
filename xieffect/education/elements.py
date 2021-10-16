@@ -35,7 +35,7 @@ class Page(Base, Identifiable, Marshalable):
     def create_test_bundle(session: Session, author: Author):
         for i in range(1, 4):
             with open(f"../files/tfs/test/{i}.json", "rb") as f:
-                Page.create(session, load(f), author)
+                Page.find_or_create(session, load(f), author)
 
     __tablename__ = "pages"
     not_found_text = "Page not found"
@@ -77,7 +77,7 @@ class Page(Base, Identifiable, Marshalable):
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
     @classmethod
-    def create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Page]:
+    def find_or_create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Page]:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls._create(session, json_data, author)
