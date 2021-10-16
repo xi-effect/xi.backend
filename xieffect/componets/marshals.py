@@ -148,12 +148,12 @@ def unite_models(*models: Dict[str, Union[Type[RawField], RawField]]):
 class ResponseDoc:
     """ Dataclass to keep the response description is one place """
 
-    code: int = 200
+    code: Union[int, str] = 200
     description: str = None
     model: Optional[Model] = None
 
     @classmethod
-    def error_response(cls, code: int, description: str) -> ResponseDoc:
+    def error_response(cls, code: Union[int, str], description: str) -> ResponseDoc:
         """ Creates an instance of an :class:`ResponseDoc` with a message response model for the response body """
         return cls(code, description, Model("Message Response", {"a": StringField}))
 
@@ -161,7 +161,7 @@ class ResponseDoc:
         if self.model is not None:
             self.model = ns.model(self.model.name, self.model)
 
-    def get_args(self) -> Union[Tuple[int, str], Tuple[int, str, Model]]:
+    def get_args(self) -> Union[Tuple[Union[int, str], str], Tuple[Union[int, str], str, Model]]:
         if self.model is None:
             return self.code, self.description
         return self.code, self.description, self.model

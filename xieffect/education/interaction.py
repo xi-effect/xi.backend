@@ -48,7 +48,7 @@ def redirected_to_pages(op_name, *possible_module_types: ModuleType):
 
 
 def with_point_id(function):
-    @interaction_namespace.doc_responses(ResponseDoc.error_response(404, "Point is not in this module"))
+    @interaction_namespace.doc_responses(ResponseDoc.error_response("404 ", "Point is not in this module"))
     @wraps(function)
     def with_point_id_inner(*args, **kwargs):
         if 0 <= kwargs["point_id"] < kwargs["module"].length:
