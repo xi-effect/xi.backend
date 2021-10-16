@@ -5,7 +5,6 @@ from authorship import Author, Moderator
 from componets import with_session
 from education import Module, Page
 from file_system.keeper import WIPPage
-from main import db_meta
 from other.test_keeper import TestPoint
 from users import User
 from webhooks import WebhookURLs, send_discord_message
@@ -15,6 +14,8 @@ ADMIN_EMAIL: str = "admin@admin.admin"
 
 if __name__ == "__main__":  # test only
     application.debug = True
+else:  # works on server restart:
+    send_discord_message(WebhookURLs.NOTIF, "Application restated")
 
 
 @with_session
@@ -42,10 +43,7 @@ def init_all(session):
     TestPoint.test(session)
 
 
-db_meta.create_all()
 init_all()
 
 if __name__ == "__main__":  # test only
     application.run()  # (ssl_context="adhoc")
-else:  # works on server restart:
-    send_discord_message(WebhookURLs.NOTIF, "Application restated")
