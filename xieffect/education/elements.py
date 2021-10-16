@@ -134,7 +134,7 @@ class Point(Base):
     type = Column(EnumType(PointType, by_name=True), nullable=False)
     length = Column(Integer, nullable=False)
 
-    pages = relationship("PointToPage", order_by=PointToPage.position)
+    pages = relationship("PointToPage", cascade="all, delete", order_by=PointToPage.position)
 
     @classmethod
     def create(cls, session, module_id: int, point_id: int, point_data: Dict[str, str]) -> Point:
