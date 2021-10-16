@@ -280,27 +280,19 @@
       {
         "type": "practice",
         "pages": [
-          3
-        ]
-      },
-      {
-        "type": "practice",
-        "pages": [
           1
         ]
       },
       {
         "type": "practice",
         "pages": [
-          1
-        ]
-      },
-      {
-        "type": "practice",
-        "pages": [
-          3,
-          3,
           2
+        ]
+      },
+      {
+        "type": "practice",
+        "pages": [
+          3
         ]
       }
     ]

@@ -27,3 +27,26 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
 
         elif module_type == "test":
             pass
+
+
+def test_standard_module_session(client: FlaskClient):  # relies on module#5
+    def scroll_through() -> Iterator[int]:
+        while True:
+            result: TestResponse = check_status_code(client.post("/modules/5/next/"), get_json=False)
+            if len(result.history):  # it was redirected
+                page: dict = result.get_json()
+                assert "id" in page.keys()
+                yield page["id"]
+            else:
+                assert result.get_json() == {"a": "You have reached the end"}
+                break
+
+    for _ in scroll_through():
+        pass  # if any session was started before, reset the module
+
+    ids1: list[int] = [page_id for page_id in scroll_through()]
+    ids2: list[int] = [page_id for page_id in scroll_through()]
+
+    assert ids1 == ids2
+
+    assert all(ids1[i] < ids1[i + 1] for i in range(len(ids1) - 1))
