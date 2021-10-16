@@ -1,4 +1,5 @@
 from json import load
+from sys import modules
 
 from api import app as application, log_stuff  # noqa
 from authorship import Author, Moderator
@@ -12,7 +13,7 @@ from webhooks import WebhookURLs, send_discord_message
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
 
-if __name__ == "__main__":  # test only
+if __name__ == "__main__" or "pytest" in modules.keys():  # test only  # pytest here temporarily!!!
     application.debug = True
 else:  # works on server restart:
     send_discord_message(WebhookURLs.NOTIF, "Application restated")
