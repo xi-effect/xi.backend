@@ -1,5 +1,6 @@
 from typing import Iterator, Callable
 
+from pytest import mark
 from flask.testing import FlaskClient
 from werkzeug.test import TestResponse
 
@@ -7,6 +8,7 @@ from .components import check_status_code
 from .knowledge_test import MODULES_PER_REQUEST
 
 
+@mark.order(500)
 def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
         module_id = module["id"]
@@ -29,6 +31,7 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             pass
 
 
+@mark.order(500)
 def test_standard_module_session(client: FlaskClient):  # relies on module#5
     def scroll_through() -> Iterator[int]:
         while True:
