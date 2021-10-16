@@ -47,6 +47,18 @@ def redirected_to_pages(op_name, *possible_module_types: ModuleType):
     return redirected_to_pages_wrapper
 
 
+def with_point_id(function):
+    @interaction_namespace.doc_responses(ResponseDoc.error_response(404, "Point is not in this module"))
+    @wraps(function)
+    def with_point_id_inner(*args, **kwargs):
+        if 0 <= kwargs["point_id"] < kwargs["module"].length:
+            return function(*args, **kwargs)
+        else:
+            return {"a": "Point is not in this module"}, 404
+
+    return with_point_id_inner
+
+
 @interaction_namespace.route("/next/")
 class ModuleProgresser(Resource):
     @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "You have reached the end"))
@@ -69,6 +81,7 @@ class ModuleProgresser(Resource):
 @interaction_namespace.route("/points/<int:point_id>/")
 class ModuleNavigator(Resource):
     @redirected_to_pages("direct navigation", ModuleType.TEST, ModuleType.THEORY_BLOCK)
+    @with_point_id
     def get(self, session, user: User, module: Module, module_type: ModuleType, point_id: int) -> int:
         """ Endpoint for navigating a Theory Block or Test """
 
@@ -98,6 +111,7 @@ def with_test_session(function):
 class TestReplySaver(Resource):
     @with_test_session
     @interaction_namespace.a_response()
+    @with_point_id
     # @interaction_namespace.argument_parser()
     def post(self, session, test_session: TestModuleSession, point_id: int) -> None:
         """ Saves user's reply to an open test """

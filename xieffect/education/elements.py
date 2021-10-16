@@ -313,13 +313,11 @@ class Module(Base, Identifiable, Marshalable):
         # print(stmt)
         return session.execute(stmt.offset(offset).limit(limit)).all()
 
-    def execute_point(self, point_id: int = None, theory_level: float = None):
+    def execute_point(self, point_id: int = None, theory_level: float = None) -> int:
         if point_id is None:
             point_id = randint(0, self.length - 1)
 
         point: Point = self.points[point_id]
-        if point is None:
-            return None
 
         page_position: int
         if point.type == PointType.PRACTICE:

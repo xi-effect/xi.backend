@@ -78,4 +78,4 @@ def test_module_navigation(client: FlaskClient):  # relies on module#9
 
     for point_id in range(length):
         check_status_code(client.get(f"/modules/9/points/{point_id}/"))
-    check_status_code(client.get(f"/modules/9/points/{length}/"))
+    check_status_code(client.get(f"/modules/9/points/{length}/"), 404)
