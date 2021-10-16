@@ -21,7 +21,7 @@ def module_typed(op_name, *possible_module_types: ModuleType):
         def module_typed_inner(*args, **kwargs):
             module_type: ModuleType = kwargs["module"].type
             if module_type not in possible_module_types:
-                return {"a": f"Module of type {module_type} can't use {op_name}"}, 400
+                return {"a": f"Module of type {module_type.to_string()} can't use {op_name}"}, 400
 
             if len(possible_module_types) > 1:
                 kwargs["module_type"] = module_type

@@ -132,7 +132,10 @@ class TestModuleSession(BaseModuleSession):
 
     @classmethod
     def create(cls, session: Session, user_id: int, module_id: int) -> TestModuleSession:
-        pass
+        new_entry = cls(user_id=user_id, module_id=module_id)
+        session.add(new_entry)
+        session.flush()
+        return new_entry
 
     def get_task(self, session: Session, task_id: int) -> int:
         return 3  # temp
