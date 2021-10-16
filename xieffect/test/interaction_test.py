@@ -40,8 +40,12 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
 
     assert len(types_set) == 0
 
-@mark.order(500)
+
+@mark.order(510)
 def test_standard_module_session(client: FlaskClient):  # relies on module#5
+    module = check_status_code(client.get("/modules/5/"))
+    assert module["type"] == "standard"
+
     def scroll_through() -> Iterator[int]:
         while True:
             result: TestResponse = check_status_code(client.post("/modules/5/next/"), get_json=False)
