@@ -33,7 +33,7 @@ class Avatar(Resource):  # [GET|POST] /avatar/
         with open(f"files/avatars/{user.id}.png", "wb") as f:
             f.write(request.data)
 
-    @other_settings_namespace.doc_file_param("image")
+    @other_settings_namespace.a_response()
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
     def delete(self, user: User) -> None:
         os.remove(f"files/avatars/{user.id}.png")
