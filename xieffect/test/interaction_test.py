@@ -62,3 +62,16 @@ def test_standard_module_session(client: FlaskClient):  # relies on module#5
     assert ids1 == ids2
 
     assert all(ids1[i] < ids1[i + 1] for i in range(len(ids1) - 1))
+
+
+@mark.order(520)
+def test_module_navigation(client: FlaskClient):  # relies on module#9
+    module = check_status_code(client.get("/modules/9/"))
+    assert module["type"] == "theory-block"
+
+    assert "map" in module.keys()
+    length = len(module["map"])
+
+    for point_id in range(length):
+        check_status_code(client.get(f"/modules/9/points/{point_id}/"))
+    check_status_code(client.get(f"/modules/9/points/{length}/"))
