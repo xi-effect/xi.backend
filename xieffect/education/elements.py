@@ -205,7 +205,8 @@ class Module(Base, Identifiable, Marshalable):
     points = relationship("Point", back_populates="module", cascade="all, delete", order_by=Point.point_id)
 
     @classmethod
-    def create(cls, session: Session, json_data: Dict[str, Any], author: Author, force: bool = False) -> Module:
+    def create(cls, session: Session, json_data: Dict[str, Any], author: Author,
+               force: bool = False) -> Optional[Module]:
         if cls.find_by_id(session, json_data["id"]):
             return
 
@@ -314,7 +315,7 @@ class Module(Base, Identifiable, Marshalable):
 
     def execute_point(self, point_id: int = None, theory_level: float = None):
         if point_id is None:
-            point_id = randint(1, self.length)
+            point_id = randint(0, self.length - 1)
 
         point: Point = self.points[point_id]
         if point is None:
