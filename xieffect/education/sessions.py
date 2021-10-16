@@ -4,10 +4,11 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Column, select
-from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime
+from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float
 
 from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
 from componets.checkers import first_or_none
+from users import User
 from main import Base, Session
 
 
@@ -103,19 +104,20 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
 
 class StandardModuleSession(BaseModuleSession):
     __tablename__ = "standard_module_sessions"
-    progress = Column(Integer, nullable=False, default=0)
+    progress = Column(Integer, nullable=False, default=-1)
+    theory_level = Column(Float, nullable=False, default=0.5)
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int,
-               progress: int = 0) -> Optional[StandardModuleSession]:
+    def create(cls, session: Session, user_id: int, module_id: int) -> Optional[StandardModuleSession]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
-        new_entry = cls(user_id=user_id, module_id=module_id, progress=progress)
+        new_entry = cls(user_id=user_id, module_id=module_id)
         session.add(new_entry)
+        session.flush()
         return new_entry
 
-    def get_theory_level(self):
-        pass
+    def get_theory_level(self, session: Session):
+        return User.find_by_id(session, self.user_id).theory_level * 0.2 + self.theory_level * 0.8
 
     def delete(self, session: Session):
         session.delete(self)

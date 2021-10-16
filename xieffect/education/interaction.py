@@ -60,7 +60,7 @@ class ModuleProgresser(Resource):
             if module_session.progress >= module.length:
                 module_session.delete(session)
                 return {"a": "You have reached the end"}
-            return module.execute_point(module_session.progress, module_session.get_theory_level())
+            return module.execute_point(module_session.progress, module_session.get_theory_level(session))
 
         elif module_type == ModuleType.PRACTICE_BLOCK:
             return module.execute_point()
