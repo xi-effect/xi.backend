@@ -30,13 +30,14 @@ class Avatar(Resource):  # [GET|POST] /avatar/
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
     def post(self, user: User) -> None:
         """ Overwrites user's own avatar """
-        with open(f"files/avatars/{user.id}.png", "wb") as f:
+        with open(f"../files/avatars/{user.id}.png", "wb") as f:
             f.write(request.data)
 
     @other_settings_namespace.a_response()
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
     def delete(self, user: User) -> None:
-        os.remove(f"files/avatars/{user.id}.png")
+        """Delete avatar"""
+        os.remove(f"../files/avatars/{user.id}.png")
 
 
 def changed(value):
