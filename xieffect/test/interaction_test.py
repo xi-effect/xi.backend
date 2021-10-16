@@ -10,10 +10,18 @@ from .knowledge_test import MODULES_PER_REQUEST
 
 @mark.order(500)
 def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    types_set: set[str] = {"standard", "practice-block", "theory-block", "test"}
+
     for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
         module_id = module["id"]
         module_type = module["type"]
         module = check_status_code(client.get(f"/modules/{module_id}/"))
+
+        if len(types_set) == 0:
+            return
+        if module_type not in types_set:
+            continue
+        types_set.remove(module_type)
 
         if module_type in ("standard", "practice-block"):
             check_status_code(client.post(f"/modules/{module_id}/next/"))
@@ -30,6 +38,7 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
         elif module_type == "test":
             pass
 
+    assert len(types_set) == 0
 
 @mark.order(500)
 def test_standard_module_session(client: FlaskClient):  # relies on module#5
