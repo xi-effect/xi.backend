@@ -28,14 +28,18 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             assert check_status_code(client.get(f"/modules/{module_id}/points/0/"), 400) == \
                    {"a": f"Module of type {module_type} can't use direct navigation"}
 
-        elif module_type in ("theory-block", "test"):
+        if module_type in ("theory-block", "test"):
             assert "map" in module.keys()
             map_length = len(module["map"]) - 1
             check_status_code(client.get(f"/modules/{module_id}/points/{map_length}/"))
             assert check_status_code(client.post(f"/modules/{module_id}/next/"), 400) == \
                    {"a": f"Module of type {module_type} can't use linear progression"}
 
-        elif module_type == "test":
+        if module_type in ("practice-block", "test"):
+            assert check_status_code(client.get(f"/modules/{module_id}/open/"), 400) == \
+                   {"a": f"Module of type {module_type} can't use progress saving"}
+
+        if module_type == "test":
             pass
 
     assert len(types_set) == 0
@@ -79,3 +83,15 @@ def test_module_navigation(client: FlaskClient):  # relies on module#9
     for point_id in range(length):
         check_status_code(client.get(f"/modules/9/points/{point_id}/"))
     check_status_code(client.get(f"/modules/9/points/{length}/"), 404)
+
+
+@mark.order(530)
+def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 (point#8 & point#9)
+    if (response_json := check_status_code(client.post("/modules/5/next/"))) == {"a": "You have reached the end"}:
+        response_json = check_status_code(client.post("/modules/5/next/"))
+    assert check_status_code(client.get("/modules/5/open/")) == response_json
+
+    response_json = check_status_code(client.get("/modules/9/points/8/"))
+    assert check_status_code(client.get("/modules/9/open/")) == response_json
+    response_json = check_status_code(client.get("/modules/9/points/9/"))
+    assert check_status_code(client.get("/modules/9/open/")) == response_json
