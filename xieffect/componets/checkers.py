@@ -126,23 +126,30 @@ class Namespace(RestXNamespace):
 
     @staticmethod
     def _database_searcher(identifiable: Type[Identifiable], check_only: bool, no_id: bool,
-                           use_session: bool, error_code: int, callback, *args, **kwargs):
+                           use_session: bool, error_code: int, callback, args, kwargs, *,
+                           input_field_name: Optional[str] = None, result_field_name: Optional[str] = None):
+        if input_field_name is None:
+            input_field_name = identifiable.__name__.lower() + "_id"
+        if result_field_name is None:
+            result_field_name = identifiable.__name__.lower()
         session = get_or_pop(kwargs, "session", use_session)
-        target_id: int = get_or_pop(kwargs, identifiable.__name__.lower() + "_id", check_only and not no_id)
+        target_id: int = get_or_pop(kwargs, input_field_name, check_only and not no_id)
         if (result := identifiable.find_by_id(session, target_id)) is None:
             return {"a": identifiable.not_found_text}, error_code
         else:
             if not check_only:
-                kwargs[identifiable.__name__.lower()] = result
+                kwargs[result_field_name] = result
             return callback(*args, **kwargs)
 
-    def database_searcher(self, identifiable: Type[Identifiable], check_only: bool = False, use_session: bool = False):
+    def database_searcher(self, identifiable: Type[Identifiable], *, result_field_name: Optional[str] = None,
+                          check_only: bool = False, use_session: bool = False):
         """
         - Uses incoming id argument to find something :class:`Identifiable` in the database.
         - If the entity wasn't found, will return a 404 response, which is documented automatically.
         - Can pass (entity's id or entity) and session objects to the decorated function.
 
         :param identifiable: identifiable to search for
+        :param result_field_name: overrides default name of found object [default is identifiable.__name__.lower()]
         :param check_only: (default: False) if True, checks if entity exists and passes id to the decorated function
         :param use_session: (default: False) whether or not to pass the session to the decorated function
         """
@@ -152,8 +159,8 @@ class Namespace(RestXNamespace):
             @wraps(function)
             @with_session
             def searcher_inner(*args, **kwargs):
-                return self._database_searcher(
-                    identifiable, check_only, False, use_session, 404, function, *args, **kwargs)
+                return self._database_searcher(identifiable, check_only, False, use_session, 404,
+                                               function, args, kwargs, result_field_name=result_field_name)
 
             return searcher_inner
 
@@ -186,9 +193,9 @@ class Namespace(RestXNamespace):
             @jwt_required()
             @with_session
             def authorizer_inner(*args, **kwargs):
-                kwargs[role.__name__.lower() + "_id"] = get_jwt_identity()
-                return self._database_searcher(
-                    role, check_only, True, use_session, error_code, function, *args, **kwargs)
+                kwargs["jwt"] = get_jwt_identity()
+                return self._database_searcher(role, check_only, True, use_session, error_code,
+                                               function, args, kwargs, input_field_name="jwt")
 
             return authorizer_inner
 
