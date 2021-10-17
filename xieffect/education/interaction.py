@@ -1,99 +1,153 @@
+from functools import wraps
+from typing import Optional
+
 from flask import redirect
 from flask_restx import Resource
+from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, with_session, with_auto_session
-from education.elements import Module, Point
-from education.sessions import StandardModuleSession as SMS, TestModuleSession as TMS
+from componets import Namespace, ResponseDoc
 from users import User
+from .elements import Module, ModuleType
+from .sessions import ModuleProgressSession, TestModuleSession
+
+interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
 
 
-def redirected_to_pages(func):  # session related parts have to be redone!!!!!!!
-    @interaction_namespace.jwt_authorizer(User, check_only=True)
-    def inner_redirected_to_pages(*args, **kwargs):
-        return redirect(f"/pages/{func(*args, **kwargs)}/")
+def module_typed(op_name, *possible_module_types: ModuleType):
+    def module_typed_wrapper(function):
+        @interaction_namespace.doc_responses(ResponseDoc.error_response(400, "Unacceptable module type"))
+        @interaction_namespace.jwt_authorizer(User)
+        @interaction_namespace.database_searcher(Module, use_session=True)
+        @wraps(function)
+        def module_typed_inner(*args, **kwargs):
+            module_type: ModuleType = kwargs["module"].type
+            if module_type not in possible_module_types:
+                return {"a": f"Module of type {module_type.to_string()} can't use {op_name}"}, 400
 
-    return inner_redirected_to_pages
+            if len(possible_module_types) > 1:
+                kwargs["module_type"] = module_type
 
+            return function(*args, **kwargs)
 
-interaction_namespace: Namespace = Namespace("interaction", path="/")
+        return module_typed_inner
 
-
-# module_type: ModuleType = ModuleType(module.type)
-# if module_type == ModuleType.STANDARD:
-#     return {"session": SMS.find_or_create(session, user.id, module.id).id}
-# elif module_type == ModuleType.PRACTICE_BLOCK:
-#     return redirect(f"/modules/{module.id}/next/")
-# elif module_type == ModuleType.THEORY_BLOCK:
-#     return redirect(f"/modules/{module.id}/contents/")
-# elif module_type == ModuleType.TEST:
-#     return {"test": TMS.find_or_create(session, user.id, module.id).id}
-
-
-@interaction_namespace.route("/sessions/<int:session_id>/")
-class StandardProgresser(Resource):  # POST /sessions/<int:session_id>/
-    @with_auto_session  # redo!!
-    @redirected_to_pages
-    # @interaction_namespace.database_searcher(SMS, "session_id", "session")
-    def post(self, session: SMS):
-        return session.next_page_id()
+    return module_typed_wrapper
 
 
-@interaction_namespace.route("/module/<int:module_id>/next/")
-class PracticeGenerator(Resource):  # GET /module/<int:module_id>/next/
-    @redirected_to_pages
-    # @interaction_namespace.database_searcher(Module, "module_id", "module")
-    def get(self, session, module: Module):
-        return module.get_any_point(session).execute()
+def redirected_to_pages(op_name, *possible_module_types: ModuleType):
+    def redirected_to_pages_wrapper(function):
+        @interaction_namespace.doc_responses(ResponseDoc(302, r"Redirect to GET /pages/\<id\>/ with generated ID"))
+        @module_typed(op_name, *possible_module_types)
+        @wraps(function)
+        def redirected_to_pages_inner(*args, **kwargs):
+            result = function(*args, **kwargs)
+            return redirect(f"/pages/{result}/") if isinstance(result, int) else result
+
+        return redirected_to_pages_inner
+
+    return redirected_to_pages_wrapper
 
 
-@interaction_namespace.route("/module/<int:module_id>/contents/")
-class TheoryContentsGetter(Resource):  # GET /module/<int:module_id>/contents/
-    @interaction_namespace.jwt_authorizer(User, check_only=True, use_session=False)
-    # @interaction_namespace.database_searcher(Module, "module_id", "module")
-    def get(self, module: Module):
-        pass  # not done!
+def with_point_id(function):
+    @interaction_namespace.doc_responses(ResponseDoc.error_response("404 ", "Point is not in this module"))
+    @wraps(function)
+    def with_point_id_inner(*args, **kwargs):
+        if 0 <= kwargs["point_id"] < kwargs["module"].length:
+            return function(*args, **kwargs)
+        else:
+            return {"a": "Point is not in this module"}, 404
+
+    return with_point_id_inner
 
 
-@interaction_namespace.route("/module/<int:module_id>/points/<int:point_id>/")
-class TheoryNavigator(Resource):  # GET /module/<int:module_id>/points/<int:point_id>/
-    @with_session
-    @redirected_to_pages
-    # @interaction_namespace.database_searcher(Module, "module_id", "module")
-    def get(self, session, module: Module, point_id: int):
-        return Point.find_and_execute(session, module.id, point_id)
+@interaction_namespace.route("/open/")
+class ModuleOpener(Resource):
+    @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "No progress saved"))
+    @redirected_to_pages("progress saving", ModuleType.STANDARD, ModuleType.THEORY_BLOCK)
+    def get(self, session, user: User, module: Module, module_type: ModuleType):
+        """ Endpoint for starting a Standard Module or Theory Block form the last visited point """
+
+        module_session: Optional[ModuleProgressSession] = ModuleProgressSession.find_by_ids(session, user.id, module.id)
+        if module_session is not None and module_session.progress is not None:
+            return module.execute_point(module_session.progress, module_session.theory_level)
+        elif module_type == ModuleType.STANDARD:
+            return module.execute_point(0, 0.4 + 0.2 * user.theory_level)
+        else:
+            return {"a": "No progress saved"}
 
 
-@interaction_namespace.route("/tests/<int:test_id>/contents/")
-class TestContentsGetter(Resource):  # GET /tests/<int:test_id>/contents/
-    @interaction_namespace.jwt_authorizer(User, check_only=True, use_session=False)
-    # @interaction_namespace.database_searcher(TMS, "test_id", "test")
-    def get(self, test: TMS):
-        pass  # not done!
+@interaction_namespace.route("/next/")
+class ModuleProgresser(Resource):
+    @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "You have reached the end"))
+    @redirected_to_pages("linear progression", ModuleType.STANDARD, ModuleType.PRACTICE_BLOCK)
+    def post(self, session, user: User, module: Module, module_type: ModuleType):
+        """ Endpoint for progressing a Standard Module or Practice Block """
+
+        if module_type == ModuleType.STANDARD:
+            module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(session, user.id, module.id)
+
+            if module_session.progress is None:
+                module_session.progress = 1
+                module_session.theory_level = 0.5
+            else:
+                module_session.progress += 1
+
+            if module_session.progress >= module.length:
+                module_session.delete(session)
+                return {"a": "You have reached the end"}
+
+            return module.execute_point(module_session.progress, module_session.get_theory_level(session))
+
+        elif module_type == ModuleType.PRACTICE_BLOCK:
+            return module.execute_point()
 
 
-@interaction_namespace.route("/tests/<int:test_id>/points/<int:task_id>/")
-class TestNavigator(Resource):  # GET /tests/<int:test_id>/points/<int:task_id>/
-    @interaction_namespace.jwt_authorizer(User, check_only=True, use_session=False)
-    # @interaction_namespace.database_searcher(TMS, "test_id", "test")
-    def get(self, test: TMS, task_id: int):
-        return test.get_task(task_id)
+@interaction_namespace.route("/points/<int:point_id>/")
+class ModuleNavigator(Resource):
+    @redirected_to_pages("direct navigation", ModuleType.TEST, ModuleType.THEORY_BLOCK)
+    @with_point_id
+    def get(self, session, user: User, module: Module, module_type: ModuleType, point_id: int) -> int:
+        """ Endpoint for navigating a Theory Block or Test """
+
+        if module_type == ModuleType.TEST:
+            return TestModuleSession.find_or_create(session, user.id, module.id).get_task(session, point_id)
+
+        elif module_type == ModuleType.THEORY_BLOCK:
+            module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(session, user.id, module.id)
+            module_session.progress = point_id
+            return module.execute_point(point_id)
 
 
-@interaction_namespace.route("/tests/<int:test_id>/tasks/<int:task_id>/reply/")
-class TestReplySaver(Resource):  # P*T /tests/<int:test_id>/tasks/<int:task_id>/reply/
-    @interaction_namespace.jwt_authorizer(User, check_only=True)
-    # @interaction_namespace.database_searcher(TMS, "test_id", "test")
-    def post(self, session, test: TMS, task_id: int, reply):
-        test.set_reply(session, task_id, reply)
-        return {"a": True}
+def with_test_session(function):
+    @interaction_namespace.doc_responses(ResponseDoc.error_response(404, TestModuleSession.not_found_text))
+    @module_typed("reply & results functionality", ModuleType.TEST)
+    @wraps(function)
+    def with_test_session_inner(session, user: User, module: Module, *args, **kwargs):
+        test_session: TestModuleSession = TestModuleSession.find_by_ids(session, user.id, module.id)
+        if test_session is None:
+            return {"a": TestModuleSession.not_found_text}, 404
 
-    def put(self, *args, **kwargs):
-        self.post(*args, **kwargs)
+        kwargs["test_session"] = test_session
+        return function(session, *args, **kwargs)
+
+    return with_test_session_inner
 
 
-@interaction_namespace.route("/tests/<int:test_id>/results/")
-class TestResultCollector(Resource):  # GET /tests/<int:test_id>/results/
-    @interaction_namespace.jwt_authorizer(User, check_only=True, use_session=False)
-    # @interaction_namespace.database_searcher(TMS, "test_id", "test")
-    def get(self, test: TMS):
-        return test.collect_results()
+@interaction_namespace.route("/points/<int:point_id>/reply/")
+class TestReplySaver(Resource):
+    @with_test_session
+    @interaction_namespace.a_response()
+    @with_point_id
+    # @interaction_namespace.argument_parser()
+    def post(self, session, test_session: TestModuleSession, point_id: int) -> None:
+        """ Saves user's reply to an open test """
+        test_session.set_reply(session, point_id, None)  # temp
+
+
+@interaction_namespace.route("/results/")
+class TestResultGetter(Resource):
+    @with_test_session
+    @interaction_namespace.doc_responses(ResponseDoc(description="Some sort of TestResults object"))
+    def get(self, session, test_session: TestModuleSession):
+        """ Ends the test & returns the results / result page """
+        return test_session.collect_results(session)

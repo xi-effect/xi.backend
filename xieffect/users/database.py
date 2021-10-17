@@ -5,7 +5,7 @@ from typing import Dict, Union, Optional
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float
 
 from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
 from componets.checkers import first_or_none
@@ -27,8 +27,9 @@ class TokenBlockList(Base):
         session.add(cls(jti=jti))
 
 
+@create_marshal_model("full-settings", "email", "email_confirmed", "name",
+                      "surname", "patronymic", inherit="main-settings")
 @create_marshal_model("main-settings", "username", "dark_theme", "language")
-@create_marshal_model("full-settings", "filter_bind", "password", "id", full=True)
 @create_marshal_model("role-settings")
 class User(Base, UserRole, Marshalable):
     __tablename__ = "users"
@@ -59,6 +60,7 @@ class User(Base, UserRole, Marshalable):
     patronymic = Column(String(100), nullable=True)
 
     # Education data:
+    theory_level = Column(Float, nullable=False, default=0.5)
     filter_bind = Column(String(10), nullable=True)
 
     # Role-related:  # need to redo user_roles with relations

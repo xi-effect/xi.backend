@@ -4,7 +4,7 @@ from flask.testing import FlaskClient
 from pytest import fixture
 from werkzeug.test import TestResponse
 
-from api import app
+from wsgi import application as app   # temp, return back to ``from api import app``
 from xieffect.test.components import check_status_code
 
 

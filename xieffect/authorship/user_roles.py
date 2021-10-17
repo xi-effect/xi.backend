@@ -22,7 +22,7 @@ class Author(Base, UserRole, Marshalable):
     banned = Column(Boolean, nullable=False, default=False)
     last_image_id = Column(Integer, nullable=False, default=0)
 
-    modules = relationship("Module", backref="authors")
+    modules = relationship("Module", back_populates="author")
 
     @classmethod
     def create(cls, session: Session, user: User) -> Author:
