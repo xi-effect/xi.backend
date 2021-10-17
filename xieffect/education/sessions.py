@@ -8,8 +8,8 @@ from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float
 
 from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
 from componets.checkers import first_or_none
-from users import User
 from main import Base, Session
+from users import User
 
 
 class BaseModuleSession(Base):
@@ -102,13 +102,13 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
             self.note_change()
 
 
-class StandardModuleSession(BaseModuleSession):
+class ModuleProgressSession(BaseModuleSession):
     __tablename__ = "standard_module_sessions"
-    progress = Column(Integer, nullable=False, default=-1)
-    theory_level = Column(Float, nullable=False, default=0.5)
+    progress = Column(Integer, nullable=True)
+    theory_level = Column(Float, nullable=True)  # temp disabled for theory blocks
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int) -> Optional[StandardModuleSession]:
+    def create(cls, session: Session, user_id: int, module_id: int) -> Optional[ModuleProgressSession]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
         new_entry = cls(user_id=user_id, module_id=module_id)
@@ -116,7 +116,9 @@ class StandardModuleSession(BaseModuleSession):
         session.flush()
         return new_entry
 
-    def get_theory_level(self, session: Session):
+    def get_theory_level(self, session: Session) -> Optional[float]:
+        if self.theory_level is None:
+            return None
         return User.find_by_id(session, self.user_id).theory_level * 0.2 + self.theory_level * 0.8
 
     def delete(self, session: Session):

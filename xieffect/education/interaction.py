@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Optional
 
 from flask import redirect
 from flask_restx import Resource
@@ -7,7 +8,7 @@ from flask_restx.reqparse import RequestParser
 from componets import Namespace, ResponseDoc
 from users import User
 from .elements import Module, ModuleType
-from .sessions import StandardModuleSession, TestModuleSession
+from .sessions import ModuleProgressSession, TestModuleSession
 
 interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
 
@@ -59,6 +60,22 @@ def with_point_id(function):
     return with_point_id_inner
 
 
+@interaction_namespace.route("/open/")
+class ModuleOpener(Resource):
+    @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "No progress saved"))
+    @redirected_to_pages("progress saving", ModuleType.STANDARD, ModuleType.THEORY_BLOCK)
+    def get(self, session, user: User, module: Module, module_type: ModuleType):
+        """ Endpoint for starting a Standard Module or Theory Block form the last visited point """
+
+        module_session: Optional[ModuleProgressSession] = ModuleProgressSession.find_by_ids(session, user.id, module.id)
+        if module_session is not None and module_session.progress is not None:
+            return module.execute_point(module_session.progress, module_session.theory_level)
+        elif module_type == ModuleType.STANDARD:
+            return module.execute_point(0, 0.4 + 0.2 * user.theory_level)
+        else:
+            return {"a": "No progress saved"}
+
+
 @interaction_namespace.route("/next/")
 class ModuleProgresser(Resource):
     @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "You have reached the end"))
@@ -67,11 +84,18 @@ class ModuleProgresser(Resource):
         """ Endpoint for progressing a Standard Module or Practice Block """
 
         if module_type == ModuleType.STANDARD:
-            module_session: StandardModuleSession = StandardModuleSession.find_or_create(session, user.id, module.id)
-            module_session.progress += 1
+            module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(session, user.id, module.id)
+
+            if module_session.progress is None:
+                module_session.progress = 1
+                module_session.theory_level = 0.5
+            else:
+                module_session.progress += 1
+
             if module_session.progress >= module.length:
                 module_session.delete(session)
                 return {"a": "You have reached the end"}
+
             return module.execute_point(module_session.progress, module_session.get_theory_level(session))
 
         elif module_type == ModuleType.PRACTICE_BLOCK:
@@ -89,6 +113,8 @@ class ModuleNavigator(Resource):
             return TestModuleSession.find_or_create(session, user.id, module.id).get_task(session, point_id)
 
         elif module_type == ModuleType.THEORY_BLOCK:
+            module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(session, user.id, module.id)
+            module_session.progress = point_id
             return module.execute_point(point_id)
 
 

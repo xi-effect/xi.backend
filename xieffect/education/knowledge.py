@@ -84,7 +84,7 @@ class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
 
 
 @modules_view_namespace.route("/<int:module_id>/")
-class ModuleOpener(Resource):  # GET /modules/<int:module_id>/
+class ModuleGetter(Resource):  # GET /modules/<int:module_id>/
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.database_searcher(Module, use_session=True, check_only=True)
     @modules_view_namespace.marshal_with(module_view_json, skip_none=True)
