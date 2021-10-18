@@ -1,1 +1,1 @@
-web: sh -c 'cd xieffect && gunicorn wsgi:app'
+web: sh -c 'cd xieffect && gunicorn wsgi:application'
