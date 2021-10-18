@@ -43,8 +43,9 @@ class GithubDocumentsWebhook(Resource):  # [POST] /update-docs/
 class HerokuBuildWebhook(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("action", str, required=True)
+    parser.add_argument("resource", str, required=True)
 
     @webhook_namespace.a_response()
     @webhook_namespace.argument_parser(parser)
-    def post(self, action: str) -> None:
-        send_discord_message(WebhookURLs.HEROKU, f"Heroku may be online [{action}]")
+    def post(self, resource: str, action: str) -> None:
+        send_discord_message(WebhookURLs.HEROKU, f"Heroku may be online [{resource}:{action}]")
