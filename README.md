@@ -22,3 +22,10 @@
 3. По окончании работы над фичей, отправлять PR из своей *feature-branch* в `prod`
 4. В PR нужно отмечать issues, над которыми работали и призывать кого-то на review
 5. Если во время работы над фичей произошло обновление в `prod`, необходимо обновить собственную ветку до PR!
+
+### Heroku
+1. Установить [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli#download-and-install)
+2. Залогиниться: `heroku login`
+3. Открыть терминал в папке проекта
+4. Добавить remote: `heroku git:remote -a xieffect-socketio`
+5. Пушить только тщательной проверки локально, при обновлениях в `xieffect-socketio`, после всех коммитов. Команда: `git push -f heroku feat/socketio-integration:master`
