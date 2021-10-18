@@ -23,8 +23,9 @@ else:  # works on server restart:
 
 
 def init_folder_structure():
-    Path("../files/images").mkdir(parents=True, exist_ok=True)
     Path("../files/avatars").mkdir(parents=True, exist_ok=True)
+    Path("../files/images").mkdir(parents=True, exist_ok=True)
+    Path("../files/temp").mkdir(parents=True, exist_ok=True)
 
     Path("../files/tfs/wip-pages").mkdir(parents=True, exist_ok=True)
     Path("../files/tfs/wip-modules").mkdir(parents=True, exist_ok=True)
