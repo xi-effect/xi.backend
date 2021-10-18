@@ -4,4 +4,5 @@ venv/
 xieffect/app.db
 xieffect/test/.pytest_cache
 files/temp/*
+files/tfs/wip-*
 files/versions-lock.json

@@ -1,4 +1,5 @@
 from json import load
+from pathlib import Path
 from sys import modules
 
 from api import app as application, log_stuff  # noqa
@@ -17,6 +18,14 @@ if __name__ == "__main__" or "pytest" in modules.keys():  # test only  # pytest 
     application.debug = True
 else:  # works on server restart:
     send_discord_message(WebhookURLs.NOTIF, "Application restated")
+
+
+def init_folder_structure():
+    Path("../files/images").mkdir(parents=True, exist_ok=True)
+    Path("../files/avatars").mkdir(parents=True, exist_ok=True)
+
+    Path("../files/tfs/wip-pages").mkdir(parents=True, exist_ok=True)
+    Path("../files/tfs/wip-modules").mkdir(parents=True, exist_ok=True)
 
 
 @with_session
@@ -44,6 +53,7 @@ def init_all(session):
     TestPoint.test(session)
 
 
+init_folder_structure()
 init_all()
 
 if __name__ == "__main__":  # test only
