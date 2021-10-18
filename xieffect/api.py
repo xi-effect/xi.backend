@@ -1,9 +1,6 @@
 from datetime import datetime, timedelta, timezone
-from json import load, dump
-from os.path import exists
 from sys import stderr
 from traceback import format_tb
-from typing import Dict
 
 from flask import Response, request
 from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
@@ -14,7 +11,7 @@ from authorship import (authors_namespace)
 from componets import with_session
 from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
 from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace, wip_index_namespace)
-from main import app, db_meta, Session, versions
+from main import app, db_meta, versions
 from other import (application_namespace, oct_namespace)
 from outside import (basic_namespace, github_namespace)
 from users import (TokenBlockList, reglog_namespace, email_namespace,
@@ -73,24 +70,7 @@ def log_stuff(level: str, message: str):
                 send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
 
 
-# Some request and error handlers:
-@app.before_first_request
-@with_session
-def create_tables(session: Session):
-    if exists("../files/versions-lock.json"):
-        versions_lock: Dict[str, str] = load(open("../files/versions-lock.json", encoding="utf-8"))
-    else:
-        versions_lock: Dict[str, str] = {}
-
-    if versions_lock != versions:
-        log_stuff("status", "\n".join([
-            f"{key:3} was updated to {versions[key]}"
-            for key in versions.keys()
-            if versions_lock.get(key, None) != versions[key]
-        ]).expandtabs())
-        dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
-
-
+# Some error handlers:
 @jwt.token_in_blocklist_loader
 @with_session
 def check_if_token_revoked(_, jwt_payload, session):

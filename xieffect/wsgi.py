@@ -1,4 +1,5 @@
-from json import load
+from json import load, dump
+from os.path import exists
 from pathlib import Path
 from sys import modules
 
@@ -7,6 +8,7 @@ from authorship import Author, Moderator
 from componets import with_session
 from education import Module, Page
 from file_system.keeper import WIPPage
+from main import versions
 from other.test_keeper import TestPoint
 from users import User
 from webhooks import WebhookURLs, send_discord_message
@@ -53,8 +55,24 @@ def init_all(session):
     TestPoint.test(session)
 
 
+def version_check():
+    if exists("../files/versions-lock.json"):
+        versions_lock: dict[str, str] = load(open("../files/versions-lock.json", encoding="utf-8"))
+    else:
+        versions_lock: dict[str, str] = {}
+
+    if versions_lock != versions:
+        log_stuff("status", "\n".join([
+            f"{key:3} was updated to {versions[key]}"
+            for key in versions.keys()
+            if versions_lock.get(key, None) != versions[key]
+        ]).expandtabs())
+        dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
+
+
 init_folder_structure()
 init_all()
+version_check()
 
 if __name__ == "__main__":  # test only
     application.run()  # (ssl_context="adhoc")
