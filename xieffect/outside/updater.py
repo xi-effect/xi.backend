@@ -2,7 +2,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from componets import Namespace
-from webhooks import send_discord_message, WebhookURLs, execute_in_console, reload_webapp
+from webhooks import send_discord_message, WebhookURLs
 
 github_token: str = ""
 github_namespace: Namespace = Namespace("github")
@@ -18,8 +18,8 @@ class GithubWebhook(Resource):  # [POST] /update/
         if event_type == "push":
             send_discord_message(WebhookURLs.GITHUB, f"Got a push notification.\n"
                                                      f"Starting auto-update")
-            execute_in_console("git pull")
-            reload_webapp()
+            # execute_in_console("git pull")
+            # reload_webapp()
         elif event_type == "release":
             send_discord_message(WebhookURLs.GITHUB, f"Got a release notification.\n"
                                                      f"Releases are not supported yet!")
