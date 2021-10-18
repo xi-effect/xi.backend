@@ -2,6 +2,8 @@ from flask import Flask, send_file  # , request
 from flask_socketio import SocketIO, emit
 # from flask_jwt_extended import verify_jwt_in_request, JWTManager, get_jwt_identity
 
+# from xieffect.webhooks import send_discord_message, WebhookURLs
+
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -26,4 +28,5 @@ def handle_message(data):
 
 
 if __name__ == "__main__":
+    # send_discord_message(WebhookURLs.HEROKU, "Heroku may be online")
     socketio.run(app, debug=True)
