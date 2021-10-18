@@ -29,4 +29,4 @@ def handle_message(data):
 
 if __name__ == "__main__":
     # send_discord_message(WebhookURLs.HEROKU, "Heroku may be online")
-    socketio.run(app, debug=True)
+    socketio.run(app, port=5050, debug=True)
