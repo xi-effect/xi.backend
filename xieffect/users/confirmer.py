@@ -33,10 +33,12 @@ class EmailConfirm(Resource):  # [POST] /email-confirm/
     @email_namespace.doc_responses(message_response)
     @with_session
     @email_namespace.argument_parser(parser)
-    def post(self, code: str):
+    def post(self, session, code: str):
         # email = parse_code(code, "confirm")
         # if email is None:
         #     return {"a": "Code error"}
+
+        return {"a": "It's not supposed to work..."}
 
         user: User = User.find_by_email_address(session, email)
         if user is None:
