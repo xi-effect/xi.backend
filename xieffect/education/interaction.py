@@ -2,7 +2,8 @@ from functools import wraps
 from typing import Optional
 
 from flask import redirect
-from flask_restx import Resource
+from flask_restx import Resource, Model
+from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, ResponseDoc
@@ -62,18 +63,19 @@ def with_point_id(function):
 
 @interaction_namespace.route("/open/")
 class ModuleOpener(Resource):
-    @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "No progress saved"))
+    @interaction_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @redirected_to_pages("progress saving", ModuleType.STANDARD, ModuleType.THEORY_BLOCK)
     def get(self, session, user: User, module: Module, module_type: ModuleType):
         """ Endpoint for starting a Standard Module or Theory Block form the last visited point """
 
         module_session: Optional[ModuleProgressSession] = ModuleProgressSession.find_by_ids(session, user.id, module.id)
-        if module_session is not None and module_session.progress is not None:
-            return module.execute_point(module_session.progress, module_session.theory_level)
-        elif module_type == ModuleType.STANDARD:
-            return module.execute_point(0, 0.4 + 0.2 * user.theory_level)
-        else:
-            return {"a": "No progress saved"}
+        if module_type == ModuleType.STANDARD:
+            if module_session is None or module_session.progress is None:
+                return module.execute_point(0, 0.4 + 0.2 * user.theory_level)
+            else:
+                return module.execute_point(module_session.progress, module_session.theory_level)
+        elif module_type == ModuleType.THEORY_BLOCK:
+            return {"id": None if module_session is None else module_session.progress}
 
 
 @interaction_namespace.route("/next/")
