@@ -15,7 +15,7 @@ from main import app, db_meta, versions
 from other import (application_namespace, oct_namespace)
 from outside import (basic_namespace, github_namespace)
 from users import (TokenBlockList, reglog_namespace, email_namespace,
-                   settings_namespace, other_settings_namespace, protected_settings_namespace)
+                   settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
@@ -35,6 +35,7 @@ api.add_namespace(basic_namespace)
 api.add_namespace(email_namespace)
 api.add_namespace(reglog_namespace)
 
+api.add_namespace(profiles_namespace)
 api.add_namespace(settings_namespace)
 api.add_namespace(other_settings_namespace)
 api.add_namespace(protected_settings_namespace)
@@ -51,6 +52,7 @@ api.add_namespace(wip_json_file_namespace)
 api.add_namespace(wip_index_namespace)
 
 api.add_namespace(oct_namespace)
+
 
 jwt: JWTManager = JWTManager(app)
 

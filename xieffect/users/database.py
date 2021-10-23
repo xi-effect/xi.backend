@@ -5,7 +5,7 @@ from typing import Dict, Union, Optional
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text
 
 from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
 from componets.checkers import first_or_none
@@ -27,6 +27,8 @@ class TokenBlockList(Base):
         session.add(cls(jti=jti))
 
 
+@create_marshal_model("profile", "name", "surname", "patronymic", "username",
+                      "bio", "group")
 @create_marshal_model("full-settings", "email", "email_confirmed", "name",
                       "surname", "patronymic", inherit="main-settings")
 @create_marshal_model("main-settings", "username", "dark_theme", "language")
@@ -54,10 +56,12 @@ class User(Base, UserRole, Marshalable):
     dark_theme = Column(Boolean, nullable=False, default=True)
     language = Column(String(20), nullable=False, default="russian")
 
-    # Real name:
+    # profile:
     name = Column(String(100), nullable=True)
     surname = Column(String(100), nullable=True)
     patronymic = Column(String(100), nullable=True)
+    bio = Column(Text, nullable=True)
+    group = Column(String(100), nullable=True)
 
     # Education data:
     theory_level = Column(Float, nullable=False, default=0.5)
