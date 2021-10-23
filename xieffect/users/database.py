@@ -75,6 +75,9 @@ class User(Base, UserRole, Marshalable):
     author_status: LambdaFieldDef = LambdaFieldDef("role-settings", str, lambda user: user.get_author_status())
     moderator_status: LambdaFieldDef = LambdaFieldDef("role-settings", bool, lambda user: user.moderator is not None)
 
+    # Chat-related
+    chats = relationship("UserToChat")
+
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
