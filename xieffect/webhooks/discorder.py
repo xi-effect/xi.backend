@@ -19,6 +19,7 @@ class WebhookURLs(Enum):
     GITHUB = "854307355347779614/T5F80VykQKj4-5bwgriePYXWpkIDxpP84KMZ5rohRuLOwrsJcyLvchy3pkXwnV0_QNeJ"
     NOTIF = "854307934233952266/efeU2EMEJvEad9mw45bJscKdX_vMVJE5xYRknfo7bP_BTli_xX7_ubJJBJMjYqKnSHEx"
     HEROKU = "899768347405729892/_-roOKd49JDjD0tPRbY6b0zon469e_KByPL7bakMTBlbEdPxTL0PtqLlIY0fna1B_w3Z"
+    NETLIF = "903386251112120360/7WcUs86qDZkjp59PgWQUrbXpFK7ABrNTBc1P1Jopf05BNi05VhoW06oGDrjHAAtdSp3R"
 
 
 def send_message(webhook_url: WebhookURLs, message: str) -> Response:
