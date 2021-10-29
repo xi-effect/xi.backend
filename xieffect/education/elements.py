@@ -15,8 +15,8 @@ from sqlalchemy_enum34 import EnumType
 from authorship import Author
 from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef
 from componets.checkers import first_or_none, register_as_searchable
-from .sessions import ModuleFilterSession as MFS
 from main import Base, Session  # , whooshee
+from .sessions import ModuleFilterSession as MFS
 
 
 class PageKind(TypeEnum):

@@ -2,9 +2,8 @@ from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restx import Resource
 
-from main import versions
 from componets import Namespace
-
+from main import versions
 
 application_namespace: Namespace = Namespace("app", path="/<app_name>/")
 

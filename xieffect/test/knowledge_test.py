@@ -186,7 +186,7 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
 
 def set_module_hidden(client: FlaskClient, module_id: int, hidden: bool):
     assert check_status_code(client.post(f"/modules/{module_id}/preference/",
-                             json={"a": "hide" if hidden else "show"})) == {"a": True}
+                                         json={"a": "hide" if hidden else "show"})) == {"a": True}
 
 
 @mark.order(430)
