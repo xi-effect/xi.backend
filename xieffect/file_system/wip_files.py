@@ -35,16 +35,16 @@ class ImageProcessor(Resource):  # [GET|PUT|DELETE] /wip/images/<int:image_id>/
         """ Redirects to a global permanent url for this image_id & author """
         return redirect(f"/images/{author.id}-{image_id}/")
 
-    @wip_images_namespace.a_response()
     @wip_images_namespace.doc_file_param("image")
     @wip_images_namespace.jwt_authorizer(Author, use_session=False)
+    @wip_images_namespace.a_response()
     def put(self, author: Author, image_id: int) -> None:
         """ Overwrites author's wip-image with request's body """
         with open(f"../files/images/{author.id}-{image_id}.png", "wb") as f:
             f.write(request.data)
 
-    @wip_images_namespace.a_response()
     @wip_images_namespace.jwt_authorizer(Author, use_session=False)
+    @wip_images_namespace.a_response()
     def delete(self, author: Author, image_id: int) -> None:
         """ Deletes author's wip-image, removes the permanent url """
         remove(f"../files/images/{author.id}-{image_id}.png")

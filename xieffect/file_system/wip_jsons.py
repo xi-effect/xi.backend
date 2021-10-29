@@ -88,8 +88,8 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 
 @wip_json_file_namespace.route("/<int:file_id>/")
 class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
-    @wip_json_file_namespace.response(200, "JSON-file of the file type")
     @file_getter(type_only=False, use_session=False)
+    @wip_json_file_namespace.response(200, "JSON-file of the file type")
     def get(self, file: JSONFile):
         """ Loads author's wip-file's full contents """
         with open(file.get_link(), "rb") as f:
@@ -100,17 +100,17 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     # def get(self, file_type: Type[CATFile], file_id: int):
     #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
 
+    @file_getter(type_only=False)
     @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.a_response()
-    @file_getter(type_only=False)
     def put(self, session, file: JSONFile) -> None:
         """ Overwrites author's wip-file's contents and modifies index accordingly """
         file.update_json(session, request.get_json())
         # file.update(request.get_data())
 
+    @file_getter(type_only=False)
     @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.a_response()
-    @file_getter(type_only=False)
     def delete(self, session, file: JSONFile) -> None:
         """ Deletes author's wip-file's contents and erases its metadata form the index """
         file.delete(session)
@@ -118,8 +118,8 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
 
 @wip_json_file_namespace.route("/<int:file_id>/publication/")
 class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
-    @wip_json_file_namespace.a_response()
     @file_getter(type_only=False, use_session=True, use_author=True)
+    @wip_json_file_namespace.a_response()
     def post(self, session, file: JSONFile, author: Author) -> str:
         """ Validates and then publishes author's wip-file """
         with open(file.get_link(), "rb") as f:
