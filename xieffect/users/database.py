@@ -117,6 +117,10 @@ class User(Base, UserRole, Marshalable):
             self.surname = new_values["surname"]
         if "patronymic" in new_values.keys():
             self.patronymic = new_values["patronymic"]
+        if "bio" in new_values.keys():
+            self.patronymic = new_values["bio"]
+        if "group" in new_values.keys():
+            self.patronymic = new_values["group"]
 
     def get_author_status(self) -> str:
         return "not-yet" if self.author is None else "banned" if self.author.banned else "current"

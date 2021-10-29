@@ -25,3 +25,4 @@ class ProfileViewer(Resource):
         """Get profile """
         return profile_viewer
 
+
