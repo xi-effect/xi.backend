@@ -81,8 +81,8 @@ class UserLogout(Resource):  # [POST] /logout/
 
 @reglog_namespace.route("/password-reset/<email>/")
 class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
-    @reglog_namespace.a_response()
     @with_session
+    @reglog_namespace.a_response()
     def get(self, session, email: str) -> bool:
         """ First step of resetting password, tries sending a password-reset email by the address given """
         return User.find_by_email_address(session, email) is not None and email != "admin@admin.admin"
@@ -93,9 +93,9 @@ class PasswordReseter(Resource):  # [POST] /password-reset/confirm/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True, help="Code sent in the email")
 
-    @reglog_namespace.a_response()
     @with_session
     @reglog_namespace.argument_parser(parser)
+    @reglog_namespace.a_response()
     def post(self, session, code: str, password: str) -> str:
         """ Second step of resetting password, sets the new password if code is correct """
 

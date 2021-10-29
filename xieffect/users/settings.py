@@ -25,16 +25,16 @@ class Avatar(Resource):  # [GET|POST] /avatar/
         """ Loads user's own avatar """
         return send_from_directory(r"../files/avatars", f"{user.id}.png")
 
-    @other_settings_namespace.a_response()
     @other_settings_namespace.doc_file_param("image")
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
+    @other_settings_namespace.a_response()
     def post(self, user: User) -> None:
         """ Overwrites user's own avatar """
         with open(f"../files/avatars/{user.id}.png", "wb") as f:
             f.write(request.data)
 
-    @other_settings_namespace.a_response()
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
+    @other_settings_namespace.a_response()
     def delete(self, user: User) -> None:
         """Delete avatar"""
         os.remove(f"../files/avatars/{user.id}.png")
@@ -63,9 +63,9 @@ class Settings(Resource):  # [GET|POST] /settings/
         """ Loads user's own full settings """
         return user
 
-    @settings_namespace.a_response()
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.argument_parser(parser)  # fix with json (marshal?)
+    @settings_namespace.a_response()
     def post(self, user: User, changed: dict) -> None:
         """ Overwrites values in user's settings with ones form payload """
         user.change_settings(changed)
@@ -94,9 +94,9 @@ class EmailChanger(Resource):  # [POST] /email-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", dest="new_email", required=True, help="Email to be connected to the user")
 
-    @protected_settings_namespace.a_response()
     @protected_settings_namespace.jwt_authorizer(User)
     @protected_settings_namespace.argument_parser(parser)
+    @protected_settings_namespace.a_response()
     def post(self, session, user: User, password: str, new_email: str) -> str:
         """ Verifies user's password and changes user's email to a new one """
 
@@ -116,9 +116,9 @@ class PasswordChanger(Resource):  # [POST] /password-change/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", dest="new_password", required=True, help="Password that will be used in future")
 
-    @protected_settings_namespace.a_response()
     @protected_settings_namespace.jwt_authorizer(User, use_session=False)
     @protected_settings_namespace.argument_parser(parser)
+    @protected_settings_namespace.a_response()
     def post(self, user: User, password: str, new_password: str) -> str:
         """ Verifies user's password and changes it to a new one """
 
