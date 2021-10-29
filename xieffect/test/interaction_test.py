@@ -1,7 +1,7 @@
 from typing import Iterator, Callable
 
-from pytest import mark
 from flask.testing import FlaskClient
+from pytest import mark
 from werkzeug.test import TestResponse
 
 from .components import check_status_code

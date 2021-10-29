@@ -4,7 +4,6 @@ from typing import Optional
 from flask import redirect
 from flask_restx import Resource, Model
 from flask_restx.fields import Integer
-from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, ResponseDoc
 from users import User

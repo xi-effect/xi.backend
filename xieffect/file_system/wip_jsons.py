@@ -11,7 +11,6 @@ from componets import Namespace, counter_parser, ResponseDoc
 from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 
-
 wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_type>/")
 wip_index_namespace: Namespace = Namespace("wip-files", path="/wip/")
 wip_short_page_json = wip_index_namespace.model("WIPPageShort", WIPPage.marshal_models["wip-page"])
