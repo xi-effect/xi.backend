@@ -1,3 +1,5 @@
+from functools import wraps
+
 from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
@@ -11,6 +13,9 @@ chats_namespace = ChatNamespace("chats", path="/chats/")
 
 chat_meta_parser: RequestParser = RequestParser()
 chat_meta_parser.add_argument("name", str, required=True)
+
+user_to_chat_parser: RequestParser = RequestParser()
+user_to_chat_parser.add_argument("role", str, required=True, choices=ChatRole.get_all_field_names())
 
 chat_meta_view = chats_namespace.model("ChatMeta", Chat.marshal_models["chat-meta"])
 chat_full_view = chats_namespace.model("ChatFull", Chat.marshal_models["chat-full"])
@@ -74,15 +79,54 @@ class ChatManager(Resource):
     @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_chat=True)
     @chats_namespace.argument_parser(chat_meta_parser)
     @chats_namespace.a_response()
-    def put(self, chat: Chat) -> None:
+    def put(self, chat: Chat, name: str) -> None:
         """ Changes some of chat's metadata (chat admins only) """
-        pass
+        chat.name = name
 
-    @chats_namespace.search_user_to_chat(min_role=ChatRole.OWNER, use_chat=True)
+    @chats_namespace.search_user_to_chat(min_role=ChatRole.OWNER, use_chat=True, use_session=True)
     @chats_namespace.a_response()
-    def delete(self, chat: Chat) -> None:
-        """ Deletes a chat (chat admins only) """
-        pass
+    def delete(self, session, chat: Chat) -> None:
+        """ Deletes a chat (chat owner only) """
+        chat.delete(session)
+
+
+def manage_user(with_role: bool = False):
+    def manage_user_wrapper(function):
+        @chats_namespace.doc_responses(ResponseDoc.error_response(404, "Target user is not in the chat"))
+        @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_chat=True, use_user_to_chat=True)
+        @chats_namespace.database_searcher(User, result_field_name="target", use_session=True)
+        @wraps(function)
+        def manage_user_inner(session, user_to_chat: UserToChat, chat: Chat, target: User):
+            target_to_chat: UserToChat = UserToChat.find_by_ids(session, chat.id, target.id)
+            if target_to_chat is None:
+                return {"a": "Target user is not in the chat"}, 404
+
+            if with_role:
+                return function(session, target_to_chat)
+            return function(user_to_chat, target_to_chat)
+
+        return manage_user_inner
+
+    return manage_user_wrapper
+
+
+def with_role_check(function):
+    @chats_namespace.doc_responses(ResponseDoc.error_response(400, "Not enough permissions"))
+    @manage_user(with_role=True)
+    @chats_namespace.argument_parser(user_to_chat_parser)
+    @wraps(function)
+    def with_role_check_inner(user_to_chat: UserToChat, target_to_chat: UserToChat, role: str):
+        try:
+            role: ChatRole = ChatRole.from_string(role)
+        except (ValueError, KeyError):
+            return {"a": f"Chat role '{role}' is not supported"}, 400  # redo!
+
+        if role >= user_to_chat.role:
+            return {"a": "You can only set roles below your own"}, 400
+
+        return function(target_to_chat, role)
+
+    return with_role_check_inner
 
 
 @chats_namespace.route("/<int:chat_id>/users/<int:user_id>/")
@@ -92,18 +136,16 @@ class ChatUserManager(Resource):
     @chats_namespace.a_response()
     def post(self, chat: Chat, target: User) -> None:
         """ Adds (invites?) a user to the chat """
-        pass
+        chat.add_participant(target)
 
-    @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_chat=True)
-    @chats_namespace.database_searcher(User, result_field_name="target")
+    @with_role_check
     @chats_namespace.a_response()
-    def put(self, chat: Chat, target: User) -> None:
+    def put(self, target_to_chat: UserToChat, role: ChatRole) -> None:
         """ Changes user's role """
-        pass
+        target_to_chat.role = role
 
-    @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_chat=True)
-    @chats_namespace.database_searcher(User, result_field_name="target")
+    @manage_user()
     @chats_namespace.a_response()
-    def delete(self, chat: Chat, target: User) -> None:
+    def delete(self, session, target_to_chat: UserToChat) -> None:
         """ Removes a user from the chat """
-        pass
+        target_to_chat.delete(session)

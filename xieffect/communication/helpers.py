@@ -12,10 +12,10 @@ class ChatNamespace(Namespace):
         def search_user_to_chat_wrapper(function):
             message_response.register_model(self)
 
-            @wraps(function)
-            @self.doc_responses(ResponseDoc(403, "User doesn't have needed role in the chat", message_response.model))
+            @self.doc_responses(ResponseDoc.error_response(403, "Chat role is lower than needed"))
             @self.jwt_authorizer(User)
             @self.database_searcher(Chat, use_session=True)
+            @wraps(function)
             def search_user_to_chat_inner(*args, **kwargs):
                 session = get_or_pop(kwargs, "session", use_session)
                 user = get_or_pop(kwargs, "user", use_user)

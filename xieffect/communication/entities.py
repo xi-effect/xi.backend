@@ -68,6 +68,10 @@ class Chat(Base, Marshalable, Identifiable):
     def add_participant(self, user: User) -> None:
         user.chats.append(UserToChat(chat=self, role=ChatRole.BASIC))
 
+    def delete(self, session: Session):
+        session.delete(self)
+        session.flush()
+
 
 class ChatRole(TypeEnum):
     MUTED = 0
