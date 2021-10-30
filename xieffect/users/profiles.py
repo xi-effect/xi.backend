@@ -24,5 +24,3 @@ class ProfileViewer(Resource):
     def get(self, user: User, profile_viewer: User):
         """Get profile """
         return profile_viewer
-
-
