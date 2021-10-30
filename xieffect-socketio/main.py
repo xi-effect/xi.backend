@@ -18,7 +18,7 @@ app.config["JWT_COOKIE_SECURE"] = True
 app.config["JWT_BLACKLIST_ENABLED"] = True
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=72)
 app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
-app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY")
+app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY", "hope it's local")
 
 jwt = JWTManager(app)
 
