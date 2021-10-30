@@ -44,7 +44,7 @@ class User(Base, UserRole, Marshalable):
         return sha256.verify(password, hashed)
 
     # Vital:
-    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
     email = Column(String(100), nullable=False, unique=True)
     email_confirmed = Column(Boolean, nullable=False, default=False)
     password = Column(String(100), nullable=False)

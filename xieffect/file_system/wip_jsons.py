@@ -11,7 +11,6 @@ from componets import Namespace, counter_parser, ResponseDoc
 from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 
-
 wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_type>/")
 wip_index_namespace: Namespace = Namespace("wip-files", path="/wip/")
 wip_short_page_json = wip_index_namespace.model("WIPPageShort", WIPPage.marshal_models["wip-page"])
@@ -101,16 +100,16 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
 
     @wip_json_file_namespace.doc_file_param("json")
-    @wip_json_file_namespace.a_response()
     @file_getter(type_only=False)
+    @wip_json_file_namespace.a_response()
     def put(self, session, file: JSONFile) -> None:
         """ Overwrites author's wip-file's contents and modifies index accordingly """
         file.update_json(session, request.get_json())
         # file.update(request.get_data())
 
     @wip_json_file_namespace.doc_file_param("json")
-    @wip_json_file_namespace.a_response()
     @file_getter(type_only=False)
+    @wip_json_file_namespace.a_response()
     def delete(self, session, file: JSONFile) -> None:
         """ Deletes author's wip-file's contents and erases its metadata form the index """
         file.delete(session)
@@ -118,8 +117,8 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
 
 @wip_json_file_namespace.route("/<int:file_id>/publication/")
 class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
-    @wip_json_file_namespace.a_response()
     @file_getter(type_only=False, use_session=True, use_author=True)
+    @wip_json_file_namespace.a_response()
     def post(self, session, file: JSONFile, author: Author) -> str:
         """ Validates and then publishes author's wip-file """
         with open(file.get_link(), "rb") as f:

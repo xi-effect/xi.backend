@@ -4,7 +4,6 @@ from typing import Optional
 from flask import redirect
 from flask_restx import Resource, Model
 from flask_restx.fields import Integer
-from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, ResponseDoc
 from users import User
@@ -138,8 +137,8 @@ def with_test_session(function):
 @interaction_namespace.route("/points/<int:point_id>/reply/")
 class TestReplySaver(Resource):
     @with_test_session
-    @interaction_namespace.a_response()
     @with_point_id
+    @interaction_namespace.a_response()
     # @interaction_namespace.argument_parser()
     def post(self, session, test_session: TestModuleSession, point_id: int) -> None:
         """ Saves user's reply to an open test """

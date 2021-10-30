@@ -9,8 +9,8 @@ from typing import Dict, Optional
 from sqlalchemy import Column, select
 from sqlalchemy.sql.sqltypes import Integer, String, DateTime, Text
 
-from main import Base, Session
 from componets.checkers import first_or_none
+from main import Base, Session
 
 
 class ResultCodes(Enum):

@@ -28,8 +28,8 @@ report_parser.add_argument("message", required=False)
 
 @education_namespace.route("/filters/")
 class FilterGetter(Resource):  # [GET] /filters/
-    @education_namespace.a_response()
     @education_namespace.jwt_authorizer(User, use_session=False)
+    @education_namespace.a_response()
     def get(self, user: User) -> str:
         """ Gets user's saved global filter. Deprecated? """
         return user.get_filter_bind()
@@ -99,10 +99,10 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True, dest="operation", choices=PreferenceOperation.get_all_field_names())
 
-    @modules_view_namespace.a_response()
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.database_searcher(Module, check_only=True, use_session=True)
     @modules_view_namespace.argument_parser(parser)
+    @modules_view_namespace.a_response()
     def post(self, session, module_id: int, user: User, operation: str) -> None:
         """ Changes user relation to some module """
         module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
@@ -111,10 +111,10 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
 
 @modules_view_namespace.route("/<int:module_id>/report/")
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
-    @modules_view_namespace.a_response()
     @modules_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @modules_view_namespace.database_searcher(Module)
     @modules_view_namespace.argument_parser(report_parser)
+    @modules_view_namespace.a_response()
     def post(self, module: Module, reason: str, message: str) -> None:
         pass
 
@@ -148,14 +148,15 @@ class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
     @pages_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @pages_view_namespace.database_searcher(Page)
     @pages_view_namespace.argument_parser(report_parser)
-    def post(self, page: Page, reason: str, message: str):
+    @modules_view_namespace.a_response()
+    def post(self, page: Page, reason: str, message: str) -> None:
         pass
 
 
 @modules_view_namespace.route("/reset-hidden/")
 class ShowAllModules(Resource):  # GET /modules/reset-hidden/
-    @modules_view_namespace.a_response()
     @modules_view_namespace.jwt_authorizer(User)
+    @modules_view_namespace.a_response()
     def get(self, session, user: User) -> None:
         """ TEST-ONLY, marks all modules as shown """
         ModuleFilterSession.change_preference_by_user(session, user.id, PreferenceOperation.SHOW)
