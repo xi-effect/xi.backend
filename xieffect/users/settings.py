@@ -6,12 +6,14 @@ from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, password_parser, ResponseDoc
 from users.database import User
+
 # from users.emailer import send_generated_email
 
 settings_namespace: Namespace = Namespace("settings")
 other_settings_namespace: Namespace = Namespace("settings", path="/")  # redo (unite with settings_namespace)
 protected_settings_namespace: Namespace = Namespace("settings", path="/")
 full_settings = settings_namespace.model("FullSettings", User.marshal_models["full-settings"])
+profile_settings = settings_namespace.model("ProfileSetting", User.marshal_models["profile"])
 main_settings = settings_namespace.model("MainSettings", User.marshal_models["main-settings"])
 role_settings = settings_namespace.model("RoleSettings", User.marshal_models["role-settings"])
 
@@ -48,7 +50,8 @@ changed.__schema__ = {
     "type": "object",
     "format": "changed",
     "example": '{"dark-theme": true | false, ' +
-               ", ".join(f'"{key}": ""' for key in ["username", "language", "name", "surname", "patronymic"]) + "}"
+               ", ".join(f'"{key}": ""' for key in ["username", "language", "name", "surname", "patronymic",
+                                                    "bio", "group"]) + "}"
 }
 
 
@@ -57,6 +60,7 @@ class Settings(Resource):  # [GET|POST] /settings/
     parser: RequestParser = RequestParser()
     parser.add_argument("changed", type=changed, required=True, help="A dict of changed settings")
 
+    # В marshal_with full_settings
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(full_settings, skip_none=True)
     def get(self, user: User):
