@@ -20,6 +20,10 @@ if __name__ == "__main__" or "pytest" in modules.keys():  # test only  # pytest 
     application.debug = True
 else:  # works on server restart:
     send_discord_message(WebhookURLs.NOTIF, "Application restated")
+    if any([send_discord_message(WebhookURLs.NOTIF, f"ERROR! No environmental variable for secret `{secret_name}`")
+            for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY"]
+            if application.config[secret_name] == "hope it's local"]):
+        send_discord_message(WebhookURLs.NOTIF, "Production environment setup failed")
 
 
 def init_folder_structure():
