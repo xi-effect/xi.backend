@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Column, Sequence, select, ForeignKey
@@ -36,8 +37,19 @@ class Message(Base, Marshalable):
     sender_name: LambdaFieldDef = LambdaFieldDef("message", str, lambda message: message.sender.username)
 
     @classmethod
-    def create(cls, session: Session) -> Message:
-        pass
+    def create(cls, session: Session, chat: Chat, content: str, sender: User) -> Message:
+        entry: cls = cls(content=content, sent=datetime.utcnow(), sender=sender, chat=chat)  # noqa
+        session.add(entry)
+        session.flush()
+        return entry
+
+    @classmethod
+    def find_by_ids(cls, session: Session, chat_id: int, message_id: int) -> Optional[Message]:
+        return first_or_none(session.execute(select(cls).filter_by(chat_id=chat_id, id=message_id)).first())
+
+    def delete(self, session: Session):
+        session.delete(self)
+        session.flush()
 
 
 @create_marshal_model("chat-full")

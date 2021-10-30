@@ -6,13 +6,17 @@ from users import User
 from .entities import ChatRole, UserToChat, Chat
 
 
+def create_403_response(has_min_role: bool) -> ResponseDoc:
+    return ResponseDoc.error_response(403, "User not in chat" if has_min_role else "Chat role is lower than needed")
+
+
 class ChatNamespace(Namespace):
     def search_user_to_chat(self, min_role: Optional[ChatRole] = None, use_user_to_chat: bool = False,
                             use_chat: bool = False, use_user: bool = False, use_session: bool = False):
         def search_user_to_chat_wrapper(function):
             message_response.register_model(self)
 
-            @self.doc_responses(ResponseDoc.error_response(403, "Chat role is lower than needed"))
+            @self.doc_responses(create_403_response(min_role is None))
             @self.jwt_authorizer(User)
             @self.database_searcher(Chat, use_session=True)
             @wraps(function)
