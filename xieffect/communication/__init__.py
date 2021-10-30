@@ -1,2 +1,2 @@
-from .chatting import chat_meta_namespace
+from .chatting import chats_namespace
 from .messaging import messages_namespace
