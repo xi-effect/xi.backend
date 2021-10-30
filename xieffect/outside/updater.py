@@ -45,8 +45,8 @@ class HerokuBuildWebhook(Resource):
     parser.add_argument("action", str, required=True)
     parser.add_argument("resource", str, required=True)
 
-    @webhook_namespace.a_response()
     @webhook_namespace.argument_parser(parser)
+    @webhook_namespace.a_response()
     def post(self, resource: str, action: str) -> None:
         send_discord_message(WebhookURLs.HEROKU, f"Heroku may be online [{resource}:{action}]")
 
@@ -66,8 +66,8 @@ class NetlifyBuildWebhook(Resource):
     for arg_name in arguments.keys():
         parser.add_argument(arg_name, str)
 
-    @webhook_namespace.a_response()
     @webhook_namespace.argument_parser(parser)
+    @webhook_namespace.a_response()
     def post(self, state: str, commit_url: str, **kwargs) -> None:
         result: str = (f"__**Netlify build failed!**__\n" if state == "error" else
                        f"__**Netlify build is {state}!**__\n")
