@@ -111,7 +111,6 @@ def manage_user(with_role: bool = False):
 
 
 def with_role_check(function):
-    @chats_namespace.doc_responses(ResponseDoc.error_response(400, "Not enough permissions"))
     @manage_user(with_role=True)
     @chats_namespace.argument_parser(user_to_chat_parser)
     @wraps(function)
@@ -122,7 +121,7 @@ def with_role_check(function):
             return {"a": f"Chat role '{role}' is not supported"}, 400  # redo!
 
         if role >= user_to_chat.role:
-            return {"a": "You can only set roles below your own"}, 400
+            return {"a": "You can only set roles below your own"}, 403
 
         return function(target_to_chat, role)
 
