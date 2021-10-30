@@ -19,7 +19,7 @@ user_to_chat_parser.add_argument("role", str, required=True, choices=ChatRole.ge
 
 chat_meta_view = chats_namespace.model("ChatMeta", Chat.marshal_models["chat-meta"])
 chat_full_view = chats_namespace.model("ChatFull", Chat.marshal_models["chat-full"])
-message_view = chats_namespace.model("Message", Message.marshal_models["message-full"])
+message_view = chats_namespace.model("Message", Message.marshal_models["message"])
 
 
 @chats_namespace.route("/index/")

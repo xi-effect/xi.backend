@@ -13,8 +13,7 @@ from main import Base, Session
 from users import User
 
 
-@create_marshal_model("message-full", inherit="message-base")
-@create_marshal_model("message-base", )
+@create_marshal_model("message", "id", "content", "sender_id", "sent", "updated")
 class Message(Base, Marshalable):
     __tablename__ = "messages"
 
@@ -34,7 +33,7 @@ class Message(Base, Marshalable):
     sender = relationship("User")
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
-    sender_name = LambdaFieldDef("message-base", str, lambda message: message.sender.username)
+    sender_name: LambdaFieldDef = LambdaFieldDef("message", str, lambda message: message.sender.username)
 
     @classmethod
     def create(cls, session: Session) -> Message:
