@@ -2,9 +2,9 @@ from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, ResponseDoc
+from componets import Namespace, counter_parser, ResponseDoc
 from users import User
-from .entities import UserToChat, Chat
+from .entities import UserToChat, Chat, Message
 
 chats_namespace = Namespace("chats", path="/chats/")
 
@@ -13,6 +13,7 @@ chat_meta_parser.add_argument("name", str, required=True)
 
 chat_meta_view = chats_namespace.model("ChatMeta", Chat.marshal_models["chat-meta"])
 chat_full_view = chats_namespace.model("ChatFull", Chat.marshal_models["chat-full"])
+message_view = chats_namespace.model("Message", Message.marshal_models["message-full"])
 
 
 @chats_namespace.route("/index/")
@@ -47,6 +48,19 @@ class ChatProcessor(Resource):
     def delete(self, session, chat_id: int, user: User) -> bool:
         """ Used for quitting the chat by the logged-in user. Returns `{"a": False}` if user is not in the chat """
         return UserToChat.find_and_delete(session, chat_id, user.id)
+
+
+@chats_namespace.route("/<int:chat_id>/message-history/")
+class MessageLister(Resource):
+    @chats_namespace.jwt_authorizer(User)
+    @chats_namespace.database_searcher(Chat)
+    @chats_namespace.argument_parser(counter_parser)
+    @chats_namespace.lister(50, message_view)
+    def post(self, session, user: User, chat: Chat, start: int, finish: int) -> list[Message]:
+        """ Lists chat's messages (new on top) """
+        if UserToChat.find_by_ids(session, chat.id, user.id) is None:
+            return {"a", ""}, 403
+        return chat.messages[start:finish + 1]
 
 
 @chats_namespace.route("/")
