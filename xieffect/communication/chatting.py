@@ -26,6 +26,16 @@ class ChatLister(Resource):
         return user.chats[start:finish - 1]
 
 
+@chats_namespace.route("/")
+class ChatAdder(Resource):
+    @chats_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
+    @chats_namespace.jwt_authorizer(User)
+    @chats_namespace.argument_parser(chat_meta_parser)
+    def post(self, session, name: str, user: User) -> dict[str, int]:
+        """ Creates a new chat and returns its id """
+        return {"id": Chat.create(session, name, user).id}
+
+
 @chats_namespace.route("/<int:chat_id>/")
 class ChatProcessor(Resource):
     @chats_namespace.search_user_to_chat(use_chat=True)
@@ -57,16 +67,6 @@ class MessageLister(Resource):
     def post(self, chat: Chat, start: int, finish: int) -> list[Message]:
         """ Lists chat's messages (new on top) """
         return chat.messages[start:finish + 1]
-
-
-@chats_namespace.route("/")
-class ChatAdder(Resource):
-    @chats_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
-    @chats_namespace.jwt_authorizer(User)
-    @chats_namespace.argument_parser(chat_meta_parser)
-    def post(self, session, name: str, user: User) -> dict[str, int]:
-        """ Creates a new chat and returns its id """
-        return {"id": Chat.create(session, name, user).id}
 
 
 @chats_namespace.route("/<int:chat_id>/manage/")
