@@ -5,6 +5,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from componets import password_parser, Namespace, with_session, success_response
+from main import app
 from users.database import TokenBlockList, User
 # from users.emailer import send_generated_email, parse_code
 
@@ -76,6 +77,19 @@ class UserLogout(Resource):  # [POST] /logout/
         response = jsonify({"a": True})
         TokenBlockList.add_by_jti(session, get_jwt()["jti"])
         unset_jwt_cookies(response)
+        return response
+
+
+@reglog_namespace.route("/go/")
+class Test(Resource):
+    @add_sets_cookie_response
+    def get(self):
+        """ Localhost-only endpoint for logging in from the docs """
+        if not app.debug:
+            return {"a": False}
+
+        response: Response = jsonify({"a": True})
+        set_access_cookies(response, create_access_token(identity=1))
         return response
 
 

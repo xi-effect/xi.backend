@@ -47,10 +47,8 @@ def init_all(session):
     Page.create_test_bundle(session, test_user.author)
 
     with open("../files/tfs/module-bundle.json", encoding="utf-8") as f:
-        module_bundle_data = load(f)
-
-    for module_data in module_bundle_data:
-        Module.create(session, module_data, test_user.author, force=True)
+        for module_data in load(f):
+            Module.create(session, module_data, test_user.author, force=True)
 
     WIPPage.create_test_bundle(session, test_user.author)
     TestPoint.test(session)

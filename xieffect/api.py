@@ -92,7 +92,7 @@ def refresh_expiring_jwt(response: Response):
 
 @app.errorhandler(HTTPException)
 def on_http_exception(error: HTTPException):
-    return ("Not found", 404) if error.response is None else error.response
+    return ({"a": "Not found"}, 404) if error.response is None else error.response
 
 
 @app.errorhandler(Exception)
