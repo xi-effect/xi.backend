@@ -1,9 +1,9 @@
 from datetime import timedelta
 from json import load
-from os import urandom
-from random import randint
+from os import getenv
 from typing import Dict
 
+from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 from sqlalchemy import MetaData, create_engine
@@ -11,14 +11,16 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from componets.add_whoosh import IndexService
 
+load_dotenv("../.env")
+
 # Version control:
 versions: Dict[str, str] = load(open("../files/versions.json", encoding="utf-8"))
 
 app: Flask = Flask(__name__)
 
 # Basic config:
-app.config["SECRET_KEY"] = urandom(randint(32, 64))
-app.config["SECURITY_PASSWORD_SALT"] = urandom(randint(32, 64))
+app.config["SECRET_KEY"] = getenv("SECRET_KEY")
+app.config["SECURITY_PASSWORD_SALT"] = getenv("SECURITY_PASSWORD_SALT")
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
 # JWT config:
@@ -29,7 +31,7 @@ app.config["JWT_COOKIE_SECURE"] = True
 app.config["JWT_BLACKLIST_ENABLED"] = True
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=72)
 app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
-app.config["JWT_SECRET_KEY"] = urandom(randint(32, 64))
+app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY")
 
 # app.config["USE_X_SENDFILE"] = True  # breaks avatar sending
 app.config["MAIL_USERNAME"] = "xieffect.edu@gmail.com"
