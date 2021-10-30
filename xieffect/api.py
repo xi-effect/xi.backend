@@ -66,8 +66,11 @@ def log_stuff(level: str, message: str):
         if level == "status":
             send_discord_message(WebhookURLs.STATUS, message)
         else:
-            response = send_file_discord_message(
-                WebhookURLs.ERRORS, message, "error_message.txt", "Server error appeared!")
+            if len(message) < 200:
+                response = send_discord_message(WebhookURLs.ERRORS, message)
+            else:
+                response = send_file_discord_message(
+                    WebhookURLs.ERRORS, message, "error_message.txt", "Server error appeared!")
             if response.status_code < 200 or response.status_code > 299:
                 send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
 
@@ -110,16 +113,20 @@ def expired_token_callback(*_):
 
 @jwt.token_verification_failed_loader
 def verification_failed_callback(*_):
+    log_stuff("error", f"Token verification somehow failed\n[`{datetime.utcnow()}`]")
     return {"a": f"token verification failed"}, 401
 
 
 @jwt.invalid_token_loader
 def invalid_token_callback(callback):
+    log_stuff("error", f"Invalid token: {callback}\n[`{datetime.utcnow()}`]")
     return {"a": f"invalid token: {callback}"}, 422
 
 
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):
+    if callback != "Missing cookie \"access_token_cookie\"":
+        log_stuff("error", f"Unauthorized: {callback}\n[`{datetime.utcnow()}`]")
     return {"a": f"unauthorized: {callback}"}, 401
 
 # CURL:
