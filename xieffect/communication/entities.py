@@ -55,17 +55,26 @@ class Chat(Base, Marshalable, Identifiable):
 
     @classmethod
     def create(cls, session: Session, name: str, owner: User) -> Chat:
-        pass
+        chat: cls = cls(name=name)
+        chat.participants.append(UserToChat(user=owner, role=ChatRole.OWNER))
+        session.add(chat)
+        session.flush()
+        return chat
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[Chat]:
-        pass
+        return first_or_none(session.execute(select(cls).filter_by(id=entry_id)))
+
+    def add_participant(self, user: User) -> None:
+        user.chats.append(UserToChat(chat=self, role=ChatRole.BASIC))
 
 
 class ChatRole(TypeEnum):
-    BASIC = 0
-    ADMIN = 1
-    OWNER = 2
+    MUTED = 0
+    BASIC = 1
+    MODER = 2
+    ADMIN = 3
+    OWNER = 4
 
 
 @create_marshal_model("user2chat-full")
@@ -79,3 +88,18 @@ class UserToChat(Base, Marshalable):
 
     role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
     unread = Column(Integer, nullable=True)
+
+    @classmethod
+    def find_by_ids(cls, session: Session, chat_id: int, user_id: int) -> UserToChat:
+        return first_or_none(session.execute(select(cls).filter_by(chat_id=chat_id, user_id=user_id)))
+
+    @classmethod
+    def find_and_delete(cls, session: Session, chat_id: int, user_id: int) -> bool:
+        if (entry := cls.find_by_ids(session, chat_id, user_id)) is None:
+            return False
+        entry.delete(session)
+        return True
+
+    def delete(self, session: Session):
+        session.delete(self)
+        session.flush()

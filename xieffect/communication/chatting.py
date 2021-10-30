@@ -1,9 +1,10 @@
-from flask_restx import Resource
+from flask_restx import Resource, Model
+from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, counter_parser
+from componets import Namespace, ResponseDoc
 from users import User
-from .entities import UserToChat, ChatRole, Chat
+from .entities import UserToChat, Chat
 
 chat_meta_namespace = Namespace("chats", path="/chats/")
 
@@ -16,46 +17,46 @@ chat_full_view = chat_meta_namespace.model("ChatFull", Chat.marshal_models["chat
 
 @chat_meta_namespace.route("/index/")
 class ChatLister(Resource):
-    @chat_meta_namespace.jwt_authorizer(User)
+    @chat_meta_namespace.jwt_authorizer(User, use_session=False)
     @chat_meta_namespace.marshal_with(chat_meta_view, as_list=True, skip_none=True)
-    def post(self, session, user: User):  # dunno how to pagination yet
+    def post(self, user: User):  # dunno how to pagination yet
         """ Get all chats with metadata """
-        pass
+        return user.chats
 
 
 @chat_meta_namespace.route("/<int:chat_id>/")
 class ChatProcessor(Resource):
-    @chat_meta_namespace.jwt_authorizer(User)
-    @chat_meta_namespace.database_searcher(Chat, use_session=True)
+    @chat_meta_namespace.jwt_authorizer(User, check_only=False)
+    @chat_meta_namespace.database_searcher(Chat)
     @chat_meta_namespace.marshal_with(chat_full_view, skip_none=True)
-    def get(self, session, user: User, chat: Chat):
-        """ Returns chat's full info """
-        pass
+    def get(self, chat: Chat):
+        """ Returns chat's full info + user's role """
+        return chat  # add user's role & user count!!!
 
-    @chat_meta_namespace.a_response()
-    @chat_meta_namespace.jwt_authorizer(User)
-    @chat_meta_namespace.database_searcher(Chat, use_session=True)
-    @chat_meta_namespace.argument_parser(chat_meta_parser)
-    def post(self, session, user: User, chat: Chat) -> None:
-        """ User joins a chat [???] """
-        pass
+    # @chat_meta_namespace.jwt_authorizer(User)
+    # @chat_meta_namespace.database_searcher(Chat)
+    # @chat_meta_namespace.argument_parser(chat_meta_parser)
+    # @chat_meta_namespace.a_response()
+    # def post(self, user: User, chat: Chat) -> None:
+    #     """ User joins a chat [???] """
+    #     pass
 
-    @chat_meta_namespace.a_response()
     @chat_meta_namespace.jwt_authorizer(User)
-    @chat_meta_namespace.database_searcher(Chat, use_session=True)
-    def delete(self, session, user: User, chat: Chat) -> None:
-        """ Used for quitting the chat by the logged-in user """
-        pass
+    @chat_meta_namespace.database_searcher(Chat, check_only=True, use_session=True)
+    @chat_meta_namespace.a_response()
+    def delete(self, session, chat_id: int, user: User) -> bool:
+        """ Used for quitting the chat by the logged-in user. Returns `{"a": False}` if user is not in the chat """
+        return UserToChat.find_and_delete(session, chat_id, user.id)
 
 
 @chat_meta_namespace.route("/")
 class ChatAdder(Resource):
-    @chat_meta_namespace.a_response()
+    @chat_meta_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @chat_meta_namespace.jwt_authorizer(User)
     @chat_meta_namespace.argument_parser(chat_meta_parser)
-    def post(self, session, user: User, name: str) -> None:
-        """ Creates a new chat """
-        pass
+    def post(self, session, name: str, user: User) -> dict[str, int]:
+        """ Creates a new chat and returns its id """
+        return {"id": Chat.create(session, name, user).id}
 
 
 @chat_meta_namespace.route("/<int:chat_id>/manage/")
