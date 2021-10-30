@@ -1,10 +1,27 @@
+from datetime import timedelta
+from os import getenv
+
+from dotenv import load_dotenv
 from flask import Flask, send_file  # , request
 from flask_socketio import SocketIO, emit
-# from flask_jwt_extended import verify_jwt_in_request, JWTManager, get_jwt_identity
+from flask_jwt_extended import JWTManager  # , get_jwt_identity
 
-# from xieffect.webhooks import send_discord_message, WebhookURLs
+load_dotenv("../.env")
 
 app = Flask(__name__)
+
+# JWT config:
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+app.config["JWT_COOKIE_SAMESITE"] = "None"
+app.config["JWT_COOKIE_SECURE"] = True
+app.config["JWT_BLACKLIST_ENABLED"] = True
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=72)
+app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
+app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY")
+
+jwt = JWTManager(app)
+
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
