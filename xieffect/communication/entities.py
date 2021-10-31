@@ -67,7 +67,7 @@ class Chat(Base, Marshalable, Identifiable):
     @classmethod
     def create(cls, session: Session, name: str, owner: User) -> Chat:
         chat: cls = cls(name=name)
-        chat.participants.append(UserToChat(user=owner, role=ChatRole.OWNER))
+        owner.chats.append(UserToChat(chat=chat, role=ChatRole.OWNER))
         session.add(chat)
         session.flush()
         return chat
