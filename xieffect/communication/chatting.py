@@ -148,3 +148,19 @@ class ChatUserManager(Resource):
     def delete(self, session, target_to_chat: UserToChat) -> None:
         """ Removes a user from the chat """
         target_to_chat.delete(session)
+
+
+@chats_namespace.route("/<int:chat_id>/users/add-all/")
+class ChatUserManager(Resource):
+    parser: RequestParser = RequestParser()
+    parser.add_argument("ids", type=list, required=True)
+
+    @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_session=True, use_chat=True)
+    @chats_namespace.argument_parser(parser)
+    @chats_namespace.a_response()
+    def post(self, session, chat: Chat, ids: list[int]) -> None:
+        """ Adds (invites?) a list of users by ids to the chat """
+        for user_id in ids:
+            user: User = User.find_by_id(session, user_id)
+            if user is not None and UserToChat.find_by_ids(session, chat.id, user_id) is None:
+                chat.add_participant(user)  # no error check, REDO
