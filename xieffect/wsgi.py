@@ -16,6 +16,9 @@ from webhooks import WebhookURLs, send_discord_message
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
 
+BASIC_PASS: str = "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"
+ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe"
+
 if __name__ == "__main__" or "pytest" in modules.keys():  # test only  # pytest here temporarily!!!
     application.debug = True
 else:  # works on server restart:
@@ -39,14 +42,19 @@ def init_folder_structure():
 def init_all(session):
     if (test_user := User.find_by_email_address(session, TEST_EMAIL)) is None:
         log_stuff("status", "Database has been reset")
-        test_user: User = User.create(session, TEST_EMAIL, "test", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
-                                      "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
+        test_user: User = User.create(session, TEST_EMAIL, "test", BASIC_PASS)
         test_user.author = Author.create(session, test_user)
 
     if (admin_user := User.find_by_email_address(session, ADMIN_EMAIL)) is None:
-        admin_user: User = User.create(session, ADMIN_EMAIL, "admin", "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
-                                       "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454")
+        admin_user: User = User.create(session, ADMIN_EMAIL, "admin", ADMIN_PASS)
         # admin_user.moderator = Moderator.create(session, admin_user)
+
+    with open("../files/test/user-bundle.json", encoding="utf-8") as f:
+        for i, user_settings in enumerate(load(f)):
+            email: str = f"{i}@user.user"
+            if (user := User.find_by_email_address(session, email)) is None:
+                user = User.create(session, email, f"user-{i}", BASIC_PASS)
+            user.change_settings(user_settings)
 
     Page.create_test_bundle(session, test_user.author)
 
