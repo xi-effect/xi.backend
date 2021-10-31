@@ -12,8 +12,8 @@ from users.database import User
 settings_namespace: Namespace = Namespace("settings")
 other_settings_namespace: Namespace = Namespace("settings", path="/")  # redo (unite with settings_namespace)
 protected_settings_namespace: Namespace = Namespace("settings", path="/")
+
 full_settings = settings_namespace.model("FullSettings", User.marshal_models["full-settings"])
-profile_settings = settings_namespace.model("ProfileSetting", User.marshal_models["profile"])
 main_settings = settings_namespace.model("MainSettings", User.marshal_models["main-settings"])
 role_settings = settings_namespace.model("RoleSettings", User.marshal_models["role-settings"])
 

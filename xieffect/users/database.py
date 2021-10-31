@@ -32,7 +32,7 @@ class TokenBlockList(Base):
                       "bio", "group")
 @create_marshal_model("full-settings", "email", "email_confirmed", "name",
                       "surname", "patronymic", "bio", "group", inherit="main-settings")
-@create_marshal_model("main-settings", "username", "dark_theme", "language")
+@create_marshal_model("main-settings", "id", "username", "dark_theme", "language")
 @create_marshal_model("role-settings")
 class User(Base, UserRole, Marshalable):
     __tablename__ = "users"
