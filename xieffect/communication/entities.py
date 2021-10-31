@@ -38,7 +38,8 @@ class Message(Base, Marshalable):
 
     @classmethod
     def create(cls, session: Session, chat: Chat, content: str, sender: User) -> Message:
-        entry: cls = cls(content=content, sent=datetime.utcnow(), sender=sender, chat=chat)  # noqa
+        entry: cls = cls(id=chat.get_next_message_id(), content=content,
+                         sent=datetime.utcnow(), sender=sender, chat=chat)  # noqa
         session.add(entry)
         session.flush()
         return entry
@@ -117,6 +118,7 @@ class Chat(Base, Marshalable, Identifiable):
     messages = relationship("Message", back_populates="chat", cascade="all, delete", order_by=Message.id)
     participants = relationship("UserToChat", back_populates="chat", cascade="all, delete",
                                 order_by=UserToChat.activity.desc())
+    next_message_id = Column(Integer, nullable=False, default=0)
 
     @classmethod
     def create(cls, session: Session, name: str, owner: User) -> Chat:
@@ -130,8 +132,12 @@ class Chat(Base, Marshalable, Identifiable):
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[Chat]:
         return first_or_none(session.execute(select(cls).filter_by(id=entry_id)))
 
-    def add_participant(self, user: User) -> None:
-        user.chats.append(UserToChat(chat=self, role=ChatRole.BASIC))
+    def add_participant(self, user: User, role: ChatRole = ChatRole.BASIC) -> None:
+        user.chats.append(UserToChat(chat=self, role=role))
+
+    def get_next_message_id(self):
+        self.next_message_id += 1
+        return self.next_message_id
 
     def delete(self, session: Session):
         session.delete(self)
