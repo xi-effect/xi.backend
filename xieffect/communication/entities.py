@@ -52,36 +52,6 @@ class Message(Base, Marshalable):
         session.flush()
 
 
-class Chat(Base, Marshalable, Identifiable):
-    __tablename__ = "chats"
-    not_found_text = "Chat not found"
-
-    id = Column(Integer, Sequence("chat_id_seq"), primary_key=True)
-    name = Column(String(100), nullable=False)
-
-    messages = relationship("Message", back_populates="chat", cascade="all, delete", order_by=Message.id)
-    participants = relationship("UserToChat", back_populates="chat")
-
-    @classmethod
-    def create(cls, session: Session, name: str, owner: User) -> Chat:
-        chat: cls = cls(name=name)
-        owner.chats.append(UserToChat(chat=chat, role=ChatRole.OWNER))
-        session.add(chat)
-        session.flush()
-        return chat
-
-    @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Chat]:
-        return first_or_none(session.execute(select(cls).filter_by(id=entry_id)))
-
-    def add_participant(self, user: User) -> None:
-        user.chats.append(UserToChat(chat=self, role=ChatRole.BASIC))
-
-    def delete(self, session: Session):
-        session.delete(self)
-        session.flush()
-
-
 class ChatRole(TypeEnum):
     MUTED = 0
     BASIC = 1
@@ -95,26 +65,27 @@ class ChatRole(TypeEnum):
 @create_marshal_model("chat-user-index", inherit="chat-user-base")
 @create_marshal_model("chat-user-base", "unread")
 class UserToChat(Base, Marshalable):
-    __tablename__ = "chat_to_user"
+    __tablename__ = "user_to_chat"
 
     # User-related
     user_id = Column(ForeignKey("users.id"), primary_key=True)
     user = relationship("User", back_populates="chats")
 
-    userid: LambdaFieldDef = LambdaFieldDef("user-in-chat", int, "user_id", "id")
+    _user_id: LambdaFieldDef = LambdaFieldDef("user-in-chat", int, "user_id", "id")
     username: LambdaFieldDef = LambdaFieldDef("user-in-chat", str, lambda u2c: u2c.user.username)
 
     # Chat-related
     chat_id = Column(ForeignKey("chats.id"), primary_key=True)
     chat = relationship("Chat")
 
-    chatid: LambdaFieldDef = LambdaFieldDef("chat-user-index", int, "chat_id", "id")
+    _chat_id: LambdaFieldDef = LambdaFieldDef("chat-user-index", int, "chat_id", "id")
     chat_name: LambdaFieldDef = LambdaFieldDef("chat-user-base", str, lambda u2c: u2c.chat.name, "name")
     chat_users: LambdaFieldDef = LambdaFieldDef("chat-user-full", int, lambda u2c: len(u2c.chat.participants), "users")
 
     # Other data:
     role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
     unread = Column(Integer, nullable=True)
+    activity = Column(DateTime, nullable=True)
 
     @classmethod
     def find_by_ids(cls, session: Session, chat_id: int, user_id: int) -> UserToChat:
@@ -130,6 +101,37 @@ class UserToChat(Base, Marshalable):
     @classmethod
     def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[UserToChat]:
         return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
+
+    def delete(self, session: Session):
+        session.delete(self)
+        session.flush()
+
+
+class Chat(Base, Marshalable, Identifiable):
+    __tablename__ = "chats"
+    not_found_text = "Chat not found"
+
+    id = Column(Integer, Sequence("chat_id_seq"), primary_key=True)
+    name = Column(String(100), nullable=False)
+
+    messages = relationship("Message", back_populates="chat", cascade="all, delete", order_by=Message.id)
+    participants = relationship("UserToChat", back_populates="chat", cascade="all, delete",
+                                order_by=UserToChat.activity.desc())
+
+    @classmethod
+    def create(cls, session: Session, name: str, owner: User) -> Chat:
+        chat: cls = cls(name=name)
+        owner.chats.append(UserToChat(chat=chat, role=ChatRole.OWNER))
+        session.add(chat)
+        session.flush()
+        return chat
+
+    @classmethod
+    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Chat]:
+        return first_or_none(session.execute(select(cls).filter_by(id=entry_id)))
+
+    def add_participant(self, user: User) -> None:
+        user.chats.append(UserToChat(chat=self, role=ChatRole.BASIC))
 
     def delete(self, session: Session):
         session.delete(self)
