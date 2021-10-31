@@ -24,7 +24,7 @@ def search_message(use_session: bool, unmoderatable: bool = True):
             if (message := Message.find_by_ids(session, chat.id, message_id)) is None:
                 return {"a": "Message not found"}, 404
 
-            if unmoderatable or user_to_chat.role < ChatRole.MODER:
+            if unmoderatable or user_to_chat.role.value < ChatRole.MODER.value:
                 if message.sender.id != user.id:
                     return {"a": "Not your message"}, 403
 

@@ -28,7 +28,7 @@ class ChatNamespace(Namespace):
                 if (user_to_chat := UserToChat.find_by_ids(session, chat.id, user.id)) is None:
                     return {"a": "User not in the chat"}, 403
 
-                if min_role is not None and user_to_chat.role < min_role:
+                if min_role is not None and user_to_chat.role.value < min_role.value:
                     return {"a": f"You have to be at least chat's {min_role.to_string()}"}, 403
 
                 if use_user_to_chat:

@@ -120,7 +120,7 @@ def with_role_check(function):
         except (ValueError, KeyError):
             return {"a": f"Chat role '{role}' is not supported"}, 400  # redo!
 
-        if role >= user_to_chat.role:
+        if role.value >= user_to_chat.role.value:
             return {"a": "You can only set roles below your own"}, 403
 
         return function(target_to_chat, role)
