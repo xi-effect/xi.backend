@@ -1,11 +1,29 @@
+from typing import Optional
+
 from flask import send_from_directory
 from flask_restx import Resource
+from flask_restx.reqparse import RequestParser
 
-from componets import Namespace
+from componets import Namespace, counter_parser
 from users import User
+
+users_namespace: Namespace = Namespace("profiles", path="/users/")
+user_index_view = users_namespace.model("UserIndex", User.marshal_models["user-index"])
 
 profiles_namespace: Namespace = Namespace("profiles", path="/users/<int:user_id>/")
 profile_view = profiles_namespace.model("Profile", User.marshal_models["profile"])
+
+
+@users_namespace.route("/")
+class UserFinder(Resource):
+    parser: RequestParser = counter_parser.copy()
+    parser.add_argument("search", type=str, required=False)
+
+    @users_namespace.jwt_authorizer(User, use_session=True)
+    @users_namespace.argument_parser(parser)
+    @users_namespace.lister(10, user_index_view)
+    def post(self, session, user: User, search: Optional[str], start: int, finish: int):
+        return User.search_by_username(session, user.id, search, start, finish - start)
 
 
 @profiles_namespace.route("/avatar/")

@@ -27,10 +27,11 @@ class TokenBlockList(Base):
         session.add(cls(jti=jti))
 
 
+@create_marshal_model("user-index", "username", "id", "bio")
 @create_marshal_model("profile", "name", "surname", "patronymic", "username",
                       "bio", "group")
 @create_marshal_model("full-settings", "email", "email_confirmed", "name",
-                      "surname", "patronymic", "bio", "group",  inherit="main-settings")
+                      "surname", "patronymic", "bio", "group", inherit="main-settings")
 @create_marshal_model("main-settings", "username", "dark_theme", "language")
 @create_marshal_model("role-settings")
 class User(Base, UserRole, Marshalable):
@@ -90,6 +91,14 @@ class User(Base, UserRole, Marshalable):
         new_user = cls(email=email, password=cls.generate_hash(password), username=username)
         session.add(new_user)
         return new_user
+
+    @classmethod
+    def search_by_username(cls, session: Session, exclude_id: int, search: Optional[str],
+                           offset: int, limit: int) -> list[User]:
+        stmt = select(cls).filter(cls.id != exclude_id)
+        if search is not None:
+            stmt = stmt.filter(cls.username.contains(search))
+        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
     def confirm_email(self) -> None:  # auto-commit
         self.email_confirmed = True
