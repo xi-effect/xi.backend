@@ -1,44 +1,9 @@
 from datetime import datetime, timedelta
 from json import dump
-from random import randint
-from time import sleep
+from random import randint, shuffle, choice
+from typing import Union
 
 from lorem import sentence, paragraph
-
-
-def generate_message_bundle():
-    result = []
-    sender_id = 0
-    sender_name = sentence().split()[0]
-
-    for message_id in range(20):
-        content: str = sentence()
-        seed = randint(0, 9)
-        sent: datetime = None
-        updated: datetime = None
-        if seed < 5:
-            sent = datetime.utcnow()
-        else:
-            sent = datetime.utcnow()
-            updated = datetime.utcnow() + timedelta(minutes=seed)
-        if seed % 2:
-            sender_id += 1
-            sender_name = sentence().split()[0]
-        result.append({
-            "id": message_id,
-            "content": content,
-            "sender-id": sender_id,
-            "sender-name": sender_name,
-            "sent": sent.isoformat()
-        })
-        if updated is not None:
-            result[-1]["updated"] = updated.isoformat()
-        sleep(0.5)
-
-    assert result == 20
-
-    with open("message-bundle.json", "w") as f:
-        dump(result[::-1], f)
 
 
 def generate_user_bundle():
@@ -55,5 +20,36 @@ def generate_user_bundle():
         dump(result, f, indent=4)
 
 
+def generate_chat_bundle():
+    roles = ["basic", "basic", "basic", "admin", "muted", "muted", "muted", "basic", "moder", "moder"]
+    demo_roles = ["moder", "muted", "admin", "basic"]
+
+    def generate_chat(counter: int):
+        owner_i: int = randint(0, 9)
+        user_emails: list[Union[str, tuple[str, str]]] = [f"{i}@user.user" for i in range(10) if i != owner_i]
+        shuffle(user_emails)
+        participants = [(t, choice(roles[:counter * 3 + 1])) for t in user_emails[:counter * 3]]
+        participants.append((f"{owner_i}@user.user", "owner"))
+        participants.append(("test@test.test", demo_roles.pop()))
+
+        last_sender = choice(user_emails)
+        last_sent = datetime.utcnow()
+
+        return {
+            "name": sentence()[:randint(5, 30)],
+            "owner-email": f"{owner_i}@user.user",
+            "participants": participants,
+            "messages": [{
+                "content": paragraph()[:randint(1, 10) * 20],
+                "sender-email": last_sender if randint(0, 1) == 1 else (last_sender := choice(user_emails)),
+                "sent": (last_sent := last_sent + timedelta(minutes=randint(0, 20))).isoformat(),
+                "updated": (last_sent + timedelta(hours=randint(0, 24))).isoformat() if randint(0, 1) == 1 else None,
+            } for _ in range(70)],
+        }
+
+    with open("chat-bundle.json", "w") as f:
+        dump([generate_chat(i) for i in range(4)], f, indent=4)
+
+
 if __name__ == "__main__":
-    generate_user_bundle()
+    generate_chat_bundle()
