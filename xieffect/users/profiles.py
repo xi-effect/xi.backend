@@ -4,6 +4,9 @@ from flask_restx import Resource
 from componets import Namespace
 from users import User
 
+users_namespace: Namespace = Namespace("profiles", path="/users/")
+user_index_view = users_namespace.model("UserIndex", User.marshal_models["user-index"])
+
 profiles_namespace: Namespace = Namespace("profiles", path="/users/<int:user_id>/")
 profile_view = profiles_namespace.model("Profile", User.marshal_models["profile"])
 

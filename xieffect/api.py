@@ -14,7 +14,7 @@ from file_system import (wip_json_file_namespace, wip_images_namespace, images_v
 from main import app, db_meta, versions
 from other import (application_namespace, oct_namespace)
 from outside import (basic_namespace, github_namespace)
-from users import (TokenBlockList, reglog_namespace, email_namespace,
+from users import (TokenBlockList, reglog_namespace, email_namespace, users_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
@@ -35,7 +35,9 @@ api.add_namespace(basic_namespace)
 api.add_namespace(email_namespace)
 api.add_namespace(reglog_namespace)
 
+api.add_namespace(users_namespace)
 api.add_namespace(profiles_namespace)
+
 api.add_namespace(settings_namespace)
 api.add_namespace(other_settings_namespace)
 api.add_namespace(protected_settings_namespace)
