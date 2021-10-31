@@ -32,7 +32,7 @@ class ChatNamespace(Namespace):
                     return {"a": f"You have to be at least chat's {min_role.to_string()}"}, 403
 
                 if use_user_to_chat:
-                    kwargs["user_to_chat"] = use_user_to_chat
+                    kwargs["user_to_chat"] = user_to_chat
 
                 return function(*args, **kwargs)
 
