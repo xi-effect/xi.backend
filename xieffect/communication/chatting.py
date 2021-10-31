@@ -17,18 +17,21 @@ chat_meta_parser.add_argument("name", str, required=True)
 user_to_chat_parser: RequestParser = RequestParser()
 user_to_chat_parser.add_argument("role", str, required=True, choices=ChatRole.get_all_field_names())
 
-chat_meta_view = chats_namespace.model("ChatMeta", Chat.marshal_models["chat-meta"])
-chat_full_view = chats_namespace.model("ChatFull", Chat.marshal_models["chat-full"])
+chat_index_view = chats_namespace.model("ChatIndex", UserToChat.marshal_models["chat-user-index"])
+chat_full_view = chats_namespace.model("ChatFull", UserToChat.marshal_models["chat-user-full"])
+chat_user_view = chats_namespace.model("ChatUser", UserToChat.marshal_models["user-in-chat"])
+
 message_view = chats_namespace.model("Message", Message.marshal_models["message"])
 
 
 @chats_namespace.route("/index/")
 class ChatLister(Resource):
-    @chats_namespace.jwt_authorizer(User, use_session=False)
-    @chats_namespace.lister(20, chat_meta_view)
-    def post(self, user: User, start: int, finish: int):  # dunno how to pagination yet
+    @chats_namespace.jwt_authorizer(User)
+    @chats_namespace.argument_parser(counter_parser)
+    @chats_namespace.lister(50, chat_index_view)
+    def post(self, session, user: User, start: int, finish: int):  # dunno how to pagination yet
         """ Get all chats with metadata """
-        return user.chats[start:finish - 1]
+        return UserToChat.find_by_user(session, user.id, start, finish - start)
 
 
 @chats_namespace.route("/")
@@ -43,11 +46,11 @@ class ChatAdder(Resource):
 
 @chats_namespace.route("/<int:chat_id>/")
 class ChatProcessor(Resource):
-    @chats_namespace.search_user_to_chat(use_chat=True)
+    @chats_namespace.search_user_to_chat(use_user_to_chat=True)
     @chats_namespace.marshal_with(chat_full_view, skip_none=True)
-    def get(self, chat: Chat):
+    def get(self, user_to_chat: UserToChat):
         """ Returns chat's full info + user's role """
-        return chat  # add user's role & user count!!!
+        return user_to_chat
 
     # @chats_namespace.jwt_authorizer(User)
     # @chats_namespace.database_searcher(Chat)

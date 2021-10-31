@@ -76,7 +76,7 @@ class User(Base, UserRole, Marshalable):
     moderator_status: LambdaFieldDef = LambdaFieldDef("role-settings", bool, lambda user: user.moderator is not None)
 
     # Chat-related
-    chats = relationship("UserToChat")
+    chats = relationship("UserToChat", back_populates="user")
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:

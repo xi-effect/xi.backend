@@ -52,8 +52,6 @@ class Message(Base, Marshalable):
         session.flush()
 
 
-@create_marshal_model("chat-full")
-@create_marshal_model("chat-meta")
 class Chat(Base, Marshalable, Identifiable):
     __tablename__ = "chats"
     not_found_text = "Chat not found"
@@ -92,15 +90,29 @@ class ChatRole(TypeEnum):
     OWNER = 4
 
 
-@create_marshal_model("user2chat-full")
-@create_marshal_model("user2chat-meta")
+@create_marshal_model("user-in-chat", "role")
+@create_marshal_model("chat-user-full", "role", inherit="chat-user-base")
+@create_marshal_model("chat-user-index", inherit="chat-user-base")
+@create_marshal_model("chat-user-base", "unread")
 class UserToChat(Base, Marshalable):
     __tablename__ = "chat_to_user"
 
+    # User-related
     user_id = Column(ForeignKey("users.id"), primary_key=True)
+    user = relationship("User", back_populates="chats")
+
+    userid: LambdaFieldDef = LambdaFieldDef("user-in-chat", int, "user_id", "id")
+    username: LambdaFieldDef = LambdaFieldDef("user-in-chat", str, lambda u2c: u2c.user.username)
+
+    # Chat-related
     chat_id = Column(ForeignKey("chats.id"), primary_key=True)
     chat = relationship("Chat")
 
+    chatid: LambdaFieldDef = LambdaFieldDef("chat-user-index", int, "chat_id", "id")
+    chat_name: LambdaFieldDef = LambdaFieldDef("chat-user-base", str, lambda u2c: u2c.chat.name, "name")
+    chat_users: LambdaFieldDef = LambdaFieldDef("chat-user-full", int, lambda u2c: len(u2c.chat.participants), "users")
+
+    # Other data:
     role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
     unread = Column(Integer, nullable=True)
 
@@ -114,6 +126,10 @@ class UserToChat(Base, Marshalable):
             return False
         entry.delete(session)
         return True
+
+    @classmethod
+    def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[UserToChat]:
+        return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
 
     def delete(self, session: Session):
         session.delete(self)
