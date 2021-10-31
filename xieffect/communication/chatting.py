@@ -67,6 +67,15 @@ class ChatProcessor(Resource):
         user_to_chat.delete(session)
 
 
+@chats_namespace.route("/<int:chat_id>/users/")
+class ChatUserLister(Resource):
+    @chats_namespace.search_user_to_chat(use_chat=True)
+    @chats_namespace.argument_parser(counter_parser)
+    @chats_namespace.lister(50, chat_user_view)
+    def post(self, chat: Chat, start: int, finish: int) -> list[UserToChat]:
+        return chat.participants[start:finish + 1]
+
+
 @chats_namespace.route("/<int:chat_id>/message-history/")
 class MessageLister(Resource):
     @chats_namespace.search_user_to_chat(use_chat=True)
