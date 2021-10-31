@@ -1,0 +1,11 @@
+<input id="chat-input" type="text">
+<button onclick="sendMessage()">Send Message</button>
+<div id="chat"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+  const socket = io()
+	function sendMessage() {
+		socket.emit("message", document.getElementById("chat-input").value)
+	}
+	socket.on("new_message", (data) => document.getElementById("chat").innerHTML+= "<br>" + data)
+</script>
