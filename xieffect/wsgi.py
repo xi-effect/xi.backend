@@ -50,7 +50,7 @@ def init_all(session):
 
     Page.create_test_bundle(session, test_user.author)
 
-    with open("../files/tfs/module-bundle.json", encoding="utf-8") as f:
+    with open("../files/test/module-bundle.json", encoding="utf-8") as f:
         for module_data in load(f):
             Module.create(session, module_data, test_user.author, force=True)
 
