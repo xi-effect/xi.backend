@@ -142,12 +142,12 @@ def with_role_check(function):
 
 @chats_namespace.route("/<int:chat_id>/users/<int:user_id>/")
 class ChatUserManager(Resource):
-    @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_chat=True)
-    @chats_namespace.database_searcher(User, result_field_name="target")
+    @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_session=True, use_chat=True)
+    # @chats_namespace.database_searcher(User, result_field_name="target")
     @chats_namespace.a_response()
-    def post(self, chat: Chat, target: User) -> None:
+    def post(self, session, chat: Chat, user_id: int) -> None:
         """ Adds (invites?) a user to the chat """
-        chat.add_participant(target)
+        chat.add_participant(User.find_by_id(session, user_id))
 
     @with_role_check
     @chats_namespace.a_response()
