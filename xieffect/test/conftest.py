@@ -40,9 +40,9 @@ def client(base_client: FlaskClient) -> FlaskClient:
 
 
 @fixture()
-def multi_client(base_client: FlaskClient) -> Callable[[int], FlaskClient]:
-    def multi_client_inner(user_i: int):
-        return login(base_client, f"{user_i}@user.user", BASIC_PASS)
+def multi_client(base_client: FlaskClient) -> Callable[[str], FlaskClient]:
+    def multi_client_inner(user_email: str):
+        return login(base_client, user_email, BASIC_PASS)
 
     return multi_client_inner
 
