@@ -4,7 +4,7 @@ from flask.testing import FlaskClient
 from pytest import fixture
 from werkzeug.test import TestResponse
 
-from wsgi import application as app  # temp, return back to ``from api import app``
+from wsgi import application as app, TEST_EMAIL, BASIC_PASS  # temp, return back to ``from api import app``
 from xieffect.test.components import check_status_code
 
 
@@ -18,19 +18,33 @@ app.test_client_class = RedirectedFlaskClient
 
 
 @fixture
-def client():
+def base_client():
     app.debug = True
     with app.test_client() as client:
-        response: TestResponse = client.post("/auth/", follow_redirects=True, data={
-            "email": "test@test.test",
-            "password": "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
-                        "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"})
-        assert response.status_code == 200
-        assert "Set-Cookie" in response.headers.keys()
-        cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
-        assert cookie[0] == "access_token_cookie"
-        client.set_cookie("test", "access_token_cookie", cookie[1])
         yield client
+
+
+def login(client: FlaskClient, email: str, password: str) -> FlaskClient:
+    response: TestResponse = client.post("/auth/", follow_redirects=True, data={"email": email, "password": password})
+    assert response.status_code == 200
+    assert "Set-Cookie" in response.headers.keys()
+    cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    assert cookie[0] == "access_token_cookie"
+    client.set_cookie("test", "access_token_cookie", cookie[1])
+    return client
+
+
+@fixture
+def client(base_client: FlaskClient) -> FlaskClient:
+    return login(base_client, TEST_EMAIL, BASIC_PASS)
+
+
+@fixture()
+def multi_client(base_client: FlaskClient) -> Callable[[int], FlaskClient]:
+    def multi_client_inner(user_i: int):
+        return login(base_client, f"{user_i}@user.user", BASIC_PASS)
+
+    return multi_client_inner
 
 
 @fixture()

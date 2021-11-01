@@ -1,18 +1,10 @@
 from typing import Tuple
 
 from flask.testing import FlaskClient
-from pytest import fixture, mark
+from pytest import mark
 from werkzeug.test import TestResponse
 
-from api import app
 from xieffect.test.components import check_status_code
-
-
-@fixture
-def base_client():
-    app.debug = True
-    with app.test_client() as client:
-        yield client
 
 
 # @mark.order(0)
