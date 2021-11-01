@@ -1,3 +1,4 @@
+from json import load
 from typing import Callable, Iterator
 
 from flask.testing import FlaskClient
@@ -57,3 +58,46 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     assert check_status_code(client.delete(f"/chats/{chat_id}/manage/")) == {"a": True}
     assert check_status_code(client.get(f"/chats/{chat_id}/"), 404)
     assert all(chat["id"] != chat_id for chat in list_tester("/chats/index/", {}, 50))
+
+
+def get_roles_to_user(multi_client: Callable[[str], FlaskClient], chat):
+    roles = ["muted", "basic", "moder", "admin"]
+    not_found_roles = roles.copy()
+    role_to_email = {not_found_roles.pop(not_found_roles.index(role)): email
+                     for email, role in chat["participants"]
+                     if role in not_found_roles}
+    assert len(not_found_roles) == 0
+    return [(role, (email := role_to_email[role]), check_status_code(multi_client(email).get("/settings/main/"))["id"])
+            for role in roles]
+
+
+@mark.order(610)
+def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
+                    multi_client: Callable[[str], FlaskClient]):  # relies on chat#4
+    with open("../files/test/chat-bundle.json", encoding="utf-8") as f:
+        chat = load(f)[-1]
+    chat_name = chat["name"]
+    chat_uc = len(chat["participants"])
+    chat_id = [c["id"] for c in list_tester("/chats/index/", {}, 50) if c["name"] == chat_name][0]
+    role_to_user = get_roles_to_user(multi_client, chat)
+
+    for i in range(len(role_to_user)):
+        role, email, user_id = role_to_user[i]
+        client = multi_client(email)
+        code: int = 200 if role == "admin" else 403
+
+        check_status_code(client.delete(f"/chats/{chat_id}/manage/"), 403)
+        check_status_code(client.put(f"/chats/{chat_id}/manage/", json={"name": "new_name"}), code)
+        if role == "admin":
+            assert check_status_code(client.get(f"/chats/{chat_id}/"))["name"] == "new_name"
+        check_status_code(client.put(f"/chats/{chat_id}/manage/", json={"name": chat_name}), code)
+
+        for target in list_tester(f"/chats/{chat_id}/users/", {}, 50):
+            target_id = target["id"]
+            if target["role"] == "owner":
+                check_status_code(client.delete(f"/chats/{chat_id}/users/{target_id}/"), 403)
+            elif target_id != user_id:
+                check_status_code(client.delete(f"/chats/{chat_id}/users/{target_id}/"), code)
+                assert role != "admin" or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc - 1
+                check_status_code(client.post(f"/chats/{chat_id}/users/{target_id}/"), code)
+                assert role != "admin" or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
