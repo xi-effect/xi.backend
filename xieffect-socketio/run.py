@@ -1,0 +1,12 @@
+from flask_restx import Api
+
+from setup import socketio, app
+from websockets import TestNamespace
+from temp_api import broadcast_namespace
+
+api = Api(app, doc="/doc/")
+api.add_namespace(broadcast_namespace)
+socketio.on_namespace(TestNamespace("/"))
+
+if __name__ == "__main__":
+    socketio.run(app, port=5050, debug=True)
