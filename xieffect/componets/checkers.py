@@ -155,7 +155,7 @@ class Namespace(RestXNamespace):
         """
 
         def searcher_wrapper(function):
-            @self.response(*ResponseDoc.error_response(404, identifiable.not_found_text).get_args())
+            @self.response(*ResponseDoc.error_response("404 ", identifiable.not_found_text).get_args())
             @wraps(function)
             @with_session
             def searcher_inner(*args, **kwargs):
@@ -180,14 +180,14 @@ class Namespace(RestXNamespace):
         """
 
         auth_errors: List[ResponseDoc] = [
-            ResponseDoc(401, "JWTError", message_response.model),
-            ResponseDoc(422, "InvalidJWT", message_response.model)
+            ResponseDoc.error_response("401 ", "JWTError"),
+            ResponseDoc.error_response("422 ", "InvalidJWT")
         ]
 
         def authorizer_wrapper(function):
             error_code: int = 401 if role is UserRole.default_role else 403
 
-            @self.doc_responses(*auth_errors, ResponseDoc.error_response(error_code, role.not_found_text))
+            @self.doc_responses(ResponseDoc.error_response(f"{error_code} ", role.not_found_text), *auth_errors)
             @self.doc(security="jwt")
             @wraps(function)
             @jwt_required()

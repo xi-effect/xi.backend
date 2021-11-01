@@ -63,6 +63,7 @@ class LambdaFieldDef:
     model_name: str
     field_type: type
     attribute: Union[str, Callable]
+    name: Optional[str] = None
 
     def to_field(self) -> Union[Type[RawField], RawField]:
         field_type: Type[RawField] = RawField
@@ -105,7 +106,7 @@ def create_marshal_model(model_name: str, *fields: str, inherit: Optional[str] =
         })
 
         model_dict.update({
-            field_name.replace("_", "-"): field.to_field()
+            field_name.replace("_", "-") if field.name is None else field.name: field.to_field()
             for field_name, field_type in get_type_hints(cls).items()
             if isinstance(field_type, type) and issubclass(field_type, LambdaFieldDef)
             if (field := getattr(cls, field_name)).model_name == model_name

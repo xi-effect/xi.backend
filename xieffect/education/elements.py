@@ -31,12 +31,6 @@ class PageKind(TypeEnum):
 @create_marshal_model("page-short", "author_id", "views", "updated", inherit="page-base")
 @create_marshal_model("page-base", "id", "name", "kind", "theme", "description")
 class Page(Base, Identifiable, Marshalable):
-    @staticmethod
-    def create_test_bundle(session: Session, author: Author):
-        for i in range(1, 4):
-            with open(f"../files/tfs/test/{i}.json", "rb") as f:
-                Page.find_or_create(session, load(f), author)
-
     __tablename__ = "pages"
     not_found_text = "Page not found"
     directory = "files/tfs/cat-pages/"

@@ -1,3 +1,5 @@
+from json import load
+from random import choice
 from typing import Iterator, Callable
 
 from flask.testing import FlaskClient
@@ -6,14 +8,20 @@ from .components import check_status_code
 
 
 def test_user_search(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    results = list(list_tester("/users/", {}, 10))
+    with open("../files/test/user-bundle.json", encoding="utf-8") as f:
+        usernames = [user_data["username"] for user_data in load(f)]
 
-    for res in results:
-        assert res["username"] != "test"
-        if res["username"] == "admin":
-            break
-    else:
-        assert False, "Admin user not found"
+    admin_user_found = False
+    for user in list_tester("/users/", {}, 10):
+        assert user["username"] != "test"
+        if user["username"] == "admin":
+            admin_user_found = True
+        else:
+            assert user["username"] in usernames
+    assert admin_user_found
+
+    some_name = choice(usernames)
+    assert any(user["username"] == some_name for user in list_tester("/users/", {"search": some_name[1:-1]}, 10))
 
 
 def test_user_profile(client: FlaskClient):
