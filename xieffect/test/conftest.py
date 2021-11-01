@@ -1,3 +1,4 @@
+from os import remove
 from typing import Tuple, Iterator, Callable
 
 from flask.testing import FlaskClient
@@ -17,11 +18,12 @@ class RedirectedFlaskClient(FlaskClient):
 app.test_client_class = RedirectedFlaskClient
 
 
-@fixture
+@fixture(scope="session", autouse=True)
 def base_client():
     app.debug = True
     with app.test_client() as client:
         yield client
+    remove("app.db")
 
 
 def login(client: FlaskClient, email: str, password: str) -> FlaskClient:
@@ -39,7 +41,7 @@ def client(base_client: FlaskClient) -> FlaskClient:
     return login(base_client, TEST_EMAIL, BASIC_PASS)
 
 
-@fixture()
+@fixture
 def multi_client(base_client: FlaskClient) -> Callable[[str], FlaskClient]:
     def multi_client_inner(user_email: str):
         return login(base_client, user_email, BASIC_PASS)
@@ -47,7 +49,7 @@ def multi_client(base_client: FlaskClient) -> Callable[[str], FlaskClient]:
     return multi_client_inner
 
 
-@fixture()
+@fixture
 def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator[dict]]:
     def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
         counter = 0
