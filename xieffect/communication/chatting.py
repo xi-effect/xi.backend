@@ -113,6 +113,9 @@ def manage_user(with_role: bool = False):
             if target_to_chat is None:
                 return {"a": "Target user is not in the chat"}, 404
 
+            if target_to_chat.role.value >= user_to_chat.role.value:
+                return {"a": "Your role is not higher that user's"}, 403
+
             if with_role:
                 return function(user_to_chat=user_to_chat, target_to_chat=target_to_chat, *args)
             return function(session=session, target_to_chat=target_to_chat, *args)
