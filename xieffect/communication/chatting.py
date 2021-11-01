@@ -146,19 +146,19 @@ class ChatUserManager(Resource):
     # @chats_namespace.database_searcher(User, result_field_name="target")
     @chats_namespace.a_response()
     def post(self, session, chat: Chat, user_id: int) -> None:
-        """ Adds (invites?) a user to the chat """
+        """ Adds a user to the chat (admins only) """
         chat.add_participant(User.find_by_id(session, user_id))
 
     @with_role_check
     @chats_namespace.a_response()
     def put(self, target_to_chat: UserToChat, role: ChatRole) -> None:
-        """ Changes user's role """
+        """ Changes user's role (admins only) """
         target_to_chat.role = role
 
     @manage_user()
     @chats_namespace.a_response()
     def delete(self, session, target_to_chat: UserToChat) -> None:
-        """ Removes a user from the chat """
+        """ Removes a user from the chat (admins only) """
         target_to_chat.delete(session)
 
 
@@ -171,7 +171,7 @@ class ChatUserBulkAdder(Resource):
     @chats_namespace.argument_parser(parser)
     @chats_namespace.a_response()
     def post(self, session, chat: Chat, ids: list[int]) -> None:
-        """ Adds (invites?) a list of users by ids to the chat """
+        """ Adds a list of users by ids to the chat (admins only) """
         for user_id in ids:
             user: User = User.find_by_id(session, user_id)
             if user is not None and UserToChat.find_by_ids(session, chat.id, user_id) is None:

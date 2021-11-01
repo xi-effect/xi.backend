@@ -38,7 +38,7 @@ class Message(Base, Marshalable):
 
     @classmethod
     def create(cls, session: Session, chat: Chat, content: str, sender: User) -> Message:
-        entry: cls = cls(id=chat.get_next_message_id(), content=content,
+        entry: cls = cls(id=chat.get_next_message_id(), content=content,  # noqa
                          sent=datetime.utcnow(), sender=sender, chat=chat)  # noqa
         session.add(entry)
         session.flush()
@@ -54,11 +54,11 @@ class Message(Base, Marshalable):
 
 
 class ChatRole(TypeEnum):
-    MUTED = 0
-    BASIC = 1
-    MODER = 2
-    ADMIN = 3
-    OWNER = 4
+    MUTED = 0  # get metadata, participants, messages
+    BASIC = 1  # send, edit, delete own messages
+    MODER = 2  # delete other's messages
+    ADMIN = 3  # edit chat metadata, manage participants
+    OWNER = 4  # delete the chat
 
 
 @create_marshal_model("user-in-chat", "role")
