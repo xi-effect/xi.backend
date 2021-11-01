@@ -95,12 +95,6 @@ class JSONFile(CATFile):
 
 @create_marshal_model("wip-page", "id", "kind", "name", "theme", "description", "status")
 class WIPPage(JSONFile, Marshalable):
-    @staticmethod
-    def create_test_bundle(session: Session, author: Author) -> None:
-        for i in range(1, 4):
-            with open(f"../files/tfs/test/{i}.json", "rb") as f:
-                WIPPage.create_from_json(session, author, load(f))
-
     __tablename__ = "wip-pages"
     not_found_text = "Page not found"
     directory: str = "../files/tfs/wip-pages/"

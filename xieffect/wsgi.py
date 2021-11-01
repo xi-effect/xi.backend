@@ -61,15 +61,20 @@ def init_users(session):
 
 @with_session
 def init_knowledge(session):
-    test_user: User = User.find_by_email_address(session, TEST_EMAIL)
+    test_author: Author = User.find_by_email_address(session, TEST_EMAIL).author
 
-    Page.create_test_bundle(session, test_user.author)
+    with open(f"../files/test/page-bundle.json", "rb") as f:
+        for page_data in load(f):
+            WIPPage.create_from_json(session, test_author, page_data)
+            Page.find_or_create(session, page_data, test_author)
 
     with open("../files/test/module-bundle.json", encoding="utf-8") as f:
         for module_data in load(f):
-            Module.create(session, module_data, test_user.author, force=True)
+            Module.create(session, module_data, test_author, force=True)
 
-    WIPPage.create_test_bundle(session, test_user.author)
+
+@with_session
+def init_oct(session):
     TestPoint.test(session)
 
 
@@ -111,6 +116,7 @@ def version_check():
 init_folder_structure()
 init_users()
 init_knowledge()
+init_oct()
 init_chats()
 version_check()
 
