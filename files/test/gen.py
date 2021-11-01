@@ -16,8 +16,8 @@ def generate_user_bundle():
         "group": chr(65 + randint(0, 25)) + str(randint(1, 16)),
     } for _ in range(10)]
 
-    with open("user-bundle.json", "w") as f:
-        dump(result, f, indent=4)
+    with open("user-bundle.json", "w", encoding="utf-8") as f:
+        dump(result, f, ensure_ascii=False, indent=4)
 
 
 def generate_chat_bundle():
@@ -47,9 +47,9 @@ def generate_chat_bundle():
             } for _ in range(70)],
         }
 
-    with open("chat-bundle.json", "w") as f:
-        dump([generate_chat(i) for i in range(4)], f, indent=4)
+    with open("chat-bundle.json", "w", encoding="utf-8") as f:
+        dump([generate_chat(i) for i in range(4)], f, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":
-    generate_chat_bundle()
+    pass
