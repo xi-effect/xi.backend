@@ -163,9 +163,9 @@ class ChatUserManager(Resource):
 
 
 @chats_namespace.route("/<int:chat_id>/users/add-all/")
-class ChatUserManager(Resource):
+class ChatUserBulkAdder(Resource):
     parser: RequestParser = RequestParser()
-    parser.add_argument("ids", type=list, required=True)
+    parser.add_argument("ids", type=int, required=True, action="append")
 
     @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_session=True, use_chat=True)
     @chats_namespace.argument_parser(parser)
