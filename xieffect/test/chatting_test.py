@@ -12,9 +12,10 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     chat_name1, chat_name2 = "test", "production"
     assert (chat_id := check_status_code(client.post("/chats/", json={"name": chat_name1})).get("id", None)) is not None
 
-    # Checking initial chat metadata:
+    # Checking initial chat metadata & message-history:
     assert check_status_code(client.get(f"/chats/{chat_id}/")) == {"name": chat_name1, "role": "owner", "users": 1}
     assert any(chat == {"id": chat_id, "name": chat_name1} for chat in list_tester("/chats/index/", {}, 50))
+    assert len(list(list_tester(f"/chats/{chat_id}/message-history/", {}, 50))) == 0
 
     # Checking the initial user-list:
     user_list = list(list_tester(f"/chats/{chat_id}/users/", {}, 50))
