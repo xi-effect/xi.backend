@@ -108,14 +108,14 @@ def manage_user(with_role: bool = False):
         @chats_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_chat=True, use_user_to_chat=True)
         @chats_namespace.database_searcher(User, result_field_name="target", use_session=True)
         @wraps(function)
-        def manage_user_inner(session, user_to_chat: UserToChat, chat: Chat, target: User):
+        def manage_user_inner(*args, session, user_to_chat: UserToChat, chat: Chat, target: User):
             target_to_chat: UserToChat = UserToChat.find_by_ids(session, chat.id, target.id)
             if target_to_chat is None:
                 return {"a": "Target user is not in the chat"}, 404
 
             if with_role:
-                return function(session, target_to_chat)
-            return function(user_to_chat, target_to_chat)
+                return function(user_to_chat=user_to_chat, target_to_chat=target_to_chat, *args)
+            return function(session=session, target_to_chat=target_to_chat, *args)
 
         return manage_user_inner
 
@@ -126,7 +126,7 @@ def with_role_check(function):
     @manage_user(with_role=True)
     @chats_namespace.argument_parser(user_to_chat_parser)
     @wraps(function)
-    def with_role_check_inner(user_to_chat: UserToChat, target_to_chat: UserToChat, role: str):
+    def with_role_check_inner(*args, user_to_chat: UserToChat, target_to_chat: UserToChat, role: str):
         try:
             role: ChatRole = ChatRole.from_string(role)
         except (ValueError, KeyError):
@@ -135,7 +135,7 @@ def with_role_check(function):
         if role.value >= user_to_chat.role.value:
             return {"a": "You can only set roles below your own"}, 403
 
-        return function(target_to_chat, role)
+        return function(target_to_chat=target_to_chat, role=role, *args)
 
     return with_role_check_inner
 
