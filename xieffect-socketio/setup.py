@@ -3,6 +3,7 @@ from os import getenv
 
 from dotenv import load_dotenv
 from flask import Flask
+from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_jwt_extended import JWTManager
 
@@ -19,5 +20,6 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=72)
 app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
 app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY", "hope it's local")
 
+CORS(app, supports_credentials=True)
 jwt = JWTManager(app)
 socketio = SocketIO(app, cors_allowed_origins="*")

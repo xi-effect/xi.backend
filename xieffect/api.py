@@ -60,6 +60,29 @@ api.add_namespace(webhook_namespace)
 api.add_namespace(oct_namespace)
 
 
+# from flask import redirect, request
+# from flask_restx import Namespace, Resource
+# from users import User
+#
+# other_namespace = Namespace("hey", path="/")
+#
+#
+# @other_namespace.route("/socket.io/")
+# class TEMP(Resource):
+#     @chats_namespace.jwt_authorizer(User, use_session=False, check_only=True)
+#     def get(self):
+#         return redirect("https://457f-188-242-138-193.ngrok.io/socket.io/?"
+#                         + request.query_string.decode("utf-8"), code=307)
+#
+#     @chats_namespace.jwt_authorizer(User, use_session=False, check_only=True)
+#     def post(self):
+#         return redirect("https://457f-188-242-138-193.ngrok.io/socket.io/?"
+#                         + request.query_string.decode("utf-8"), code=307)
+#
+#
+# api.add_namespace(other_namespace)
+
+
 jwt: JWTManager = JWTManager(app)
 
 db_meta.create_all()
