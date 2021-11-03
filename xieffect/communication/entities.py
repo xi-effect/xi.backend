@@ -112,6 +112,11 @@ class UserToChat(Base, Marshalable):
         for user_to_chat in session.execute(stmt).scalars().all():
             user_to_chat.online = False
 
+    @classmethod
+    def find_by_chat(cls, session: Session, chat_id: int) -> list[UserToChat]:  # offline users only!
+        stmt = select(cls).filter(cls.chat_id == chat_id, cls.online.is_(False))
+        return session.execute(stmt).scalars().all()
+
     def delete(self, session: Session):
         session.delete(self)
         session.flush()

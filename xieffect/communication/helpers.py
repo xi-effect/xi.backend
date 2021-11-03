@@ -42,3 +42,23 @@ class ChatNamespace(Namespace):
             return search_user_to_chat_inner
 
         return search_user_to_chat_wrapper
+
+    @staticmethod
+    def broadcast_after():
+        def broadcast_after_wrapper(function):
+            @wraps(function)
+            def broadcast_after_inner(*args, **kwargs):
+                result = function(*args, **kwargs)
+
+                session = kwargs["session"]
+                chat: Chat = kwargs["chat"]
+                data = {u2c.user_id: u2c.unread for u2c in UserToChat.find_by_chat(session, chat.id)}
+
+                host = "http://localhost:5050" if app.debug else "https://xieffect-socketio.herokuapp.com"
+                post(f"{host}/pass-through/", json={"event": "notif", "chat-id": chat.id, "data": data})
+
+                return result
+
+            return broadcast_after_inner
+
+        return broadcast_after_wrapper
