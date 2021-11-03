@@ -6,26 +6,20 @@ from requests import Session
 from jwt import decode
 
 from setup import user_sessions, app
-
-
-def with_chat_id(function):
-    @jwt_required()
-    @wraps(function)
-    def with_chat_id_inner(self, data: dict):
-        chat_id: int = data.get("chat-id")
-        return function(self, chat_id, data)
-
-    return with_chat_id_inner
+from .broadcast import room_broadcast
 
 
 def parse_chat_data(function):
-    @with_chat_id
+    @jwt_required()
     @wraps(function)
-    def parse_chat_data_inner(self, chat_id: int, data: dict):
-        url = f"{self.host}/chats/{chat_id}/messages/"
+    def parse_chat_data_inner(self, data: dict):
+        chat_id: int = data.get("chat-id")
+        url = f"{self.host}/chats/{chat_id}/"
         if (message_id := data.get("message-id", None)) is not None:
-            url += f"{message_id}/"
-        return function(self, url, user_sessions.sessions[get_jwt_identity()], data)
+            url += f"messages/{message_id}/"
+        else:
+            url += "messages/" if "content" in data.keys() else "presence/"
+        return function(self, url, chat_id, user_sessions.sessions[get_jwt_identity()], data)
 
     return parse_chat_data_inner
 
@@ -48,22 +42,27 @@ class MessagesNamespace(Namespace):
     def on_disconnect(self):
         user_sessions.disconnect(get_jwt_identity())
 
-    @with_chat_id
-    def on_open(self, chat_id: int, _):
+    @parse_chat_data
+    def on_open(self, url: str, chat_id: int, session: Session, _):
+        session.post(url, json={"online": True})
         join_room(f"chat-{chat_id}")
 
-    @with_chat_id
-    def on_close(self, chat_id: int, _):
+    @parse_chat_data
+    def on_close(self, url: str, chat_id: int, session: Session, _):
+        session.post(url, json={"online": False})
         leave_room(f"chat-{chat_id}")
 
     @parse_chat_data
-    def on_send(self, url: str, session: Session, data: dict):
-        session.post(url, json=data)
+    def on_send(self, url: str, chat_id: int, session: Session, data: dict):
+        session.post(url, json=data)  # add error check
+        room_broadcast("send", data, f"chat-{chat_id}")
 
     @parse_chat_data
-    def on_edit(self, url: str, session: Session, data: dict):
-        session.put(url, json=data)
+    def on_edit(self, url: str, chat_id: int, session: Session, data: dict):
+        session.put(url, json=data)  # add error check
+        room_broadcast("edit", data, f"chat-{chat_id}")
 
     @parse_chat_data
-    def on_delete(self, url: str, session: Session, _):
-        session.delete(url)
+    def on_delete(self, url: str, chat_id: int, session: Session, data: dict):
+        session.delete(url)  # add error check
+        room_broadcast("delete", data, f"chat-{chat_id}")
