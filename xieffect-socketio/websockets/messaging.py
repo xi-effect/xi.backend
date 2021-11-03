@@ -1,7 +1,7 @@
 from functools import wraps
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_socketio import join_room, leave_room, Namespace
+from flask_socketio import join_room, leave_room, Namespace, rooms
 from requests import Session
 from jwt import decode
 
@@ -41,6 +41,8 @@ class MessagesNamespace(Namespace):
     @jwt_required()
     def on_disconnect(self):
         user_sessions.disconnect(get_jwt_identity())
+        chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
+        user_sessions.sessions[get_jwt_identity()].post(f"{self.host}/chats/close-all/", json={"ids": chat_ids})
 
     @parse_chat_data
     def on_open(self, url: str, chat_id: int, session: Session, _):
