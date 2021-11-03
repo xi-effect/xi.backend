@@ -1,10 +1,22 @@
-from requests import post, put, delete
+from functools import wraps
+
+from requests import Session
 
 from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_socketio import join_room, leave_room, Namespace
 
-from setup import socketio, storage, app
+from setup import storage, app
+
+
+def with_chat_id(function):
+    @jwt_required()
+    @wraps(function)
+    def with_chat_id_inner(self, data: dict):
+        chat_id: int = data.pop("chat-id")
+        return function(self, chat_id, data)
+
+    return with_chat_id_inner
 
 
 class MessagesNamespace(Namespace):
@@ -16,14 +28,12 @@ class MessagesNamespace(Namespace):
     def on_disconnect(self):
         storage.pop(get_jwt_identity())
 
-    @jwt_required()
-    def on_open(self, data):
-        chat_id: int = data["chat-id"]
+    @with_chat_id
+    def on_open(self, chat_id: int, _):
         join_room(f"chat-{chat_id}")
 
-    @jwt_required()
-    def on_close(self, data):
-        chat_id: int = data["chat-id"]
+    @with_chat_id
+    def on_close(self, chat_id: int, _):
         leave_room(f"chat-{chat_id}")
 
     def on_send(self, data):
