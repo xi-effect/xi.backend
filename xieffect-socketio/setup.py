@@ -7,6 +7,8 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_jwt_extended import JWTManager
 
+from storage import UserSession
+
 load_dotenv("../.env")
 
 app = Flask(__name__)
@@ -24,4 +26,4 @@ CORS(app, supports_credentials=True)
 jwt = JWTManager(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-storage: dict[int, int] = dict()
+user_sessions: UserSession = UserSession()
