@@ -64,7 +64,7 @@ class User(Base, UserRole, Marshalable):
     patronymic = Column(String(100), nullable=True)
     bio = Column(Text, nullable=True)
     group = Column(String(100), nullable=True)
-    avatar = Column(JSON, nullable=True)
+    avatar = Column(JSON, nullable=False, default='{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0}')
 
     # Education data:
     theory_level = Column(Float, nullable=False, default=0.5)
