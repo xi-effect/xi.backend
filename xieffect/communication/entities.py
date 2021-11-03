@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy import Column, Sequence, select, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String
+from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON
 from sqlalchemy_enum34 import EnumType
 
 from componets import create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
@@ -35,6 +35,7 @@ class Message(Base, Marshalable):
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     sender_name: LambdaFieldDef = LambdaFieldDef("message", str, lambda message: message.sender.username)
+    sender_avatar: LambdaFieldDef = LambdaFieldDef("message", JSON, lambda message: message.sender.avatar)
 
     @classmethod
     def create(cls, session: Session, chat: Chat, content: str, sender: User) -> Message:
@@ -74,6 +75,7 @@ class UserToChat(Base, Marshalable):
 
     _user_id: LambdaFieldDef = LambdaFieldDef("user-in-chat", int, "user_id", "id")
     username: LambdaFieldDef = LambdaFieldDef("user-in-chat", str, lambda u2c: u2c.user.username)
+    user_avatar: LambdaFieldDef = LambdaFieldDef("user-in-chat", JSON, lambda u2c: u2c.user.avatar)
 
     # Chat-related
     chat_id = Column(ForeignKey("chats.id"), primary_key=True)

@@ -36,6 +36,7 @@ type_to_field: Dict[type, Type[RawField]] = {
     bool: BooleanField,
     int: IntegerField,
     str: StringField,
+    JSON: JSONLoadableField,
     datetime: DateTimeField,
 }
 
