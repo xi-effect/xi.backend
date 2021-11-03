@@ -1,9 +1,18 @@
 from functools import wraps
 from typing import Optional
 
+from requests import post
+
 from componets import Namespace, get_or_pop, ResponseDoc, message_response
+from main import app
 from users import User
 from .entities import ChatRole, UserToChat, Chat
+
+
+def broadcast(event: str, data: dict, *user_ids: int):
+    host = "http://localhost:5050" if app.debug else "https://xieffect-socketio.herokuapp.com"
+    post(f"{host}/pass-through/broadcast/{event}/",
+         json={"user_ids": user_ids, "data": data})
 
 
 def create_403_response(has_min_role: bool) -> ResponseDoc:
