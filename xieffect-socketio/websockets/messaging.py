@@ -1,18 +1,18 @@
 from functools import wraps
 
-from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_socketio import join_room, leave_room, Namespace
 from requests import Session
+from jwt import decode
 
-from setup import storage, app, auth_store
+from setup import user_sessions, app
 
 
 def with_chat_id(function):
     @jwt_required()
     @wraps(function)
     def with_chat_id_inner(self, data: dict):
-        chat_id: int = data.pop("chat-id")
+        chat_id: int = data.get("chat-id")
         return function(self, chat_id, data)
 
     return with_chat_id_inner
@@ -23,11 +23,16 @@ def parse_chat_data(function):
     @wraps(function)
     def parse_chat_data_inner(self, chat_id: int, data: dict):
         url = f"{self.host}/chats/{chat_id}/messages/"
-        if (message_id := data.pop("message-id", None)) is not None:
+        if (message_id := data.get("message-id", None)) is not None:
             url += f"{message_id}/"
-        return function(self, url, auth_store[get_jwt_identity()], data)
+        return function(self, url, user_sessions.sessions[get_jwt_identity()], data)
 
     return parse_chat_data_inner
+
+
+def get_identity(jwt_cookie: str) -> int:
+    jwt: str = jwt_cookie.partition("access_token_cookie=")[2].partition(";")[0]
+    return decode(jwt, key=app.config["JWT_SECRET_KEY"], algorithms="HS256")["sub"]
 
 
 class MessagesNamespace(Namespace):
@@ -37,11 +42,11 @@ class MessagesNamespace(Namespace):
 
     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
     def on_connect(self, _):
-        storage[get_jwt_identity()] = request.sid
+        user_sessions.connect(get_jwt_identity())
 
     @jwt_required()
     def on_disconnect(self):
-        storage.pop(get_jwt_identity())
+        user_sessions.disconnect(get_jwt_identity())
 
     @with_chat_id
     def on_open(self, chat_id: int, _):

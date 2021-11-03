@@ -2,17 +2,16 @@ from flask_restx import Resource, Namespace
 from flask_restx.reqparse import RequestParser
 
 from .components import argument_parser
-from setup import socketio, storage
+from setup import socketio
 
 broadcast_namespace = Namespace("broadcast", path="/broadcast/")
 data_parser = RequestParser()
 data_parser.add_argument("data", dict, required=True)
 
 
-def broadcast(event: str, data: dict, *user_ids: int):
+def broadcast(event: str, data: dict, *user_ids: int, namespace: str = "/"):
     for user_id in user_ids:
-        if (session_id := storage.get(user_id, None)) is not None:
-            socketio.emit(event, data, to=session_id)
+        socketio.emit(event, data, to=f"user-{user_id}", namespace=namespace)
 
 
 def room_broadcast(event: str, data: dict, room: str, namespace: str = "/"):
