@@ -9,12 +9,6 @@ from users import User
 from .entities import ChatRole, UserToChat, Chat
 
 
-def broadcast(event: str, data: dict, *user_ids: int):
-    host = "http://localhost:5050" if app.debug else "https://xieffect-socketio.herokuapp.com"
-    post(f"{host}/pass-through/broadcast/{event}/",
-         json={"user_ids": user_ids, "data": data})
-
-
 def create_403_response(has_min_role: bool) -> ResponseDoc:
     return ResponseDoc.error_response(403, "User not in chat" if has_min_role else "Chat role is lower than needed")
 
