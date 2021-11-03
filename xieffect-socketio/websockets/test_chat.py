@@ -1,6 +1,6 @@
-from flask_socketio import emit, Namespace, join_room, rooms
+from flask_socketio import Namespace, join_room, rooms
 
-from temp_api.broadcast import room_broadcast
+from .broadcast import room_broadcast
 
 
 class TestNamespace(Namespace):
