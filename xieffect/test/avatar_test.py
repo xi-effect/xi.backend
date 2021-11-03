@@ -3,7 +3,7 @@ from flask.testing import FlaskClient
 from .components import check_status_code
 
 
-def test_set_avatar_user(client: FlaskClient):
+def test_set_avatar_user(client: FlaskClient):  # deprecated
     with open("test/files/1.jpg", "rb") as f:
         image1 = f.read()
 

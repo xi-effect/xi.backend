@@ -20,6 +20,7 @@ role_settings = settings_namespace.model("RoleSettings", User.marshal_models["ro
 
 @other_settings_namespace.route("/avatar/")
 class Avatar(Resource):  # [GET|POST] /avatar/
+    @other_settings_namespace.deprecated
     @other_settings_namespace.response(200, "PNG image as a byte string")
     @other_settings_namespace.doc_responses(ResponseDoc(404, "Avatar not found"))
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
@@ -27,6 +28,7 @@ class Avatar(Resource):  # [GET|POST] /avatar/
         """ Loads user's own avatar """
         return send_from_directory(r"../files/avatars", f"{user.id}.png")
 
+    @other_settings_namespace.deprecated
     @other_settings_namespace.doc_file_param("image")
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
     @other_settings_namespace.a_response()
@@ -35,6 +37,7 @@ class Avatar(Resource):  # [GET|POST] /avatar/
         with open(f"../files/avatars/{user.id}.png", "wb") as f:
             f.write(request.data)
 
+    @other_settings_namespace.deprecated
     @other_settings_namespace.jwt_authorizer(User, use_session=False)
     @other_settings_namespace.a_response()
     def delete(self, user: User) -> None:
