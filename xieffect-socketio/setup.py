@@ -6,7 +6,6 @@ from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_jwt_extended import JWTManager
-from requests import Session
 
 load_dotenv("../.env")
 
@@ -26,4 +25,3 @@ jwt = JWTManager(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 storage: dict[int, int] = dict()
-auth_store: dict[int, Session] = dict()
