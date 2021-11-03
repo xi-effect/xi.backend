@@ -9,7 +9,7 @@ from users import User
 from .entities import UserToChat, ChatRole, Chat, Message
 from .helpers import ChatNamespace
 
-messages_namespace = ChatNamespace("messages", path="/chats/<int:chat_id>/messages/")
+messages_namespace = ChatNamespace("messages", path="/chats/<int:chat_id>/")
 
 message_parser: RequestParser = RequestParser()
 message_parser.add_argument("content", str, required=True)
@@ -37,7 +37,20 @@ def search_message(use_session: bool, unmoderatable: bool = True):
     return search_message_wrapper
 
 
-@messages_namespace.route("/")
+@messages_namespace.route("/presence/")
+class MessageReader(Resource):  # temp pass-through
+    parser: RequestParser = RequestParser()
+    parser.add_argument("online", type=bool)
+
+    @messages_namespace.search_user_to_chat(use_user_to_chat=True)
+    @messages_namespace.argument_parser(parser)
+    @messages_namespace.a_response()
+    def post(self, user_to_chat: UserToChat, online: bool) -> None:
+        """ Sets if the uses has this chat open [TEMP] """
+        user_to_chat.online = online
+
+
+@messages_namespace.route("/messages/")
 class MessageAdder(Resource):  # temp pass-through
     @messages_namespace.search_user_to_chat(ChatRole.BASIC, True, True, True, True)
     @messages_namespace.argument_parser(message_parser)
@@ -48,7 +61,7 @@ class MessageAdder(Resource):  # temp pass-through
         user_to_chat.activity = message.sent
 
 
-@messages_namespace.route("/<int:message_id>/")
+@messages_namespace.route("/messages/<int:message_id>/")
 class MessageProcessor(Resource):  # temp pass-through
     @search_message(False)
     @messages_namespace.argument_parser(message_parser)

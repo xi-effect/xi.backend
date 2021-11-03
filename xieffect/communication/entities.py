@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy import Column, Sequence, select, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON
+from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON, Boolean
 from sqlalchemy_enum34 import EnumType
 
 from componets import create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
@@ -87,6 +87,7 @@ class UserToChat(Base, Marshalable):
 
     # Other data:
     role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
+    online = Column(Boolean, nullable=False, default=False)
     unread = Column(Integer, nullable=True)
     activity = Column(DateTime, nullable=True)
 
