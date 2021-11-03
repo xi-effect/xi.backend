@@ -1,1 +1,2 @@
-from .messaging import TestNamespace
+from .test_chat import TestNamespace
+from .messaging import MessagesNamespace
