@@ -51,7 +51,7 @@ changed.__schema__ = {
     "format": "changed",
     "example": '{"dark-theme": true | false, ' +
                ", ".join(f'"{key}": ""' for key in ["username", "language", "name", "surname", "patronymic",
-                                                    "bio", "group"]) + "}"
+                                                    "bio", "group", "avatar"]) + "}"
 }
 
 

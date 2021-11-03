@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from json import dumps
 from typing import Dict, Union, Optional
 
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 
 from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
 from componets.checkers import first_or_none
@@ -27,11 +28,11 @@ class TokenBlockList(Base):
         session.add(cls(jti=jti))
 
 
-@create_marshal_model("user-index", "username", "id", "bio")
+@create_marshal_model("user-index", "username", "id", "bio", "avatar")
 @create_marshal_model("profile", "name", "surname", "patronymic", "username",
-                      "bio", "group")
-@create_marshal_model("full-settings", "email", "email_confirmed", "name",
-                      "surname", "patronymic", "bio", "group", inherit="main-settings")
+                      "bio", "group", "avatar")
+@create_marshal_model("full-settings", "email", "email_confirmed", "avatar",
+                      "name", "surname", "patronymic", "bio", "group", inherit="main-settings")
 @create_marshal_model("main-settings", "id", "username", "dark_theme", "language")
 @create_marshal_model("role-settings")
 class User(Base, UserRole, Marshalable):
@@ -63,6 +64,7 @@ class User(Base, UserRole, Marshalable):
     patronymic = Column(String(100), nullable=True)
     bio = Column(Text, nullable=True)
     group = Column(String(100), nullable=True)
+    avatar = Column(JSON, nullable=True)
 
     # Education data:
     theory_level = Column(Float, nullable=False, default=0.5)
@@ -133,6 +135,8 @@ class User(Base, UserRole, Marshalable):
             self.bio = new_values["bio"]
         if "group" in new_values.keys():
             self.group = new_values["group"]
+        if "avatar" in new_values.keys():
+            self.avatar = dumps(new_values["avatar"])
 
     def get_author_status(self) -> str:
         return "not-yet" if self.author is None else "banned" if self.author.banned else "current"
