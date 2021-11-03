@@ -1,82 +1,152 @@
 [
     {
-        "username": "numquam",
-        "name": "Quiquia",
-        "surname": "Sed",
-        "patronymic": "Dolore",
-        "bio": "Amet porro consectetur dolore amet est consectetur. Est porro dolore quiquia. Quisquam magnam modi sit sit neque quiquia sed. Ut tempora numquam non ut velit aliquam. Etincidunt porro voluptatem modi modi. Aliquam quaerat non est voluptatem. Ipsum numquam labore neque. Eius voluptatem dolorem voluptatem dolorem dolor consectetur. Amet velit voluptatem ut neque sed quisquam. Quaerat magnam amet eius.",
-        "group": "U3"
+        "username": "modi",
+        "name": null,
+        "surname": null,
+        "patronymic": null,
+        "bio": "Numquam eius dolorem quaerat neque porro aliquam adipisci. Amet quisquam sit etincidunt quaerat non quaerat est. Quiquia ipsum consectetur non etincidunt quiquia dolore dolorem. Ut dolor non dolorem etincidunt porro. Velit modi dolorem dolorem velit. Eius velit quiquia sed ipsum labore dolor. Ipsum voluptatem dolor quisquam quisquam numquam aliquam ipsum. Sed dolorem est quaerat ut quiquia modi. Est quiquia tempora dolore. Sed labore eius modi dolore modi ipsum sed.",
+        "group": "T7",
+        "avatar": {
+            "accessory": 4,
+            "body": 11,
+            "face": 30,
+            "hair": 22,
+            "facialHair": 7
+        }
+    },
+    {
+        "username": "modi",
+        "name": "Amet",
+        "surname": "Consectetur",
+        "patronymic": null,
+        "bio": null,
+        "group": "S8",
+        "avatar": {
+            "accessory": 9,
+            "body": 16,
+            "face": 16,
+            "hair": 37,
+            "facialHair": 11
+        }
+    },
+    {
+        "username": "adipisci",
+        "name": "Non",
+        "surname": "Dolorem",
+        "patronymic": null,
+        "bio": null,
+        "group": "G16",
+        "avatar": {
+            "accessory": 8,
+            "body": 17,
+            "face": 17,
+            "hair": 24,
+            "facialHair": 4
+        }
+    },
+    {
+        "username": "velit",
+        "name": "Dolorem",
+        "surname": "Aliquam",
+        "patronymic": null,
+        "bio": "Labore sit ut sit etincidunt. Aliquam labore adipisci amet aliquam. Quaerat adipisci neque quisquam sit dolor consectetur magnam. Sit etincidunt numquam aliquam magnam numquam velit. Modi modi consectetur tempora.",
+        "group": "C8",
+        "avatar": {
+            "accessory": 6,
+            "body": 22,
+            "face": 7,
+            "hair": 7,
+            "facialHair": 3
+        }
     },
     {
         "username": "quaerat",
+        "name": "Ipsum",
+        "surname": "Consectetur",
+        "patronymic": null,
+        "bio": "Tempora dolore aliquam numquam ipsum. Dolorem magnam aliquam numquam quiquia. Ut etincidunt eius aliquam. Ipsum aliquam ut magnam porro quaerat consectetur est. Consectetur amet dolorem quiquia. Tempora quiquia non ut sed quiquia ipsum. Quaerat voluptatem numquam est sit sit ut dolorem. Porro dolore non magnam quiquia eius quiquia dolorem. Adipisci quisquam sed quiquia dolor. Modi amet consectetur quaerat.",
+        "group": "W6",
+        "avatar": {
+            "accessory": 8,
+            "body": 20,
+            "face": 13,
+            "hair": 9,
+            "facialHair": 6
+        }
+    },
+    {
+        "username": "sit",
+        "name": null,
+        "surname": null,
+        "patronymic": null,
+        "bio": "Porro aliquam amet modi modi eius. Modi labore numquam dolor. Dolorem dolore modi dolorem aliquam numquam. Neque tempora sit velit labore. Est labore sit etincidunt porro. Consectetur quaerat dolorem consectetur modi quisquam.",
+        "group": "M14",
+        "avatar": {
+            "accessory": 8,
+            "body": 23,
+            "face": 23,
+            "hair": 44,
+            "facialHair": 2
+        }
+    },
+    {
+        "username": "adipisci",
         "name": "Dolor",
-        "surname": "Voluptatem",
-        "patronymic": null,
-        "bio": "Quiquia modi quiquia voluptatem. Neque magnam quaerat porro. Dolorem etincidunt quaerat modi. Tempora non voluptatem sed etincidunt. Est tempora aliquam est etincidunt sed sed. Consectetur eius modi porro est quiquia quisquam ipsum. Amet quisquam sit est eius adipisci ut.",
-        "group": "W5"
-    },
-    {
-        "username": "eius",
-        "name": "Modi",
-        "surname": null,
+        "surname": "Ut",
         "patronymic": null,
         "bio": null,
-        "group": "L4"
+        "group": "O5",
+        "avatar": {
+            "accessory": 1,
+            "body": 10,
+            "face": 6,
+            "hair": 8,
+            "facialHair": 6
+        }
     },
     {
-        "username": "non",
+        "username": "porro",
         "name": null,
         "surname": null,
         "patronymic": null,
-        "bio": null,
-        "group": "A9"
-    },
-    {
-        "username": "sit",
-        "name": null,
-        "surname": null,
-        "patronymic": null,
-        "bio": null,
-        "group": "B4"
-    },
-    {
-        "username": "tempora",
-        "name": "Quaerat",
-        "surname": "Quaerat",
-        "patronymic": null,
-        "bio": "Eius dolore porro adipisci. Ipsum dolore tempora non est ut. Etincidunt aliquam voluptatem tempora adipisci tempora adipisci eius. Labore numquam sed dolorem neque tempora quaerat. Ipsum neque amet velit eius neque. Velit tempora labore amet numquam quisquam quisquam.",
-        "group": "N14"
-    },
-    {
-        "username": "dolorem",
-        "name": "Quisquam",
-        "surname": null,
-        "patronymic": null,
-        "bio": "Dolore adipisci ipsum tempora ipsum adipisci velit quaerat. Dolorem est quaerat est. Amet sed est quisquam adipisci velit velit. Amet est non tempora etincidunt labore. Est porro quiquia quiquia quaerat est dolorem. Dolor neque eius adipisci sed magnam dolorem ipsum. Magnam porro neque sit.",
-        "group": "R10"
-    },
-    {
-        "username": "quaerat",
-        "name": "Labore",
-        "surname": "Velit",
-        "patronymic": null,
-        "bio": null,
-        "group": "Y1"
-    },
-    {
-        "username": "sit",
-        "name": "Neque",
-        "surname": "Non",
-        "patronymic": "Magnam",
-        "bio": null,
-        "group": "J5"
+        "bio": "Quiquia dolor neque est. Labore sed etincidunt adipisci neque. Aliquam labore sed quiquia sed. Non neque neque numquam ipsum sed modi neque. Quisquam quaerat neque amet dolorem ut. Neque sed aliquam aliquam sed consectetur.",
+        "group": "L12",
+        "avatar": {
+            "accessory": 1,
+            "body": 4,
+            "face": 14,
+            "hair": 24,
+            "facialHair": 12
+        }
     },
     {
         "username": "numquam",
-        "name": "Sed",
-        "surname": "Modi",
+        "name": "Etincidunt",
+        "surname": "Sed",
         "patronymic": null,
         "bio": null,
-        "group": "I4"
+        "group": "U5",
+        "avatar": {
+            "accessory": 3,
+            "body": 15,
+            "face": 25,
+            "hair": 16,
+            "facialHair": 0
+        }
+    },
+    {
+        "username": "quiquia",
+        "name": "Ipsum",
+        "surname": "Tempora",
+        "patronymic": null,
+        "bio": null,
+        "group": "D15",
+        "avatar": {
+            "accessory": 6,
+            "body": 13,
+            "face": 13,
+            "hair": 10,
+            "facialHair": 14
+        }
     }
 ]
