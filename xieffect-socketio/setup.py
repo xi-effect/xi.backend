@@ -23,3 +23,5 @@ app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY", "hope it's local")
 CORS(app, supports_credentials=True)
 jwt = JWTManager(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+storage: dict[int, int] = dict()
