@@ -7,7 +7,7 @@ from temp_api import broadcast_namespace, reglog_namespace
 api = Api(app, doc="/doc/")
 api.add_namespace(broadcast_namespace)
 api.add_namespace(reglog_namespace)
-socketio.on_namespace(TestNamespace("/"))
+socketio.on_namespace(TestNamespace("/test"))
 socketio.on_namespace(MessagesNamespace("/"))
 
 if __name__ == "__main__":
