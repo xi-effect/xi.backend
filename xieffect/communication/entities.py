@@ -106,6 +106,12 @@ class UserToChat(Base, Marshalable):
     def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[UserToChat]:
         return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
 
+    @classmethod
+    def find_and_close(cls, session: Session, user_id: int, chat_ids: list[int]) -> None:
+        stmt = select(cls).filter(cls.user_id == user_id, cls.chat_id.in_(chat_ids), cls.online.is_(True))
+        for user_to_chat in session.execute(stmt).scalars().all():
+            user_to_chat.online = False
+
     def delete(self, session: Session):
         session.delete(self)
         session.flush()
