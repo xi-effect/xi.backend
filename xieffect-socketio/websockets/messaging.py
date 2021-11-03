@@ -1,12 +1,11 @@
 from functools import wraps
 
-from requests import Session
-
 from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_socketio import join_room, leave_room, Namespace
+from requests import Session
 
-from setup import storage, app
+from setup import storage, app, auth_store
 
 
 def with_chat_id(function):
@@ -19,7 +18,23 @@ def with_chat_id(function):
     return with_chat_id_inner
 
 
+def parse_chat_data(function):
+    @with_chat_id
+    @wraps(function)
+    def parse_chat_data_inner(self, chat_id: int, data: dict):
+        url = f"{self.host}/chats/{chat_id}/messages/"
+        if (message_id := data.pop("message-id", None)) is not None:
+            url += f"{message_id}/"
+        return function(self, url, auth_store[get_jwt_identity()], data)
+
+    return parse_chat_data_inner
+
+
 class MessagesNamespace(Namespace):
+    def __init__(self, namespace=None):
+        super().__init__(namespace)
+        self.host = "http://localhost:5000" if app.debug else "https://xieffect.pythonanywhere.com"
+
     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
     def on_connect(self, _):
         storage[get_jwt_identity()] = request.sid
@@ -36,11 +51,14 @@ class MessagesNamespace(Namespace):
     def on_close(self, chat_id: int, _):
         leave_room(f"chat-{chat_id}")
 
-    def on_send(self, data):
-        pass
+    @parse_chat_data
+    def on_send(self, url: str, session: Session, data: dict):
+        session.post(url, json=data)
 
-    def on_edit(self, data):
-        pass
+    @parse_chat_data
+    def on_edit(self, url: str, session: Session, data: dict):
+        session.put(url, json=data)
 
-    def on_delete(self, data):
-        pass
+    @parse_chat_data
+    def on_delete(self, url: str, session: Session, _):
+        session.delete(url)
