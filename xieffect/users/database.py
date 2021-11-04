@@ -12,6 +12,8 @@ from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDe
 from componets.checkers import first_or_none
 from main import Base, Session
 
+DEFAULT_AVATAR: str = '{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, bgcolor: 0}'
+
 
 class TokenBlockList(Base):
     __tablename__ = "token_block_list"
@@ -64,7 +66,7 @@ class User(Base, UserRole, Marshalable):
     patronymic = Column(String(100), nullable=True)
     bio = Column(Text, nullable=True)
     group = Column(String(100), nullable=True)
-    avatar = Column(JSON, nullable=False, default='{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0}')
+    avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
 
     # Education data:
     theory_level = Column(Float, nullable=False, default=0.5)
