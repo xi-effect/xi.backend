@@ -12,7 +12,7 @@ from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDe
 from componets.checkers import first_or_none
 from main import Base, Session
 
-DEFAULT_AVATAR: str = '{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, bgcolor: 0}'
+DEFAULT_AVATAR: str = '{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}'
 
 
 class TokenBlockList(Base):
