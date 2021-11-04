@@ -7,7 +7,7 @@ from flask_restx.reqparse import RequestParser
 from componets import counter_parser, ResponseDoc
 from users import User
 from .entities import UserToChat, Chat, Message, ChatRole
-from .helpers import ChatNamespace
+from .helpers import ChatNamespace, pass_through
 
 chats_namespace = ChatNamespace("chats", path="/chats/")
 
@@ -94,12 +94,15 @@ class ChatManager(Resource):
     def put(self, chat: Chat, name: str) -> None:
         """ Changes some of chat's metadata (chat admins only) """
         chat.name = name
+        pass_through("edit-chat", {"chat-id": chat.id, "name": name}, [u2c.user_id for u2c in chat.participants])
 
     @chats_namespace.search_user_to_chat(min_role=ChatRole.OWNER, use_chat=True, use_session=True)
     @chats_namespace.a_response()
     def delete(self, session, chat: Chat) -> None:
         """ Deletes a chat (chat owner only) """
+        user_ids = [u2c.user_id for u2c in chat.participants]
         chat.delete(session)
+        pass_through("delete-chat", {"chat-id": chat.id}, user_ids)
 
 
 def manage_user(with_role: bool = False):
@@ -117,7 +120,7 @@ def manage_user(with_role: bool = False):
                 return {"a": "Your role is not higher that user's"}, 403
 
             if with_role:
-                return function(user_to_chat=user_to_chat, target_to_chat=target_to_chat, *args)
+                return function(user_to_chat=user_to_chat, chat=chat, target_to_chat=target_to_chat, *args)
             return function(session=session, target_to_chat=target_to_chat, *args)
 
         return manage_user_inner
@@ -151,18 +154,22 @@ class ChatUserManager(Resource):
     def post(self, session, chat: Chat, user_id: int) -> None:
         """ Adds a user to the chat (admins only) """
         chat.add_participant(User.find_by_id(session, user_id))
+        pass_through("add-chat", {"chat-id": chat.id, "name": chat.name}, [user_id])
 
     @with_role_check
     @chats_namespace.a_response()
     def put(self, target_to_chat: UserToChat, role: ChatRole) -> None:
         """ Changes user's role (admins only) """
         target_to_chat.role = role
+        pass_through("edit-chat", {"chat-id": target_to_chat.chat_id, "name": target_to_chat.chat.name,
+                                   "role": role.to_string()}, [target_to_chat.user_id])
 
     @manage_user()
     @chats_namespace.a_response()
     def delete(self, session, target_to_chat: UserToChat) -> None:
         """ Removes a user from the chat (admins only) """
         target_to_chat.delete(session)
+        pass_through("delete-chat", {"chat-id": target_to_chat.chat_id}, [target_to_chat.user_id])
 
 
 @chats_namespace.route("/<int:chat_id>/users/add-all/")
@@ -179,3 +186,4 @@ class ChatUserBulkAdder(Resource):
             user: User = User.find_by_id(session, user_id)
             if user is not None and UserToChat.find_by_ids(session, chat.id, user_id) is None:
                 chat.add_participant(user)  # no error check, REDO
+        pass_through("add-chat", {"chat-id": chat.id, "name": chat.name}, ids)
