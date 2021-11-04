@@ -20,6 +20,7 @@ def generate_user_bundle():
             "face": randint(0, 32),
             "hair": randint(0, 46),
             "facialHair": randint(0, 16),
+            "bgcolor": randint(0, 12),
         }
     } for _ in range(10)]
 
