@@ -8,7 +8,7 @@ from flask_restx import Api
 from werkzeug.exceptions import HTTPException
 
 from authorship import (authors_namespace)
-from communication import (chats_namespace, messages_namespace)
+from communication import (chats_namespace, chat_temp_namespace, chat_index_temp_namespace, messages_namespace)
 from componets import with_session
 from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
 from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace, wip_index_namespace)
@@ -43,6 +43,8 @@ api.add_namespace(other_settings_namespace)
 api.add_namespace(protected_settings_namespace)
 
 api.add_namespace(chats_namespace)
+api.add_namespace(chat_temp_namespace)
+api.add_namespace(chat_index_temp_namespace)
 api.add_namespace(messages_namespace)
 
 api.add_namespace(education_namespace)
