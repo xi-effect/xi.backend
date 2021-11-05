@@ -14,6 +14,14 @@ def generate_user_bundle():
         "patronymic": sentence().partition(" ")[0] if seed > 7 else None,
         "bio": paragraph() if seed % 2 == 0 else None,
         "group": chr(65 + randint(0, 25)) + str(randint(1, 16)),
+        "avatar": {
+            "accessory": randint(0, 9),
+            "body": randint(0, 27),
+            "face": randint(0, 32),
+            "hair": randint(0, 46),
+            "facialHair": randint(0, 16),
+            "bgcolor": randint(0, 12),
+        }
     } for _ in range(10)]
 
     with open("user-bundle.json", "w", encoding="utf-8") as f:
