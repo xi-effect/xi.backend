@@ -12,8 +12,8 @@ class Temp(Resource):
     parser = RequestParser()
     parser.add_argument("event", str, required=True)
     parser.add_argument("data", dict, required=True)
-    parser.add_argument("user-ids", int, required=False, action="append", dect="user_ids")
-    parser.add_argument("user-data", dict, required=False, dect="user_data")
+    parser.add_argument("user-ids", int, required=False, action="append", dest="user_ids")
+    parser.add_argument("user-data", dict, required=False, dest="user_data")
 
     @argument_parser(pass_through_namespace, parser)
     def post(self, event: str, data: dict, user_ids: list[int], user_data: dict):
