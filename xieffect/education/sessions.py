@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, select
+import sqlalchemy
+from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float
 
 from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
@@ -129,7 +130,8 @@ class ModuleProgressSession(BaseModuleSession):
 class TestModuleSession(BaseModuleSession):
     __tablename__ = "test-module-sessions"
     not_found_text = "Test session not found"
-
+    module_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, primary_key=True)
     pass  # keeps test instance (one to many) in keeper.py
 
     @classmethod
@@ -147,3 +149,18 @@ class TestModuleSession(BaseModuleSession):
 
     def collect_results(self, session: Session) -> dict:
         pass  # delete the test_session!
+
+
+class TestPointSession(Base):
+    __tablename__ = "test-point-sessions"
+    module_id = Column(Integer, ForeignKey("TestModuleSession.module_id"))
+    user_id = Column(Integer, ForeignKey("TestModuleSession.module_id"))
+    point_id = Column(Integer, primary_key=True)
+    page_id = Column(Integer)
+    right_answers = Column(Integer)
+    total_answers = Column(Integer)
+    answers = Column(sqlalchemy.JSON)
+
+    @classmethod
+    def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Optional[TestModuleSession]:
+        return first_or_none(session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)))
