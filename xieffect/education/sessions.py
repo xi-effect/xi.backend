@@ -8,6 +8,7 @@ from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float, JSON
 
 from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
 from componets.checkers import first_or_none
+from elements import Module
 from main import Base, Session
 from users import User
 
@@ -139,11 +140,17 @@ class TestModuleSession(BaseModuleSession):
         session.flush()
         return new_entry
 
+    @classmethod
+    def create_point_session(cls, session: Session, user_id: int, module_id: int, point_id: int,
+                             module: Module) -> TestPointSession:
+        page_id = module.execute_point(point_id)
+        new_entry = cls(user_id=user_id, module_id=module_id, point_id=point_id, page_id=page_id)
+        session.add(new_entry)
+        session.flush()
+        return new_entry
+
     def find_point_session(self, session: Session, point_id: int) -> Optional[TestPointSession]:
-        if not TestPointSession.point_id == point_id:
-            return None
-        else:
-            return TestPointSession.point_id
+        return TestPointSession.find_by_ids(session, user_id=self.user_id, module_id=self.module_id, point_id=point_id)
 
     def set_reply(self, session: Session, task_id: int, reply) -> None:
         pass
