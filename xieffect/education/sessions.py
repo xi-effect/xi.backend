@@ -139,8 +139,11 @@ class TestModuleSession(BaseModuleSession):
         session.flush()
         return new_entry
 
-    def get_task(self, session: Session, task_id: int) -> int:
-        return 3  # temp
+    def find_point_session(self, session: Session, point_id: int) -> Optional[TestPointSession]:
+        if not TestPointSession.point_id == point_id:
+            return None
+        else:
+            return TestPointSession.point_id
 
     def set_reply(self, session: Session, task_id: int, reply) -> None:
         pass

@@ -111,7 +111,7 @@ class ModuleNavigator(Resource):
         """ Endpoint for navigating a Theory Block or Test """
 
         if module_type == ModuleType.TEST:
-            return TestModuleSession.find_or_create(session, user.id, module.id).get_task(session, point_id)
+            return TestModuleSession.find_or_create(session, user.id, module.id).find_point_session(session, point_id)
 
         elif module_type == ModuleType.THEORY_BLOCK:
             module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(session, user.id, module.id)
