@@ -128,10 +128,9 @@ class ModuleProgressSession(BaseModuleSession):
 
 
 class TestModuleSession(BaseModuleSession):
-    __tablename__ = "test-module-sessions"
+    __tablename__ = "test_module_sessions"
     not_found_text = "Test session not found"
-    module_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, primary_key=True)
+
     pass  # keeps test instance (one to many) in keeper.py
 
     @classmethod
@@ -153,8 +152,8 @@ class TestModuleSession(BaseModuleSession):
 
 class TestPointSession(Base):
     __tablename__ = "test-point-sessions"
-    module_id = Column(Integer, ForeignKey("TestModuleSession.module_id"))
-    user_id = Column(Integer, ForeignKey("TestModuleSession.module_id"))
+    module_id = Column(Integer, ForeignKey("test_module_sessions.module_id"))
+    user_id = Column(Integer, ForeignKey("test_module_sessions.user_id"))
     point_id = Column(Integer, primary_key=True)
     page_id = Column(Integer)
     right_answers = Column(Integer)
