@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-import sqlalchemy
-from sqlalchemy import Column, select, ForeignKey
-from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float
+
+from sqlalchemy import Column, select, ForeignKey, ForeignKeyConstraint
+from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float, JSON
 
 from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
 from componets.checkers import first_or_none
@@ -152,13 +152,16 @@ class TestModuleSession(BaseModuleSession):
 
 class TestPointSession(Base):
     __tablename__ = "test-point-sessions"
-    module_id = Column(Integer, ForeignKey("test_module_sessions.module_id"))
-    user_id = Column(Integer, ForeignKey("test_module_sessions.user_id"))
+    __table_args__ = (
+        ForeignKeyConstraint(("module_id", "user_id"),
+                             ("test_module_sessions.module_id", "test_module_sessions.user_id")),)
+    module_id = Column(Integer, ForeignKey("test_module_sessions.module_id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("test_module_sessions.user_id"), primary_key=True)
     point_id = Column(Integer, primary_key=True)
-    page_id = Column(Integer)
-    right_answers = Column(Integer)
-    total_answers = Column(Integer)
-    answers = Column(sqlalchemy.JSON)
+    page_id = Column(Integer, nullable=False)
+    right_answers = Column(Integer, nullable=True)
+    total_answers = Column(Integer, nullable=True)
+    answers = Column(JSON)
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Optional[TestModuleSession]:
