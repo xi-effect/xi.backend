@@ -3,12 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, select, ForeignKey, ForeignKeyConstraint
+from sqlalchemy import Column, select, ForeignKeyConstraint
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float, JSON
 
 from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
 from componets.checkers import first_or_none
-from elements import Module
 from main import Base, Session
 from users import User
 
@@ -130,8 +130,7 @@ class ModuleProgressSession(BaseModuleSession):
 class TestModuleSession(BaseModuleSession):
     __tablename__ = "test_module_sessions"
     not_found_text = "Test session not found"
-
-    pass  # keeps test instance (one to many) in keeper.py
+    points = relationship("TestPointSession", cascade="all, delete")
 
     @classmethod
     def create(cls, session: Session, user_id: int, module_id: int) -> TestModuleSession:
@@ -140,12 +139,10 @@ class TestModuleSession(BaseModuleSession):
         session.flush()
         return new_entry
 
-    @classmethod
-    def create_point_session(cls, session: Session, user_id: int, module_id: int, point_id: int,
-                             module: Module) -> TestPointSession:
+    def create_point_session(self, session: Session, point_id: int, module) -> TestPointSession:
         page_id = module.execute_point(point_id)
-        new_entry = cls(user_id=user_id, module_id=module_id, point_id=point_id, page_id=page_id)
-        session.add(new_entry)
+        new_entry = TestPointSession(page_id=page_id, point_id=point_id)
+        self.points.append(new_entry)
         session.flush()
         return new_entry
 
@@ -164,13 +161,13 @@ class TestPointSession(Base):
     __table_args__ = (
         ForeignKeyConstraint(("module_id", "user_id"),
                              ("test_module_sessions.module_id", "test_module_sessions.user_id")),)
-    module_id = Column(Integer, ForeignKey("test_module_sessions.module_id"), primary_key=True)
-    user_id = Column(Integer, ForeignKey("test_module_sessions.user_id"), primary_key=True)
+    module_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, primary_key=True)
     point_id = Column(Integer, primary_key=True)
     page_id = Column(Integer, nullable=False)
     right_answers = Column(Integer, nullable=True)
     total_answers = Column(Integer, nullable=True)
-    answers = Column(JSON)
+    answers = Column(JSON, nullable=True)
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int, point_id) -> Optional[TestModuleSession]:
