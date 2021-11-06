@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-
 from sqlalchemy import Column, select, ForeignKey, ForeignKeyConstraint
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float, JSON
 
@@ -26,7 +25,7 @@ class BaseModuleSession(Base):
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Optional[BaseModuleSession]:
-        return first_or_none(session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)))
+        return first_or_none(session.execute(select(cls).filter(cls.user_id == user_id, cls.module_id == module_id)))
 
     @classmethod
     def find_or_create(cls, session: Session, user_id: int, module_id: int) -> BaseModuleSession:
@@ -164,5 +163,6 @@ class TestPointSession(Base):
     answers = Column(JSON)
 
     @classmethod
-    def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Optional[TestModuleSession]:
-        return first_or_none(session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)))
+    def find_by_ids(cls, session: Session, user_id: int, module_id: int, point_id) -> Optional[TestModuleSession]:
+        return first_or_none(session.execute(
+            select(cls).filter(cls.user_id == user_id, cls.module_id == module_id, cls.point_id == point_id)))
