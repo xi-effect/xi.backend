@@ -11,6 +11,13 @@ def get_identity(jwt_cookie: str) -> int:
     return decode(jwt, key=app.config["JWT_SECRET_KEY"], algorithms="HS256")["sub"]
 
 
+def notify_offline(host: str, session: Session, chat_id: int) -> None:
+    user_list = session.get(f"{host}/chats/{chat_id}/users/offline/")
+    for user_data in user_list.json():
+        user_id: int = user_data["user-id"]
+        room_broadcast("notif", {"chat-id": chat_id, "unread": user_data["unread"]}, f"user-{user_id}")
+
+
 class MessagesNamespace(Namespace):
     def __init__(self, namespace=None):
         super().__init__(namespace)
@@ -45,15 +52,28 @@ class MessagesNamespace(Namespace):
     def on_send(self, session: Session, chat_id: int, data: dict):
         session.post(f"{self.host}/chats/{chat_id}/messages/", json=data)
         room_broadcast("send", data, f"chat-{chat_id}")
+        notify_offline(self.host, session, chat_id)
 
     @with_request_session
     @with_arguments(EArg("chat-id"), EArg("message-id"), EArg("content", check_only=True), use_original_data=True)
     def on_edit(self, session: Session, chat_id: int, message_id: int, data: dict):
         session.put(f"{self.host}/chats/{chat_id}/messages/{message_id}/", json=data)
         room_broadcast("edit", data, f"chat-{chat_id}")
+        notify_offline(self.host, session, chat_id)
 
     @with_request_session
     @with_arguments(EArg("chat-id"), EArg("message-id"), use_original_data=True)
     def on_delete(self, session: Session, chat_id: int, message_id: int, data: dict):
         session.delete(f"{self.host}/chats/{chat_id}/messages/{message_id}/")
         room_broadcast("delete", data, f"chat-{chat_id}")  # add "message" to data!!!
+        notify_offline(self.host, session, chat_id)
+
+
+# for user_data in data:
+#     user_data["unread"] user_data["user-id"]
+#     event_data.update({"chat-id": chat.id})
+#     room_broadcast("notif", event_data, f"user-{user_id}")
+
+
+# for user_id in user_ids:
+#     room_broadcast(event, data, f"user-{user_id}")

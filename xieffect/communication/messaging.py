@@ -41,7 +41,6 @@ def search_message(use_session: bool, unmoderatable: bool = True):
 class MessageAdder(Resource):  # temp pass-through
     @messages_namespace.search_user_to_chat(ChatRole.BASIC, True, True, True, True)
     @messages_namespace.argument_parser(message_parser)
-    @messages_namespace.broadcast_after()
     @messages_namespace.a_response()
     def post(self, session, user: User, chat: Chat, user_to_chat: UserToChat, content: str) -> None:
         """ For sending a new message [TEMP] """
@@ -53,7 +52,6 @@ class MessageAdder(Resource):  # temp pass-through
 class MessageProcessor(Resource):  # temp pass-through
     @search_message(False)
     @messages_namespace.argument_parser(message_parser)
-    @messages_namespace.broadcast_after()
     @messages_namespace.a_response()
     def put(self, message: Message, content: str) -> None:
         """ For editing a message (by the sender only) [TEMP] """
@@ -61,7 +59,6 @@ class MessageProcessor(Resource):  # temp pass-through
         message.updated = datetime.utcnow()
 
     @search_message(True, False)
-    @messages_namespace.broadcast_after()
     @messages_namespace.a_response()
     def delete(self, session, message: Message) -> None:
         """ For deleting a message (by the sender or chat moderator) [TEMP] """

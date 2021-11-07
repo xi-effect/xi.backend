@@ -1,18 +1,9 @@
 from functools import wraps
-from typing import Optional, Union, Any
-
-from requests import post
+from typing import Optional
 
 from componets import Namespace, get_or_pop, ResponseDoc, message_response
-from main import app
 from users import User
 from .entities import ChatRole, UserToChat, Chat
-
-
-def pass_through(event: str, data: dict, users: Union[dict[int, Any], list[int]]):
-    host = "http://localhost:5050" if app.debug else "https://xieffect-socketio.herokuapp.com"
-    post(f"{host}/pass-through/", json={
-        "event": event, "data": data, "user-data" if isinstance(users, dict) else "user-ids": users})
 
 
 def create_403_response(has_min_role: bool) -> ResponseDoc:
@@ -48,21 +39,3 @@ class ChatNamespace(Namespace):
             return search_user_to_chat_inner
 
         return search_user_to_chat_wrapper
-
-    @staticmethod
-    def broadcast_after():
-        def broadcast_after_wrapper(function):
-            @wraps(function)
-            def broadcast_after_inner(*args, **kwargs):
-                session = kwargs["session"]
-                chat: Chat = kwargs["chat"]
-                data = {u2c.user_id: {"unread": u2c.unread} for u2c in UserToChat.find_by_chat(session, chat.id)}
-
-                result = function(*args, **kwargs)
-                pass_through("notif", {"chat-id": chat.id}, data)
-
-                return result
-
-            return broadcast_after_inner
-
-        return broadcast_after_wrapper

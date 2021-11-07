@@ -8,10 +8,11 @@ from flask_restx.reqparse import RequestParser
 from componets import ResponseDoc
 from users import User
 from .entities import UserToChat, Chat, ChatRole
-from .helpers import ChatNamespace, pass_through
+from .helpers import ChatNamespace
 
 chat_index_temp_namespace = ChatNamespace("chat-temp", path="/chat-temp/")
 chat_temp_namespace = ChatNamespace("chat-temp", path="/chat-temp/<int:chat_id>/")
+temp_u2c = chat_temp_namespace.model("TempU2C", UserToChat.marshal_models["temp-u2c"])
 
 chat_meta_parser: RequestParser = RequestParser()
 chat_meta_parser.add_argument("name", str, required=True)
@@ -41,6 +42,24 @@ class ChatCloser(Resource):  # temp pass-through
     def post(self, session, user: User, ids: list[int]) -> None:
         """ Sets all in-chat statuses to offline (for chats form the list in parameters) [TEMP] """
         UserToChat.find_and_close(session, user.id, ids)
+
+
+@chat_temp_namespace.route("/users/all/")
+class ChatFullUserLister(Resource):  # temp pass-through
+    @chat_temp_namespace.jwt_authorizer(User, check_only=True, use_session=False)
+    @chat_temp_namespace.database_searcher(Chat)
+    @chat_temp_namespace.response(200, "A list of user ids")
+    def get(self, chat: Chat) -> list[UserToChat]:
+        return [u2c.user_id for u2c in chat.participants]
+
+
+@chat_temp_namespace.route("/users/offline/")
+class ChatOfflineUserLister(Resource):  # temp pass-through
+    @chat_temp_namespace.jwt_authorizer(User, check_only=True, use_session=False)
+    @chat_temp_namespace.database_searcher(Chat, use_session=True)
+    @chat_temp_namespace.marshal_list_with(temp_u2c)
+    def get(self, session, chat: Chat) -> list[UserToChat]:
+        return UserToChat.find_by_chat(session, chat.id)
 
 
 @chat_temp_namespace.route("/presence/")
@@ -83,15 +102,15 @@ class ChatManager(Resource):  # temp pass-through
     def put(self, chat: Chat, name: str) -> None:  # redo as event
         """ Changes some of chat's metadata (chat admins only) [TEMP] """
         chat.name = name
-        pass_through("edit-chat", {"chat-id": chat.id, "name": name}, [u2c.user_id for u2c in chat.participants])
+        # pass_through("edit-chat", {"chat-id": chat.id, "name": name}, [u2c.user_id for u2c in chat.participants])
 
     @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.OWNER, use_chat=True, use_session=True)
     @chat_temp_namespace.a_response()
     def delete(self, session, chat: Chat) -> None:  # redo as event
         """ Deletes a chat (chat owner only) [TEMP] """
-        user_ids = [u2c.user_id for u2c in chat.participants]
+        # user_ids = [u2c.user_id for u2c in chat.participants]
         chat.delete(session)
-        pass_through("delete-chat", {"chat-id": chat.id}, user_ids)
+        # pass_through("delete-chat", {"chat-id": chat.id}, user_ids)
 
 
 def manage_user(with_role: bool = False):
@@ -145,8 +164,8 @@ class ChatUserManager(Resource):  # temp pass-through
     def post(self, session, chat: Chat, user_id: int, role: ChatRole) -> None:  # redo as event
         """ Adds a user to the chat (admins only) [TEMP] """
         chat.add_participant(User.find_by_id(session, user_id), role)
-        pass_through("add-chat", {"chat-id": chat.id, "name": chat.name,
-                                  "role": role.to_string()}, [user_id])
+        # pass_through("add-chat", {"chat-id": chat.id, "name": chat.name,
+        #                           "role": role.to_string()}, [user_id])
 
     @manage_user(with_role=True)
     @with_role_check
@@ -154,15 +173,15 @@ class ChatUserManager(Resource):  # temp pass-through
     def put(self, target_to_chat: UserToChat, role: ChatRole) -> None:  # redo as event
         """ Changes user's role (admins only) [TEMP] """
         target_to_chat.role = role
-        pass_through("edit-chat", {"chat-id": target_to_chat.chat_id, "name": target_to_chat.chat.name,
-                                   "role": role.to_string()}, [target_to_chat.user_id])
+        # pass_through("edit-chat", {"chat-id": target_to_chat.chat_id, "name": target_to_chat.chat.name,
+        #                            "role": role.to_string()}, [target_to_chat.user_id])
 
     @manage_user()
     @chat_temp_namespace.a_response()
     def delete(self, session, target_to_chat: UserToChat) -> None:  # redo as event
         """ Removes a user from the chat (admins only) [TEMP] """
         target_to_chat.delete(session)
-        pass_through("delete-chat", {"chat-id": target_to_chat.chat_id}, [target_to_chat.user_id])
+        # pass_through("delete-chat", {"chat-id": target_to_chat.chat_id}, [target_to_chat.user_id])
 
 
 @chat_temp_namespace.route("/users/add-all/")
@@ -179,4 +198,4 @@ class ChatUserBulkAdder(Resource):  # temp pass-through
             user: User = User.find_by_id(session, user_id)
             if user is not None and UserToChat.find_by_ids(session, chat.id, user_id) is None:
                 chat.add_participant(user)  # no error check, REDO
-        pass_through("add-chat", {"chat-id": chat.id, "name": chat.name}, ids)
+        # pass_through("add-chat", {"chat-id": chat.id, "name": chat.name}, ids)
