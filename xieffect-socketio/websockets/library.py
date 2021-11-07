@@ -1,6 +1,7 @@
 from functools import wraps
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_socketio import Namespace as _Namespace
 from requests import Session as _Session, Response
 
 from setup import socketio, user_sessions
@@ -26,3 +27,8 @@ def with_request_session(function):
         return function(*args, **kwargs)
 
     return with_request_session_inner
+
+
+class Namespace(_Namespace):
+    def trigger_event(self, event, *args):
+        super().trigger_event(event.replace("-", "_"), *args)

@@ -6,7 +6,7 @@ from jwt import decode
 from requests import Session
 
 from setup import user_sessions, app
-from .broadcast import room_broadcast
+from .library import room_broadcast, Namespace
 
 
 def parse_chat_data(function):
