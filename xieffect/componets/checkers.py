@@ -4,8 +4,10 @@ from functools import wraps
 from typing import Type, Optional, Any, List
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_restx import Namespace as RestXNamespace
+from flask_restx import Namespace as RestXNamespace, Model
 from flask_restx.reqparse import RequestParser
+from flask_restx.fields import List as ListField, Integer as IntField, Nested
+from flask_restx.marshalling import marshal
 from sqlalchemy.engine import Result
 
 from main import Session, Base, index_service
@@ -245,7 +247,7 @@ class Namespace(RestXNamespace):
 
         return a_response_wrapper
 
-    def lister(self, per_request: int, marshal_model, skip_none: bool = True, **kwargs):
+    def lister(self, per_request: int, marshal_model: Model, skip_none: bool = True):
         """
         - Used for organising pagination.
         - Uses `counter` form incoming arguments for the decorated function and `per_request` argument
@@ -257,18 +259,22 @@ class Namespace(RestXNamespace):
         :param per_request:
         :param marshal_model:
         :param skip_none:
-        :param kwargs:
         :return:
         """
+        list_marshal_model = self.model("List" + marshal_model.name,
+                                        {"results": ListField(Nested(marshal_model)), "has-next": IntField})
 
         def lister_wrapper(function):
             @wraps(function)
-            @self.marshal_list_with(marshal_model, skip_none=skip_none, **kwargs)
+            @self.response(200, "Success", list_marshal_model)
             def lister_inner(*args, **kwargs):
                 counter: int = kwargs.pop("counter") * per_request
                 kwargs["start"] = counter
-                kwargs["finish"] = counter + per_request
-                return function(*args, **kwargs)
+                kwargs["finish"] = counter + per_request + 1
+                result_list = function(*args, **kwargs)
+                if has_next := len(result_list) > per_request:
+                    result_list.pop()
+                return {"results": marshal(result_list, marshal_model, skip_none=skip_none), "has-next": has_next}
 
             return lister_inner
 
