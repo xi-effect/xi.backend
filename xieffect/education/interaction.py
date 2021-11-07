@@ -111,13 +111,13 @@ class ModuleNavigator(Resource):
         """ Endpoint for navigating a Theory Block or Test """
 
         if module_type == ModuleType.TEST:
-            new_session = TestModuleSession.find_or_create(session=session, user_id=user.id, module_id=module.id)
-            new_point = new_session.find_point_session(session=session, point_id=point_id)
-            if new_point is not None:
-                return new_point.page_id
+            new_test_session = TestModuleSession.find_or_create(session, user.id, module.id)
+            new_test_point = new_test_session.find_point_session(session, point_id)
+            if new_test_point is not None:
+                return new_test_point.page_id
             else:
-                new_point = new_session.create_point_session(session=session, point_id=point_id, module=module)
-                return new_point.page_id
+                new_test_point = new_test_session.create_point_session(session, point_id, module)
+                return new_test_point.page_id
 
         elif module_type == ModuleType.THEORY_BLOCK:
             module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(session, user.id, module.id)
