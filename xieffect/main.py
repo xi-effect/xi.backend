@@ -34,7 +34,7 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=72)
 app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
 
 # Secret config:
-for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY"]:
+for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY", "API_KEY"]:
     app.config[secret_name] = getenv(secret_name, "hope it's local")
 
 # CORS config:
