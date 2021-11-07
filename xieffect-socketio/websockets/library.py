@@ -18,22 +18,23 @@ class EventArgument:
     name: str
     dest: Optional[str] = None
     desc: Optional[str] = None
+    check_only: bool = False
 
     def __post_init__(self):
         if self.dest is None:
             self.dest = self.name.replace("-", "_")
 
 
-def with_arguments(*event_args: EventArgument):
+def with_arguments(*event_args: EventArgument, use_original_data: bool = False):
     def with_arguments_wrapper(function):
         @wraps(function)
         def with_arguments_inner(*args, **kwargs):
             try:
-                data: dict = kwargs.pop("data")
-                kwargs.update({arg.dest: data[arg.name] for arg in event_args})
+                data: dict = kwargs.get("data") if use_original_data else kwargs.pop("data")
+                kwargs.update({arg.dest: data[arg.name] for arg in event_args if not arg.check_only})
                 return function(*args, **kwargs)
             except KeyError as e:
-                pass  # error check
+                emit_error(f"Argument parsing error, missing '{e}'", function.__name__[3:])
 
         return with_arguments_inner
 
