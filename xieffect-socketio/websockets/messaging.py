@@ -1,9 +1,9 @@
 from functools import wraps
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_socketio import join_room, leave_room, Namespace, rooms
-from requests import Session
+from flask_socketio import join_room, leave_room, rooms
 from jwt import decode
+from requests import Session
 
 from setup import user_sessions, app
 from .broadcast import room_broadcast
@@ -14,12 +14,20 @@ def parse_chat_data(function):
     @wraps(function)
     def parse_chat_data_inner(self, data: dict):
         chat_id: int = data.get("chat-id")
+        args: list = [chat_id]
+
         url = f"{self.host}/chats/{chat_id}/"
         if (message_id := data.get("message-id", None)) is not None:
             url += f"messages/{message_id}/"
+        elif (user_id := data.get("user-id", None)) is not None:
+            url += f"users/{user_id}/"
+            args.append(user_id)
+            if (role := data.get("role", None)) is not None:
+                args.append(role)
         else:
             url += "messages/" if "content" in data.keys() else "presence/"
-        return function(self, url, chat_id, user_sessions.sessions[get_jwt_identity()], data)
+
+        return function(self, url, *args, user_sessions.sessions[get_jwt_identity()], data)
 
     return parse_chat_data_inner
 
@@ -40,9 +48,11 @@ class MessagesNamespace(Namespace):
 
     @jwt_required()
     def on_disconnect(self):
+        session = user_sessions.sessions[get_jwt_identity()]
         user_sessions.disconnect(get_jwt_identity())
+
         chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
-        user_sessions.sessions[get_jwt_identity()].post(f"{self.host}/chats/close-all/", json={"ids": chat_ids})
+        session.post(f"{self.host}/chats/close-all/", json={"ids": chat_ids})
 
     @parse_chat_data
     def on_open(self, url: str, chat_id: int, session: Session, _):
