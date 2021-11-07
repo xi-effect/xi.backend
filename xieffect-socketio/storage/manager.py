@@ -1,6 +1,6 @@
 from flask import request
 from flask_socketio import join_room, close_room
-from requests import Session
+from websockets import Session
 
 
 class UserSession:
