@@ -1,6 +1,6 @@
 from flask_socketio import Namespace, join_room, rooms
 
-from .broadcast import room_broadcast
+from .library import room_broadcast
 
 
 class TestNamespace(Namespace):
