@@ -50,23 +50,23 @@ class MessagesNamespace(Namespace):
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), EArg("content", check_only=True))
-    def on_send(self, session: Session, chat_id: int, data: dict):
+    def on_send_message(self, session: Session, chat_id: int, data: dict):
         session.post(f"{self.host}/chat-temp/{chat_id}/messages/", json=data)
-        room_broadcast("send", data, f"chat-{chat_id}")
+        room_broadcast("send-message", data, f"chat-{chat_id}")
         notify_offline(self.host, session, chat_id)
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), EArg("message-id"), EArg("content", check_only=True))
-    def on_edit(self, session: Session, chat_id: int, message_id: int, data: dict):
+    def on_edit_message(self, session: Session, chat_id: int, message_id: int, data: dict):
         session.put(f"{self.host}/chat-temp/{chat_id}/messages/{message_id}/", json=data)
-        room_broadcast("edit", data, f"chat-{chat_id}")
+        room_broadcast("edit-message", data, f"chat-{chat_id}")
         notify_offline(self.host, session, chat_id)
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), EArg("message-id"))
-    def on_delete(self, session: Session, chat_id: int, message_id: int, data: dict):
+    def on_delete_message(self, session: Session, chat_id: int, message_id: int, data: dict):
         session.delete(f"{self.host}/chat-temp/{chat_id}/messages/{message_id}/")
-        room_broadcast("delete", data, f"chat-{chat_id}")  # add "message" to data!!!
+        room_broadcast("delete-message", data, f"chat-{chat_id}")  # add "message" to data!!!
         notify_offline(self.host, session, chat_id)
 
     @with_request_session(use_user_id=True)
