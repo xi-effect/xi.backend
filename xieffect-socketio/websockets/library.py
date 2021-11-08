@@ -85,17 +85,24 @@ class Session(_Session):
         return response
 
 
-def with_request_session(function):
-    @jwt_required()
-    @wraps(function)
-    def with_request_session_inner(*args, **kwargs):
-        kwargs["session"] = user_sessions.sessions[get_jwt_identity()]
-        try:
-            return function(*args, **kwargs)
-        except RequestException as e:
-            e.emit_error_event(function.__name__)
+def with_request_session(use_user_id: bool = False, ignore_errors: bool = False):
+    def with_request_session_wrapper(function):
+        @jwt_required()
+        @wraps(function)
+        def with_request_session_inner(*args, **kwargs):
+            user_id: int = get_jwt_identity()
+            kwargs["session"] = user_sessions.sessions[user_id]
+            if use_user_id:
+                kwargs["user_id"] = user_id
+            try:
+                return function(*args, **kwargs)
+            except RequestException as e:
+                if not ignore_errors:
+                    e.emit_error_event(function.__name__)
 
-    return with_request_session_inner
+        return with_request_session_inner
+
+    return with_request_session_wrapper
 
 
 class Namespace(_Namespace):
