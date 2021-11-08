@@ -113,10 +113,10 @@ class ChatManager(Resource):  # temp pass-through
         # pass_through("delete-chat", {"chat-id": chat.id}, user_ids)
 
 
-def manage_user(with_role: bool = False):
+def manage_user(with_current: bool = False):
     def manage_user_wrapper(function):
         @chat_temp_namespace.doc_responses(ResponseDoc.error_response(404, "Target user is not in the chat"))
-        @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_chat=True, use_user_to_chat=True)
+        @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.MODER, use_chat=True, use_user_to_chat=True)
         @chat_temp_namespace.database_searcher(User, result_field_name="target", use_session=True)
         @wraps(function)
         def manage_user_inner(*args, session, user_to_chat: UserToChat, chat: Chat, target: User):
@@ -127,7 +127,7 @@ def manage_user(with_role: bool = False):
             if target_to_chat.role.value >= user_to_chat.role.value:
                 return {"a": "Your role is not higher that user's"}, 403
 
-            if with_role:
+            if with_current:
                 return function(user_to_chat=user_to_chat, chat=chat, target_to_chat=target_to_chat, *args)
             return function(session=session, target_to_chat=target_to_chat, *args)
 
@@ -167,7 +167,7 @@ class ChatUserManager(Resource):  # temp pass-through
         # pass_through("add-chat", {"chat-id": chat.id, "name": chat.name,
         #                           "role": role.to_string()}, [user_id])
 
-    @manage_user(with_role=True)
+    @manage_user(with_current=True)
     @with_role_check
     @chat_temp_namespace.a_response()
     def put(self, target_to_chat: UserToChat, role: ChatRole) -> None:  # redo as event
