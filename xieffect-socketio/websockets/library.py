@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
 from json import dumps
-from typing import Optional
+from typing import Optional, Any
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_socketio import emit, Namespace as _Namespace
@@ -13,6 +13,11 @@ from setup import socketio, user_sessions, app
 
 def room_broadcast(event: str, data: dict, room: str, namespace: str = "/"):
     socketio.emit(event, data, to=room, namespace=namespace)
+
+
+def users_broadcast(event: str, data: dict, user_ids: list[int], namespace: str = "/"):
+    for user_id in user_ids:
+        room_broadcast(event, data, f"user-{user_id}", namespace)
 
 
 def send_discord_message(webhook: str, message: str):

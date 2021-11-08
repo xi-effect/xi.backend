@@ -1,14 +1,9 @@
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_socketio import join_room, leave_room, rooms
-from jwt import decode
 
 from setup import user_sessions, app
-from .library import room_broadcast, Namespace, with_request_session, with_arguments, EventArgument as EArg, Session
-
-
-def get_identity(jwt_cookie: str) -> int:
-    jwt: str = jwt_cookie.partition("access_token_cookie=")[2].partition(";")[0]
-    return decode(jwt, key=app.config["JWT_SECRET_KEY"], algorithms="HS256")["sub"]
+from .library import (room_broadcast, users_broadcast, Namespace,
+                      with_arguments, EventArgument as EArg, with_request_session, Session)
 
 
 def emit_notify(user_id: int, chat_id: int, unread: int):
@@ -19,6 +14,10 @@ def notify_offline(host: str, session: Session, chat_id: int) -> None:
     user_list = session.get(f"{host}/chat-temp/{chat_id}/users/offline/")
     for user_data in user_list.json():
         emit_notify(user_data["user-id"], chat_id, user_data["unread"])
+
+
+def get_participants(host: str, session: Session, chat_id: int) -> list[int]:
+    return session.get(f"{host}/chat-temp/{chat_id}/users/all/").json()
 
 
 class MessagesNamespace(Namespace):
