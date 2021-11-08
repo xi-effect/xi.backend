@@ -16,7 +16,7 @@ def emit_notify(user_id: int, chat_id: int, unread: int):
 
 
 def notify_offline(host: str, session: Session, chat_id: int) -> None:
-    user_list = session.get(f"{host}/chats/{chat_id}/users/offline/")
+    user_list = session.get(f"{host}/chat-temp/{chat_id}/users/offline/")
     for user_data in user_list.json():
         emit_notify(user_data["user-id"], chat_id, user_data["unread"])
 
@@ -34,39 +34,39 @@ class MessagesNamespace(Namespace):
     def on_disconnect(self, session: Session, user_id: int):
         user_sessions.disconnect(user_id)
         chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
-        session.post(f"{self.host}/chats/close-all/", json={"ids": chat_ids})
+        session.post(f"{self.host}/chat-temp/close-all/", json={"ids": chat_ids})
 
     @with_request_session(use_user_id=True)
     @with_arguments(EArg("chat-id"), use_original_data=False)
     def on_open(self, session: Session, chat_id: int, user_id: int):
-        session.post(f"{self.host}/chats/{chat_id}/presence/", json={"online": True})
+        session.post(f"{self.host}/chat-temp/{chat_id}/presence/", json={"online": True})
         join_room(f"chat-{chat_id}")
         emit_notify(user_id, chat_id, 0)
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), use_original_data=False)
     def on_close(self, session: Session, chat_id: int):
-        session.post(f"{self.host}/chats/{chat_id}/presence/", json={"online": False})
+        session.post(f"{self.host}/chat-temp/{chat_id}/presence/", json={"online": False})
         leave_room(f"chat-{chat_id}")
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), EArg("content", check_only=True))
     def on_send(self, session: Session, chat_id: int, data: dict):
-        session.post(f"{self.host}/chats/{chat_id}/messages/", json=data)
+        session.post(f"{self.host}/chat-temp/{chat_id}/messages/", json=data)
         room_broadcast("send", data, f"chat-{chat_id}")
         notify_offline(self.host, session, chat_id)
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), EArg("message-id"), EArg("content", check_only=True))
     def on_edit(self, session: Session, chat_id: int, message_id: int, data: dict):
-        session.put(f"{self.host}/chats/{chat_id}/messages/{message_id}/", json=data)
+        session.put(f"{self.host}/chat-temp/{chat_id}/messages/{message_id}/", json=data)
         room_broadcast("edit", data, f"chat-{chat_id}")
         notify_offline(self.host, session, chat_id)
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), EArg("message-id"))
     def on_delete(self, session: Session, chat_id: int, message_id: int, data: dict):
-        session.delete(f"{self.host}/chats/{chat_id}/messages/{message_id}/")
+        session.delete(f"{self.host}/chat-temp/{chat_id}/messages/{message_id}/")
         room_broadcast("delete", data, f"chat-{chat_id}")  # add "message" to data!!!
         notify_offline(self.host, session, chat_id)
 
