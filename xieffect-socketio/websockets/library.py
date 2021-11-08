@@ -29,13 +29,17 @@ def emit_error(message: str, event_name: str, **kwargs):
 @dataclass()
 class EventArgument:
     name: str
+    default: Optional[Any] = None
     dest: Optional[str] = None
     desc: Optional[str] = None
     check_only: bool = False
+    required: bool = True
 
     def __post_init__(self):
         if self.dest is None:
             self.dest = self.name.replace("-", "_")
+        if self.default is not None:
+            self.required = False
 
 
 def with_arguments(*event_args: EventArgument, use_original_data: bool = True):
@@ -44,7 +48,8 @@ def with_arguments(*event_args: EventArgument, use_original_data: bool = True):
         def with_arguments_inner(*args, **kwargs):
             try:
                 data: dict = kwargs.get("data") if use_original_data else kwargs.pop("data")
-                kwargs.update({arg.dest: data[arg.name] for arg in event_args if not arg.check_only})
+                kwargs.update({arg.dest: data[arg.name] if arg.required is None else data.get(arg.name, arg.default)
+                               for arg in event_args if not arg.check_only})
                 return function(*args, **kwargs)
             except KeyError as e:
                 emit_error(f"Argument parsing error, missing '{e}'", function.__name__[3:])
