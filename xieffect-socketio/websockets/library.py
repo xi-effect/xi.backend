@@ -38,7 +38,7 @@ class EventArgument:
             self.dest = self.name.replace("-", "_")
 
 
-def with_arguments(*event_args: EventArgument, use_original_data: bool = False):
+def with_arguments(*event_args: EventArgument, use_original_data: bool = True):
     def with_arguments_wrapper(function):
         @wraps(function)
         def with_arguments_inner(*args, **kwargs):
