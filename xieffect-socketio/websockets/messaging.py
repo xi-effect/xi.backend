@@ -11,11 +11,14 @@ def get_identity(jwt_cookie: str) -> int:
     return decode(jwt, key=app.config["JWT_SECRET_KEY"], algorithms="HS256")["sub"]
 
 
+def emit_notify(user_id: int, chat_id: int, unread: int):
+    room_broadcast("notif", {"chat-id": chat_id, "unread": unread}, f"user-{user_id}")
+
+
 def notify_offline(host: str, session: Session, chat_id: int) -> None:
     user_list = session.get(f"{host}/chats/{chat_id}/users/offline/")
     for user_data in user_list.json():
-        user_id: int = user_data["user-id"]
-        room_broadcast("notif", {"chat-id": chat_id, "unread": user_data["unread"]}, f"user-{user_id}")
+        emit_notify(user_data["user-id"], chat_id, user_data["unread"])
 
 
 class MessagesNamespace(Namespace):
@@ -33,11 +36,12 @@ class MessagesNamespace(Namespace):
         chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
         session.post(f"{self.host}/chats/close-all/", json={"ids": chat_ids})
 
-    @with_request_session()
+    @with_request_session(use_user_id=True)
     @with_arguments(EArg("chat-id"))
-    def on_open(self, session: Session, chat_id: int):
+    def on_open(self, session: Session, chat_id: int, user_id: int):
         session.post(f"{self.host}/chats/{chat_id}/presence/", json={"online": True})
         join_room(f"chat-{chat_id}")
+        emit_notify(user_id, chat_id, 0)
 
     @with_request_session()
     @with_arguments(EArg("chat-id"))
