@@ -69,6 +69,25 @@ class MessagesNamespace(Namespace):
         room_broadcast("delete", data, f"chat-{chat_id}")  # add "message" to data!!!
         notify_offline(self.host, session, chat_id)
 
+    @with_request_session(use_user_id=True)
+    @with_arguments(EArg("name"), use_original_data=False)
+    def on_add_chat(self, session: Session, name: str, user_id: int):  # creates a new chat
+        chat_id = session.post(f"{self.host}/chat-temp/", json={"name": name}).json()["id"]
+        room_broadcast("add-chat", {"chat-id": chat_id, "name": name, "role": "owner"}, f"user-{user_id}")
+
+    @with_request_session()
+    @with_arguments(EArg("chat-id"), EArg("name"))
+    def on_edit_chat(self, session: Session, chat_id: int, name: str, data: dict):
+        user_ids = get_participants(self.host, session, chat_id)
+        session.put(f"{self.host}/chat-temp/{chat_id}/manage/", json={"name": name})
+        users_broadcast("edit-chat", data, user_ids)
+
+    @with_request_session()
+    @with_arguments(EArg("chat-id"))
+    def on_delete_chat(self, session: Session, chat_id: int, data: dict):
+        user_ids = get_participants(self.host, session, chat_id)
+        session.delete(f"{self.host}/chat-temp/{chat_id}/manage/")
+        users_broadcast("delete-chat", data, user_ids)
 
 # for user_data in data:
 #     user_data["unread"] user_data["user-id"]
