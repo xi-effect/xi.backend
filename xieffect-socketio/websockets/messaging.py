@@ -80,13 +80,17 @@ class MessagesNamespace(Namespace):
         session.put(f"{self.host}/chat-temp/{chat_id}/users/{user_id}/", json={"role": role})
         users_broadcast("invite-user", data, user_ids)
 
-    @with_request_session()
-    @with_arguments(EArg("chat-id"), EArg("user-id"))
-    def on_kick_user(self, session: Session, chat_id: int, user_id: int, data: dict):
-        session.delete(f"{self.host}/chat-temp/{chat_id}/users/{user_id}/")
-        user_ids = get_participants(self.host, session, chat_id)
-        users_broadcast("kick-user", data, user_ids)
-        room_broadcast("delete-chat", session.get(f"{self.host}/chats/{chat_id}/").json(), f"user-{user_id}")
+    @with_request_session(use_user_id=True)
+    @with_arguments(EArg("chat-id"), EArg("user-id", dest="target_id"))
+    def on_kick_user(self, session: Session, user_id: int, chat_id: int, target_id: int, data: dict):
+        if user_id == target_id:  # quit
+            session.delete(f"{self.host}/chat-temp/{chat_id}/membership/")
+        else:  # kick
+            session.delete(f"{self.host}/chat-temp/{chat_id}/users/{target_id}/")
+
+        room_broadcast("kick-user", data, f"chat-{chat_id}")
+        room_broadcast("delete-chat", {"id": chat_id}, f"user-{target_id}")
+        # should remove user from room f"chat-{chat_id}"
 
     @with_request_session(use_user_id=True)
     @with_arguments(EArg("chat-id"), use_original_data=False)
