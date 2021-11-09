@@ -39,7 +39,7 @@ class MessagesNamespace(Namespace):
     @with_arguments(EArg("name"), use_original_data=False)
     def on_add_chat(self, session: Session, name: str, user_id: int):  # creates a new chat
         chat_id = session.post(f"{self.host}/chat-temp/", json={"name": name}).json()["id"]
-        room_broadcast("add-chat", {"chat-id": chat_id, "name": name, "role": "owner"}, f"user-{user_id}")
+        room_broadcast("add-chat", {"chat-id": chat_id, "name": name}, f"user-{user_id}")
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), EArg("name"))
@@ -95,14 +95,14 @@ class MessagesNamespace(Namespace):
 
     @with_request_session(use_user_id=True)
     @with_arguments(EArg("chat-id"), use_original_data=False)
-    def on_open(self, session: Session, chat_id: int, user_id: int):
+    def on_open_chat(self, session: Session, chat_id: int, user_id: int):
         session.post(f"{self.host}/chat-temp/{chat_id}/presence/", json={"online": True})
         join_room(f"chat-{chat_id}")
         emit_notify(user_id, chat_id, 0)
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), use_original_data=False)
-    def on_close(self, session: Session, chat_id: int):
+    def on_close_chat(self, session: Session, chat_id: int):
         session.post(f"{self.host}/chat-temp/{chat_id}/presence/", json={"online": False})
         leave_room(f"chat-{chat_id}")
 
