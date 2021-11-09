@@ -149,13 +149,9 @@ class TestModuleSession(BaseModuleSession):
     def find_point_session(self, session: Session, point_id: int) -> Optional[TestPointSession]:
         return TestPointSession.find_by_ids(session, user_id=self.user_id, module_id=self.module_id, point_id=point_id)
 
-    def set_reply(self, session: Session, task_id: int, reply) -> None:
-        pass
 
-    def collect_results(self, session: Session) -> dict:
-        pass  # delete the test_session!
-
-
+@create_marshal_model("sessions", "module_id", "user_id", "point_id", "page_id", "right_answers", "total_answers",
+                      "answers")
 class TestPointSession(Base):
     __tablename__ = "test-point-sessions"
     __table_args__ = (
