@@ -89,6 +89,39 @@ class MessagesNamespace(Namespace):
         session.delete(f"{self.host}/chat-temp/{chat_id}/manage/")
         users_broadcast("delete-chat", data, user_ids)
 
+    @with_request_session()
+    @with_arguments(EArg("chat-id"), EArg("user-ids"))
+    def on_invite_users(self, session: Session, chat_id: int, user_ids: list[int], data: dict):
+        # this does NOT check if invited users are already in the chat!
+        old_user_ids = get_participants(self.host, session, chat_id)
+        session.post(f"{self.host}/chat-temp/{chat_id}/users/add-all/", json={"ids": user_ids})
+        users_broadcast("invite-users", data, old_user_ids)
+        users_broadcast("add-chat", session.get(f"{self.host}/chats/{chat_id}/").json(), user_ids)
+
+    @with_request_session()
+    @with_arguments(EArg("chat-id"), EArg("user-id"), EArg("role"))
+    def on_invite_user(self, session: Session, chat_id: int, user_id: int, role: str, data: dict):
+        # this does NOT check if invited user is already in the chat!
+        user_ids = get_participants(self.host, session, chat_id)
+        session.post(f"{self.host}/chat-temp/{chat_id}/users/{user_id}/", json={"role": role})
+        users_broadcast("invite-user", data, user_ids)
+        room_broadcast("add-chat", session.get(f"{self.host}/chats/{chat_id}/").json(), f"user-{user_id}")
+
+    @with_request_session()
+    @with_arguments(EArg("chat-id"), EArg("user-id"), EArg("role"))
+    def on_assign_user(self, session: Session, chat_id: int, user_id: int, role: str, data: dict):
+        user_ids = get_participants(self.host, session, chat_id)
+        session.put(f"{self.host}/chat-temp/{chat_id}/users/{user_id}/", json={"role": role})
+        users_broadcast("invite-user", data, user_ids)
+
+    @with_request_session()
+    @with_arguments(EArg("chat-id"), EArg("user-id"))
+    def on_kick_user(self, session: Session, chat_id: int, user_id: int, data: dict):
+        session.delete(f"{self.host}/chat-temp/{chat_id}/users/{user_id}/")
+        user_ids = get_participants(self.host, session, chat_id)
+        users_broadcast("kick-user", data, user_ids)
+        room_broadcast("delete-chat", session.get(f"{self.host}/chats/{chat_id}/").json(), f"user-{user_id}")
+
 # for user_data in data:
 #     user_data["unread"] user_data["user-id"]
 #     event_data.update({"chat-id": chat.id})
