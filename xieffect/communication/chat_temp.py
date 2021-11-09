@@ -70,11 +70,13 @@ class MessageReader(Resource):  # temp pass-through
     @chat_temp_namespace.search_user_to_chat(use_user_to_chat=True)
     @chat_temp_namespace.argument_parser(parser)
     @chat_temp_namespace.a_response()
-    def post(self, user_to_chat: UserToChat, online: bool) -> None:
-        """ Sets if the uses has this chat open [TEMP] """
-        user_to_chat.online = online
-        if online:
+    def post(self, user_to_chat: UserToChat, online: bool) -> bool:
+        """ Sets if the user has this chat open & returns if notif event is needed [TEMP] """
+        user_to_chat.online += 1 if online else -1
+        if online and user_to_chat.online == 1:
             user_to_chat.unread = 0
+            return True
+        return False
 
 
 @chat_temp_namespace.route("/membership/")

@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy import Column, Sequence, select, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON, Boolean
+from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON
 from sqlalchemy_enum34 import EnumType
 
 from componets import create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
@@ -89,7 +89,7 @@ class UserToChat(Base, Marshalable):
 
     # Other data:
     role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
-    online = Column(Boolean, nullable=False, default=False)
+    online = Column(Integer, nullable=False, default=False)
     unread = Column(Integer, nullable=True)
     activity = Column(DateTime, nullable=True)
 
@@ -110,13 +110,13 @@ class UserToChat(Base, Marshalable):
 
     @classmethod
     def find_and_close(cls, session: Session, user_id: int, chat_ids: list[int]) -> None:
-        stmt = select(cls).filter(cls.user_id == user_id, cls.chat_id.in_(chat_ids), cls.online.is_(True))
+        stmt = select(cls).filter(cls.user_id == user_id, cls.chat_id.in_(chat_ids), cls.online > 0)
         for user_to_chat in session.execute(stmt).scalars().all():
-            user_to_chat.online = False
+            user_to_chat.online -= 1
 
     @classmethod
     def find_by_chat(cls, session: Session, chat_id: int) -> list[UserToChat]:  # offline users only!
-        stmt = select(cls).filter(cls.chat_id == chat_id, cls.online.is_(False))
+        stmt = select(cls).filter(cls.chat_id == chat_id, cls.online == 0)
         return session.execute(stmt).scalars().all()
 
     def delete(self, session: Session):

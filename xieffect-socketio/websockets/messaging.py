@@ -96,9 +96,10 @@ class MessagesNamespace(Namespace):
     @with_request_session(use_user_id=True)
     @with_arguments(EArg("chat-id"), use_original_data=False)
     def on_open_chat(self, session: Session, chat_id: int, user_id: int):
-        session.post(f"{self.host}/chat-temp/{chat_id}/presence/", json={"online": True})
+        notify_needed = session.post(f"{self.host}/chat-temp/{chat_id}/presence/", json={"online": True}).json()["a"]
         join_room(f"chat-{chat_id}")
-        emit_notify(user_id, chat_id, 0)
+        if notify_needed:
+            emit_notify(user_id, chat_id, 0)
 
     @with_request_session()
     @with_arguments(EArg("chat-id"), use_original_data=False)
