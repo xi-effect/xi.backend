@@ -171,6 +171,6 @@ class TestResultGetter(Resource):
     @with_test_session
     @interaction_namespace.doc_responses(ResponseDoc(description="Some sort of TestResults object"))
     @interaction_namespace.marshal_list_with(interaction_model)
-    def get(self, session, test_session: TestModuleSession):
+    def get(self, session, test_session: TestPointSession):
         """ Ends the test & returns the results / result page """
         return test_session.collect_results(session)
