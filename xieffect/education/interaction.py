@@ -13,7 +13,7 @@ from .elements import Module, ModuleType
 from .sessions import ModuleProgressSession, TestModuleSession, TestPointSession
 
 interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
-interaction_model = interaction_namespace.model("sessions", TestPointSession.marshal_models["TestPointSession"])
+test_model = interaction_namespace.model("test_model", TestPointSession.marshal_models["TestPointSession"])
 
 
 def module_typed(op_name, *possible_module_types: ModuleType):
@@ -148,29 +148,26 @@ class TestReplySaver(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("right-answers", type=int, dest="right_answers", required=True)
     parser.add_argument("total-answers", type=int, dest="total_answers", required=True)
-    parser.add_argument("user-id", type=int, dest="user_id", required=True)
     parser.add_argument("answers", type=dict, required=True)
 
     @with_point_id
     @interaction_namespace.a_response()
     @interaction_namespace.argument_parser(parser)
-    def post(self, session, point_id, user_id: int,
-             module_id: int, right_answers: int,
+    def post(self, session, point_id, user: User, module_id: int, right_answers: int,
              total_answers: int, answers) -> None:
         """ Saves user's reply to an open test """
-        point_session = TestPointSession.find_by_ids(session=session, user_id=user_id, module_id=module_id,
+        point_session = TestPointSession.find_by_ids(session=session, user_id=user.id, module_id=module_id,
                                                      point_id=point_id)
         point_session.right_answers = right_answers
         point_session.total_answers = total_answers
         point_session.answers = dumps(answers, ensure_ascii=False)
-        return point_session
 
 
 @interaction_namespace.route("/results/")
 class TestResultGetter(Resource):
-    @with_test_session
+
     @interaction_namespace.doc_responses(ResponseDoc(description="Some sort of TestResults object"))
-    @interaction_namespace.marshal_list_with(interaction_model)
-    def get(self, session, test_session: TestPointSession):
+    @interaction_namespace.marshal_list_with(test_model)
+    def get(self, session,user: User, module_id: int, test_session: TestPointSession):
         """ Ends the test & returns the results / result page """
-        return test_session.collect_results(session)
+        return test_session.collect_all(session, user_id=user.id, module_id=module_id)

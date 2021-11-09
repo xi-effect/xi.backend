@@ -169,3 +169,8 @@ class TestPointSession(Base):
     def find_by_ids(cls, session: Session, user_id: int, module_id: int, point_id) -> Optional[TestModuleSession]:
         return first_or_none(session.execute(
             select(cls).filter(cls.user_id == user_id, cls.module_id == module_id, cls.point_id == point_id)))
+
+    @classmethod
+    def collect_all(cls, session: Session, user_id: int, module_id: int) -> list[TestPointSession]:
+        return session.execute(
+            select(cls).filter(cls.user_id == user_id, cls.module_id == module_id)).scalars().all()
