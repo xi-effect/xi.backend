@@ -13,7 +13,7 @@ from .elements import Module, ModuleType
 from .sessions import ModuleProgressSession, TestModuleSession, TestPointSession
 
 interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
-interaction_model = interaction_namespace.model("sessions", TestPointSession.marshal_models["sessions"])
+interaction_model = interaction_namespace.model("sessions", TestPointSession.marshal_models["TestPointSession"])
 
 
 def module_typed(op_name, *possible_module_types: ModuleType):

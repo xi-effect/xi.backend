@@ -150,7 +150,7 @@ class TestModuleSession(BaseModuleSession):
         return TestPointSession.find_by_ids(session, user_id=self.user_id, module_id=self.module_id, point_id=point_id)
 
 
-@create_marshal_model("sessions", "module_id", "user_id", "point_id", "page_id", "right_answers", "total_answers",
+@create_marshal_model("TestPointSession", "page_id", "right_answers", "total_answers",
                       "answers")
 class TestPointSession(Base):
     __tablename__ = "test-point-sessions"
