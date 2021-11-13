@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
+from typing import Union
 
 from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -8,7 +9,7 @@ from flask_socketio import join_room, close_room
 from pydantic import BaseModel, Field
 from requests import Session as _Session, Response
 
-from library0 import ServerEvent
+from library0 import ServerEvent, DuplexEvent
 
 
 class Error(BaseModel):
@@ -43,6 +44,11 @@ class RequestException(Exception):
             error_event.emit(message=self.message, event=event_name, code=self.code)
         else:
             error_event.emit(message="Server error was reported to discord", event=event_name, code=500)
+
+
+def users_broadcast(_event: Union[ServerEvent, DuplexEvent], _user_ids: list[int], **data):
+    for user_id in _user_ids:
+        _event.emit(f"user-{user_id}", **data)
 
 
 class Session(_Session):
