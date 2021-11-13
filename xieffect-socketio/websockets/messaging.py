@@ -2,8 +2,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_socketio import join_room, leave_room, rooms
 
 from setup import user_sessions, app
-from .library import (room_broadcast, users_broadcast, Namespace,
-                      with_arguments, EventArgument as EArg, with_request_session, Session)
+from library import (users_broadcast, Namespace,
+                     with_arguments, EventArgument as EArg, with_request_session, Session)
 
 
 def emit_notify(user_id: int, chat_id: int, unread: int):

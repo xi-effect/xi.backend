@@ -7,7 +7,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_jwt_extended import JWTManager
 
-from websockets.library import UserSession
+from library import UserSession
 
 load_dotenv("../.env")
 
