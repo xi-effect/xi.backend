@@ -103,7 +103,7 @@ class Namespace(_Namespace):
 class SocketIO(_SocketIO):
     def __init__(self, title: str = "SIO", version: str = "1.0.0", doc_path: str = "/"):
         self.async_api = {"asyncapi": "2.2.0", "info": {"title": title, "version": version},
-                          "channels": {}, "components": {"schemas": {}}}
+                          "channels": {}, "components": {"messages": {}}}
         self.doc_path = doc_path
 
     def docs(self):
@@ -119,5 +119,5 @@ class SocketIO(_SocketIO):
     def on_namespace(self, namespace_handler):
         if isinstance(namespace_handler, Namespace):
             self.async_api["channels"].update(namespace_handler.doc_channels)
-            self.async_api["components"]["schemas"].update(namespace_handler.doc_messages)
+            self.async_api["components"]["messages"].update(namespace_handler.doc_messages)
         return super(SocketIO, self).on_namespace(namespace_handler)
