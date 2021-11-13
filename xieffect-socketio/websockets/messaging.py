@@ -1,18 +1,15 @@
-from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_socketio import join_room, leave_room, rooms
+from flask_socketio import join_room, leave_room
 from pydantic import create_model
 
 from library import Session
 from library0 import EventGroup, ServerEvent, ClientEvent, DuplexEvent
 from setup import user_sessions, app
-from .library import Namespace
-
 
 edit_message_model = create_model("EditMessage", chat_id=(int, ...), message_id=(int, ...))
 delete_message_model = create_model("DeleteMessage", __base__=edit_message_model, content=(str, ...))
 
 
-class Messaging(EventGroup):  # self.host!!!
+class Messaging(EventGroup):
     notif: ServerEvent = ServerEvent(create_model("Notif", chat_id=(int, ...), unread=0))
     open_chat: ClientEvent = ClientEvent(create_model("ChatID", chat_id=(int, ...)))
     close_chat: ClientEvent = ClientEvent(create_model("ChatID", chat_id=(int, ...)))
@@ -62,19 +59,3 @@ class Messaging(EventGroup):  # self.host!!!
         session.delete(f"{app.config['host']}/chat-temp/{chat_id}/messages/{message_id}/")
         self.delete_message.emit(f"chat-{chat_id}", chat_id=chat_id, message_id=message_id)
         self.notify_offline(session, chat_id)
-
-
-class MessagesNamespace(Namespace):
-    def __init__(self, namespace=None):
-        super().__init__(namespace)
-        self.host = "http://localhost:5000" if app.debug else "https://xieffect.pythonanywhere.com"
-
-    @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
-    def on_connect(self, _):
-        user_sessions.connect(get_jwt_identity())
-
-    @user_sessions.with_request_session(use_user_id=True, ignore_errors=True)
-    def on_disconnect(self, session: Session, user_id: int):
-        user_sessions.disconnect(user_id)
-        chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
-        session.post(f"{self.host}/chat-temp/close-all/", json={"ids": chat_ids})

@@ -1,3 +1,4 @@
-from .test_chat import TestNamespace
+from .library import Namespace
 from .management import ChatManagement, ChatUserManagement
-from .messaging import MessagesNamespace
+from .messaging import Messaging
+from .test_chat import TestNamespace
