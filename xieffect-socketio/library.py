@@ -1,67 +1,16 @@
 from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
-from json import dumps
-from typing import Optional, Any
 
+from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_socketio import emit, Namespace as _Namespace, join_room, close_room
-from requests import Session as _Session, Response, post
-
-from setup import socketio, app
-
-
-def room_broadcast(event: str, data: dict, room: str, namespace: str = "/"):
-    socketio.emit(event, data, to=room, namespace=namespace)
-
-
-def users_broadcast(event: str, data: dict, user_ids: list[int], namespace: str = "/"):
-    for user_id in user_ids:
-        room_broadcast(event, data, f"user-{user_id}", namespace)
-
-
-def send_discord_message(webhook: str, message: str):
-    host = "http://localhost:5000" if app.debug else "https://xieffect.pythonanywhere.com"
-    post(f"{host}/webhooks/pass-through/", headers={"Authorization": app.config["API_KEY"]},
-         json={"webhook": webhook, "message": message})
+from flask_socketio import emit, join_room, close_room
+from requests import Session as _Session, Response
 
 
 def emit_error(message: str, event_name: str, **kwargs):
     kwargs.update({"a": message, "event": event_name, "timestamp": datetime.utcnow().isoformat()})
     emit("error", kwargs)
-
-
-@dataclass()
-class EventArgument:
-    name: str
-    default: Optional[Any] = None
-    dest: Optional[str] = None
-    desc: Optional[str] = None
-    check_only: bool = False
-    required: bool = True
-
-    def __post_init__(self):
-        if self.dest is None:
-            self.dest = self.name.replace("-", "_")
-        if self.default is not None:
-            self.required = False
-
-
-def with_arguments(*event_args: EventArgument, use_original_data: bool = True):
-    def with_arguments_wrapper(function):
-        @wraps(function)
-        def with_arguments_inner(*args, **kwargs):
-            try:
-                data: dict = kwargs.get("data") if use_original_data else kwargs.pop("data")
-                kwargs.update({arg.dest: data[arg.name] if arg.required is None else data.get(arg.name, arg.default)
-                               for arg in event_args if not arg.check_only})
-                return function(*args, **kwargs)
-            except KeyError as e:
-                emit_error(f"Argument parsing error, missing '{e}'", function.__name__[3:])
-
-        return with_arguments_inner
-
-    return with_arguments_wrapper
 
 
 @dataclass()
@@ -75,9 +24,12 @@ class RequestException(Exception):
         self.client_fault = self.code in (401, 403, 404, 422)
         self.server_fault = self.code in (400, 401, 422)
 
+    def send_discord_message(self, webhook: str, message: str):
+        raise NotImplementedError  # temp
+
     def emit_error_event(self, event_name: str):
         if self.server_fault:
-            send_discord_message("errors", f"Socket-IO server {self.code}-error appeared!\n`{self.message}`")
+            self.send_discord_message("errors", f"Socket-IO server {self.code}-error appeared!\n`{self.message}`")
         if self.client_fault:
             emit_error(self.message, event_name, code=self.code)
         else:
@@ -134,12 +86,3 @@ class UserSession:
             return with_request_session_inner
 
         return with_request_session_wrapper
-
-
-class Namespace(_Namespace):
-    def trigger_event(self, event, *args):
-        super().trigger_event(event.replace("-", "_"), *args)
-
-    def on_error(self, data):
-        send_discord_message("errors", f"Client reported socketio error!\n"
-                                       f"```json\n{dumps(data, ensure_ascii=False, indent=2)}\n```")
