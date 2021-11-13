@@ -6,7 +6,7 @@ from typing import Type, Optional, Any, List
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace as RestXNamespace, Model
 from flask_restx.reqparse import RequestParser
-from flask_restx.fields import List as ListField, Integer as IntField, Nested
+from flask_restx.fields import List as ListField, Boolean as BoolField, Nested
 from flask_restx.marshalling import marshal
 from sqlalchemy.engine import Result
 
@@ -262,7 +262,7 @@ class Namespace(RestXNamespace):
         :return:
         """
         list_marshal_model = self.model("List" + marshal_model.name,
-                                        {"results": ListField(Nested(marshal_model)), "has-next": IntField})
+                                        {"results": ListField(Nested(marshal_model)), "has-next": BoolField})
 
         def lister_wrapper(function):
             @wraps(function)

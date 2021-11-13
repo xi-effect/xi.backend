@@ -34,7 +34,7 @@ def test_getting_pages(client: FlaskClient):
 
 @mark.order(407)
 def test_page_view_counter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    page_json: dict = check_status_code(client.post("/pages/", json={"counter": 0}))[0]
+    page_json: dict = check_status_code(client.post("/pages/", json={"counter": 0}))["results"][0]
     page_id, views_before = [page_json[key] for key in ["id", "views"]]
     check_status_code(client.get(f"/pages/{page_id}/"), get_json=False)
 
