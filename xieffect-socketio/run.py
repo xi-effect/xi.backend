@@ -35,5 +35,10 @@ messages_namespace.attach_event_group(user_management_events, use_kebab_case=Tru
 socketio.on_namespace(TestNamespace("/test"))
 socketio.on_namespace(messages_namespace)
 
-if __name__ == "__main__":
+
+def run():
     socketio.run(app, port=5050, debug=True)
+
+
+if __name__ == "__main__":
+    run()
