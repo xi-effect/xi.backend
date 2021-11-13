@@ -149,10 +149,9 @@ class TestModuleSession(BaseModuleSession):
     def find_point_session(self, session: Session, point_id: int) -> Optional[TestPointSession]:
         return TestPointSession.find_by_ids(session, user_id=self.user_id, module_id=self.module_id, point_id=point_id)
 
-    @classmethod
-    def collect_all(cls, session: Session) -> list[TestPointSession]:
-        session.delete(cls)
-        return cls.points
+    def collect_all(self, session: Session) -> list[TestPointSession]:
+        self.delete(session)
+        return self.points
 
 
 @create_marshal_model("TestPointSession", "point_id", "page_id", "right_answers", "total_answers", "answers")
