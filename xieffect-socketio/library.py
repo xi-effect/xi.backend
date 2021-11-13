@@ -4,13 +4,21 @@ from functools import wraps
 
 from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_socketio import emit, join_room, close_room
+from flask_socketio import join_room, close_room
+from pydantic import BaseModel, Field
 from requests import Session as _Session, Response
 
+from library0 import ServerEvent
 
-def emit_error(message: str, event_name: str, **kwargs):
-    kwargs.update({"a": message, "event": event_name, "timestamp": datetime.utcnow().isoformat()})
-    emit("error", kwargs)
+
+class Error(BaseModel):
+    code: int
+    message: str
+    event: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+
+error_event = ServerEvent(Error, "error")
 
 
 @dataclass()
@@ -24,16 +32,17 @@ class RequestException(Exception):
         self.client_fault = self.code in (401, 403, 404, 422)
         self.server_fault = self.code in (400, 401, 422)
 
-    def send_discord_message(self, webhook: str, message: str):
+    @staticmethod
+    def send_discord_message(webhook: str, message: str):
         raise NotImplementedError  # temp
 
     def emit_error_event(self, event_name: str):
         if self.server_fault:
             self.send_discord_message("errors", f"Socket-IO server {self.code}-error appeared!\n`{self.message}`")
         if self.client_fault:
-            emit_error(self.message, event_name, code=self.code)
+            error_event.emit(message=self.message, event=event_name, code=self.code)
         else:
-            emit_error("Server error appeared. It was reported to discord", event_name, code=500)
+            error_event.emit(message="Server error was reported to discord", event=event_name, code=500)
 
 
 class Session(_Session):
