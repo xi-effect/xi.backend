@@ -77,27 +77,28 @@ class Namespace(_Namespace):
         self.doc_channels = {}
         self.doc_messages = {}
 
+    def attach_event(self, event: Event):
+        doc_data = {"description": ""}
+        event_doc = event.create_doc(self.namespace)
+
+        if isinstance(event, ClientEvent):
+            if event.handler is None:
+                pass  # error!
+            setattr(self, f"on_{event.name}", event.handler)
+            doc_data["publish"] = event_doc
+
+        if isinstance(event, ServerEvent):
+            doc_data["subscribe"] = event_doc
+
+        self.doc_channels[event.name] = doc_data
+        self.doc_messages[event.model.__name__] = {"payload": event.model.schema()}
+        # {"name": "", "title": "", "summary": "", "description": ""}
+
     def attach_event_group(self, cls: Type[EventGroup]):
         for name, member in cls.__members__.items():
-            if not isinstance(member, Event):
-                continue
-
-            member.name = name.lower()
-            doc_data = {"description": ""}
-            event_doc = member.create_doc(self.namespace)
-
-            if isinstance(member, ClientEvent):
-                if member.handler is None:
-                    pass  # error!
-                setattr(self, f"on_{member.name}", member.handler)
-                doc_data["publish"] = event_doc
-
-            if isinstance(member, ServerEvent):
-                doc_data["subscribe"] = event_doc
-
-            self.doc_channels[member.name] = doc_data
-            self.doc_messages[member.model.__name__] = {"payload": member.model.schema()}
-            # {"name": "", "title": "", "summary": "", "description": ""}
+            if isinstance(member, Event):
+                member.name = name.lower()
+                self.attach_event(member)
 
 
 class SocketIO(_SocketIO):
