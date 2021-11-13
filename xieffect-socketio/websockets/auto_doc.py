@@ -106,6 +106,16 @@ class SocketIO(_SocketIO):
                           "channels": {}, "components": {"schemas": {}}}
         self.doc_path = doc_path
 
+    def docs(self):
+        return self.async_api
+
+    def init_app(self, app, **kwargs):
+        @app.route(self.doc_path)
+        def documentation():
+            return self.docs()
+
+        return super(SocketIO, self).init_app(app, **kwargs)
+
     def on_namespace(self, namespace_handler):
         if isinstance(namespace_handler, Namespace):
             self.async_api["channels"].update(namespace_handler.doc_channels)
