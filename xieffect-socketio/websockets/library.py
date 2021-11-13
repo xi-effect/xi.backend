@@ -1,9 +1,10 @@
 from json import dumps
+from typing import Union
 
 from requests import post
 
 from library import RequestException as _RequestException, error_event
-from library0 import ServerEvent, Namespace as _Namespace
+from library0 import ServerEvent, Namespace as _Namespace, DuplexEvent
 from setup import app  # temp
 
 
@@ -19,9 +20,9 @@ class RequestException(_RequestException):
         send_discord_message(webhook, message)
 
 
-def users_broadcast(event: ServerEvent, data: dict, user_ids: list[int]):
-    for user_id in user_ids:
-        event.emit(f"user-{user_id}", data)
+def users_broadcast(_event: Union[ServerEvent, DuplexEvent], _user_ids: list[int], **data):
+    for user_id in _user_ids:
+        _event.emit(f"user-{user_id}", **data)
 
 
 # error_event.emit(message=f"Argument parsing error, missing '{e}'", event=function.__name__, code=400)

@@ -10,16 +10,31 @@ def remove_none(data: dict):
     return {key: value for key, value in data.items() if value is not None}
 
 
-@dataclass()
-class Event:
-    model: Type[BaseModel]
-    name: str = None
-    summary: str = None
-    description: str = None
+class BaseEvent:  # do not instantiate!
+    def __init__(self, name: str = None):
+        self.name = None
+        if name is not None:
+            self.attach_name(name)
+
+    def attach_name(self, name: str):
+        raise NotImplementedError
+
+    def create_doc(self, namespace: str):
+        raise NotImplementedError
+
+
+class Event(BaseEvent):  # do not instantiate!
+    def __init__(self, model: Type[BaseModel], name: str = None, description: str = None):
+        super().__init__(name)
+        self.model: Type[BaseModel] = model
+        self.description: str = description
+
+    def attach_name(self, name: str):
+        self.name = name
 
     def create_doc(self, namespace: str):
         return remove_none({
-            "summary": self.summary, "description": self.description,
+            "description": self.description,
             "tags": [{"name": f"namespace-{namespace}"}],
             "message": {"$ref": f"#/components/messages/{self.model.__name__}"}
         })
@@ -27,7 +42,9 @@ class Event:
 
 @dataclass()
 class ClientEvent(Event):
-    handler: Callable = None
+    def __init__(self, model: Type[BaseModel], name: str = None, description: str = None, handler: Callable = None):
+        super().__init__(model, name, description)
+        self.handler: Callable = handler
 
     def parse(self, data: dict):
         return self.model.parse_obj(data).dict()
@@ -35,23 +52,19 @@ class ClientEvent(Event):
     def bind(self, function):
         self.handler = lambda data: function(**self.parse(data))
 
+    def create_doc(self, namespace: str):
+        return {"publish": super().create_doc(namespace)}
+
 
 @dataclass()
 class ServerEvent(Event):
-    include: set[str] = None
-    exclude: set[str] = None
-    exclude_none: bool = True
-
-    def __post_init__(self):
-        if self.include is None:
-            self.include = set()
-        if self.exclude is None:
-            self.exclude = set()
-
+    def __init__(self, model: Type[BaseModel], name: str = None, description: str = None,
+                 include: set[str] = None, exclude: set[str] = None, exclude_none: bool = True):
+        super().__init__(model, name, description)
         self._emit_kwargs = {
-            "exclude_none": self.exclude_none,
-            "include": self.include,
-            "exclude": self.exclude,
+            "exclude_none": exclude_none,
+            "include": include,
+            "exclude": exclude,
             "by_alias": True,
         }
 
@@ -62,9 +75,41 @@ class ServerEvent(Event):
             _data: BaseModel = self.model.parse_obj(_data)
         emit(self.name, _data.dict(**self._emit_kwargs), to=_room)
 
+    def create_doc(self, namespace: str):
+        return {"subscribe": super().create_doc(namespace)}
 
-class DuplexEvent(ServerEvent, ClientEvent):
-    pass
+
+@dataclass()
+class DuplexEvent(BaseEvent):
+    def __init__(self, client_event: ClientEvent = None, server_event: ServerEvent = None,
+                 name: str = None, description: str = None):
+        super().__init__(name)
+        self.client_event: ClientEvent = client_event
+        self.server_event: ServerEvent = server_event
+        self.description: str = description
+
+    @classmethod
+    def similar(cls, model: Type[BaseModel], name: str = None, handler: Callable = None,
+                include: set[str] = None, exclude: set[str] = None, exclude_none: bool = True):
+        return cls(ClientEvent(model, handler=handler),
+                   ServerEvent(model, include=include, exclude=exclude, exclude_none=exclude_none), name)
+
+    def attach_name(self, name: str):
+        self.client_event.name = name
+        self.server_event.name = name
+
+    def emit(self, _room: str = None, _data: Any = None, **kwargs):
+        return self.server_event.emit(_room, _data, **kwargs)
+
+    def bind(self, function):
+        return self.client_event.bind(function)
+
+    def create_doc(self, namespace: str):
+        result: dict = self.client_event.create_doc(namespace)
+        result.update(self.server_event.create_doc(namespace))
+        if self.description is not None:
+            result["description"] = self.description
+        return result
 
 
 class EventGroup(Enum):
@@ -77,27 +122,29 @@ class Namespace(_Namespace):
         self.doc_channels = {}
         self.doc_messages = {}
 
-    def attach_event(self, event: Event):
-        doc_data = {"description": ""}
-        event_doc = event.create_doc(self.namespace)
+    def attach_event(self, event: BaseEvent, name: str = None):
+        if name is None:
+            name = event.name
 
         if isinstance(event, ClientEvent):
             if event.handler is None:
                 pass  # error!
-            setattr(self, f"on_{event.name}", event.handler)
-            doc_data["publish"] = event_doc
+            setattr(self, f"on_{name}", event.handler)
 
-        if isinstance(event, ServerEvent):
-            doc_data["subscribe"] = event_doc
+        if isinstance(event, DuplexEvent):
+            if event.client_event.handler is None:
+                pass  # error!
+            setattr(self, f"on_{name}", event.client_event.handler)
 
-        self.doc_channels[event.name] = doc_data
+        self.doc_channels[name] = event.create_doc(self.namespace)
         self.doc_messages[event.model.__name__] = {"payload": event.model.schema()}
         # {"name": "", "title": "", "summary": "", "description": ""}
 
     def attach_event_group(self, cls: Type[EventGroup]):
         for name, member in cls.__members__.items():
-            if isinstance(member, Event):
-                member.name = name.lower()
+            if isinstance(member, BaseEvent):
+                if member.name is None:
+                    member.name = name.lower()
                 self.attach_event(member)
 
 
