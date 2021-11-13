@@ -149,6 +149,11 @@ class TestModuleSession(BaseModuleSession):
     def find_point_session(self, session: Session, point_id: int) -> Optional[TestPointSession]:
         return TestPointSession.find_by_ids(session, user_id=self.user_id, module_id=self.module_id, point_id=point_id)
 
+    @classmethod
+    def collect_all(cls, session: Session) -> list[TestPointSession]:
+        session.delete(cls)
+        return cls.points
+
 
 @create_marshal_model("TestPointSession", "point_id", "page_id", "right_answers", "total_answers", "answers")
 class TestPointSession(Base):
@@ -168,8 +173,3 @@ class TestPointSession(Base):
     def find_by_ids(cls, session: Session, user_id: int, module_id: int, point_id) -> Optional[TestModuleSession]:
         return first_or_none(session.execute(
             select(cls).filter(cls.user_id == user_id, cls.module_id == module_id, cls.point_id == point_id)))
-
-    @classmethod
-    def collect_all(cls, session: Session, user_id: int, module_id: int) -> list[TestPointSession]:
-        return session.execute(select(cls).filter(cls.user_id == user_id, cls.module_id == module_id)
-                               .order_by(cls.point_id)).scalars().all()

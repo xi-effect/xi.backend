@@ -168,6 +168,7 @@ class TestReplySaver(Resource):
 class TestResultGetter(Resource):
     @module_typed("results functionality", ModuleType.TEST)
     @interaction_namespace.marshal_list_with(test_model)
-    def get(self, session, module: Module, user: User):
+    def get(self, session, user: User, module: Module):
         """ Ends the test & returns the results / result page """
-        return TestPointSession.collect_all(session, user_id=user.id, module_id=module.id)
+        new_test_session = TestModuleSession.find_or_create(session, user.id, module.id)
+        return new_test_session.collect_all(session)
