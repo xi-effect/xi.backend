@@ -3,7 +3,7 @@ from flask_socketio import join_room, leave_room, rooms
 
 from library import Session
 from setup import user_sessions, app
-from .library import users_broadcast, Namespace
+from .library import Namespace
 
 
 def emit_notify(user_id: int, chat_id: int, unread: int):
@@ -34,44 +34,6 @@ class MessagesNamespace(Namespace):
         user_sessions.disconnect(user_id)
         chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
         session.post(f"{self.host}/chat-temp/close-all/", json={"ids": chat_ids})
-
-    @user_sessions.with_request_session()
-    @with_arguments(EArg("chat-id"), EArg("user-ids"))
-    def on_invite_users(self, session: Session, chat_id: int, user_ids: list[int], data: dict):
-        # this does NOT check if invited users are already in the chat!
-        session.post(f"{self.host}/chat-temp/{chat_id}/users/add-all/", json={"ids": user_ids})
-        room_broadcast("invite-users", data, f"chat-{chat_id}")
-
-        chat_name = session.get(f"{self.host}/chats/{chat_id}/").json()["name"]
-        users_broadcast("add-chat", {"id": chat_id, "name": chat_name, "unread": 0}, user_ids)
-
-    @user_sessions.with_request_session()
-    @with_arguments(EArg("chat-id"), EArg("user-id"), EArg("role"))
-    def on_invite_user(self, session: Session, chat_id: int, user_id: int, role: str, data: dict):
-        # this does NOT check if invited user is already in the chat!
-        session.post(f"{self.host}/chat-temp/{chat_id}/users/{user_id}/", json={"role": role})
-        room_broadcast("invite-user", data, f"chat-{chat_id}")
-
-        chat_name = session.get(f"{self.host}/chats/{chat_id}/").json()["name"]
-        room_broadcast("add-chat", {"id": chat_id, "name": chat_name, "unread": 0}, f"user-{user_id}")
-
-    @user_sessions.with_request_session()
-    @with_arguments(EArg("chat-id"), EArg("user-id"), EArg("role"))
-    def on_assign_user(self, session: Session, chat_id: int, user_id: int, role: str, data: dict):
-        session.put(f"{self.host}/chat-temp/{chat_id}/users/{user_id}/", json={"role": role})
-        room_broadcast("assign-user", data, f"chat-{chat_id}")
-
-    @user_sessions.with_request_session(use_user_id=True)
-    @with_arguments(EArg("chat-id"), EArg("user-id", dest="target_id"))
-    def on_kick_user(self, session: Session, user_id: int, chat_id: int, target_id: int, data: dict):
-        if user_id == target_id:  # quit
-            session.delete(f"{self.host}/chat-temp/{chat_id}/membership/")
-        else:  # kick
-            session.delete(f"{self.host}/chat-temp/{chat_id}/users/{target_id}/")
-
-        room_broadcast("kick-user", data, f"chat-{chat_id}")
-        room_broadcast("delete-chat", {"id": chat_id}, f"user-{target_id}")
-        # should remove user from room f"chat-{chat_id}"
 
     @user_sessions.with_request_session(use_user_id=True)
     @with_arguments(EArg("chat-id"), use_original_data=False)
