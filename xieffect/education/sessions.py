@@ -150,12 +150,12 @@ class TestModuleSession(BaseModuleSession):
         return TestPointSession.find_by_ids(session, user_id=self.user_id, module_id=self.module_id, point_id=point_id)
 
     def collect_all(self, session: Session) -> list[TestPointSession]:
-        self.delete(session)
+        session.delete(self)
         return self.points
 
 
 @create_marshal_model("TestPointSession", "point_id", "page_id", "right_answers", "total_answers", "answers")
-class TestPointSession(Base):
+class TestPointSession(Base, Marshalable):
     __tablename__ = "test-point-sessions"
     __table_args__ = (
         ForeignKeyConstraint(("module_id", "user_id"),

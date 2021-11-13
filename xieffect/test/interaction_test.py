@@ -40,7 +40,16 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
                    {"a": f"Module of type {module_type} can't use progress saving"}
 
         if module_type == "test":
-            pass
+            assert "map" in module.keys()
+            map_length = len(module["map"]) - 1
+            json_test: dict = {"right-answers": 1,
+                               "total-answers": 1,
+                               "answers": {"1": 2}}
+            reply_json = check_status_code(
+                client.post(f"/modules/{module_id}/points/{map_length}/reply/", json=json_test))
+            assert reply_json == {"a": True}
+
+
 
     assert len(types_set) == 0
 
