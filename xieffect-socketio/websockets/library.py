@@ -5,10 +5,10 @@ from json import dumps
 from typing import Optional, Any
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_socketio import emit, Namespace as _Namespace
+from flask_socketio import emit, Namespace as _Namespace, join_room, close_room
 from requests import Session as _Session, Response, post
 
-from setup import socketio, user_sessions, app
+from setup import socketio, app
 
 
 def room_broadcast(event: str, data: dict, room: str, namespace: str = "/"):
@@ -95,24 +95,45 @@ class Session(_Session):
         return response
 
 
-def with_request_session(use_user_id: bool = False, ignore_errors: bool = False):
-    def with_request_session_wrapper(function):
-        @jwt_required()
-        @wraps(function)
-        def with_request_session_inner(*args, **kwargs):
-            user_id: int = get_jwt_identity()
-            kwargs["session"] = user_sessions.sessions[user_id]
-            if use_user_id:
-                kwargs["user_id"] = user_id
-            try:
-                return function(*args, **kwargs)
-            except RequestException as e:
-                if not ignore_errors:
-                    e.emit_error_event(function.__name__)
+class UserSession:
+    def __init__(self):
+        self.sessions: dict[int, Session] = dict()
+        self.counters: dict[int, int] = dict()
 
-        return with_request_session_inner
+    def connect(self, user_id: int):
+        if user_id in self.sessions.keys():
+            self.sessions[user_id] = Session()
+            self.sessions[user_id].cookies.set("access_token_cookie", request.cookies["access_token_cookie"])
+            self.counters[user_id] = 1
+        else:
+            self.counters[user_id] += 1
+        join_room(f"user-{user_id}")
 
-    return with_request_session_wrapper
+    def disconnect(self, user_id: int):
+        self.counters[user_id] -= 1
+        if self.counters[user_id] == 0:
+            self.sessions.pop(user_id)
+            self.counters.pop(user_id)
+            close_room(f"user-{user_id}")
+
+    def with_request_session(self, use_user_id: bool = False, ignore_errors: bool = False):
+        def with_request_session_wrapper(function):
+            @jwt_required()
+            @wraps(function)
+            def with_request_session_inner(*args, **kwargs):
+                user_id: int = get_jwt_identity()
+                kwargs["session"] = self.sessions[user_id]
+                if use_user_id:
+                    kwargs["user_id"] = user_id
+                try:
+                    return function(*args, **kwargs)
+                except RequestException as e:
+                    if not ignore_errors:
+                        e.emit_error_event(function.__name__)
+
+            return with_request_session_inner
+
+        return with_request_session_wrapper
 
 
 class Namespace(_Namespace):
