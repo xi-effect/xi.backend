@@ -1,3 +1,4 @@
+from random import shuffle
 from typing import Iterator, Callable
 
 from flask.testing import FlaskClient
@@ -44,12 +45,13 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             map_length = len(module["map"]) - 1
             json_test: dict = {"right-answers": 1,
                                "total-answers": 1,
-                               "answers": {"1": 2}}
+                               "answers": {"1": 2},
+                               "page-id": 1,
+                               "point-id": 16}
             reply_json = check_status_code(
                 client.post(f"/modules/{module_id}/points/{map_length}/reply/", json=json_test))
             assert reply_json == {"a": True}
-
-
+            assert check_status_code(client.get(f"/modules/{module_id}/results/")) == [json_test]
 
     assert len(types_set) == 0
 
@@ -104,3 +106,26 @@ def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 
     assert check_status_code(client.get("/modules/9/open/")) == response_json
     response_json = check_status_code(client.get("/modules/9/points/9/"))
     assert check_status_code(client.get("/modules/9/open/")) == response_json
+
+
+@mark.order(540)
+def test_reply_and_results(client: FlaskClient):  # relies on module#7
+    module = check_status_code(client.get(f"modules/7/"))
+    assert module["type"] == "test"
+    assert "map" in module.keys()
+    length = len(module["map"])
+    length = list(range(length))
+    json_test: dict = {"right-answers": 1,
+                       "total-answers": 1,
+                       "answers": {"1": 2}}
+    shuffle(length)
+    for point in length:
+        check_status_code(client.get(f"modules/7/points/{point}/"))
+        assert check_status_code(client.post(f"modules/7/points/{point}/reply/", json=json_test)) == {"a": True}
+    point_ids = None
+    for reply in check_status_code(client.get(f"modules/7/results/")):
+        assert reply["right-answers"] == json_test["right-answers"]
+        assert reply["total-answers"] == json_test["total-answers"]
+        assert reply["answers"] == json_test["answers"]
+        assert point_ids is None or reply["point-id"] > point_ids
+        point_ids = reply["point-id"]
