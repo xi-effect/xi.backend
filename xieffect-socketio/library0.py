@@ -95,6 +95,7 @@ class DuplexEvent(BaseEvent):
                    ServerEvent(model, include=include, exclude=exclude, exclude_none=exclude_none), name)
 
     def attach_name(self, name: str):
+        self.name = name
         self.client_event.name = name
         self.server_event.name = name
 
@@ -125,6 +126,7 @@ class Namespace(_Namespace):
     def attach_event(self, event: BaseEvent, name: str = None):
         if name is None:
             name = event.name
+        self.doc_channels[name] = event.create_doc(self.namespace)
 
         if isinstance(event, ClientEvent):
             if event.handler is None:
@@ -135,17 +137,19 @@ class Namespace(_Namespace):
             if event.client_event.handler is None:
                 pass  # error!
             setattr(self, f"on_{name}", event.client_event.handler)
-
-        self.doc_channels[name] = event.create_doc(self.namespace)
-        self.doc_messages[event.model.__name__] = {"payload": event.model.schema()}
+            self.doc_messages[event.client_event.model.__name__] = {"payload": event.client_event.model.schema()}
+            self.doc_messages[event.server_event.model.__name__] = {"payload": event.server_event.model.schema()}
+        else:
+            self.doc_messages[event.model.__name__] = {"payload": event.model.schema()}
         # {"name": "", "title": "", "summary": "", "description": ""}
 
     def attach_event_group(self, cls: Type[EventGroup]):
         for name, member in cls.__members__.items():
-            if isinstance(member, BaseEvent):
-                if member.name is None:
-                    member.name = name.lower()
-                self.attach_event(member)
+            event = member.value
+            if isinstance(event, BaseEvent):
+                if event.name is None:
+                    event.attach_name(name.lower())
+                self.attach_event(event)
 
 
 class SocketIO(_SocketIO):
