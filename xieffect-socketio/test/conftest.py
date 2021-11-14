@@ -4,6 +4,7 @@ from threading import Thread
 
 from .library2 import MultiClient as _MultiClient
 from run import run
+from xieffect.wsgi import application
 
 
 class MultiClient(_MultiClient):
@@ -18,7 +19,9 @@ class MultiClient(_MultiClient):
 
 @fixture()
 def multi_client():
-    thr = Thread(target=run, daemon=True)
-    thr.start()
+    thr1 = Thread(target=run, daemon=True)
+    thr1.start()
+    thr2 = Thread(target=application.run, daemon=True, kwargs={"debug": True})
+    thr2.start()
     with MultiClient("http://localhost:5050/") as multi_client:
         yield multi_client

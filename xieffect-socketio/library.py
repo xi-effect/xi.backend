@@ -52,14 +52,29 @@ def users_broadcast(_event: Union[ServerEvent, DuplexEvent], _user_ids: list[int
 
 
 class Session(_Session):
+    # from flask.testing import FlaskClient, Response as FlaskResponse
+    # client = None
+
     def request(self, *args, **kwargs):
+        # if self.client is not None and isinstance(self.client, FlaskClient):
+        #     response: FlaskResponse = self.client.open(*args, **kwargs)
+        #     json = response.get_json()
+        # else:
         response: Response = super(Session, self).request(*args, **kwargs)
+        json = response.json()
+        # print("HEY! FlaskClient wasn't used!!!")
         if 400 <= response.status_code < 500:
-            if (a := response.json().get("a", None)) is not None:
+            if (a := json.get("a", None)) is not None:
                 raise RequestException(response.status_code, a)
             else:
                 raise RequestException(response.status_code)
         return response
+
+    def set_cookie(self, key, value):
+        # if self.client is not None and isinstance(self.client, FlaskClient):
+        #     self.client.set_cookie("what?", key, value)
+        # else:
+        self.cookies.set(key, value)
 
 
 class UserSession:
@@ -70,7 +85,7 @@ class UserSession:
     def connect(self, user_id: int):
         if user_id in self.sessions.keys():
             self.sessions[user_id] = Session()
-            self.sessions[user_id].cookies.set("access_token_cookie", request.cookies["access_token_cookie"])
+            self.sessions[user_id].set_cookie("access_token_cookie", request.cookies["access_token_cookie"])
             self.counters[user_id] = 1
         else:
             self.counters[user_id] += 1
