@@ -148,16 +148,15 @@ class TestReplySaver(Resource):
     parser.add_argument("total-answers", type=int, dest="total_answers", required=True)
     parser.add_argument("answers", type=dict, required=True)
 
-    @interaction_namespace.database_searcher(Module)
     @interaction_namespace.jwt_authorizer(User)
+    @interaction_namespace.database_searcher(Module, use_session=True)
     @with_point_id
-    @interaction_namespace.a_response()
     @interaction_namespace.argument_parser(parser)
-    def post(self, session, point_id, user: User, module: Module, right_answers: int,
-             total_answers: int, answers) -> bool:
+    @interaction_namespace.a_response()
+    def post(self, session, point_id, user: User, module: Module,
+             right_answers: int, total_answers: int, answers) -> bool:
         """ Saves user's reply to an open test """
-        point_session = TestPointSession.find_by_ids(session=session, user_id=user.id, module_id=module.id,
-                                                     point_id=point_id)
+        point_session = TestPointSession.find_by_ids(session, user.id, module.id, point_id)
         if point_session is not None:
             point_session.right_answers = right_answers
             point_session.total_answers = total_answers
