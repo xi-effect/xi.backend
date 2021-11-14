@@ -1,16 +1,19 @@
 from functools import wraps
+from json import dumps
 from typing import Optional
 
 from flask import redirect
 from flask_restx import Resource, Model
 from flask_restx.fields import Integer
+from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, ResponseDoc
 from users import User
 from .elements import Module, ModuleType
-from .sessions import ModuleProgressSession, TestModuleSession
+from .sessions import ModuleProgressSession, TestModuleSession, TestPointSession
 
 interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
+test_model = interaction_namespace.model("test_model", TestPointSession.marshal_models["TestPointSession"])
 
 
 def module_typed(op_name, *possible_module_types: ModuleType):
@@ -111,7 +114,11 @@ class ModuleNavigator(Resource):
         """ Endpoint for navigating a Theory Block or Test """
 
         if module_type == ModuleType.TEST:
-            return TestModuleSession.find_or_create(session, user.id, module.id).get_task(session, point_id)
+            new_test_session = TestModuleSession.find_or_create(session, user.id, module.id)
+            new_test_point = new_test_session.find_point_session(session, point_id)
+            if new_test_point is None:
+                new_test_point = new_test_session.create_point_session(session, point_id, module)
+            return new_test_point.page_id
 
         elif module_type == ModuleType.THEORY_BLOCK:
             module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(session, user.id, module.id)
@@ -136,19 +143,33 @@ def with_test_session(function):
 
 @interaction_namespace.route("/points/<int:point_id>/reply/")
 class TestReplySaver(Resource):
-    @with_test_session
+    parser: RequestParser = RequestParser()
+    parser.add_argument("right-answers", type=int, dest="right_answers", required=True)
+    parser.add_argument("total-answers", type=int, dest="total_answers", required=True)
+    parser.add_argument("answers", type=dict, required=True)
+
+    @interaction_namespace.jwt_authorizer(User)
+    @interaction_namespace.database_searcher(Module, use_session=True)
     @with_point_id
+    @interaction_namespace.argument_parser(parser)
     @interaction_namespace.a_response()
-    # @interaction_namespace.argument_parser()
-    def post(self, session, test_session: TestModuleSession, point_id: int) -> None:
+    def post(self, session, point_id, user: User, module: Module,
+             right_answers: int, total_answers: int, answers) -> bool:
         """ Saves user's reply to an open test """
-        test_session.set_reply(session, point_id, None)  # temp
+        point_session = TestPointSession.find_by_ids(session, user.id, module.id, point_id)
+        if point_session is not None:
+            point_session.right_answers = right_answers
+            point_session.total_answers = total_answers
+            point_session.answers = dumps(answers, ensure_ascii=False)
+            return True
+        return False
 
 
 @interaction_namespace.route("/results/")
 class TestResultGetter(Resource):
-    @with_test_session
-    @interaction_namespace.doc_responses(ResponseDoc(description="Some sort of TestResults object"))
-    def get(self, session, test_session: TestModuleSession):
+    @module_typed("results functionality", ModuleType.TEST)
+    @interaction_namespace.marshal_list_with(test_model)
+    def get(self, session, user: User, module: Module):
         """ Ends the test & returns the results / result page """
-        return test_session.collect_results(session)
+        new_test_session = TestModuleSession.find_or_create(session, user.id, module.id)
+        return new_test_session.collect_all(session)

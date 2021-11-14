@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, select
-from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float
+from sqlalchemy import Column, select, ForeignKeyConstraint
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float, JSON
 
 from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
 from componets.checkers import first_or_none
@@ -25,7 +26,7 @@ class BaseModuleSession(Base):
 
     @classmethod
     def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Optional[BaseModuleSession]:
-        return first_or_none(session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)))
+        return first_or_none(session.execute(select(cls).filter(cls.user_id == user_id, cls.module_id == module_id)))
 
     @classmethod
     def find_or_create(cls, session: Session, user_id: int, module_id: int) -> BaseModuleSession:
@@ -127,10 +128,9 @@ class ModuleProgressSession(BaseModuleSession):
 
 
 class TestModuleSession(BaseModuleSession):
-    __tablename__ = "test-module-sessions"
+    __tablename__ = "test_module_sessions"
     not_found_text = "Test session not found"
-
-    pass  # keeps test instance (one to many) in keeper.py
+    points = relationship("TestPointSession", cascade="all, delete")
 
     @classmethod
     def create(cls, session: Session, user_id: int, module_id: int) -> TestModuleSession:
@@ -139,11 +139,36 @@ class TestModuleSession(BaseModuleSession):
         session.flush()
         return new_entry
 
-    def get_task(self, session: Session, task_id: int) -> int:
-        return 3  # temp
+    def create_point_session(self, session: Session, point_id: int, module) -> TestPointSession:
+        page_id = module.execute_point(point_id)
+        new_entry = TestPointSession(page_id=page_id, point_id=point_id)
+        self.points.append(new_entry)
+        session.flush()
+        return new_entry
 
-    def set_reply(self, session: Session, task_id: int, reply) -> None:
-        pass
+    def find_point_session(self, session: Session, point_id: int) -> Optional[TestPointSession]:
+        return TestPointSession.find_by_ids(session, user_id=self.user_id, module_id=self.module_id, point_id=point_id)
 
-    def collect_results(self, session: Session) -> dict:
-        pass  # delete the test_session!
+    def collect_all(self, session: Session) -> list[TestPointSession]:
+        session.delete(self)
+        return self.points
+
+
+@create_marshal_model("TestPointSession", "point_id", "page_id", "right_answers", "total_answers", "answers")
+class TestPointSession(Base, Marshalable):
+    __tablename__ = "test-point-sessions"
+    __table_args__ = (
+        ForeignKeyConstraint(("module_id", "user_id"),
+                             ("test_module_sessions.module_id", "test_module_sessions.user_id")),)
+    module_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, primary_key=True)
+    point_id = Column(Integer, primary_key=True)
+    page_id = Column(Integer, nullable=False)
+    right_answers = Column(Integer, nullable=True)
+    total_answers = Column(Integer, nullable=True)
+    answers = Column(JSON, nullable=True)
+
+    @classmethod
+    def find_by_ids(cls, session: Session, user_id: int, module_id: int, point_id) -> Optional[TestModuleSession]:
+        return first_or_none(session.execute(
+            select(cls).filter(cls.user_id == user_id, cls.module_id == module_id, cls.point_id == point_id)))

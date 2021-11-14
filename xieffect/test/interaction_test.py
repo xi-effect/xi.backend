@@ -1,4 +1,5 @@
-from typing import Iterator, Callable
+from random import shuffle
+from typing import Iterator, Callable, Optional
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -40,7 +41,16 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
                    {"a": f"Module of type {module_type} can't use progress saving"}
 
         if module_type == "test":
-            pass
+            assert "map" in module.keys()
+            map_length = len(module["map"]) - 1
+            json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
+            assert check_status_code(client.post(f"/modules/{module_id}/points/{map_length}/reply/",
+                                                 json=json_test)) == {"a": True}
+
+            reply = check_status_code(client.get(f"/modules/{module_id}/results/"))[0]
+            assert reply["right-answers"] == json_test["right-answers"]
+            assert reply["total-answers"] == json_test["total-answers"]
+            assert reply["answers"] == json_test["answers"]
 
     assert len(types_set) == 0
 
@@ -95,3 +105,25 @@ def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 
     assert check_status_code(client.get("/modules/9/open/")) == response_json
     response_json = check_status_code(client.get("/modules/9/points/9/"))
     assert check_status_code(client.get("/modules/9/open/")) == response_json
+
+
+@mark.order(540)
+def test_reply_and_results(client: FlaskClient):  # relies on module#7
+    module = check_status_code(client.get(f"/modules/7/"))
+    assert module["type"] == "test"
+    assert "map" in module.keys()
+
+    json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
+    point_ids: list[int] = list(range(len(module["map"])))
+    shuffle(point_ids)
+    for point in point_ids:
+        check_status_code(client.get(f"/modules/7/points/{point}/"))
+        assert check_status_code(client.post(f"/modules/7/points/{point}/reply/", json=json_test)) == {"a": True}
+
+    point_id: Optional[int] = None
+    for reply in check_status_code(client.get(f"/modules/7/results/")):
+        assert reply["right-answers"] == json_test["right-answers"]
+        assert reply["total-answers"] == json_test["total-answers"]
+        assert reply["answers"] == json_test["answers"]
+        assert point_id is None or reply["point-id"] > point_id
+        point_id = reply["point-id"]
