@@ -7,7 +7,7 @@ from setup import socketio, app, user_sessions
 from websockets import TestNamespace, Namespace, messaging_events, chat_management_events, user_management_events
 from temp_api import reglog_namespace, static_namespace
 
-api = Api(app, doc="/doc/")
+api = Api(app, doc="/api-doc/")
 api.add_namespace(static_namespace)
 api.add_namespace(reglog_namespace)
 
@@ -28,9 +28,9 @@ class MessagesNamespace(Namespace):
 
 
 messages_namespace = MessagesNamespace("/")
-messages_namespace.attach_event_group(messaging_events)
-messages_namespace.attach_event_group(chat_management_events)
-messages_namespace.attach_event_group(user_management_events)
+messages_namespace.attach_event_group(messaging_events, use_kebab_case=True)
+messages_namespace.attach_event_group(chat_management_events, use_kebab_case=True)
+messages_namespace.attach_event_group(user_management_events, use_kebab_case=True)
 
 socketio.on_namespace(TestNamespace("/test"))
 socketio.on_namespace(messages_namespace)
