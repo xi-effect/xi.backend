@@ -1,9 +1,8 @@
 from pydantic import create_model, BaseModel, Field
 
-from library import Session
+from library import Session, users_broadcast
 from library0 import DuplexEvent, ServerEvent, ClientEvent, EventGroup
 from setup import user_sessions, app
-from .library import users_broadcast
 
 
 def get_participants(host: str, session: Session, chat_id: int) -> list[int]:
