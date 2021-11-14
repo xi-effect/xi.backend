@@ -153,10 +153,11 @@ class Namespace(_Namespace):
 
 
 class SocketIO(_SocketIO):
-    def __init__(self, title: str = "SIO", version: str = "1.0.0", doc_path: str = "/"):
+    def __init__(self, app=None, title: str = "SIO", version: str = "1.0.0", doc_path: str = "/doc/", **kwargs):
         self.async_api = {"asyncapi": "2.2.0", "info": {"title": title, "version": version},
                           "channels": {}, "components": {"messages": {}}}
         self.doc_path = doc_path
+        super(SocketIO, self).__init__(app, **kwargs)
 
     def docs(self):
         return self.async_api
