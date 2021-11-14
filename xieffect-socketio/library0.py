@@ -113,8 +113,9 @@ class DuplexEvent(BaseEvent):
         return result
 
 
-class EventGroup(Enum):
-    pass
+class EventGroup:
+    def __init__(self, **events: [str, BaseEvent]):
+        self.events: dict[str, BaseEvent] = events
 
 
 class Namespace(_Namespace):
@@ -143,13 +144,11 @@ class Namespace(_Namespace):
             self.doc_messages[event.model.__name__] = {"payload": event.model.schema()}
         # {"name": "", "title": "", "summary": "", "description": ""}
 
-    def attach_event_group(self, cls: Type[EventGroup]):
-        for name, member in cls.__members__.items():
-            event = member.value
-            if isinstance(event, BaseEvent):
-                if event.name is None:
-                    event.attach_name(name.lower())
-                self.attach_event(event)
+    def attach_event_group(self, event_group: EventGroup):
+        for name, event in event_group.events.items():
+            if event.name is None:
+                event.attach_name(name.lower())
+            self.attach_event(event)
 
 
 class SocketIO(_SocketIO):

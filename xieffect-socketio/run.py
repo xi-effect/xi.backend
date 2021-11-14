@@ -4,7 +4,7 @@ from flask_socketio import rooms
 
 from library import Session
 from setup import socketio, app, user_sessions
-from websockets import TestNamespace, Namespace, Messaging, ChatManagement, ChatUserManagement
+from websockets import TestNamespace, Namespace, messaging_events, chat_management_events, user_management_events
 from temp_api import reglog_namespace, static_namespace
 
 api = Api(app, doc="/doc/")
@@ -28,9 +28,9 @@ class MessagesNamespace(Namespace):
 
 
 messages_namespace = MessagesNamespace("/")
-messages_namespace.attach_event_group(Messaging)
-messages_namespace.attach_event_group(ChatManagement)
-messages_namespace.attach_event_group(ChatUserManagement)
+messages_namespace.attach_event_group(messaging_events)
+messages_namespace.attach_event_group(chat_management_events)
+messages_namespace.attach_event_group(user_management_events)
 
 socketio.on_namespace(TestNamespace("/test"))
 socketio.on_namespace(messages_namespace)
