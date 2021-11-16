@@ -5,7 +5,7 @@ from pytest import fixture
 from requests import post
 
 from .components import check_status_code
-from .library2 import MultiClient as _MultiClient, Session, AnyClient
+from .library2 import MultiClient as _MultiClient, MultiDoubleClient as _MultiDoubleClient, Session, AnyClient
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
@@ -29,6 +29,10 @@ class MultiClient(_MultiClient):
         return False
 
 
+class MultiDoubleClient(_MultiDoubleClient, MultiClient):
+    pass
+
+
 @fixture(scope="session", autouse=True)
 def main_server():
     # thr2 = Thread(target=application.run, daemon=True, kwargs={"debug": True})
@@ -44,6 +48,12 @@ def multi_client(main_server):
     # thr1 = Thread(target=run, daemon=True)
     # thr1.start()
     with MultiClient("http://localhost:5050/") as multi_client:
+        yield multi_client
+
+
+@fixture()
+def multi_double_client(main_server):
+    with MultiDoubleClient("http://localhost:5050/") as multi_client:
         yield multi_client
 
 
