@@ -9,7 +9,7 @@ from users import User
 from .entities import UserToChat, ChatRole, Chat, Message
 from .helpers import ChatNamespace
 
-messages_namespace = ChatNamespace("messages", path="/chats/<int:chat_id>/messages/")
+messages_namespace = ChatNamespace("messages", path="/chat-temp/<int:chat_id>/messages/")
 
 message_parser: RequestParser = RequestParser()
 message_parser.add_argument("content", str, required=True)

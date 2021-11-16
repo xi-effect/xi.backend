@@ -1,2 +1,2 @@
-web: sh -c 'cd xieffect-socketio && gunicorn --worker-class eventlet -w 1 main:app'
+web: sh -c 'cd xieffect-socketio && gunicorn --worker-class eventlet -w 1 run:app'
 web2: sh -c 'cd xieffect && gunicorn wsgi:application'

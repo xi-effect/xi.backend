@@ -62,12 +62,14 @@ class ChatRole(TypeEnum):
     OWNER = 4  # delete the chat
 
 
+@create_marshal_model("temp-u2c", "unread")
 @create_marshal_model("user-in-chat", "role")
 @create_marshal_model("chat-user-full", "role", inherit="chat-user-base")
 @create_marshal_model("chat-user-index", inherit="chat-user-base")
 @create_marshal_model("chat-user-base", "unread")
 class UserToChat(Base, Marshalable):
     __tablename__ = "user_to_chat"
+    _user_id2: LambdaFieldDef = LambdaFieldDef("temp-u2c", int, "user_id", "user-id")  # temp!!!
 
     # User-related
     user_id = Column(ForeignKey("users.id"), primary_key=True)
@@ -87,6 +89,7 @@ class UserToChat(Base, Marshalable):
 
     # Other data:
     role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
+    online = Column(Integer, nullable=False, default=False)
     unread = Column(Integer, nullable=True)
     activity = Column(DateTime, nullable=True)
 
@@ -104,6 +107,17 @@ class UserToChat(Base, Marshalable):
     @classmethod
     def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[UserToChat]:
         return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
+
+    @classmethod
+    def find_and_close(cls, session: Session, user_id: int, chat_ids: list[int]) -> None:
+        stmt = select(cls).filter(cls.user_id == user_id, cls.chat_id.in_(chat_ids), cls.online > 0)
+        for user_to_chat in session.execute(stmt).scalars().all():
+            user_to_chat.online -= 1
+
+    @classmethod
+    def find_by_chat(cls, session: Session, chat_id: int) -> list[UserToChat]:  # offline users only!
+        stmt = select(cls).filter(cls.chat_id == chat_id, cls.online == 0)
+        return session.execute(stmt).scalars().all()
 
     def delete(self, session: Session):
         session.delete(self)

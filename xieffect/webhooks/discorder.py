@@ -1,7 +1,7 @@
-from enum import Enum
-
 from discord_webhook import DiscordWebhook
 from requests import post, Response
+
+from componets import TypeEnum
 
 """
 https://discordapp.com/developers/docs/resources/webhook#execute-webhook
@@ -12,7 +12,7 @@ result: Response = requests.post(url, json=data, headers={"Content-Type": "appli
 """
 
 
-class WebhookURLs(Enum):
+class WebhookURLs(TypeEnum):
     STATUS = "843500826223312936/9ZcT7YinTBn4g0hdwPL_ca-YszwRUYrNrLhVEPjDrZQw_lMWHeo7l5LNtl6rq4LAUhgv"
     ERRORS = "843536959624445984/-V9-tEd9Af2mz-0L18YQqlabtK4rJatCSs0YS0XUFh-Tl-s49e2DG1Jg0z3wG2Soo0Op"
     WEIRDO = "843431829931556864/XY-k_4IOZ9NVatCuPEYB8OU6_DPSfUBP_lvGROf55g8GTM6TbDarcvLIJiz5KvGOZZZD"

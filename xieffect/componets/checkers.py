@@ -5,9 +5,9 @@ from typing import Type, Optional, Any, List
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace as RestXNamespace, Model
-from flask_restx.reqparse import RequestParser
 from flask_restx.fields import List as ListField, Boolean as BoolField, Nested
 from flask_restx.marshalling import marshal
+from flask_restx.reqparse import RequestParser
 from sqlalchemy.engine import Result
 
 from main import Session, Base, index_service
@@ -268,12 +268,20 @@ class Namespace(RestXNamespace):
             @wraps(function)
             @self.response(200, "Success", list_marshal_model)
             def lister_inner(*args, **kwargs):
-                counter: int = kwargs.pop("counter") * per_request
-                kwargs["start"] = counter
-                kwargs["finish"] = counter + per_request + 1
+                offset: int = kwargs.pop("offset", None)
+                counter: int = kwargs.pop("counter", None)
+                if offset is None:
+                    if counter is None:
+                        return {"a": "Neither counter nor offset are provided"}, 400
+                    offset = counter * per_request
+
+                kwargs["start"] = offset
+                kwargs["finish"] = offset + per_request + 1
                 result_list = function(*args, **kwargs)
+
                 if has_next := len(result_list) > per_request:
                     result_list.pop()
+
                 return {"results": marshal(result_list, marshal_model, skip_none=skip_none), "has-next": has_next}
 
             return lister_inner

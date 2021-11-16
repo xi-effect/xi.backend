@@ -8,7 +8,7 @@ from flask_restx import Api
 from werkzeug.exceptions import HTTPException
 
 from authorship import (authors_namespace)
-from communication import (chats_namespace, messages_namespace)
+from communication import (chats_namespace, chat_temp_namespace, chat_index_temp_namespace, messages_namespace)
 from componets import with_session
 from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
 from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace, wip_index_namespace)
@@ -43,6 +43,8 @@ api.add_namespace(other_settings_namespace)
 api.add_namespace(protected_settings_namespace)
 
 api.add_namespace(chats_namespace)
+api.add_namespace(chat_temp_namespace)
+api.add_namespace(chat_index_temp_namespace)
 api.add_namespace(messages_namespace)
 
 api.add_namespace(education_namespace)
@@ -58,6 +60,29 @@ api.add_namespace(wip_index_namespace)
 
 api.add_namespace(webhook_namespace)
 api.add_namespace(oct_namespace)
+
+
+# from flask import redirect, request
+# from flask_restx import Namespace, Resource
+# from users import User
+#
+# other_namespace = Namespace("hey", path="/")
+#
+#
+# @other_namespace.route("/socket.io/")
+# class TEMP(Resource):
+#     @chats_namespace.jwt_authorizer(User, use_session=False, check_only=True)
+#     def get(self):
+#         return redirect("https://457f-188-242-138-193.ngrok.io/socket.io/?"
+#                         + request.query_string.decode("utf-8"), code=307)
+#
+#     @chats_namespace.jwt_authorizer(User, use_session=False, check_only=True)
+#     def post(self):
+#         return redirect("https://457f-188-242-138-193.ngrok.io/socket.io/?"
+#                         + request.query_string.decode("utf-8"), code=307)
+#
+#
+# api.add_namespace(other_namespace)
 
 
 jwt: JWTManager = JWTManager(app)
