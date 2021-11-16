@@ -11,7 +11,6 @@ from socketio.client import Client as _Client
 @dataclass()
 class Event:
     name: str
-    sid: str
     data: Any
 
 
@@ -52,8 +51,8 @@ class Client(_Client, AnyClient):
     def exit(self):
         self.disconnect()
 
-    def handler(self, event: str, sid: str, data: Any):
-        self.events.append(Event(event, sid, data))
+    def handler(self, event: str, data: Any = None):
+        self.events.append(Event(event, data))
 
     def next_new_event(self) -> Optional[Event]:
         if len(self.events) == 0:
