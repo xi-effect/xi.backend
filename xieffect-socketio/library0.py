@@ -137,12 +137,12 @@ class Namespace(_Namespace):
         if isinstance(event, ClientEvent):
             if event.handler is None:
                 pass  # error!
-            setattr(self, f"on_{name}", event.handler)
+            setattr(self, f"on_{name.replace('-', '_')}", event.handler)
 
         if isinstance(event, DuplexEvent):
             if event.client_event.handler is None:
                 pass  # error!
-            setattr(self, f"on_{name}", event.client_event.handler)
+            setattr(self, f"on_{name.replace('-', '_')}", event.client_event.handler)
 
             if use_kebab_case:
                 kebabify_model(event.client_event.model)
@@ -159,7 +159,7 @@ class Namespace(_Namespace):
     def attach_event_group(self, event_group: EventGroup, use_kebab_case: bool = False):
         for name, event in event_group.events.items():
             if event.name is None:
-                event.attach_name(name.lower())
+                event.attach_name(name.lower().replace("_", "-"))
             self.attach_event(event, use_kebab_case=use_kebab_case)
 
 
