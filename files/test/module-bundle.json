@@ -8,27 +8,9 @@
     "difficulty": "enthusiast",
     "views": 7777,
     "map": [
-      "test",
-      "lol",
-      "hello world",
-      "test",
-      "lol",
-      "hello world",
-      "test",
-      "lol",
-      "hello world",
-      "test",
-      "lol",
-      "hello world",
-      "test",
-      "lol",
-      "hello world",
-      "test",
-      "lol",
-      "hello world",
-      "test",
-      "lol",
-      "hello world"
+      "THEORY",
+      "QUIZ 4",
+      "QUIZ 5"
     ],
     "created": "2020-10-22T10:30:03",
     "description": "Прикольный пробник по математике для ЕГЭ. Удачи на экзамене, мои соболезнования",
@@ -36,23 +18,19 @@
       {
         "type": "theory",
         "pages": [
-          3,
-          1,
-          1
-        ]
-      },
-      {
-        "type": "theory",
-        "pages": [
-          3,
-          3,
-          1
-        ]
-      },
-      {
-        "type": "theory",
-        "pages": [
           2
+        ]
+      },
+      {
+        "type": "practice",
+        "pages": [
+          4
+        ]
+      },
+      {
+        "type": "practice",
+        "pages": [
+          5
         ]
       }
     ]
