@@ -26,12 +26,16 @@ class AnyClient:
 
 
 class Session(_Session, AnyClient):
-    def __init__(self, prefix_url: str = None):
+    def __init__(self, prefix_url: str = None, default_headers: dict = None):
         super(Session, self).__init__()
         self.prefix_url = prefix_url
+        self.default_headers = default_headers
 
     def request(self, method: str, url: str, *args, **kwargs):
-        return super().request(method, urljoin(self.prefix_url, url), *args, **kwargs)
+        headers = kwargs.pop("headers", None)
+        if headers is None or headers == {}:
+            headers = self.default_headers
+        return super().request(method, urljoin(self.prefix_url, url), *args, headers=headers, **kwargs)
 
     def exit(self):
         self.close()
@@ -103,6 +107,8 @@ class DoubleClient(AnyClient):
         self.rst: Session = session
         if self.rst.prefix_url is None:
             self.rst.prefix_url = url
+        if self.rst.default_headers is None:
+            self.rst.default_headers = connection_kwargs.get("headers", default_kwargs.get("headers", None)).copy()
         self.sio: Client = Client(url, connection_kwargs, default_kwargs)
 
     def exit(self):

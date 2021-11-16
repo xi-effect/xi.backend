@@ -30,7 +30,13 @@ class MultiClient(_MultiClient):
 
 
 class MultiDoubleClient(_MultiDoubleClient, MultiClient):
-    pass
+    def auth_user(self, email: str, password: str) -> Optional[AnyClient]:
+        session: Session = Session("http://localhost:5000/")
+        response = session.post(f"/auth/", json={"email": email, "password": password})
+        if response.status_code == 200 and response.json() == {"a": "Success"}:
+            header = response.headers["Set-Cookie"]
+            return self.connect_user(headers={"Cookie": header}, session=session)
+        return None
 
 
 @fixture(scope="session", autouse=True)
@@ -64,8 +70,9 @@ def multi_double_client(main_server):
 
 
 @fixture
-def list_tester(session: Session) -> Callable[[str, dict, int, int], Iterator[dict]]:
-    def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
+def list_tester() -> Callable[[Session, str, dict, int, int], Iterator[dict]]:
+    def list_tester_inner(session: Session, link: str, request_json: dict,
+                          page_size: int, status_code: int = 200) -> Iterator[dict]:
         counter = 0
         amount = page_size
         while amount == page_size:
@@ -77,7 +84,7 @@ def list_tester(session: Session) -> Callable[[str, dict, int, int], Iterator[di
             for content in response_json["results"]:
                 yield content
 
-            amount = len(response_json)
+            amount = len(response_json["results"])
             assert amount <= page_size
 
             counter += 1
