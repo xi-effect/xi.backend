@@ -63,7 +63,7 @@ def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator
             for content in response_json["results"]:
                 yield content
 
-            amount = len(response_json)
+            amount = len(response_json["results"])
             assert amount <= page_size
 
             counter += 1
