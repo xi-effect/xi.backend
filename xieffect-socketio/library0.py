@@ -49,7 +49,7 @@ class ClientEvent(Event):
         return self.model.parse_obj(data).dict()
 
     def bind(self, function):
-        self.handler = lambda data: function(**self.parse(data))
+        self.handler = lambda data = None: function(**self.parse(data))
 
     def create_doc(self, namespace: str):
         return {"publish": super().create_doc(namespace)}
@@ -66,6 +66,7 @@ class ServerEvent(Event):
             "exclude": exclude,
             "by_alias": True,
         }
+        self.model.Config.allow_population_by_field_name = True
 
     def emit(self, _room: str = None, _data: Any = None, **kwargs):
         if _data is None:

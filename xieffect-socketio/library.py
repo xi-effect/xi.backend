@@ -83,7 +83,7 @@ class UserSession:
         self.counters: dict[int, int] = dict()
 
     def connect(self, user_id: int):
-        if user_id in self.sessions.keys():
+        if user_id not in self.sessions.keys():
             self.sessions[user_id] = Session()
             self.sessions[user_id].set_cookie("access_token_cookie", request.cookies["access_token_cookie"])
             self.counters[user_id] = 1
