@@ -47,12 +47,21 @@ class Client(_Client, AnyClient):
         self.on("*", self.handler)
 
         self.events: list[Event] = []
+        self.stop: bool = False
 
     def exit(self):
         self.disconnect()
 
+    def emit(self, event, data=None, namespace=None, callback=None, wait_stop: bool = False):
+        super(Client, self).emit(event, data, namespace, callback)
+        if wait_stop:
+            self.wait_stop()
+
     def handler(self, event: str, data: Any = None):
-        self.events.append(Event(event, data))
+        if event == "stop":
+            self.stop = True
+        else:
+            self.events.append(Event(event, data))
 
     def next_new_event(self) -> Optional[Event]:
         if len(self.events) == 0:
@@ -65,6 +74,11 @@ class Client(_Client, AnyClient):
 
     def new_event_count(self) -> int:
         return len(self.events)
+
+    def wait_stop(self):
+        self.emit("stop")
+        while not self.stop:
+            self.sleep(1)
 
 
 class HClient(Client):

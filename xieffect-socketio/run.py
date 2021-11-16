@@ -1,11 +1,11 @@
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restx import Api
-from flask_socketio import rooms
+from flask_socketio import rooms, emit
 
 from library import Session
 from setup import socketio, app, user_sessions
-from websockets import Namespace, messaging_events, chat_management_events, user_management_events
 from temp_api import reglog_namespace, static_namespace
+from websockets import Namespace, messaging_events, chat_management_events, user_management_events
 
 api = Api(app, doc="/api-doc/")
 api.add_namespace(static_namespace)
@@ -19,6 +19,12 @@ class MessagesNamespace(Namespace):
     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
     def on_connect(self, _):
         user_sessions.connect(get_jwt_identity())
+
+    # test only:
+    def on_stop(self, *_):
+        print("stop")
+        emit("stop")
+        # disconnect()  # temp
 
     @user_sessions.with_request_session(use_user_id=True, ignore_errors=True)
     def on_disconnect(self, session: Session, user_id: int):
