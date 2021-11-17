@@ -17,12 +17,6 @@ class MessagesNamespace(Namespace):
     def on_connect(self, _):
         user_sessions.connect(get_jwt_identity())
 
-    # test only:
-    def on_stop(self, *_):
-        print("stop")
-        emit("stop")
-        # disconnect()  # temp
-
     @user_sessions.with_request_session(use_user_id=True, ignore_errors=True)
     def on_disconnect(self, session: Session, user_id: int):
         user_sessions.disconnect(user_id)

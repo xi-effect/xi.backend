@@ -1,11 +1,18 @@
-from collections import Callable
-from typing import Iterator, Optional
+from sys import path
+from time import sleep
+from typing import Optional
 
+from flask.testing import FlaskClient
+from flask_socketio.test_client import SocketIOTestClient
 from pytest import fixture
-from requests import post
 
-from .components import check_status_code
-from .library2 import MultiClient as _MultiClient, MultiDoubleClient as _MultiDoubleClient, Session, AnyClient
+from run import socketio, app
+from xieffect.wsgi import application
+from .library2 import MultiClient as _MultiClient, DoubleClient
+
+project_home = "../xieffect"
+if project_home not in path:
+    path = [project_home] + path
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
@@ -14,12 +21,22 @@ BASIC_PASS: str = "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b
 ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe"
 
 
+class RedirectedFlaskClient(FlaskClient):
+    def open(self, *args, **kwargs):
+        kwargs["follow_redirects"] = True
+        return super(RedirectedFlaskClient, self).open(*args, **kwargs)
+
+
+app.test_client_class = RedirectedFlaskClient
+
+
 class MultiClient(_MultiClient):
-    def auth_user(self, email: str, password: str) -> Optional[AnyClient]:
-        response = post(f"{self.server_url}/auth/", json={"email": email, "password": password})
-        if response.status_code == 200 and response.json() == {"a": True}:
-            header = response.headers["Set-Cookie"]
-            return self.connect_user(headers={"Cookie": header})
+    def auth_user(self, email: str, password: str) -> Optional[DoubleClient]:
+        flask_client = application.test_client()
+        response = flask_client.post(f"/auth/", json={"email": email, "password": password})
+        if response.status_code == 200 and response.get_json() == {"a": "Success"}:
+            sleep(1)
+            return self.connect_user(flask_client)
         return None
 
     def attach_auth_user(self, username: str, email: str, password: str) -> bool:
@@ -28,75 +45,19 @@ class MultiClient(_MultiClient):
             return True
         return False
 
-
-class MultiDoubleClient(_MultiDoubleClient, MultiClient):
-    def auth_user(self, email: str, password: str) -> Optional[AnyClient]:
-        session: Session = Session("http://localhost:5000/")
-        response = session.post(f"/auth/", json={"email": email, "password": password})
-        if response.status_code == 200 and response.json() == {"a": "Success"}:
-            header = response.headers["Set-Cookie"]
-            return self.connect_user(headers={"Cookie": header}, session=session)
-        return None
+    def get_tr_io(self) -> tuple[SocketIOTestClient, SocketIOTestClient, SocketIOTestClient]:
+        return self.users["Anatol"].sio, self.users["Evgen"].sio, self.users["Vasil"].sio
 
 
 @fixture(scope="session", autouse=True)
-def main_server():
-    # thr2 = Thread(target=application.run, daemon=True, kwargs={"debug": True})
-    # thr2.start()
-    s = Session("http://localhost:5000/")
-    yield s
-    s.close()
-    # remove("app.db")
-
-
-@fixture()
-def multi_client(main_server):
-    # thr1 = Thread(target=run, daemon=True)
-    # thr1.start()
-    with MultiClient("http://localhost:5050/") as multi_client:
+def multi_client():
+    with MultiClient(app, socketio) as multi_client:
         yield multi_client
 
 
 @fixture()
-def multi_double_client(main_server):
-    with MultiDoubleClient("http://localhost:5050/") as multi_client:
-        yield multi_client
-
-
-# @fixture()
-# def client(multi_client: MultiClient):
-#     with multi_client:
-#         pass
-
-
-@fixture()
-def socket_tr_io_client(multi_double_client):  # add to library2.py
-    multi_double_client.attach_auth_user("Anatol", "8@user.user", BASIC_PASS)
-    multi_double_client.attach_auth_user("Evgen", "test@test.test", BASIC_PASS)
-    multi_double_client.attach_auth_user("Vasil", "7@user.user", BASIC_PASS)
-    return multi_double_client
-
-
-@fixture
-def list_tester() -> Callable[[Session, str, dict, int, int], Iterator[dict]]:
-    def list_tester_inner(session: Session, link: str, request_json: dict,
-                          page_size: int, status_code: int = 200) -> Iterator[dict]:
-        counter = 0
-        amount = page_size
-        while amount == page_size:
-            request_json["counter"] = counter
-            response_json: dict = check_status_code(session.post(link, json=request_json), status_code)
-
-            assert "results" in response_json
-            assert isinstance(response_json["results"], list)
-            for content in response_json["results"]:
-                yield content
-
-            amount = len(response_json["results"])
-            assert amount <= page_size
-
-            counter += 1
-
-        assert counter > 0
-
-    return list_tester_inner
+def socket_tr_io_client(multi_client: MultiClient):  # add to library2.py
+    multi_client.attach_auth_user("Anatol", "8@user.user", BASIC_PASS)
+    multi_client.attach_auth_user("Evgen", "test@test.test", BASIC_PASS)
+    multi_client.attach_auth_user("Vasil", "7@user.user", BASIC_PASS)
+    return multi_client
