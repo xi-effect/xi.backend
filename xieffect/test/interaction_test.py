@@ -101,10 +101,10 @@ def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 
         response_json = check_status_code(client.post("/modules/5/next/"))
     assert check_status_code(client.get("/modules/5/open/")) == response_json
 
-    response_json = check_status_code(client.get("/modules/9/points/8/"))
-    assert check_status_code(client.get("/modules/9/open/")) == response_json
-    response_json = check_status_code(client.get("/modules/9/points/9/"))
-    assert check_status_code(client.get("/modules/9/open/")) == response_json
+    check_status_code(client.get("/modules/9/points/8/"))
+    assert check_status_code(client.get("/modules/9/open/")) == {"id": 8}
+    check_status_code(client.get("/modules/9/points/9/"))
+    assert check_status_code(client.get("/modules/9/open/")) == {"id": 9}
 
 
 @mark.order(540)
