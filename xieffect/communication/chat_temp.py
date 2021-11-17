@@ -34,7 +34,7 @@ class ChatAdder(Resource):
 @chat_index_temp_namespace.route("/close-all/")
 class ChatCloser(Resource):  # temp pass-through
     parser: RequestParser = RequestParser()
-    parser.add_argument("ids", type=int, action="append")
+    parser.add_argument("ids", type=int, action="append", required=True)
 
     @chat_index_temp_namespace.jwt_authorizer(User)
     @chat_index_temp_namespace.argument_parser(parser)

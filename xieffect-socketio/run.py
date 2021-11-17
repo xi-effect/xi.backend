@@ -21,7 +21,8 @@ class MessagesNamespace(Namespace):
     def on_disconnect(self, session: Session, user_id: int):
         user_sessions.disconnect(user_id)
         chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
-        session.post(f"{app.config['host']}/chat-temp/close-all/", json={"ids": chat_ids})
+        if len(chat_ids):
+            session.post(f"{app.config['host']}/chat-temp/close-all/", json={"ids": chat_ids})
 
 
 messages_namespace = MessagesNamespace("/")
