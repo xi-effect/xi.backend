@@ -110,7 +110,7 @@ class UserSession:
                     return function(*args, **kwargs)
                 except RequestException as e:
                     if not ignore_errors:
-                        e.emit_error_event(function.__name__)
+                        e.emit_error_event(function.__name__[3:].replace("_", "-"))
 
             return with_request_session_inner
 
