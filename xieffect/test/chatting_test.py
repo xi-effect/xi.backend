@@ -40,8 +40,9 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
                if user_id != test_user_id and user_id != an_id)
     # MB add a check for inviting already invited users
 
-    # Editing & checking chat metadata:
+    # Editing chat metadata:
     assert check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name2})) == {"a": True}
+    # Checking chat metadata:
     chat_data = {"name": chat_name2, "role": "owner", "users": len(invited)}
     assert check_status_code(client.get(f"/chats/{chat_id}/")) == chat_data
     assert any(chat == {"id": chat_id, "name": chat_name2} for chat in list_tester("/chats/index/", {}, 50))
@@ -52,12 +53,14 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
         assert user["id"] in invited.keys(), "Invited user not found in a chat"
         assert user["role"] == invited[user["id"]]
 
-    # Kick one user & check the updated user-list:
+    # Kick one user:
     check_status_code(client.delete(f"/chat-temp/{chat_id}/users/{(removed_user_id := list(invited)[2])}/"))
+    # Check the updated user-list
     assert all(user["id"] != removed_user_id for user in list_tester(f"/chats/{chat_id}/users/", {}, 50))
 
-    # Delete the chat & check absence:
+    # Delete the chat:
     assert check_status_code(client.delete(f"/chat-temp/{chat_id}/manage/")) == {"a": True}
+    # Check chat's absence:
     assert check_status_code(client.get(f"/chats/{chat_id}/"), 404)
     assert all(chat["id"] != chat_id for chat in list_tester("/chats/index/", {}, 50))
 
@@ -93,6 +96,8 @@ def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
         if role == "admin":
             assert check_status_code(client.get(f"/chats/{chat_id}/"))["name"] == "new_name"
         check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name}), code)
+        if role == "admin":
+            assert check_status_code(client.get(f"/chats/{chat_id}/"))["name"] == chat_name
 
         for target in list_tester(f"/chats/{chat_id}/users/", {}, 50):
             target_id = target["id"]
