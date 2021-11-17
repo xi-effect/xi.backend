@@ -11,7 +11,8 @@ from .components import check_status_code
 def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     # Creating a new chat:
     chat_name1, chat_name2 = "test", "production"
-    assert (chat_id := check_status_code(client.post("/chats/", json={"name": chat_name1})).get("id", None)) is not None
+    chat_id = check_status_code(client.post("/chat-temp/", json={"name": chat_name1})).get("id", None)
+    assert chat_id is not None
 
     # Checking initial chat metadata & message-history:
     assert check_status_code(client.get(f"/chats/{chat_id}/")) == {"name": chat_name1, "role": "owner", "users": 1}
@@ -27,35 +28,36 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     # Generating users to invite:
     invited: dict[int] = {test_user_id: "owner", 3: "muted", 4: "basic", 5: "moder", 6: "admin"}  # redo with /users/
     bulk = [user_id for user_id in list(invited) if user_id != test_user_id]
+    an_id = bulk[-1]
 
     # Inviting users:
-    assert check_status_code(client.post(f"/chats/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})) == {"a": True}
-    assert check_status_code(client.post(f"/chats/{chat_id}/users/{bulk[-1]}/"))
+    assert check_status_code(client.post(f"/chat-temp/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})) == {"a": True}
+    assert check_status_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))
 
     # Changing users' roles:
-    assert all(check_status_code(client.put(f"/chats/{chat_id}/users/{user_id}/", json={"role": role}))["a"]
+    assert all(check_status_code(client.put(f"/chat-temp/{chat_id}/users/{user_id}/", json={"role": role}))["a"]
                for user_id, role in invited.items()
-               if user_id != test_user_id)
+               if user_id != test_user_id and user_id != an_id)
     # MB add a check for inviting already invited users
 
     # Editing & checking chat metadata:
-    assert check_status_code(client.put(f"/chats/{chat_id}/manage/", json={"name": chat_name2})) == {"a": True}
+    assert check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name2})) == {"a": True}
     chat_data = {"name": chat_name2, "role": "owner", "users": len(invited)}
     assert check_status_code(client.get(f"/chats/{chat_id}/")) == chat_data
     assert any(chat == {"id": chat_id, "name": chat_name2} for chat in list_tester("/chats/index/", {}, 50))
 
     # Check the updated user-list:
     for user in list_tester(f"/chats/{chat_id}/users/", {}, 50):
-        assert list(user.keys()) == ["id", "role", "username"]
+        assert list(user.keys()) == ["id", "role", "user-avatar", "username"]
         assert user["id"] in invited.keys(), "Invited user not found in a chat"
         assert user["role"] == invited[user["id"]]
 
     # Kick one user & check the updated user-list:
-    check_status_code(client.delete(f"/chats/{chat_id}/users/{(removed_user_id := list(invited)[2])}/"))
+    check_status_code(client.delete(f"/chat-temp/{chat_id}/users/{(removed_user_id := list(invited)[2])}/"))
     assert all(user["id"] != removed_user_id for user in list_tester(f"/chats/{chat_id}/users/", {}, 50))
 
     # Delete the chat & check absence:
-    assert check_status_code(client.delete(f"/chats/{chat_id}/manage/")) == {"a": True}
+    assert check_status_code(client.delete(f"/chat-temp/{chat_id}/manage/")) == {"a": True}
     assert check_status_code(client.get(f"/chats/{chat_id}/"), 404)
     assert all(chat["id"] != chat_id for chat in list_tester("/chats/index/", {}, 50))
 
@@ -84,20 +86,21 @@ def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
     for i in range(len(role_to_user)):
         role, email, user_id = role_to_user[i]
         client = multi_client(email)
-        code: int = 200 if role == "admin" else 403
+        code = 200 if role == "admin" else 403
 
-        check_status_code(client.delete(f"/chats/{chat_id}/manage/"), 403)
-        check_status_code(client.put(f"/chats/{chat_id}/manage/", json={"name": "new_name"}), code)
+        check_status_code(client.delete(f"/chat-temp/{chat_id}/manage/"), 403)
+        check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": "new_name"}), code)
         if role == "admin":
             assert check_status_code(client.get(f"/chats/{chat_id}/"))["name"] == "new_name"
-        check_status_code(client.put(f"/chats/{chat_id}/manage/", json={"name": chat_name}), code)
+        check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name}), code)
 
         for target in list_tester(f"/chats/{chat_id}/users/", {}, 50):
             target_id = target["id"]
-            if target["role"] == "owner":
-                check_status_code(client.delete(f"/chats/{chat_id}/users/{target_id}/"), 403)
-            elif target_id != user_id:
-                check_status_code(client.delete(f"/chats/{chat_id}/users/{target_id}/"), code)
-                assert role != "admin" or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc - 1
-                check_status_code(client.post(f"/chats/{chat_id}/users/{target_id}/"), code)
-                assert role != "admin" or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
+            code = 200 if role == "admin" and target["role"] not in ("owner", "admin") else 403
+            if target_id != user_id:
+                check_status_code(client.delete(f"/chat-temp/{chat_id}/users/{target_id}/"), code)
+                assert code == 403 or (check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc - 1)
+
+                check_status_code(client.post(f"/chat-temp/{chat_id}/users/{target_id}/",
+                                              json={"role": target["role"]}), code)
+                assert code == 403 or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
