@@ -33,6 +33,12 @@ def test_chat_owning(socket_tr_io_client: MultiClient):  # assumes test's id == 
     ensure_broadcast(anatol, "delete-chat", {"chat-id": chat_id}, evgen)
     ensure_pass(anatol, form_pass("DELETE", f"/chat-temp/{chat_id}/manage/", None, {"a": True}, 200))
 
+    # Deleting it again for all time sake:
+    anatol.emit("delete-chat", {"chat-id": chat_id})
+    event_data = assert_one(anatol.filter_received("error"))
+    assert event_data.pop("timestamp", None) is not None
+    assert event_data == {"code": 404, "message": "Chat not found", "event": "delete-chat"}
+
 
 """
 @mark.order(620)
