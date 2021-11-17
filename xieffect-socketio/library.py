@@ -2,10 +2,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
 from typing import Union
+from urllib.parse import urlparse
 
 from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_socketio import join_room, close_room
+from flask_socketio import join_room, close_room, emit
 from pydantic import BaseModel, Field
 from requests import Session as _Session, Response
 
@@ -52,22 +53,20 @@ def users_broadcast(_event: Union[ServerEvent, DuplexEvent], _user_ids: list[int
 
 
 class Session(_Session):
-    # from flask.testing import FlaskClient, Response as FlaskResponse
-    # client = None
+    testing: bool = False
 
-    def request(self, *args, **kwargs):
-        # if self.client is not None and isinstance(self.client, FlaskClient):
-        #     response: FlaskResponse = self.client.open(*args, **kwargs)
-        #     json = response.get_json()
-        # else:
-        response: Response = super(Session, self).request(*args, **kwargs)
+    def request(self, method, url, **kwargs):
+        req_json = kwargs.get("json", None)
+        response: Response = super(Session, self).request(method, url, **kwargs)
         json = response.json()
         # print("HEY! FlaskClient wasn't used!!!")
-        if 400 <= response.status_code < 500:
+        if 400 <= (code := response.status_code) < 500:
             if (a := json.get("a", None)) is not None:
                 raise RequestException(response.status_code, a)
             else:
                 raise RequestException(response.status_code)
+        if self.testing:
+            emit("pass", {"method": method, "url": urlparse(url).path, "req": req_json, "res": json, "code": code})
         return response
 
     def set_cookie(self, key, value):

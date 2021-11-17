@@ -1,7 +1,7 @@
 from pytest import mark
 
 from .conftest import MultiClient
-from .library2 import Event
+from .components import assert_one, form_pass, ensure_broadcast, ensure_pass
 
 
 @mark.order(600)
@@ -10,40 +10,26 @@ def test_chat_owning(socket_tr_io_client: MultiClient):  # assumes test's id == 
 
     # Creating a new chat:
     chat_name1, chat_name2 = "test", "production"
-    anatol.emit("add-chat", {"name": chat_name1}, wait_stop=True)
+    anatol.emit("add-chat", incoming_data := {"name": chat_name1})
 
-    assert len(events := anatol.get_received()) == 1
-    assert (event := Event.from_sio(events[0])).name == "add-chat" and event.data.get("name", None) == chat_name1
-    assert (chat_id := event.data.get("chat-id", None)) is not None
+    assert anatol.received_count() == 2
+    event_data = assert_one(anatol.filter_received("add-chat"))
+    assert event_data.get("name", None) == chat_name1
+    assert (chat_id := event_data.get("chat-id", None)) is not None
+    ensure_pass(anatol, form_pass("POST", "/chat-temp/", incoming_data, {"id": chat_id}, 200))
 
     # Editing chat metadata:
-    event_data = {"chat-id": chat_id, "name": chat_name2}
-    anatol.emit("edit-chat", event_data, wait_stop=True)
-    assert len(events := anatol.get_received()) == 1
-    assert (event := Event.from_sio(events[0])).name == "edit-chat" and event.data == event_data
+    ensure_broadcast(anatol, "edit-chat", {"chat-id": chat_id, "name": chat_name2})
+    ensure_pass(anatol, form_pass("PUT", f"/chat-temp/{chat_id}/manage/", {"name": chat_name2}, {"a": True}, 200))
 
     # Deleting the chat:
-    event_data = {"chat-id": chat_id}
-    anatol.emit("delete-chat", event_data, wait_stop=True)
-    assert len(events := anatol.get_received()) == 1
-    assert (event := Event.from_sio(events[0])).name == "delete-chat" and event.data == event_data
+    ensure_broadcast(anatol, "delete-chat", {"chat-id": chat_id})
+    ensure_pass(anatol, form_pass("DELETE", f"/chat-temp/{chat_id}/manage/", None, {"a": True}, 200))
 
 
 """
-def get_roles_to_user(multi_client: Callable[[str], FlaskClient], chat):
-    roles = ["muted", "basic", "moder", "admin"]
-    not_found_roles = roles.copy()
-    role_to_email = {not_found_roles.pop(not_found_roles.index(role)): email
-                     for email, role in chat["participants"]
-                     if role in not_found_roles}
-    assert len(not_found_roles) == 0
-    return [(role, (email := role_to_email[role]), check_status_code(multi_client(email).get("/settings/main/"))["id"])
-            for role in roles]
-
-
-@mark.order(610)
-def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
-                    multi_client: Callable[[str], FlaskClient]):  # relies on chat#4
+@mark.order(620)
+def test_chat_roles(socket_tr_io_client: MultiClient):  # relies on chat#4
     with open("../files/test/chat-bundle.json", encoding="utf-8") as f:
         chat = load(f)[-1]
     chat_name = chat["name"]
