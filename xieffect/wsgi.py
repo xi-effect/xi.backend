@@ -100,7 +100,7 @@ def init_chats(session):
             chat: Chat = Chat.create(session, chat_data["name"], owner)
             for email, role in chat_data["participants"]:
                 if email != owner.email:
-                    chat.add_participant(User.find_by_email_address(session, email),
+                    chat.add_participant(session, User.find_by_email_address(session, email),
                                          ChatRole.from_string(role))
             for message_data in chat_data["messages"]:
                 sender = User.find_by_email_address(session, message_data["sender-email"])

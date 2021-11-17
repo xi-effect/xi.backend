@@ -164,11 +164,9 @@ class ChatUserManager(Resource):  # temp pass-through
     @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_user_to_chat=True, use_session=True, use_chat=True)
     @with_role_check
     @chat_temp_namespace.a_response()
-    def post(self, session, chat: Chat, user_id: int, role: ChatRole) -> None:  # redo as event
+    def post(self, session, chat: Chat, user_id: int, role: ChatRole) -> bool:  # redo as event
         """ Adds a user to the chat (admins only) [TEMP] """
-        chat.add_participant(User.find_by_id(session, user_id), role)
-        # pass_through("add-chat", {"chat-id": chat.id, "name": chat.name,
-        #                           "role": role.to_string()}, [user_id])
+        return chat.add_participant(session, User.find_by_id(session, user_id), role)
 
     @manage_user(with_current=True)
     @with_role_check
@@ -194,11 +192,8 @@ class ChatUserBulkAdder(Resource):  # temp pass-through
 
     @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_session=True, use_chat=True)
     @chat_temp_namespace.argument_parser(parser)
-    @chat_temp_namespace.a_response()
-    def post(self, session, chat: Chat, ids: list[int]) -> None:  # redo as event
+    def post(self, session, chat: Chat, ids: list[int]) -> list[bool]:  # redo as event
         """ Adds a list of users by ids to the chat (admins only) [TEMP] """
-        for user_id in ids:
-            user: User = User.find_by_id(session, user_id)
-            if user is not None and UserToChat.find_by_ids(session, chat.id, user_id) is None:
-                chat.add_participant(user)  # no error check, REDO
-        # pass_through("add-chat", {"chat-id": chat.id, "name": chat.name}, ids)
+        return [(user := User.find_by_id(session, user_id)) is not None
+                and chat.add_participant(session, user)
+                for user_id in ids]

@@ -148,8 +148,11 @@ class Chat(Base, Marshalable, Identifiable):
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[Chat]:
         return first_or_none(session.execute(select(cls).filter_by(id=entry_id)))
 
-    def add_participant(self, user: User, role: ChatRole = ChatRole.BASIC) -> None:
-        user.chats.append(UserToChat(chat=self, role=role))
+    def add_participant(self, session: Session, user: User, role: ChatRole = ChatRole.BASIC) -> bool:
+        if UserToChat.find_by_ids(session, self.id, user.id) is None:
+            user.chats.append(UserToChat(chat=self, role=role))
+            return True
+        return False
 
     def get_next_message_id(self):
         self.next_message_id += 1

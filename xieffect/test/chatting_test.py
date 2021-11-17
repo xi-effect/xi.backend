@@ -31,8 +31,12 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     an_id = bulk[-1]
 
     # Inviting users:
-    assert check_status_code(client.post(f"/chat-temp/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})) == {"a": True}
-    assert check_status_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))
+    assert all(check_status_code(client.post(f"/chat-temp/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})))
+    assert check_status_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))["a"]
+
+    # Fail to invite the same users:
+    assert not any(check_status_code(client.post(f"/chat-temp/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})))
+    assert not check_status_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))["a"]
 
     # Changing users' roles:
     assert all(check_status_code(client.put(f"/chat-temp/{chat_id}/users/{user_id}/", json={"role": role}))["a"]
