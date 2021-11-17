@@ -36,7 +36,7 @@ socketio.on_namespace(messages_namespace)
 @app.before_request
 def main_server():
     path = urlparse(request.url).path
-    if path != "/socket.io/":
+    if path != "/socket.io/" and path != socketio.doc_path:
         return redirect(urljoin(app.config["host"], path))
 
 
