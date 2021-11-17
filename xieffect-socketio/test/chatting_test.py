@@ -18,12 +18,19 @@ def test_chat_owning(socket_tr_io_client: MultiClient):  # assumes test's id == 
     assert (chat_id := event_data.get("chat-id", None)) is not None
     ensure_pass(anatol, form_pass("POST", "/chat-temp/", incoming_data, {"id": chat_id}, 200))
 
+    # Inviting Evgen to chat:
+    anatol.emit("invite-user", {"chat-id": chat_id, "role": "basic", "target-id": 1})
+    ensure_pass(anatol, form_pass("POST", f"/chat-temp/{chat_id}/users/1/", {"role": "basic"}, {"a": True}, 200))
+
+    event_data = assert_one(evgen.filter_received("add-chat"))
+    assert event_data == {"chat-id": chat_id, "name": chat_name1}
+
     # Editing chat metadata:
-    ensure_broadcast(anatol, "edit-chat", {"chat-id": chat_id, "name": chat_name2})
+    ensure_broadcast(anatol, "edit-chat", {"chat-id": chat_id, "name": chat_name2}, evgen)
     ensure_pass(anatol, form_pass("PUT", f"/chat-temp/{chat_id}/manage/", {"name": chat_name2}, {"a": True}, 200))
 
     # Deleting the chat:
-    ensure_broadcast(anatol, "delete-chat", {"chat-id": chat_id})
+    ensure_broadcast(anatol, "delete-chat", {"chat-id": chat_id}, evgen)
     ensure_pass(anatol, form_pass("DELETE", f"/chat-temp/{chat_id}/manage/", None, {"a": True}, 200))
 
 
