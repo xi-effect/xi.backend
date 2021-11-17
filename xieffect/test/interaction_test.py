@@ -1,4 +1,4 @@
-from random import shuffle
+from random import shuffle, randint
 from typing import Iterator, Callable, Optional
 
 from flask.testing import FlaskClient
@@ -120,18 +120,28 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
     assert module["type"] == "test"
     assert "map" in module.keys()
 
-    json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
-    point_ids: list[int] = list(range(len(module["map"])))
+    length: int = len(module["map"])
+
+    replies: list[dict] = [{
+        "right-answers": (right := randint(0, 10)),
+        "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right*2))),
+        "answers": {str(k): int(k) for k in range(randint(right, total))}
+    } for _ in range(length)]
+
+    point_ids: list[int] = list(range(length))
     shuffle(point_ids)
+
     for point in point_ids:
         assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == {}
         check_status_code(client.get(f"/modules/7/points/{point}/"))
         assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == {}
-        assert check_status_code(client.post(f"/modules/7/points/{point}/reply/", json=json_test)) == {"a": True}
-        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == json_test["answers"]
+
+        reply = replies[point]
+        assert check_status_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)) == {"a": True}
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == reply["answers"]
 
     point_id: Optional[int] = None
-    for reply in check_status_code(client.get(f"/modules/7/results/")):
-        assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
+    for i, reply in enumerate(check_status_code(client.get(f"/modules/7/results/"))):
+        assert dict_equal(reply, replies[i], "right-answers", "total-answers", "answers")
         assert point_id is None or reply["point-id"] > point_id
         point_id = reply["point-id"]
