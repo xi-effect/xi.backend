@@ -23,7 +23,7 @@ app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = ["access"]
 app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY", "hope it's local")
 app.config["API_KEY"] = getenv("API_KEY", "hope it's local")
 
-app.config["host"] = getenv("host", "http://localhost:5000/")
+app.config["host"] = getenv("host", "http://localhost:5000")
 
 CORS(app, supports_credentials=True)
 jwt = JWTManager(app)
