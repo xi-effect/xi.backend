@@ -146,6 +146,9 @@ class MultiClient:
     def disconnect_user(self, username: str) -> None:
         self.users.pop(username).exit()
 
+    def get_tr_io(self) -> tuple[AnyClient, AnyClient, AnyClient]:
+        return self.users.get("Anatol", None), self.users.get("Evgen", None), self.users.get("Vasil", None)
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         for user in self.users.values():
             user.exit()
@@ -153,7 +156,7 @@ class MultiClient:
 
 
 class MultiDoubleClient(MultiClient):
-    def connect_user(self, keep_history: bool = False, session: Session = None, **connection_kwargs) -> DoubleClient:
+    def connect_user(self, keep_history: bool = False, session: Session = None, **connection_kwargs) -> AnyClient:
         if keep_history:
             return DoubleHClient(self.server_url, connection_kwargs, self.connect_kwargs, session)
         return DoubleClient(self.server_url, connection_kwargs, self.connect_kwargs, session)

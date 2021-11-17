@@ -69,6 +69,14 @@ def multi_double_client(main_server):
 #         pass
 
 
+@fixture()
+def socket_tr_io_client(multi_double_client):  # add to library2.py
+    multi_double_client.attach_auth_user("Anatol", "8@user.user", BASIC_PASS)
+    multi_double_client.attach_auth_user("Evgen", "test@test.test", BASIC_PASS)
+    multi_double_client.attach_auth_user("Vasil", "7@user.user", BASIC_PASS)
+    return multi_double_client
+
+
 @fixture
 def list_tester() -> Callable[[Session, str, dict, int, int], Iterator[dict]]:
     def list_tester_inner(session: Session, link: str, request_json: dict,
