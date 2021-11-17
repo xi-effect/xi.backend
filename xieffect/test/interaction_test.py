@@ -9,6 +9,12 @@ from .components import check_status_code
 from .knowledge_test import MODULES_PER_REQUEST
 
 
+def dict_equal(dict1: dict, dict2: dict, *keys) -> bool:
+    dict1 = {key: dict1.get(key, None) for key in keys}
+    dict2 = {key: dict2.get(key, None) for key in keys}
+    return dict1 == dict2
+
+
 @mark.order(500)
 def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     types_set: set[str] = {"standard", "practice-block", "theory-block", "test"}
@@ -47,10 +53,11 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             assert check_status_code(client.post(f"/modules/{module_id}/points/{map_length}/reply/",
                                                  json=json_test)) == {"a": True}
 
+            reply = check_status_code(client.get(f"/modules/{module_id}/points/{map_length}/reply"))
+            assert reply == json_test["answers"]
+
             reply = check_status_code(client.get(f"/modules/{module_id}/results/"))[0]
-            assert reply["right-answers"] == json_test["right-answers"]
-            assert reply["total-answers"] == json_test["total-answers"]
-            assert reply["answers"] == json_test["answers"]
+            assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
 
     assert len(types_set) == 0
 
@@ -117,13 +124,14 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
     point_ids: list[int] = list(range(len(module["map"])))
     shuffle(point_ids)
     for point in point_ids:
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == {}
         check_status_code(client.get(f"/modules/7/points/{point}/"))
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == {}
         assert check_status_code(client.post(f"/modules/7/points/{point}/reply/", json=json_test)) == {"a": True}
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == json_test["answers"]
 
     point_id: Optional[int] = None
     for reply in check_status_code(client.get(f"/modules/7/results/")):
-        assert reply["right-answers"] == json_test["right-answers"]
-        assert reply["total-answers"] == json_test["total-answers"]
-        assert reply["answers"] == json_test["answers"]
+        assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
         assert point_id is None or reply["point-id"] > point_id
         point_id = reply["point-id"]
