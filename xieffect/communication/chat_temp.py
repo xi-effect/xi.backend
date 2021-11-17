@@ -118,7 +118,8 @@ class ChatManager(Resource):  # temp pass-through
 def manage_user(with_current: bool = False):
     def manage_user_wrapper(function):
         @chat_temp_namespace.doc_responses(ResponseDoc.error_response(404, "Target user is not in the chat"))
-        @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.MODER, use_chat=True, use_user_to_chat=True)
+        @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.MODER if with_current else ChatRole.ADMIN,
+                                                 use_chat=True, use_user_to_chat=True)
         @chat_temp_namespace.database_searcher(User, result_field_name="target", use_session=True)
         @wraps(function)
         def manage_user_inner(*args, session, user_to_chat: UserToChat, chat: Chat, target: User):
@@ -130,7 +131,7 @@ def manage_user(with_current: bool = False):
                 return {"a": "Your role is not higher that user's"}, 403
 
             if with_current:
-                return function(user_to_chat=user_to_chat, chat=chat, target_to_chat=target_to_chat, *args)
+                return function(user_to_chat=user_to_chat, target_to_chat=target_to_chat, *args)
             return function(session=session, target_to_chat=target_to_chat, *args)
 
         return manage_user_inner
@@ -142,7 +143,7 @@ def with_role_check(function):
     @chat_temp_namespace.argument_parser(user_to_chat_parser)
     @wraps(function)
     def with_role_check_inner(*args, user_to_chat: UserToChat, role: Optional[str] = None,
-                              target_to_chat: Optional[UserToChat] = None):
+                              target_to_chat: Optional[UserToChat] = None, **kwargs):
         try:
             role: ChatRole = ChatRole.BASIC if role is None else ChatRole.from_string(role)
         except (ValueError, KeyError):
@@ -152,15 +153,15 @@ def with_role_check(function):
             return {"a": "You can only set roles below your own"}, 403
 
         if target_to_chat is None:
-            return function(role=role, *args)
-        return function(target_to_chat=target_to_chat, role=role, *args)
+            return function(role=role, *args, **kwargs)
+        return function(target_to_chat=target_to_chat, role=role, *args, **kwargs)
 
     return with_role_check_inner
 
 
 @chat_temp_namespace.route("/users/<int:user_id>/")
 class ChatUserManager(Resource):  # temp pass-through
-    @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_session=True, use_chat=True)
+    @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_user_to_chat=True, use_session=True, use_chat=True)
     @with_role_check
     @chat_temp_namespace.a_response()
     def post(self, session, chat: Chat, user_id: int, role: ChatRole) -> None:  # redo as event
