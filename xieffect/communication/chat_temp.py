@@ -171,18 +171,18 @@ class ChatUserManager(Resource):  # temp pass-through
     @manage_user(with_current=True)
     @with_role_check
     @chat_temp_namespace.a_response()
-    def put(self, target_to_chat: UserToChat, role: ChatRole) -> None:  # redo as event
+    def put(self, target_to_chat: UserToChat, role: ChatRole) -> bool:  # redo as event
         """ Changes user's role (admins only) [TEMP] """
+        if target_to_chat.role == role:
+            return False
         target_to_chat.role = role
-        # pass_through("edit-chat", {"chat-id": target_to_chat.chat_id, "name": target_to_chat.chat.name,
-        #                            "role": role.to_string()}, [target_to_chat.user_id])
+        return True
 
     @manage_user()
     @chat_temp_namespace.a_response()
     def delete(self, session, target_to_chat: UserToChat) -> None:  # redo as event
         """ Removes a user from the chat (admins only) [TEMP] """
         target_to_chat.delete(session)
-        # pass_through("delete-chat", {"chat-id": target_to_chat.chat_id}, [target_to_chat.user_id])
 
 
 @chat_temp_namespace.route("/users/add-all/")

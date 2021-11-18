@@ -81,8 +81,8 @@ def on_invite_user(session: Session, chat_id: int, target_id: int, role: str):
 @assign_user.bind
 @user_sessions.with_request_session()
 def on_assign_user(session: Session, chat_id: int, target_id: int, role: str):
-    session.put(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/", json={"role": role})
-    assign_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
+    if session.put(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/", json={"role": role}).json()["a"]:
+        assign_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
 
 
 @kick_user.bind
