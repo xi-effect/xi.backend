@@ -1,7 +1,8 @@
 from datetime import datetime
 from functools import wraps
 
-from flask_restx import Resource
+from flask_restx import Resource, Model
+from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
 from componets import ResponseDoc
@@ -39,13 +40,14 @@ def search_message(use_session: bool, unmoderatable: bool = True):
 
 @messages_namespace.route("/")
 class MessageAdder(Resource):  # temp pass-through
+    @messages_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @messages_namespace.search_user_to_chat(ChatRole.BASIC, True, True, True, True)
     @messages_namespace.argument_parser(message_parser)
-    @messages_namespace.a_response()
-    def post(self, session, user: User, chat: Chat, user_to_chat: UserToChat, content: str) -> None:
+    def post(self, session, user: User, chat: Chat, user_to_chat: UserToChat, content: str):
         """ For sending a new message [TEMP] """
         message = Message.create(session, chat, content, user)
         user_to_chat.activity = message.sent
+        return {"id": message.id}
 
 
 @messages_namespace.route("/<int:message_id>/")

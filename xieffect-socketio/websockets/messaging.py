@@ -5,14 +5,15 @@ from library import Session
 from library0 import EventGroup, ServerEvent, ClientEvent, DuplexEvent
 from setup import user_sessions, app
 
-edit_message_model = create_model("EditMessage", chat_id=(int, ...), message_id=(int, ...))
-delete_message_model = create_model("DeleteMessage", __base__=edit_message_model, content=(str, ...))
+create_message_model = create_model("NewMessageI", chat_id=(int, ...), content=(str, ...))
+edit_message_model = create_model("EditMessage", __base__=create_message_model, message_id=(int, ...))
+delete_message_model = create_model("DeleteMessage", chat_id=(int, ...), message_id=(int, ...))
 
 notif: ServerEvent = ServerEvent(create_model("Notif", chat_id=(int, ...), unread=0))
 open_chat: ClientEvent = ClientEvent(create_model("ChatID", chat_id=(int, ...)))
 close_chat: ClientEvent = ClientEvent(create_model("ChatID", chat_id=(int, ...), kicked=False))
 
-send_message: DuplexEvent = DuplexEvent.similar(create_model("NewMessage", chat_id=(int, ...), content=(str, ...)))
+send_message: DuplexEvent = DuplexEvent(ClientEvent(create_message_model), ServerEvent(edit_message_model))
 edit_message: DuplexEvent = DuplexEvent.similar(edit_message_model)
 delete_message: DuplexEvent = DuplexEvent.similar(delete_message_model)
 
@@ -44,8 +45,9 @@ def on_close_chat(session: Session, chat_id: int, kicked: bool = False):
 @send_message.bind
 @user_sessions.with_request_session()
 def on_send_message(session: Session, chat_id: int, content: str):
-    session.post(f"{app.config['host']}/chat-temp/{chat_id}/messages/", json={"chat-id": chat_id, "content": content})
-    send_message.emit(f"chat-{chat_id}", chat_id=chat_id, content=content)
+    json = {"chat-id": chat_id, "content": content}
+    message_id = session.post(f"{app.config['host']}/chat-temp/{chat_id}/messages/", json=json).json()["id"]
+    send_message.emit(f"chat-{chat_id}", chat_id=chat_id, content=content, message_id=message_id)
     notify_offline(session, chat_id)
 
 
