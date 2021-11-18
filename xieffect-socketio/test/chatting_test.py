@@ -1,8 +1,8 @@
 from pytest import mark
 
-from .conftest import MultiClient
 from .components import (assert_one, assert_one_with_data, form_pass, assert_broadcast, ensure_broadcast, ensure_pass,
                          assert_no_additional_messages)
+from .conftest import MultiClient
 
 
 @mark.order(600)
@@ -128,3 +128,61 @@ def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  #
     evgen1.emit("close-chat", {"chat-id": chat_id})
     ensure_pass(evgen1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": False}, {"a": False}))
     assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
+
+
+@mark.order(630)
+def test_messaging(socket_tr_io_client: MultiClient):  # relies on chat#4
+    anatol, evgen, vasil, anatol2, evgen2, vasil2 = socket_tr_io_client.get_dtr_io()
+    chat_id, content = 4, "This is a cool message!"
+
+    # Setup (open chats)
+    anatol.emit("open-chat", {"chat-id": chat_id})
+    ensure_pass(anatol, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}))
+    evgen.emit("open-chat", {"chat-id": chat_id})
+    ensure_pass(evgen, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}))
+    assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, anatol, evgen, anatol2, evgen2)
+    assert_no_additional_messages(anatol, evgen, vasil, anatol2, evgen2, vasil2)
+
+    # Sending a message
+    anatol.emit("send-message", (temp := {"chat-id": chat_id, "content": content}))
+    event_data = assert_one(anatol.filter_received("send-message"))
+    assert (message_id := event_data.pop("message-id", None)) is not None
+    assert (sent := event_data.pop("sent", None)) is not None
+    assert event_data == temp
+    ensure_pass(anatol, form_pass("POST", f"/chat-temp/{chat_id}/messages/",
+                                  temp, {"sent": sent, "message_id": message_id}))
+
+    # Check that everyone got the message or notif
+    temp["message-id"] = message_id
+    assert_broadcast("send-message", dict(temp, **{"sent": sent}), evgen)
+    assert_broadcast("notif", {"chat-id": chat_id, "unread": 1}, vasil)
+    assert_broadcast("notif", {"chat-id": chat_id, "unread": 1}, vasil2)
+    assert_no_additional_messages(anatol, evgen, vasil, anatol2, evgen2, vasil2)
+
+    # Editing the message
+    anatol.emit("edit-message", temp)
+    event_data = assert_one(anatol.filter_received("edit-message"))
+    assert (updated := event_data.pop("updated", None)) is not None
+    assert event_data == temp
+    ensure_pass(anatol, form_pass("PUT", f"/chat-temp/{chat_id}/messages/{message_id}/", temp, {"updated": updated}))
+
+    # Check that everyone got the message update
+    assert_broadcast("edit-message", dict(temp, **{"updated": updated}), evgen)
+    assert_no_additional_messages(anatol, evgen, vasil, anatol2, evgen2, vasil2)
+
+    # Deleting the message & check
+    temp.pop("content")
+    ensure_broadcast(anatol, "delete-message", temp, evgen)
+    ensure_pass(anatol, form_pass("DELETE", f"/chat-temp/{chat_id}/messages/{message_id}/", None, {"a": True}))
+
+    # TODO notif has to be sent to vasil with !0! unread
+    assert_broadcast("notif", {"chat-id": chat_id, "unread": 1}, vasil)
+    assert_broadcast("notif", {"chat-id": chat_id, "unread": 1}, vasil2)
+    assert_no_additional_messages(anatol, evgen, vasil, anatol2, evgen2, vasil2)
+
+    # Close opened chats
+    anatol.emit("close-chat", {"chat-id": chat_id})
+    ensure_pass(anatol, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": False}, {"a": False}))
+    evgen.emit("close-chat", {"chat-id": chat_id})
+    ensure_pass(evgen, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": False}, {"a": False}))
+    assert_no_additional_messages(anatol, evgen, vasil, anatol2, evgen2, vasil2)
