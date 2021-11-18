@@ -1,7 +1,8 @@
 from pytest import mark
 
 from .conftest import MultiClient
-from .components import assert_one, form_pass, ensure_broadcast, ensure_pass
+from .components import (assert_one, assert_one_with_data, form_pass, assert_broadcast, ensure_broadcast, ensure_pass,
+                         assert_no_additional_messages)
 
 
 @mark.order(600)
@@ -21,9 +22,7 @@ def test_chat_owning(socket_tr_io_client: MultiClient):  # assumes test's id == 
     # Inviting Evgen to chat:
     anatol.emit("invite-user", {"chat-id": chat_id, "role": "basic", "target-id": 1})
     ensure_pass(anatol, form_pass("POST", f"/chat-temp/{chat_id}/users/1/", {"role": "basic"}, {"a": True}, 200))
-
-    event_data = assert_one(evgen.filter_received("add-chat"))
-    assert event_data == {"chat-id": chat_id, "name": chat_name1}
+    assert_one_with_data(evgen.filter_received("add-chat"), {"chat-id": chat_id, "name": chat_name1})
 
     # Editing chat metadata:
     ensure_broadcast(anatol, "edit-chat", {"chat-id": chat_id, "name": chat_name2}, evgen)
@@ -40,71 +39,50 @@ def test_chat_owning(socket_tr_io_client: MultiClient):  # assumes test's id == 
     assert event_data == {"code": 404, "message": "Chat not found", "event": "delete-chat"}
 
 
-"""
-@mark.order(620)
-def test_chat_roles(socket_tr_io_client: MultiClient):  # relies on chat#4
-    with open("../files/test/chat-bundle.json", encoding="utf-8") as f:
-        chat = load(f)[-1]
-    chat_name = chat["name"]
-    chat_uc = len(chat["participants"])
-    chat_id = [c["id"] for c in list_tester("/chats/index/", {}, 50) if c["name"] == chat_name][0]
-    role_to_user = get_roles_to_user(multi_client, chat)
+@mark.order(610)
+def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  # assumes evgen's id == 10
+    anatol1, evgen1, vasil1, anatol2, evgen2, vasil2 = socket_tr_io_client.get_dtr_io()
+    chat_id, vasil_id = 3, 10
 
-    for i in range(len(role_to_user)):
-        role, email, user_id = role_to_user[i]
-        client = multi_client(email)
-        code: int = 200 if role == "admin" else 403
+    # Setup (open chat were needed)
+    anatol1.emit("open-chat", {"chat-id": chat_id})
+    ensure_pass(anatol1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}, 200))
+    evgen1.emit("open-chat", {"chat-id": chat_id})
+    ensure_pass(evgen1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}, 200))
+    assert_broadcast("notif", {'chat-id': 3, 'unread': 0}, anatol1, anatol2, evgen1, evgen2)
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
-        check_status_code(client.delete(f"/chats/{chat_id}/manage/"), 403)
-        check_status_code(client.put(f"/chats/{chat_id}/manage/", json={"name": "new_name"}), code)
-        if role == "admin":
-            assert check_status_code(client.get(f"/chats/{chat_id}/"))["name"] == "new_name"
-        check_status_code(client.put(f"/chats/{chat_id}/manage/", json={"name": chat_name}), code)
+    # Invite vasil to the chat
+    ensure_broadcast(anatol1, "invite-user", {"chat-id": chat_id, "role": "basic", "target-id": vasil_id}, evgen1)
+    ensure_pass(anatol1, form_pass("POST", f"/chat-temp/{chat_id}/users/{vasil_id}/", {"role": "basic"}, {"a": True}, 200))
 
-        for target in list_tester(f"/chats/{chat_id}/users/", {}, 50):
-            target_id = target["id"]
-            if target["role"] == "owner":
-                check_status_code(client.delete(f"/chats/{chat_id}/users/{target_id}/"), 403)
-            elif target_id != user_id:
-                check_status_code(client.delete(f"/chats/{chat_id}/users/{target_id}/"), code)
-                assert role != "admin" or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc - 1
-                check_status_code(client.post(f"/chats/{chat_id}/users/{target_id}/"), code)
-                assert role != "admin" or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
+    # Check that evgen got add-chat on both
+    assert_broadcast("add-chat", {"chat-id": chat_id, "name": "Quaerat"}, vasil1, vasil2)
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
+    # Fail to invite vasil for the second time
+    anatol1.emit("invite-user", {"chat-id": chat_id, "target-id": vasil_id, "role": "basic"})
+    ensure_pass(anatol1, form_pass("POST", f"/chat-temp/{chat_id}/users/{vasil_id}/", {"role": "basic"}, {"a": False}, 200))
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
-def test_user_management(socket_tr_io_client: MultiClient,
-                         list_tester: Callable[[Session, str, dict, int], Iterator[dict]]):  # relies on chat#3
-    anatol, evgen, vasil = get_tr_io(socket_tr_io_client)
+    # Setup for vasil
+    vasil1.emit("open-chat", {"chat-id": chat_id})
+    ensure_pass(vasil1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}, 200))
+    assert_broadcast("notif", {'chat-id': 3, 'unread': 0}, vasil1, vasil2)
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
-    anatol_id = user["id"]  # find anatol as admin!
+    # Fail to assign the same role to vasil
+    anatol1.emit("assign-user", {"chat-id": chat_id, "target-id": vasil_id, "role": "basic"})
+    ensure_pass(anatol1, form_pass("PUT", f"/chat-temp/{chat_id}/users/{vasil_id}/", {"role": "basic"}, {"a": False}, 200))
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
-    # Generating users to invite:
-    invited: dict[int] = {anatol_id: "owner", 3: "muted", 4: "basic", 5: "moder", 6: "admin"}  # redo with /users/
-    bulk = [user_id for user_id in list(invited) if user_id != anatol_id]
+    # Assign vasil a different role
+    ensure_broadcast(anatol1, "assign-user", {"chat-id": chat_id, "target-id": vasil_id, "role": "muted"}, vasil1, evgen1)
+    ensure_pass(anatol1, form_pass("PUT", f"/chat-temp/{chat_id}/users/{vasil_id}/", {"role": "muted"}, {"a": True}, 200))
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
-    # Inviting users:
-    assert check_status_code(main_server.post(f"/chats/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})) == {"a": True}
-    assert check_status_code(main_server.post(f"/chats/{chat_id}/users/{bulk[-1]}/"))
-
-    # Inviting Evgen to chat:
-    event_data = {"chat-id": chat_id, "role": "basic", "user-id": 1}
-    anatol.emit("invite-user", event_data, wait_stop=True)
-    assert anatol.new_event_count() == 1
-    assert (event := anatol.next_new_event()).name == "invite-user" and event.data == event_data
-
-    # Changing users' roles:
-    assert all(check_status_code(main_server.put(f"/chats/{chat_id}/users/{user_id}/", json={"role": role}))["a"]
-               for user_id, role in invited.items()
-               if user_id != test_user_id)
-    # MB add a check for inviting already invited users
-
-    # Check the updated user-list:
-    for user in list_tester(f"/chats/{chat_id}/users/", {}, 50):
-        assert list(user.keys()) == ["id", "role", "username"]
-        assert user["id"] in invited.keys(), "Invited user not found in a chat"
-        assert user["role"] == invited[user["id"]]
-
-    # Kick one user & check the updated user-list:
-    check_status_code(main_server.delete(f"/chats/{chat_id}/users/{(removed_user_id := list(invited)[2])}/"))
-    assert all(user["id"] != removed_user_id for user in list_tester(f"/chats/{chat_id}/users/", {}, 50))
-"""
+    # Kick vasil
+    ensure_broadcast(anatol1, "kick-user", {"chat-id": chat_id, "target-id": vasil_id}, evgen1, vasil1)
+    ensure_pass(anatol1, form_pass("DELETE", f"/chat-temp/{chat_id}/users/{vasil_id}/", None, {"a": True}, 200))
+    assert_broadcast("delete-chat", {"chat-id": chat_id}, vasil1, vasil2)
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
