@@ -60,8 +60,8 @@ kick_user = DuplexEvent.similar(UserToChat)
 @invite_users.bind
 @user_sessions.with_request_session()
 def on_invite_users(session: Session, chat_id: int, user_ids: list[int]):
-    # this does NOT check if invited users are already in the chat!
-    session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/add-all/", json={"ids": user_ids})
+    r = session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/add-all/", json={"ids": user_ids}).json()
+    user_ids = [user_ids[i] for i in range(len(user_ids)) if r[i]]
     invite_users.emit(f"chat-{chat_id}", chat_id=chat_id, user_ids=user_ids)
 
     chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
@@ -71,12 +71,11 @@ def on_invite_users(session: Session, chat_id: int, user_ids: list[int]):
 @invite_user.bind
 @user_sessions.with_request_session()
 def on_invite_user(session: Session, chat_id: int, target_id: int, role: str):
-    # this does NOT check if invited user is already in the chat!
-    session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/", json={"role": role})
-    invite_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
+    if session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/", json={"role": role}).json()["a"]:
+        invite_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
 
-    chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
-    add_chat.emit(f"user-{target_id}", chat_id=chat_id, name=chat_name)
+        chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
+        add_chat.emit(f"user-{target_id}", chat_id=chat_id, name=chat_name)
 
 
 @assign_user.bind
