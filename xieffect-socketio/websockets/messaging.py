@@ -59,7 +59,6 @@ def on_edit_message(session: Session, chat_id: int, message_id: int, content: st
     updated = session.put(f"{app.config['host']}/chat-temp/{chat_id}/messages/{message_id}/",
                           json={"chat-id": chat_id, "content": content, "message-id": message_id}).json()["updated"]
     edit_message.emit(f"chat-{chat_id}", chat_id=chat_id, message_id=message_id, content=content, updated=updated)
-    notify_offline(session, chat_id)
 
 
 @delete_message.bind
