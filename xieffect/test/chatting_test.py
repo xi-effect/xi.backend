@@ -15,8 +15,9 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     assert chat_id is not None
 
     # Checking initial chat metadata & message-history:
-    assert check_status_code(client.get(f"/chats/{chat_id}/")) == {"name": chat_name1, "role": "owner", "users": 1}
-    assert any(chat == {"id": chat_id, "name": chat_name1} for chat in list_tester("/chats/index/", {}, 50))
+    data = {"name": chat_name1, "role": "owner", "users": 1, "unread": 0}
+    assert check_status_code(client.get(f"/chats/{chat_id}/")) == data
+    assert any(chat["id"] == chat_id and chat["name"] == chat_name1 for chat in list_tester("/chats/index/", {}, 50))
     assert len(list(list_tester(f"/chats/{chat_id}/message-history/", {}, 50))) == 0
 
     # Checking the initial user-list:
@@ -39,7 +40,7 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     assert not check_status_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))["a"]
 
     # Changing users' roles:
-    assert all(check_status_code(client.put(f"/chat-temp/{chat_id}/users/{user_id}/", json={"role": role}))["a"]
+    assert all(client.put(f"/chat-temp/{chat_id}/users/{user_id}/", json={"role": role}).status_code == 200
                for user_id, role in invited.items()
                if user_id != test_user_id and user_id != an_id)
     # MB add a check for inviting already invited users
@@ -47,9 +48,9 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     # Editing chat metadata:
     assert check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name2})) == {"a": True}
     # Checking chat metadata:
-    chat_data = {"name": chat_name2, "role": "owner", "users": len(invited)}
+    chat_data = {"name": chat_name2, "role": "owner", "users": len(invited), "unread": 0}
     assert check_status_code(client.get(f"/chats/{chat_id}/")) == chat_data
-    assert any(chat == {"id": chat_id, "name": chat_name2} for chat in list_tester("/chats/index/", {}, 50))
+    assert any(chat["id"] == chat_id and chat["name"] == chat_name2 for chat in list_tester("/chats/index/", {}, 50))
 
     # Check the updated user-list:
     for user in list_tester(f"/chats/{chat_id}/users/", {}, 50):
