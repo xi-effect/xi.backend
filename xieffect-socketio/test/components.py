@@ -23,10 +23,10 @@ def assert_broadcast(name: str, data: dict = None, *receivers: SocketIOTestClien
         assert event_data == data, (event_data, type(event_data), data, type(data))
 
 
-def ensure_broadcast(sender: SocketIOTestClient, name: str, data: dict = None, *receivers: SocketIOTestClient,
-                     include_self: bool = True) -> None:
+def ensure_broadcast(sender: SocketIOTestClient, name: str, data: dict = None,
+                     *receivers: SocketIOTestClient, echo: bool = True) -> None:
     sender.emit(name, data)
-    if include_self:
+    if echo:
         receivers += (sender,)
     assert_broadcast(name, data, *receivers)
 

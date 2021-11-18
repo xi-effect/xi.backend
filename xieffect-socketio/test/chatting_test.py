@@ -86,3 +86,37 @@ def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  #
     ensure_pass(anatol1, form_pass("DELETE", f"/chat-temp/{chat_id}/users/{vasil_id}/", None, {"a": True}, 200))
     assert_broadcast("delete-chat", {"chat-id": chat_id}, vasil1, vasil2)
     assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
+
+    # Vasil should close chat after the kick:
+    vasil1.emit("close-chat", {"chat-id": chat_id, "kicked": True})
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
+
+    # Invite vasil to the chat (with invite-users)
+    ensure_broadcast(anatol1, "invite-users", {"chat-id": chat_id, "user-ids": [vasil_id]}, evgen1)
+    ensure_pass(anatol1, form_pass("POST", f"/chat-temp/{chat_id}/users/add-all/", {"ids": [vasil_id]}, [True], 200))
+
+    # Check that evgen got add-chat on both (with invite-users)
+    assert_broadcast("add-chat", {"chat-id": chat_id, "name": "Quaerat"}, vasil1, vasil2)
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
+
+    # Setup for vasil
+    vasil1.emit("open-chat", {"chat-id": chat_id})
+    ensure_pass(vasil1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}, 200))
+    assert_broadcast("notif", {'chat-id': 3, 'unread': 0}, vasil1, vasil2)
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
+
+    # Fail to invite vasil for the second time (with invite-users)
+    anatol1.emit("invite-users", {"chat-id": chat_id, "user-ids": [vasil_id]})
+    ensure_pass(anatol1, form_pass("POST", f"/chat-temp/{chat_id}/users/add-all/", {"ids": [vasil_id]}, [False], 200))
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
+
+    # Vasil can close chat before the kick:
+    vasil1.emit("close-chat", {"chat-id": chat_id})
+    ensure_pass(vasil1, form_pass("POST", "/chat-temp/3/presence/", {"online": False}, {"a": False}, 200))
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
+
+    # Vasil quits
+    ensure_broadcast(vasil1, "kick-user", {"chat-id": chat_id, "target-id": vasil_id}, anatol1, evgen1, echo=False)
+    ensure_pass(vasil1, form_pass("DELETE", f"/chat-temp/{chat_id}/membership/", None, {"a": True}, 200))
+    assert_broadcast("delete-chat", {"chat-id": chat_id}, vasil1, vasil2)
+    assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
