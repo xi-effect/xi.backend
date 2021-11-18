@@ -106,7 +106,7 @@ def init_chats(session):
                                          ChatRole.from_string(role))
             for message_data in chat_data["messages"]:
                 sender = User.find_by_email_address(session, message_data["sender-email"])
-                message: Message = Message.create(session, chat, message_data["content"], sender)
+                message: Message = Message.create(session, chat, message_data["content"], sender, False)
                 message.sent = datetime.fromisoformat(message_data["sent"])
                 if message_data["updated"] is not None:
                     message.updated = datetime.fromisoformat(message_data["updated"])

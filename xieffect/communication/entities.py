@@ -38,9 +38,11 @@ class Message(Base, Marshalable):
     sender_avatar: LambdaFieldDef = LambdaFieldDef("message", JSON, lambda message: message.sender.avatar)
 
     @classmethod
-    def create(cls, session: Session, chat: Chat, content: str, sender: User) -> Message:
+    def create(cls, session: Session, chat: Chat, content: str, sender: User, update_unread: bool = True) -> Message:
         entry: cls = cls(id=chat.get_next_message_id(), content=content,  # noqa
                          sent=datetime.utcnow(), sender=sender, chat=chat)  # noqa
+        if update_unread:
+            UserToChat.update_unread_counts(session, chat.id, sender.id)
         session.add(entry)
         session.flush()
         return entry
@@ -118,6 +120,12 @@ class UserToChat(Base, Marshalable):
     def find_by_chat(cls, session: Session, chat_id: int) -> list[UserToChat]:  # offline users only!
         stmt = select(cls).filter(cls.chat_id == chat_id, cls.online == 0)
         return session.execute(stmt).scalars().all()
+
+    @classmethod
+    def update_unread_counts(cls, session: Session, chat_id: int, sender_id: int, messages_count: int = 1):  # or -1
+        stmt = select(cls).filter(cls.chat_id == chat_id, cls.online == 0, cls.user_id != sender_id)
+        for u2c in session.execute(stmt).scalars().all():
+            u2c.unread += messages_count
 
     def delete(self, session: Session):
         session.delete(self)
