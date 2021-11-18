@@ -13,7 +13,7 @@ def assert_one_with_data(events: list[Event], data: dict):
     assert event_data == data
 
 
-def form_pass(method: str, url: str, req, res, code: int):
+def form_pass(method: str, url: str, req, res, code: int = 200):
     return Event("pass", {"method": method, "url": url, "req": req, "res": res, "code": code})
 
 
