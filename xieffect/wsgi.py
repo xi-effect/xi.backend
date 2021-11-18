@@ -4,7 +4,7 @@ from os.path import exists
 from pathlib import Path
 from sys import modules
 
-from api import app as application, log_stuff  # noqa
+from api import app as application, log_stuff, db_meta  # noqa
 from authorship import Author, Moderator
 from communication.entities import Chat, ChatRole, Message
 from componets import with_session
@@ -25,6 +25,8 @@ TEST_INVITE_ID: int = 0
 
 if __name__ == "__main__" or "pytest" in modules.keys():  # test only  # pytest here temporarily!!!
     application.debug = True
+    db_meta.drop_all()
+    db_meta.create_all()
 else:  # works on server restart:
     send_discord_message(WebhookURLs.NOTIF, "Application restated")
     if any([send_discord_message(WebhookURLs.NOTIF, f"ERROR! No environmental variable for secret `{secret_name}`")
