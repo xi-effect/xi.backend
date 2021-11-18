@@ -59,10 +59,11 @@ kick_user = DuplexEvent.similar(create_model("KickUser", chat_id=(int, ...), tar
 def on_invite_users(session: Session, chat_id: int, user_ids: list[int]):
     r = session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/add-all/", json={"ids": user_ids}).json()
     user_ids = [user_ids[i] for i in range(len(user_ids)) if r[i]]
-    invite_users.emit(f"chat-{chat_id}", chat_id=chat_id, user_ids=user_ids)
 
-    chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
-    users_broadcast(add_chat, user_ids, chat_id=chat_id, name=chat_name)
+    if len(user_ids) > 0:
+        invite_users.emit(f"chat-{chat_id}", chat_id=chat_id, user_ids=user_ids)
+        chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
+        users_broadcast(add_chat, user_ids, chat_id=chat_id, name=chat_name)
 
 
 @invite_user.bind
