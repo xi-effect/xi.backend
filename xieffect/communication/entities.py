@@ -49,7 +49,7 @@ class Message(Base, Marshalable):
 
     @classmethod
     def find_by_ids(cls, session: Session, chat_id: int, message_id: int) -> Optional[Message]:
-        return first_or_none(session.execute(select(cls).filter_by(chat_id=chat_id, id=message_id)).first())
+        return session.execute(select(cls).filter_by(chat_id=chat_id, id=message_id)).scalars().first()
 
     def delete(self, session: Session):
         session.delete(self)
