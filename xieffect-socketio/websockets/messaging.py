@@ -10,7 +10,7 @@ delete_message_model = create_model("DeleteMessage", __base__=edit_message_model
 
 notif: ServerEvent = ServerEvent(create_model("Notif", chat_id=(int, ...), unread=0))
 open_chat: ClientEvent = ClientEvent(create_model("ChatID", chat_id=(int, ...)))
-close_chat: ClientEvent = ClientEvent(create_model("ChatID", chat_id=(int, ...)))
+close_chat: ClientEvent = ClientEvent(create_model("ChatID", chat_id=(int, ...), kicked=False))
 
 send_message: DuplexEvent = DuplexEvent.similar(create_model("NewMessage", chat_id=(int, ...), content=(str, ...)))
 edit_message: DuplexEvent = DuplexEvent.similar(edit_message_model)
@@ -35,8 +35,9 @@ def on_open_chat(session: Session, chat_id: int, user_id: int):
 
 @close_chat.bind
 @user_sessions.with_request_session()
-def on_close_chat(session: Session, chat_id: int):
-    session.post(f"{app.config['host']}/chat-temp/{chat_id}/presence/", json={"online": False})
+def on_close_chat(session: Session, chat_id: int, kicked: bool = False):
+    if not kicked:  # kostil & security flaw!
+        session.post(f"{app.config['host']}/chat-temp/{chat_id}/presence/", json={"online": False})
     leave_room(f"chat-{chat_id}")
 
 
