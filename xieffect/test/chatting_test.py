@@ -144,10 +144,9 @@ def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
     fist_offline: dict[int, int] = form_offline()
     ensure_presence([], [anatol_id, vasil1_id, vasil2_id, evgen_id])
 
-    link, data = f"/chat-temp/{chat_id}/presence/", {"online": True}
-    assert check_status_code(anatol.post(link, json=data)) == {"a": fist_offline[anatol_id] != 0}
-    assert check_status_code(vasil1.post(link, json=data)) == {"a": fist_offline[vasil1_id] != 0}
-    assert check_status_code(vasil2.post(link, json=data)) == {"a": fist_offline[vasil2_id] != 0}
+    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": True}
+    assert check_status_code(vasil1.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": True}
+    assert check_status_code(vasil2.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": True}
     ensure_presence([anatol_id, vasil1_id, vasil2_id], [evgen_id])
     notif_count = form_offline()
     messages = get_messages()
