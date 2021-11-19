@@ -4,6 +4,7 @@ from abc import ABC
 from json import dumps
 from typing import Dict, Union, Optional
 
+from itsdangerous.url_safe import URLSafeSerializer
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select, ForeignKey
 from sqlalchemy.engine import Row
@@ -157,6 +158,8 @@ class User(Base, UserRole, Marshalable):
         self.filter_bind = bind
 
 
+@create_marshal_model("invite", "id_invites", "name_invites", "users_accepts_int", "limit_invites_accept",
+                      "user_created", "url_serialization", )
 class InviteCode(Base, UserRole, Marshalable, ABC):
     # invites
     __tablename__ = "inviteCode"
@@ -167,6 +170,19 @@ class InviteCode(Base, UserRole, Marshalable, ABC):
     users_accepts = Column(String, ForeignKey("users.creator_invites"))
     limit_invites_accept = Column(Integer, nullable=True)
     user_created = relationship("users")
+
+    url_serialization = URLSafeSerializer("secret-key")
+
+    @classmethod
+    def create_url(cls, session: Session, name_inv: str, limit: int, user_created: str):
+        new_url = cls(name_inv=name_inv, limit=limit, user_created=user_created)
+        sec_url = cls.url_serialization.dumps(new_url)
+        session.add(sec_url)
+        return sec_url
+
+    @classmethod
+    def find_by_id(cls, session: Session, entry_id: int) -> Optional[InviteCode]:
+        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
 
 
 UserRole.default_role = User
