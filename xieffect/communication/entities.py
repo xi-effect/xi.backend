@@ -139,7 +139,7 @@ class Chat(Base, Marshalable, Identifiable):
     id = Column(Integer, Sequence("chat_id_seq"), primary_key=True)
     name = Column(String(100), nullable=False)
 
-    messages = relationship("Message", back_populates="chat", cascade="all, delete", order_by=Message.id)
+    messages = relationship("Message", back_populates="chat", cascade="all, delete", order_by=Message.sent.desc())
     participants = relationship("UserToChat", back_populates="chat", cascade="all, delete",
                                 order_by=UserToChat.activity.desc())
     next_message_id = Column(Integer, nullable=False, default=0)
