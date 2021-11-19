@@ -159,7 +159,7 @@ class User(Base, UserRole, Marshalable):
 
 
 @create_marshal_model("invite", "id_invites", "name_invites", "users_accepts_int", "limit_invites_accept",
-                      "user_created", "url_serialization", )
+                      "user_created", "url_serialization")
 class InviteCode(Base, UserRole, Marshalable, ABC):
     # invites
     __tablename__ = "inviteCode"
