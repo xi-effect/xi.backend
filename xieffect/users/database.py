@@ -87,8 +87,9 @@ class User(Base, UserRole, Marshalable):
     chats = relationship("UserToChat", back_populates="user")
 
     # invites code-related
-    creator_invites = Column(String(10), ForeignKey("inviteCode.user_created"), nullable=True)
-    invites_user = relationship("inviteCode")
+    invites_user = relationship("inviteCode.users_accepts")
+
+
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
@@ -160,21 +161,21 @@ class User(Base, UserRole, Marshalable):
 
 @create_marshal_model("invite", "id_invites", "name_invites", "users_accepts_int", "limit_invites_accept",
                       "user_created", "url_serialization")
-class InviteCode(Base, UserRole, Marshalable, ABC):
+class InviteCode(Base, UserRole, Marshalable):
     # invites
     __tablename__ = "inviteCode"
 
-    id_invites = Column(Integer, primary_key=True)
-    name_invites = Column(String(10), nullable=True)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(10), nullable=True)
     users_accepts_int = Column(Integer)
-    users_accepts = Column(String, ForeignKey("users.creator_invites"))
+    users_accepts = Column(String, ForeignKey("users.username"))
     limit_invites_accept = Column(Integer, nullable=True)
+    user_created_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     user_created = relationship("users")
-
-    url_serialization = URLSafeSerializer("secret-key")
+    serialization = URLSafeSerializer("secret-key")
 
     @classmethod
-    def create_url(cls, session: Session, name_inv: str, limit: int, user_created: str):
+    def create(cls, session: Session, name_inv: str, limit: int, user_created: str):
         new_url = cls(name_inv=name_inv, limit=limit, user_created=user_created)
         sec_url = cls.url_serialization.dumps(new_url)
         session.add(sec_url)
@@ -182,7 +183,7 @@ class InviteCode(Base, UserRole, Marshalable, ABC):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[InviteCode]:
-        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
+        return first_or_none(session.execute(select(cls).fillter(cls.id == entry_id)))
 
 
 UserRole.default_role = User
