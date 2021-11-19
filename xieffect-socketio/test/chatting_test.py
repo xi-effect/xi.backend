@@ -130,7 +130,7 @@ def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  #
     assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
 
-@mark.order(630)
+@mark.order(650)
 def test_messaging(socket_tr_io_client: MultiClient):  # relies on chat#4
     anatol, evgen, vasil, anatol2, evgen2, vasil2 = socket_tr_io_client.get_dtr_io()
     chat_id, content = 4, "This is a cool message!"

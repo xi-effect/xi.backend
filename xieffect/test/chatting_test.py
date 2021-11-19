@@ -81,7 +81,7 @@ def get_roles_to_user(multi_client: Callable[[str], FlaskClient], chat):
             for role in roles]
 
 
-@mark.order(610)
+@mark.order(620)
 def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
                     multi_client: Callable[[str], FlaskClient]):  # relies on chat#4
     with open("../files/test/chat-bundle.json", encoding="utf-8") as f:
