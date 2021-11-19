@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Type, Any, Callable
 
@@ -126,8 +127,8 @@ def kebabify_model(model: Type[BaseModel]):
 class Namespace(_Namespace):
     def __init__(self, namespace=None):
         super().__init__(namespace)
-        self.doc_channels = {}
-        self.doc_messages = {}
+        self.doc_channels = OrderedDict()
+        self.doc_messages = OrderedDict()
 
     def attach_event(self, event: BaseEvent, name: str = None, use_kebab_case: bool = False):
         if name is None:
@@ -166,7 +167,7 @@ class Namespace(_Namespace):
 class SocketIO(_SocketIO):
     def __init__(self, app=None, title: str = "SIO", version: str = "1.0.0", doc_path: str = "/doc/", **kwargs):
         self.async_api = {"asyncapi": "2.2.0", "info": {"title": title, "version": version},
-                          "channels": {}, "components": {"messages": {}}}
+                          "channels": OrderedDict(), "components": {"messages": OrderedDict()}}
         self.doc_path = doc_path
         super(SocketIO, self).__init__(app, **kwargs)
 
@@ -174,6 +175,8 @@ class SocketIO(_SocketIO):
         return self.async_api
 
     def init_app(self, app, **kwargs):
+        app.config["JSON_SORT_KEYS"] = False  # kinda bad for a library
+
         @app.route(self.doc_path)
         def documentation():
             return self.docs()
