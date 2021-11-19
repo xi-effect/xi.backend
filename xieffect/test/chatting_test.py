@@ -4,7 +4,7 @@ from typing import Callable, Iterator
 from flask.testing import FlaskClient
 from pytest import mark
 
-from .components import check_status_code
+from .components import check_status_code, dict_equal
 
 
 @mark.order(600)
@@ -114,3 +114,90 @@ def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
                 check_status_code(client.post(f"/chat-temp/{chat_id}/users/{target_id}/",
                                               json={"role": target["role"]}), code)
                 assert code == 403 or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
+
+
+@mark.order(650)
+def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
+                   multi_client: Callable[[str], FlaskClient]):  # relies on chat#4
+    def form_offline() -> dict[int, int]:
+        offline_data: list[dict[str, int]] = check_status_code(anatol.get(f"/chat-temp/{chat_id}/users/offline/"))
+        assert all("unread" in data.keys() and "user-id" in data.keys() for data in offline_data)
+        return {data["user-id"]: data["unread"] for data in offline_data}
+
+    def ensure_presence(online_users: list[int] = None, offline_users: list[int] = None):
+        offline: dict[int, int] = form_offline()
+        for user_id in online_users or []:
+            assert user_id not in offline, f"Online user {user_id} is in offline users"
+        for user_id in offline_users or []:
+            assert user_id in offline, f"Offline user {user_id} is not in offline users"
+
+    def get_messages():
+        return list(list_tester(f"/chats/{chat_id}/message-history/", {}, 50))
+
+    chat_id, anatol_id, vasil1_id, vasil2_id, evgen_id = 4, 4, 5, 8, 1  # user ids are assumed
+    content1, content2 = "Lol that's a message I guess", "Not really I think"
+    anatol: FlaskClient = multi_client("1@user.user")  # moder
+    vasil1: FlaskClient = multi_client("2@user.user")  # muted
+    vasil2: FlaskClient = multi_client("5@user.user")  # basic
+    evgen: FlaskClient = multi_client("test@test.test")
+
+    fist_offline: dict[int, int] = form_offline()
+    ensure_presence([], [anatol_id, vasil1_id, vasil2_id, evgen_id])
+
+    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": True}
+    assert check_status_code(vasil1.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": True}
+    assert check_status_code(vasil2.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": True}
+    ensure_presence([anatol_id, vasil1_id, vasil2_id], [evgen_id])
+    notif_count = form_offline()
+    messages = get_messages()
+
+    # Sending a message
+    message = {"content": content1}
+    data = check_status_code(vasil1.post(f"/chat-temp/{chat_id}/messages/", json=message), 403)
+    assert data == {"a": "You have to be at least chat's basic"}
+    data = check_status_code(vasil2.post(f"/chat-temp/{chat_id}/messages/", json=message))
+    assert "message_id" in data.keys() and "sent" in data.keys()
+
+    # Checking message list & unread counts
+    message.update({key.replace("message_", ""): value for key, value in data.items()})
+    assert dict_equal(message, (new_messages := get_messages())[0], "content", "id", "sent")
+    assert len(messages) + 1 == len(new_messages)
+    assert {k: v + 1 for k, v in notif_count.items()} == (notif_count := form_offline())
+
+    # Updating a message
+    message["content"] = content2
+    data = check_status_code(anatol.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 403)
+    assert data == {"a": "Not your message"}
+    data = check_status_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message))
+    assert "updated" in data.keys()
+
+    # Checking message list & unread counts
+    message.update(data)
+    assert dict_equal(message, (new_messages := get_messages())[0], "content", "id", "sent", "updated")
+    assert len(messages) + 1 == len(new_messages)
+    assert notif_count == form_offline()
+
+    # Deleting the message (by vasil)
+    assert check_status_code(vasil2.delete(f"/chat-temp/{chat_id}/messages/{message['id']}/")) == {"a": True}
+    check_status_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 404)
+    assert messages == get_messages()
+    # TODO notif should probably change, cause message got deleted, use first_offline
+
+    # Sending it again & deleting by anatol (moder)
+    data = check_status_code(vasil2.post(f"/chat-temp/{chat_id}/messages/", json=message))
+    assert check_status_code(anatol.delete(f"/chat-temp/{chat_id}/messages/{data['message_id']}/")) == {"a": True}
+    check_status_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 404)
+    assert messages == get_messages()
+
+    # Check going offline
+    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/presence/", json={"online": False})) == {"a": False}
+    assert check_status_code(vasil1.post(f"/chat-temp/{chat_id}/presence/", json={"online": False})) == {"a": False}
+    assert check_status_code(vasil2.post(f"/chat-temp/close-all/", json={"ids": [chat_id]})) == {"a": True}
+
+    last_offline = form_offline()
+    for user_id, unread in fist_offline.items():
+        assert user_id in last_offline.keys()
+        if user_id in (anatol_id, vasil1_id, vasil2_id):
+            assert last_offline[user_id] == 0
+        else:
+            assert last_offline[user_id] == unread + 2  # temp, until the deleted messages fix

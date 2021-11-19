@@ -5,14 +5,8 @@ from flask.testing import FlaskClient
 from pytest import mark
 from werkzeug.test import TestResponse
 
-from .components import check_status_code
+from .components import check_status_code, dict_equal
 from .knowledge_test import MODULES_PER_REQUEST
-
-
-def dict_equal(dict1: dict, dict2: dict, *keys) -> bool:
-    dict1 = {key: dict1.get(key, None) for key in keys}
-    dict2 = {key: dict2.get(key, None) for key in keys}
-    return dict1 == dict2
 
 
 @mark.order(500)
