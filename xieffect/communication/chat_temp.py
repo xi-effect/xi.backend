@@ -73,7 +73,7 @@ class MessageReader(Resource):  # temp pass-through
     def post(self, user_to_chat: UserToChat, online: bool) -> bool:
         """ Sets if the user has this chat open & returns if notif event is needed [TEMP] """
         user_to_chat.online += 1 if online else -1
-        if online and user_to_chat.online == 1:
+        if online and user_to_chat.online == 1 and user_to_chat.unread != 0:
             user_to_chat.unread = 0
             return True
         return False

@@ -46,10 +46,10 @@ def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  #
 
     # Setup (open chat were needed)
     anatol1.emit("open-chat", {"chat-id": chat_id})
-    ensure_pass(anatol1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}))
+    ensure_pass(anatol1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": False}))
     evgen1.emit("open-chat", {"chat-id": chat_id})
-    ensure_pass(evgen1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}))
-    assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, anatol1, anatol2, evgen1, evgen2)
+    ensure_pass(evgen1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": False}))
+    # assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, anatol1, anatol2, evgen1, evgen2)
     assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
     # Invite vasil to the chat
@@ -67,8 +67,8 @@ def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  #
 
     # Setup for vasil
     vasil1.emit("open-chat", {"chat-id": chat_id})
-    ensure_pass(vasil1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}))
-    assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, vasil1, vasil2)
+    ensure_pass(vasil1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": False}))
+    # assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, vasil1, vasil2)
     assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
     # Fail to assign the same role to vasil
@@ -102,8 +102,8 @@ def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  #
 
     # Setup for vasil
     vasil1.emit("open-chat", {"chat-id": chat_id})
-    ensure_pass(vasil1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}))
-    assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, vasil1, vasil2)
+    ensure_pass(vasil1, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": False}))
+    # assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, vasil1, vasil2)
     assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
     # Fail to invite vasil for the second time (with invite-users)
@@ -137,10 +137,10 @@ def test_messaging(socket_tr_io_client: MultiClient):  # relies on chat#4
 
     # Setup (open chats)
     anatol.emit("open-chat", {"chat-id": chat_id})
-    ensure_pass(anatol, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}))
+    ensure_pass(anatol, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": False}))
     evgen.emit("open-chat", {"chat-id": chat_id})
-    ensure_pass(evgen, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": True}))
-    assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, anatol, evgen, anatol2, evgen2)
+    ensure_pass(evgen, form_pass("POST", f"/chat-temp/{chat_id}/presence/", {"online": True}, {"a": False}))
+    # assert_broadcast("notif", {"chat-id": chat_id, "unread": 0}, anatol, evgen, anatol2, evgen2)
     assert_no_additional_messages(anatol, evgen, vasil, anatol2, evgen2, vasil2)
 
     # Sending a message

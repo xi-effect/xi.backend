@@ -91,7 +91,7 @@ class UserToChat(Base, Marshalable):
 
     # Other data:
     role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
-    online = Column(Integer, nullable=False, default=False)
+    online = Column(Integer, nullable=False, default=0)
     unread = Column(Integer, nullable=False, default=0)
     activity = Column(DateTime, nullable=True)
 
