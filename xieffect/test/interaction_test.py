@@ -1,4 +1,4 @@
-from random import shuffle
+from random import shuffle, randint
 from typing import Iterator, Callable, Optional
 
 from flask.testing import FlaskClient
@@ -7,6 +7,12 @@ from werkzeug.test import TestResponse
 
 from .components import check_status_code
 from .knowledge_test import MODULES_PER_REQUEST
+
+
+def dict_equal(dict1: dict, dict2: dict, *keys) -> bool:
+    dict1 = {key: dict1.get(key, None) for key in keys}
+    dict2 = {key: dict2.get(key, None) for key in keys}
+    return dict1 == dict2
 
 
 @mark.order(500)
@@ -47,10 +53,11 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             assert check_status_code(client.post(f"/modules/{module_id}/points/{map_length}/reply/",
                                                  json=json_test)) == {"a": True}
 
+            reply = check_status_code(client.get(f"/modules/{module_id}/points/{map_length}/reply"))
+            assert reply == json_test["answers"]
+
             reply = check_status_code(client.get(f"/modules/{module_id}/results/"))[0]
-            assert reply["right-answers"] == json_test["right-answers"]
-            assert reply["total-answers"] == json_test["total-answers"]
-            assert reply["answers"] == json_test["answers"]
+            assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
 
     assert len(types_set) == 0
 
@@ -101,10 +108,10 @@ def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 
         response_json = check_status_code(client.post("/modules/5/next/"))
     assert check_status_code(client.get("/modules/5/open/")) == response_json
 
-    response_json = check_status_code(client.get("/modules/9/points/8/"))
-    assert check_status_code(client.get("/modules/9/open/")) == response_json
-    response_json = check_status_code(client.get("/modules/9/points/9/"))
-    assert check_status_code(client.get("/modules/9/open/")) == response_json
+    check_status_code(client.get("/modules/9/points/8/"))
+    assert check_status_code(client.get("/modules/9/open/")) == {"id": 8}
+    check_status_code(client.get("/modules/9/points/9/"))
+    assert check_status_code(client.get("/modules/9/open/")) == {"id": 9}
 
 
 @mark.order(540)
@@ -113,17 +120,28 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
     assert module["type"] == "test"
     assert "map" in module.keys()
 
-    json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
-    point_ids: list[int] = list(range(len(module["map"])))
+    length: int = len(module["map"])
+
+    replies: list[dict] = [{
+        "right-answers": (right := randint(0, 10)),
+        "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right*2))),
+        "answers": {str(k): int(k) for k in range(randint(right, total))}
+    } for _ in range(length)]
+
+    point_ids: list[int] = list(range(length))
     shuffle(point_ids)
+
     for point in point_ids:
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == {}
         check_status_code(client.get(f"/modules/7/points/{point}/"))
-        assert check_status_code(client.post(f"/modules/7/points/{point}/reply/", json=json_test)) == {"a": True}
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == {}
+
+        reply = replies[point]
+        assert check_status_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)) == {"a": True}
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == reply["answers"]
 
     point_id: Optional[int] = None
-    for reply in check_status_code(client.get(f"/modules/7/results/")):
-        assert reply["right-answers"] == json_test["right-answers"]
-        assert reply["total-answers"] == json_test["total-answers"]
-        assert reply["answers"] == json_test["answers"]
+    for i, reply in enumerate(check_status_code(client.get(f"/modules/7/results/"))):
+        assert dict_equal(reply, replies[i], "right-answers", "total-answers", "answers")
         assert point_id is None or reply["point-id"] > point_id
         point_id = reply["point-id"]

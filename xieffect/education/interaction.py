@@ -1,5 +1,5 @@
 from functools import wraps
-from json import dumps
+from json import dumps, loads
 from typing import Optional
 
 from flask import redirect
@@ -142,14 +142,22 @@ def with_test_session(function):
 
 
 @interaction_namespace.route("/points/<int:point_id>/reply/")
-class TestReplySaver(Resource):
+class TestReplyManager(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("right-answers", type=int, dest="right_answers", required=True)
     parser.add_argument("total-answers", type=int, dest="total_answers", required=True)
     parser.add_argument("answers", type=dict, required=True)
 
-    @interaction_namespace.jwt_authorizer(User)
-    @interaction_namespace.database_searcher(Module, use_session=True)
+    @interaction_namespace.doc_responses(ResponseDoc(200, "Answers object"))
+    @module_typed("reply functionality", ModuleType.TEST)
+    @with_point_id
+    def get(self, session, point_id, user: User, module: Module):
+        point_session: TestPointSession = TestPointSession.find_by_ids(session, user.id, module.id, point_id)
+        if point_session is None or point_session.answers is None:
+            return {}
+        return loads(point_session.answers)
+
+    @module_typed("reply functionality", ModuleType.TEST)
     @with_point_id
     @interaction_namespace.argument_parser(parser)
     @interaction_namespace.a_response()
