@@ -59,7 +59,7 @@ class User(Base, UserRole, Marshalable):
     password = Column(String(100), nullable=False)
 
     # Settings:
-    username = Column(String(100), ForeignKey("inviteCode.user_created"), nullable=False)
+    username = Column(String(100), nullable=False)
     dark_theme = Column(Boolean, nullable=False, default=True)
     language = Column(String(20), nullable=False, default="russian")
 
@@ -86,7 +86,8 @@ class User(Base, UserRole, Marshalable):
     chats = relationship("UserToChat", back_populates="user")
 
     # invites code-related
-    invites = relationship("inviteCode")
+    creator_invites = Column(String(10), ForeignKey("inviteCode.user_created"), nullable=True)
+    invites_user = relationship("inviteCode")
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
@@ -163,7 +164,7 @@ class InviteCode(Base, UserRole, Marshalable, ABC):
     id_invites = Column(Integer, primary_key=True)
     name_invites = Column(String(10), nullable=True)
     users_accepts_int = Column(Integer)
-    users_accepts = Column(String, ForeignKey("users.username"))
+    users_accepts = Column(String, ForeignKey("users.creator_invites"))
     limit_invites_accept = Column(Integer, nullable=True)
     user_created = relationship("users")
 
