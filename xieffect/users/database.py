@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from abc import ABC
 from json import dumps
 from typing import Dict, Union, Optional
 
 from passlib.hash import pbkdf2_sha256 as sha256
-from sqlalchemy import Column, Sequence, select
+from sqlalchemy import Column, Sequence, select, ForeignKey
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
@@ -58,7 +59,7 @@ class User(Base, UserRole, Marshalable):
     password = Column(String(100), nullable=False)
 
     # Settings:
-    username = Column(String(100), nullable=False)
+    username = Column(String(100), ForeignKey("inviteCode.user_created"), nullable=False)
     dark_theme = Column(Boolean, nullable=False, default=True)
     language = Column(String(20), nullable=False, default="russian")
 
@@ -83,6 +84,9 @@ class User(Base, UserRole, Marshalable):
 
     # Chat-related
     chats = relationship("UserToChat", back_populates="user")
+
+    # invites code-related
+    invites = relationship("inviteCode")
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
@@ -150,6 +154,18 @@ class User(Base, UserRole, Marshalable):
 
     def set_filter_bind(self, bind: str = None) -> None:  # auto-commit
         self.filter_bind = bind
+
+
+class InviteCode(Base, UserRole, Marshalable, ABC):
+    # invites
+    __tablename__ = "inviteCode"
+
+    id_invites = Column(Integer, primary_key=True)
+    name_invites = Column(String(10), nullable=True)
+    users_accepts_int = Column(Integer)
+    users_accepts = Column(String, ForeignKey("users.username"))
+    limit_invites_accept = Column(Integer, nullable=True)
+    user_created = relationship("users")
 
 
 UserRole.default_role = User
