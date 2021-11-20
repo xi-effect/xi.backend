@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC
+
 from json import dumps
 from typing import Dict, Union, Optional
 
@@ -87,9 +87,7 @@ class User(Base, UserRole, Marshalable):
     chats = relationship("UserToChat", back_populates="user")
 
     # invites code-related
-    invites_user = relationship("inviteCode.users_accepts")
-
-
+    invite_id = Column(Integer, ForeignKey("invites.id"), nullable=True)
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
@@ -161,28 +159,30 @@ class User(Base, UserRole, Marshalable):
 
 @create_marshal_model("invite", "id_invites", "name_invites", "users_accepts_int", "limit_invites_accept",
                       "user_created", "url_serialization")
-class InviteCode(Base, UserRole, Marshalable):
+class Invite(Base, UserRole, Marshalable):
     # invites
-    __tablename__ = "inviteCode"
+    __tablename__ = "invites"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(10), nullable=True)
-    users_accepts_int = Column(Integer)
-    users_accepts = Column(String, ForeignKey("users.username"))
-    limit_invites_accept = Column(Integer, nullable=True)
-    user_created_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    user_created = relationship("users")
-    serialization = URLSafeSerializer("secret-key")
+    name = Column(String(100), nullable=True)
+    accepted = Column(Integer, nullable=False, default=0)
+    limit = Column(Integer, nullable=True)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    creator = relationship("User", foreign_keys=[creator_id])
+    invited = relationship("User", foreign_keys=[User.invite_id])
+
+    serializer = URLSafeSerializer("secret-key")
 
     @classmethod
-    def create(cls, session: Session, name_inv: str, limit: int, user_created: str):
-        new_url = cls(name_inv=name_inv, limit=limit, user_created=user_created)
-        sec_url = cls.url_serialization.dumps(new_url)
+    def create(cls, session: Session, name_inv: str, limit: int, creator: User = None):
+        new_url = cls(name_inv=name_inv, limit=limit, creator=creator)
+        sec_url = cls.serializer.dumps(new_url)
         session.add(sec_url)
+        session.flush()
         return sec_url
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[InviteCode]:
+    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Invite]:
         return first_or_none(session.execute(select(cls).fillter(cls.id == entry_id)))
 
 
