@@ -261,12 +261,12 @@ class Namespace(RestXNamespace):
         :param skip_none:
         :return:
         """
-        list_marshal_model = self.model("List" + marshal_model.name,
-                                        {"results": ListField(Nested(marshal_model)), "has-next": BoolField})
+        response = ResponseDoc(200, f"Max size of results: {per_request}", Model(f"List" + marshal_model.name, {
+            "results": ListField(Nested(marshal_model), max_items=per_request), "has-next": BoolField}))
 
         def lister_wrapper(function):
+            @self.doc_responses(response)
             @wraps(function)
-            @self.response(200, "Success", list_marshal_model)
             def lister_inner(*args, **kwargs):
                 offset: int = kwargs.pop("offset", None)
                 counter: int = kwargs.pop("counter", None)
