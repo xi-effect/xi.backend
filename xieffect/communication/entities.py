@@ -128,6 +128,11 @@ class UserToChat(Base, Marshalable):
         for u2c in session.execute(stmt).scalars().all():
             u2c.unread += messages_count
 
+    @classmethod
+    def find_successor(cls, session: Session, chat_id: int) -> UserToChat:
+        stmt = select(cls).filter_by(chat_id=chat_id).order_by(cls.role_sorting, cls.activity, cls.unread.desc())
+        return session.execute(stmt.limit(1)).scalars().first()
+
     def delete(self, session: Session):
         session.delete(self)
         session.flush()

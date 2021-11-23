@@ -80,7 +80,7 @@ class MessageReader(Resource):  # temp pass-through
 
 
 @chat_temp_namespace.route("/membership/")
-class ChatProcessor2(Resource):  # temp pass-through
+class ChatProcessor(Resource):  # temp pass-through
     # @chat_temp_namespace.jwt_authorizer(User)
     # @chat_temp_namespace.database_searcher(Chat)
     # @chat_temp_namespace.argument_parser(chat_meta_parser)
@@ -90,10 +90,16 @@ class ChatProcessor2(Resource):  # temp pass-through
     #     pass
 
     @chat_temp_namespace.search_user_to_chat(use_user_to_chat=True, use_session=True)
-    @chat_temp_namespace.a_response()
-    def delete(self, session, user_to_chat: UserToChat) -> None:  # redo as event
+    def delete(self, session, user_to_chat: UserToChat):  # redo as event
         """ Used for quitting the chat by the logged-in user [TEMP] """
         user_to_chat.delete(session)
+        if user_to_chat.role is ChatRole.OWNER:  # Automatic ownership transfer
+            if (successor := UserToChat.find_successor(session, user_to_chat.chat_id)) is None:
+                Chat.find_by_id(session, user_to_chat.chat_id).delete(session)
+                return {"branch": "delete-chat"}
+            successor.role = ChatRole.OWNER
+            return {"branch": "assign-owner", "successor": successor.user_id}
+        return {"branch": "just-quit"}
 
 
 @chat_temp_namespace.route("/manage/")

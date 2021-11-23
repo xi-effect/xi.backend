@@ -88,13 +88,27 @@ def on_assign_user(session: Session, chat_id: int, target_id: int, role: str):
         assign_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
 
 
+def emit_user_kick(chat_id: int, target_id: int):
+    kick_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id)
+    delete_chat.emit(f"user-{target_id}", chat_id=chat_id)
+    # should remove user from room f"chat-{chat_id}"
+
+
 @kick_user.bind
 @user_sessions.with_request_session(use_user_id=True)
 def on_kick_user(session: Session, user_id: int, chat_id: int, target_id: int = None):
-    if target_id is None or user_id == target_id:  # quit
-        session.delete(f"{app.config['host']}/chat-temp/{chat_id}/membership/")
-    else:  # kick
+    if user_id != target_id:  # kick
         session.delete(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/")
+        emit_user_kick(chat_id, target_id)
+        return
+    # quit
+    res = session.delete(f"{app.config['host']}/chat-temp/{chat_id}/membership/").json()
+    if res["branch"] == "delete-chat":
+        delete_chat.emit(f"user-{user_id}", chat_id=chat_id)  # chat is deleted
+    elif res["branch"] == "assign-owner":
+        emit_user_kick(chat_id, user_id)
+        users_broadcast(assign_owner, get_participants(app.config['host'], session, chat_id))
+        # res["successor"] -> target-id
 
 
 @assign_owner.bind
