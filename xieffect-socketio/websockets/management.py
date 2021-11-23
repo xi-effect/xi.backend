@@ -45,13 +45,18 @@ def on_delete_chat(session: Session, chat_id: int):
 class UserToChat(BaseModel):
     chat_id: int = Field(alias="chat-id")
     target_id: int = Field(alias="user-id")
+
+
+class UserToChatWithRole(UserToChat):
     role: str
 
 
 invite_users = DuplexEvent.similar(create_model("InviteUsers", chat_id=(int, ...), user_ids=(list[int], ...)))
-invite_user = DuplexEvent.similar(UserToChat)
-assign_user = DuplexEvent.similar(UserToChat)
+invite_user = DuplexEvent.similar(UserToChatWithRole)
+assign_user = DuplexEvent.similar(UserToChatWithRole)
 kick_user = DuplexEvent.similar(create_model("KickUser", chat_id=(int, ...), target_id=(int, None)))
+assign_owner = DuplexEvent(ClientEvent(UserToChat),
+                           ServerEvent(create_model("Transfer", __base__=UserToChat, source_id=(int, ...))))
 
 
 @invite_users.bind
@@ -91,9 +96,12 @@ def on_kick_user(session: Session, user_id: int, chat_id: int, target_id: int = 
     else:  # kick
         session.delete(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/")
 
-    kick_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id)
-    delete_chat.emit(f"user-{target_id}", chat_id=chat_id)
-    # should remove user from room f"chat-{chat_id}"
+
+@assign_owner.bind
+@user_sessions.with_request_session(use_user_id=True)
+def on_assign_owner(session: Session, user_id: int, chat_id: int, target_id: int):
+    session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/owner/")
+    assign_owner.emit(chat_id=chat_id, target_id=target_id, source_id=user_id)
 
 
 chat_management_events: EventGroup = EventGroup(add_chat=add_chat, edit_chat=edit_chat, delete_chat=delete_chat)
