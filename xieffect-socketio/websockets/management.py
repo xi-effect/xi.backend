@@ -1,3 +1,4 @@
+from flask_socketio import leave_room
 from pydantic import create_model, BaseModel, Field
 
 from library import Session, users_broadcast
@@ -56,7 +57,7 @@ invite_user = DuplexEvent.similar(UserToChatWithRole)
 assign_user = DuplexEvent.similar(UserToChatWithRole)
 kick_user = DuplexEvent.similar(create_model("KickUser", chat_id=(int, ...), target_id=(int, None)))
 assign_owner = DuplexEvent(ClientEvent(UserToChat),
-                           ServerEvent(create_model("Transfer", __base__=UserToChat, source_id=(int, ...))))
+                           ServerEvent(create_model("Transfer", __base__=UserToChat, source_id=(int, None))))
 
 
 @invite_users.bind
@@ -97,27 +98,29 @@ def emit_user_kick(chat_id: int, target_id: int):
 @kick_user.bind
 @user_sessions.with_request_session(use_user_id=True)
 def on_kick_user(session: Session, user_id: int, chat_id: int, target_id: int = None):
-    if user_id != target_id:  # kick
+    if target_id is not None and user_id != target_id:  # kick
         session.delete(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/")
         emit_user_kick(chat_id, target_id)
         return
     # quit
     res = session.delete(f"{app.config['host']}/chat-temp/{chat_id}/membership/").json()
+    leave_room(f"chat-{chat_id}")
     if res["branch"] == "delete-chat":
         delete_chat.emit(f"user-{user_id}", chat_id=chat_id)  # chat is deleted
     elif res["branch"] == "assign-owner":
         emit_user_kick(chat_id, user_id)
-        users_broadcast(assign_owner, get_participants(app.config['host'], session, chat_id))
-        # res["successor"] -> target-id
+        assign_owner.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=res["successor"])
+    else:
+        emit_user_kick(chat_id, user_id)
 
 
 @assign_owner.bind
 @user_sessions.with_request_session(use_user_id=True)
 def on_assign_owner(session: Session, user_id: int, chat_id: int, target_id: int):
     session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/owner/")
-    assign_owner.emit(chat_id=chat_id, target_id=target_id, source_id=user_id)
+    assign_owner.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, source_id=user_id)
 
 
 chat_management_events: EventGroup = EventGroup(add_chat=add_chat, edit_chat=edit_chat, delete_chat=delete_chat)
 user_management_events: EventGroup = EventGroup(invite_users=invite_users, invite_user=invite_user,
-                                                assign_user=assign_user, kick_user=kick_user)
+                                                assign_user=assign_user, kick_user=kick_user, assign_owner=assign_owner)
