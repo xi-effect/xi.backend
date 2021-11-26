@@ -24,21 +24,18 @@ class InviteManager(Resource):
             return invite
 
     @invites_namespace.jwt_authorizer(User)
-    @invites_namespace.database_searcher(Invite)
     @invites_namespace.argument_parser(parser)
     def post(self, session, name: str, limit: int, user: User):
-        if Invite.name == name:
-            return {"a": "Invite with same name has been already created"}
-        else:
+        if Invite.find_by_id(session, user.invite_id) is None:
             return Invite.create(session, name, limit, user)
+        else:
+            return 404
 
 
 @invites_namespace.route("/global/")
 class GlobalInviteManager(Resource):
-    parser: RequestParser = counter_parser.copy()
-
     @invites_namespace.jwt_authorizer(User)
-    @invites_namespace.argument_parser(parser)
+    @invites_namespace.argument_parser(counter_parser)
     @invites_namespace.lister(10, invites_model)
     def post(self, session, user: User, start: int, finish: int):
         if user.email == "admin@admin.admin":
