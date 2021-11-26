@@ -14,7 +14,7 @@ class InviteManager(Resource):
     parser.add_argument("name", type=str, required=False)
     parser.add_argument("limit", type=int, required=False)
 
-    @invites_namespace.jwt_authorizer(User, use_session=True)
+    @invites_namespace.jwt_authorizer(User)
     @invites_namespace.marshal_with(invites_model)
     def get(self, session, user: User):
         invite = Invite.find_by_id(session, user.invite_id)
@@ -23,7 +23,7 @@ class InviteManager(Resource):
         else:
             return invite
 
-    @invites_namespace.jwt_authorizer(User, use_session=True)
+    @invites_namespace.jwt_authorizer(User)
     @invites_namespace.database_searcher(Invite)
     @invites_namespace.argument_parser(parser)
     def post(self, session, name: str, limit: int, user: User):
@@ -37,9 +37,9 @@ class InviteManager(Resource):
 class GlobalInviteManager(Resource):
     parser: RequestParser = counter_parser.copy()
 
-    @invites_namespace.jwt_authorizer(User, use_session=True)
+    @invites_namespace.jwt_authorizer(User)
     @invites_namespace.argument_parser(parser)
-    @invites_namespace.marshal_with(invites_model)
+    @invites_namespace.lister(10, invites_model)
     def post(self, session, user: User, start: int, finish: int):
         if user.email == "admin@admin.admin":
             return Invite.find_global(session, start, finish)
