@@ -188,7 +188,7 @@ class Invite(Base, UserRole, Marshalable):
     @classmethod
     def find_global(cls, session: Session, offset: int, limit: int) -> list[Invite]:
         stmt = select(cls).filter(cls.creator_id.is_(None))
-        return session.execute(stmt.offset(offset).limit(limit).scalars().all())
+        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
 
 UserRole.default_role = User
