@@ -170,7 +170,7 @@ class Invite(Base, UserRole, Marshalable):
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     creator = relationship("User", foreign_keys=[creator_id])
     invited = relationship("User", foreign_keys=[User.invite_id])
-
+    code = Column(String, default="")
     serializer = URLSafeSerializer("secret-key")
 
     @classmethod
@@ -179,6 +179,7 @@ class Invite(Base, UserRole, Marshalable):
         sec_url = cls.serializer.dumps(new_url)
         session.add(sec_url)
         session.flush()
+        new_url.code = cls.serializer.dumps(new_url.id)
         return sec_url
 
     @classmethod
