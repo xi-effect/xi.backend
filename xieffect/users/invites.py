@@ -1,7 +1,7 @@
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace
+from componets import Namespace, counter_parser
 from .database import User, Invite
 
 invites_namespace: Namespace = Namespace("invites", path="/invites/")
@@ -35,13 +35,10 @@ class InviteManager(Resource):
 
 @invites_namespace.route("/global/")
 class GlobalInviteManager(Resource):
+    parser: RequestParser = counter_parser.copy()
 
     @invites_namespace.jwt_authorizer(User)
     @invites_namespace.marshal_with(invites_model)
-    def get(self, session, user: User):
-        if User.email == "admin@admin.admin":
-            invite = Invite.find_by_id(session, user.invite_id)
-            if invite is None:
-                return {"a": "Global invite not found"}, 404
-            else:
-                return invite
+    def post(self, session, user: User, invite: Invite, start: int, finish: int):
+        if user.email == "admin@admin.admin":
+            return invite.find_global(session, start, finish)
