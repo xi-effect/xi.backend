@@ -27,3 +27,17 @@ class InviteManager(Resource):
     @invites_namespace.jwt_authorizer(User)
     def post(self, session, name: str, limit: int, user: User) -> None:
         return Invite.create(session, name, limit, user)
+
+
+@invites_namespace.route("/global/")
+class GlobalInviteManager(Resource):
+
+    @invites_namespace.jwt_authorizer(User)
+    @invites_namespace.marshal_with(invites_model)
+    def get(self, session, user: User):
+        if User.email == "admin@admin.admin":
+            invite = Invite.find_by_id(session, user.invite_id)
+            if invite is None:
+                return {"a": "Global invite not found"}, 404
+            else:
+                return invite
