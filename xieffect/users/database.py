@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from json import dumps
 from typing import Dict, Union, Optional
 
@@ -185,6 +184,11 @@ class Invite(Base, UserRole, Marshalable):
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[Invite]:
         return first_or_none(session.execute(select(cls).fillter(cls.id == entry_id)))
+
+    @classmethod
+    def find_global(cls, session: Session, exclude_id: int, offset: int, limit: int) -> list[Invite]:
+        stmt = select(cls).filter(cls.id != exclude_id)
+        return session.execute(stmt.offset(offset).limit(limit).scalars().all())
 
 
 UserRole.default_role = User
