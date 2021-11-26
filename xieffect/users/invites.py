@@ -43,3 +43,5 @@ class GlobalInviteManager(Resource):
     def post(self, session, user: User, start: int, finish: int):
         if user.email == "admin@admin.admin":
             return Invite.find_global(session, start, finish)
+        else:
+            return {"a": "Permission denied"}, 403
