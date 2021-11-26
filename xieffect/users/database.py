@@ -186,8 +186,8 @@ class Invite(Base, UserRole, Marshalable):
         return first_or_none(session.execute(select(cls).fillter(cls.id == entry_id)))
 
     @classmethod
-    def find_global(cls, session: Session, exclude_id: int, offset: int, limit: int) -> list[Invite]:
-        stmt = select(cls).filter(cls.id != exclude_id)
+    def find_global(cls, session: Session, offset: int, limit: int) -> list[Invite]:
+        stmt = select(cls)
         return session.execute(stmt.offset(offset).limit(limit).scalars().all())
 
 
