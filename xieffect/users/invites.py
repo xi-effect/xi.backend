@@ -11,8 +11,8 @@ invites_model = invites_namespace.model("Invite", Invite.marshal_models["invite"
 @invites_namespace.route("/mine/")
 class InviteManager(Resource):
     parser: RequestParser = RequestParser()
-    parser.add_argument("name", type=str)
-    parser.add_argument("limit", type=int)
+    parser.add_argument("name", type=str, required=False)
+    parser.add_argument("limit", type=int, required=False)
 
     @invites_namespace.jwt_authorizer(User)
     @invites_namespace.marshal_with(invites_model)
@@ -23,10 +23,14 @@ class InviteManager(Resource):
         else:
             return invite
 
-    @invites_namespace.argument_parser(parser)
     @invites_namespace.jwt_authorizer(User)
-    def post(self, session, name: str, limit: int, user: User) -> None:
-        return Invite.create(session, name, limit, user)
+    @invites_namespace.database_searcher(Invite)
+    @invites_namespace.argument_parser(parser)
+    def post(self, session, name: str, limit: int, user: User):
+        if Invite.name == name:
+            return {"a": "Invite with same name has been already created"}
+        else:
+            return Invite.create(session, name, limit, user)
 
 
 @invites_namespace.route("/global/")
