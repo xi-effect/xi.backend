@@ -157,7 +157,7 @@ class User(Base, UserRole, Marshalable):
         self.filter_bind = bind
 
 
-@create_marshal_model("invite", "id", "name", "users_accepts_int", "limit",
+@create_marshal_model("invite", "id", "name", "limit",
                       "creator", "serializer", "accepted")
 class Invite(Base, UserRole, Marshalable):
     # invites
