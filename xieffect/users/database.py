@@ -179,7 +179,7 @@ class Invite(Base, UserRole, Marshalable):
         session.add(sec_url)
         session.flush()
         new_url.code = cls.serializer.dumps(new_url.id)
-        return sec_url
+        return new_url
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[Invite]:
