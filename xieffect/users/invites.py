@@ -26,7 +26,7 @@ class InviteManager(Resource):
     @invites_namespace.jwt_authorizer(User)
     @invites_namespace.argument_parser(parser)
     @invites_namespace.a_response()
-    def post(self, session, name: str, limit: int, user: User):
+    def post(self, session, name: str, limit: int, user: User) -> bool:
         if Invite.find_by_id(session, user.invite_id) is None:
             return Invite.create(session, name, limit, user)
         else:
@@ -38,7 +38,6 @@ class GlobalInviteManager(Resource):
     @invites_namespace.jwt_authorizer(User)
     @invites_namespace.argument_parser(counter_parser)
     @invites_namespace.lister(10, invites_model)
-    @invites_namespace.a_response()
     def post(self, session, user: User, start: int, finish: int):
         if user.email == "admin@admin.admin":
             return Invite.find_global(session, start, finish)

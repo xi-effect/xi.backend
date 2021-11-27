@@ -175,7 +175,8 @@ class Invite(Base, UserRole, Marshalable):
     @classmethod
     def create(cls, session: Session, name_inv: str, limit: int, creator: User = None):
         new_url = cls(name_inv=name_inv, limit=limit, creator=creator)
-        session.add(new_url)
+        sec_url = cls.serializer.dumps(new_url)
+        session.add(sec_url)
         session.flush()
         new_url.code = cls.serializer.dumps(new_url.id)
         return new_url
