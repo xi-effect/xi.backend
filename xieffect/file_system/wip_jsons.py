@@ -80,7 +80,10 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
     @file_getter()
     def post(self, session, author: Author, file_type: Type[JSONFile]):
         """ Creates a new wip-file, saves its contents and adds its metadata to index """
-        result: file_type = file_type.create_from_json(session, author, request.get_json())
+        try:
+            result: file_type = file_type.create_from_json(session, author, request.get_json())
+        except KeyError as e:
+            return {"a": f"{file_type.__name__}'s json is missing {str(e)}"}, 400
         # for CATFile  result: file_type = file_type.create_with_file(author, request.get_data())
         return {"id": result.id}
 
