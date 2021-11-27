@@ -5,7 +5,7 @@ from traceback import format_tb
 from flask import Response, request
 from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
 from flask_restx import Api
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import NotFound
 
 from authorship import (authors_namespace)
 from communication import (chats_namespace, chat_temp_namespace, chat_index_temp_namespace, messages_namespace)
@@ -124,9 +124,9 @@ def refresh_expiring_jwt(response: Response):
         return response
 
 
-@app.errorhandler(HTTPException)
-def on_http_exception(error: HTTPException):
-    return ({"a": "Not found"}, 404) if error.response is None else error.response
+@app.errorhandler(NotFound)
+def on_not_found(_):
+    return {"a": "Not found"}, 404
 
 
 @app.errorhandler(Exception)
