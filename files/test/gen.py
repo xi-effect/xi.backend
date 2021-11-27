@@ -20,11 +20,9 @@ def generate_page_bundle():
             "fontWeight": "normal",
             "fontStyle": "normal",
             "textDecoration": "none",
-            "content": [{
-                "label": lorem_sentence(),
-                "rightAnswer": single == i if single else bool(randint(0, 1)),
-                "userAnswer": False,
-            } for i in range(answers)],
+            "content": [{"label": lorem_sentence()} for _ in range(answers)],
+            "rightAnswers": [single] if single else [i for i in range(answers) if bool(randint(0, 1))],
+            "userAnswer": [],
             "successAnswer": None
         }
 
