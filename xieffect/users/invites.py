@@ -28,10 +28,8 @@ class InviteManager(Resource):
     @invites_namespace.a_response()
     def post(self, session, name: str, limit: int, user: User) -> bool:
         if Invite.find_by_id(session, user.invite_id) is None:
-            return Invite.create(session, name, limit, user)
-        else:
-            return False
-
+            Invite.create(session, name, limit, user)
+            return True
 
 @invites_namespace.route("/global/")
 class GlobalInviteManager(Resource):
