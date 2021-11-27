@@ -4,7 +4,7 @@ from functools import wraps
 from typing import Type, Optional, Any, List, Union
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_restx import Namespace as RestXNamespace, Model
+from flask_restx import Namespace as RestXNamespace, Model, abort as default_abort
 from flask_restx.fields import List as ListField, Boolean as BoolField, Nested
 from flask_restx.marshalling import marshal
 from flask_restx.reqparse import RequestParser
@@ -103,13 +103,16 @@ def with_auto_session(function):
     return with_auto_session_inner
 
 
-class Namespace(RestXNamespace):
+class _Namespace(RestXNamespace):  # for the lib
     """
     Expansion of :class:`RestXNamespace`, which adds decorators for methods of :class:`Resource`.
 
     Methods of this class (used as decorators) allow parsing request parameters,
     modifying responses and automatic updating Swagger documentation where possible
     """
+
+    def abort(self, code: int, message: str = None, **kwargs):
+        default_abort(code, message, **kwargs)
 
     def argument_parser(self, parser: RequestParser):
         """
@@ -128,8 +131,7 @@ class Namespace(RestXNamespace):
 
         return argument_wrapper
 
-    @staticmethod
-    def _database_searcher(identifiable: Type[Identifiable], check_only: bool, no_id: bool,
+    def _database_searcher(self, identifiable: Type[Identifiable], check_only: bool, no_id: bool,
                            use_session: bool, error_code: int, callback, args, kwargs, *,
                            input_field_name: Optional[str] = None, result_field_name: Optional[str] = None):
         if input_field_name is None:
@@ -139,7 +141,7 @@ class Namespace(RestXNamespace):
         session = get_or_pop(kwargs, "session", use_session)
         target_id: int = get_or_pop(kwargs, input_field_name, check_only and not no_id)
         if (result := identifiable.find_by_id(session, target_id)) is None:
-            return {"a": identifiable.not_found_text}, error_code
+            self.abort(error_code, identifiable.not_found_text)
         else:
             if not check_only:
                 kwargs[result_field_name] = result
@@ -278,7 +280,7 @@ class Namespace(RestXNamespace):
                 counter: int = kwargs.pop("counter", None)
                 if offset is None:
                     if counter is None:
-                        return {"a": "Neither counter nor offset are provided"}, 400
+                        self.abort(400, "Neither counter nor offset are provided")
                     offset = counter * per_request
 
                 kwargs["start"] = offset
@@ -293,6 +295,11 @@ class Namespace(RestXNamespace):
             return lister_inner
 
         return lister_wrapper
+
+
+class Namespace(_Namespace):  # xi-effect specific
+    def abort(self, code: int, message: str = None, **kwargs):
+        default_abort(code, a=message, **kwargs)
 
 
 """
