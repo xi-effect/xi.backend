@@ -34,6 +34,7 @@ class InviteManager(Resource):
             Invite.name = name
             Invite.limit = limit
 
+
 @invites_namespace.route("/global/")
 class GlobalInviteManager(Resource):
     @invites_namespace.jwt_authorizer(User)
