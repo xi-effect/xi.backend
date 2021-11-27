@@ -27,12 +27,12 @@ class InviteManager(Resource):
     @invites_namespace.argument_parser(parser)
     @invites_namespace.a_response()
     def post(self, session, name: str, limit: int, user: User) -> None:
-        find_invite_id = Invite.find_by_id(session, user.invite_id)
-        if find_invite_id is None:
+        invite = Invite.find_by_id(session, user.invite_id)
+        if invite is None:
             Invite.create(session, name, limit, user)
-        elif find_invite_id is not None:
-            Invite.name = name
-            Invite.limit = limit
+        else:
+            invite.name = name
+            invite.limit = limit
 
 
 @invites_namespace.route("/global/")
