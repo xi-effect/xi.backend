@@ -22,7 +22,6 @@ from .sessions import ModuleFilterSession as MFS
 class PageKind(TypeEnum):
     THEORY = 0
     PRACTICE = 1
-    TASK = 2
 
 
 @register_as_searchable("name", "theme", "description")
