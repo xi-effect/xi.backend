@@ -1,12 +1,14 @@
 from typing import Union
 
-from flask_restx import Resource, marshal
+from flask import request
+from flask_restx import Resource, marshal, Model
+from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from componets import Namespace, unite_models, with_session
+from componets import Namespace, unite_models, with_session, ResponseDoc
 from main import app
-from .database import User, Feedback, FeedbackType
+from .database import User, Feedback, FeedbackType, FeedbackImage
 
 feedback_namespace: Namespace = Namespace("feedback", path="/feedback/")
 feedback_serializer: URLSafeSerializer = URLSafeSerializer(app.config["JWT_SECRET_KEY"])
@@ -41,6 +43,17 @@ class FeedbackSaver(Resource):
                 return "Code refers to non-existing user"
         Feedback.create(session, user, feedback_type, data)
         return "Success"
+
+
+@feedback_namespace.route("/images/")
+class ImageAttacher(Resource):
+    @feedback_namespace.doc_file_param("image")
+    @feedback_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
+    def post(self, session):
+        image_id = FeedbackImage.create(session).id
+        with open(f"../files/images/feedback-{image_id}.png", "wb") as f:
+            f.write(request.data)
+        return {"id": image_id}
 
 
 def generate_code(user_id: int):

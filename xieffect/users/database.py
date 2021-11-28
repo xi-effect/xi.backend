@@ -183,3 +183,14 @@ class Feedback(Base, Marshalable):
     def dump_all(cls, session: Session) -> list[Row]:
         stmt = select(*cls.__table__.columns, *User.__table__.columns).outerjoin(User, User.id == cls.user_id)
         return session.execute(stmt).all()
+
+
+class FeedbackImage(Base):
+    __tablename__ = "feedback-images"
+
+    id = Column(Integer, primary_key=True)
+
+    @classmethod
+    def create(cls, session: Session) -> FeedbackImage:
+        session.add(new_user := cls())
+        return new_user
