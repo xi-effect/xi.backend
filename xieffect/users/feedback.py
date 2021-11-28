@@ -23,6 +23,10 @@ class FeedbackSaver(Resource):
     @feedback_namespace.argument_parser(parser)
     @feedback_namespace.a_response()
     def post(self, session, user: Union[User, None], feedback_type: str, data: dict, code: Union[str, None]) -> str:
+        feedback_type = FeedbackType.from_string(feedback_type)
+        if feedback_type is None:
+            feedback_namespace.abort(400, "Unsupported type")
+
         if user is None:
             if code is None:
                 return "Neither the user is authorized, nor the code is provided"
@@ -33,7 +37,7 @@ class FeedbackSaver(Resource):
             user = User.find_by_id(session, user_id)
             if user is None:
                 return "Code refers to non-existing user"
-        Feedback.create(session, user, FeedbackType.from_string(feedback_type), data)
+        Feedback.create(session, user, feedback_type, data)
         return "Success"
 
 
