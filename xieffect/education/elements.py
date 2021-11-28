@@ -14,7 +14,7 @@ from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
 from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef
-from componets.checkers import first_or_none, register_as_searchable
+from componets.checkers import register_as_searchable
 from main import Base, Session
 from .sessions import ModuleFilterSession as MFS
 
@@ -66,7 +66,7 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Union[Page, None]:
-        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
+        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
     def find_or_create(cls, session: Session, json_data: dict[str, ...], author: Author) -> Union[Page, None]:
@@ -231,7 +231,7 @@ class Module(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: Session, module_id: int) -> Union[Module, None]:
-        return first_or_none(session.execute(select(cls).where(cls.id == module_id)))
+        return session.execute(select(cls).where(cls.id == module_id)).scalars().first()
 
     @classmethod
     def find_or_create(cls, session: Session, json_data: dict[str, ...], author: Author) -> Union[Module, None]:
