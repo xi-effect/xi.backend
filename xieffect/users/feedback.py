@@ -9,7 +9,7 @@ from main import app
 from .database import User, Feedback, FeedbackType
 
 feedback_namespace: Namespace = Namespace("feedback", path="/feedback/")
-feedback_serializer: URLSafeSerializer = URLSafeSerializer(app.config[""])
+feedback_serializer: URLSafeSerializer = URLSafeSerializer(app.config["JWT_SECRET_KEY"])
 
 
 @feedback_namespace.route("/")
@@ -35,3 +35,7 @@ class FeedbackSaver(Resource):
                 return "Code refers to non-existing user"
         Feedback.create(session, user, FeedbackType.from_string(feedback_type), data)
         return "Success"
+
+
+def generate_code(user_id: int):
+    return feedback_serializer.dumps(user_id)
