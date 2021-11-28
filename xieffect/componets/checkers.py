@@ -168,7 +168,8 @@ class Namespace(RestXNamespace):
 
         return searcher_wrapper
 
-    def jwt_authorizer(self, role: Type[UserRole], check_only: bool = False, use_session: bool = True):
+    def jwt_authorizer(self, role: Type[UserRole], optional: bool = False,
+                       check_only: bool = False, use_session: bool = True):
         """
         - Authorizes user by JWT-token.
         - If token is missing or is not processable, falls back on flask-jwt-extended error handlers.
@@ -177,6 +178,7 @@ class Namespace(RestXNamespace):
         - Can pass user and session objects to the decorated function.
 
         :param role: role to expect
+        :param optional: (default: False)
         :param check_only: (default: False) if True, user object won't be passed to the decorated function
         :param use_session: (default: True) whether or not to pass the session to the decorated function
         """
@@ -192,10 +194,13 @@ class Namespace(RestXNamespace):
             @self.doc_responses(ResponseDoc.error_response(f"{error_code} ", role.not_found_text), *auth_errors)
             @self.doc(security="jwt")
             @wraps(function)
-            @jwt_required()
+            @jwt_required(optional=optional)
             @with_session
             def authorizer_inner(*args, **kwargs):
-                kwargs["jwt"] = get_jwt_identity()
+                if (jwt := get_jwt_identity()) is None and optional:
+                    kwargs[role.__name__.lower()] = None
+                    return function(*args, **kwargs)
+                kwargs["jwt"] = jwt
                 return self._database_searcher(role, check_only, True, use_session, error_code,
                                                function, args, kwargs, input_field_name="jwt")
 
