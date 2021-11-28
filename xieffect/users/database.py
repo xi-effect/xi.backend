@@ -6,9 +6,9 @@ from typing import Dict, Union, Optional
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON, Enum
 
-from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
+from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
 from componets.checkers import first_or_none
 from main import Base, Session
 
@@ -151,3 +151,30 @@ class User(Base, UserRole, Marshalable):
 
 
 UserRole.default_role = User
+
+
+class FeedbackType(TypeEnum):
+    GENERAL = 0
+    BUG_REPORT = 1
+    CONTENT_REPORT = 2
+
+
+class Feedback(Base):
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, nullable=False)
+    type = Column(Enum(FeedbackType), nullable=False)
+    data = Column(JSON, nullable=False)
+
+    @classmethod
+    def create(cls, session: Session, user: User, feedback_type: FeedbackType, data) -> Feedback:
+        new_user = cls(user_id=user.id, type=feedback_type, data=dumps(data, ensure_ascii=False))
+        session.add(new_user)
+        return new_user
+
+    @classmethod
+    def find_by_id(cls, session: Session, entry_id: int) -> list[Feedback]:
+        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
+
+    @classmethod
+    def dump_all(cls, session: Session):
+        pass
