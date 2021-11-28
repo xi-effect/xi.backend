@@ -56,6 +56,16 @@ class ImageAttacher(Resource):
         return {"id": image_id}
 
 
+@feedback_namespace.route("/dump/")
+class FeedbackDumper(Resource):
+    @feedback_namespace.jwt_authorizer(User)
+    @feedback_namespace.marshal_list_with(feedback_json)
+    def get(self, session, user: User):
+        if user.email != "admin@admin.admin":
+            feedback_namespace.abort(403, "Permission denied")
+        return Feedback.dump_all(session)
+
+
 def generate_code(user_id: int):
     return feedback_serializer.dumps(user_id)
 
