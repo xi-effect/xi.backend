@@ -1,15 +1,17 @@
 from typing import Union
 
-from flask_restx import Resource
+from flask_restx import Resource, marshal
 from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from componets import Namespace
+from componets import Namespace, unite_models, with_session
 from main import app
 from .database import User, Feedback, FeedbackType
 
 feedback_namespace: Namespace = Namespace("feedback", path="/feedback/")
 feedback_serializer: URLSafeSerializer = URLSafeSerializer(app.config["JWT_SECRET_KEY"])
+feedback_json = feedback_namespace.model("Feedback", unite_models(
+    User.marshal_models["full-settings"], Feedback.marshal_models["feedback-full"]))
 
 
 @feedback_namespace.route("/")
@@ -43,3 +45,8 @@ class FeedbackSaver(Resource):
 
 def generate_code(user_id: int):
     return feedback_serializer.dumps(user_id)
+
+
+@with_session
+def dumps_feedback(session) -> list[dict]:
+    return marshal(Feedback.dump_all(session), feedback_json)

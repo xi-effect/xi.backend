@@ -5,6 +5,7 @@ from typing import Dict, Union, Optional
 
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select
+from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON, Enum
 
@@ -159,7 +160,8 @@ class FeedbackType(TypeEnum):
     CONTENT_REPORT = 2
 
 
-class Feedback(Base):
+@create_marshal_model("feedback-full", "id", "user-id", "type", "data")
+class Feedback(Base, Marshalable):
     __tablename__ = "feedbacks"
 
     id = Column(Integer, primary_key=True)
@@ -178,5 +180,6 @@ class Feedback(Base):
         return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
-    def dump_all(cls, session: Session):
-        pass
+    def dump_all(cls, session: Session) -> list[Row]:
+        stmt = select(*cls.__table__.columns, *User.__table__.columns).outerjoin(User, User.id == cls.user_id)
+        return session.execute(stmt).all()
