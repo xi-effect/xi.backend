@@ -160,6 +160,8 @@ class FeedbackType(TypeEnum):
 
 
 class Feedback(Base):
+    __tablename__ = "feedbacks"
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
     type = Column(Enum(FeedbackType), nullable=False)
