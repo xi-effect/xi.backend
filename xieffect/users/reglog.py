@@ -37,7 +37,7 @@ class UserRegistration(Resource):  # [POST] /reg/
             invite = Invite.find_by_id(session, invite_id)
             user: User = User.create(session, email, username, password, invite)
             if not user:
-                return {"a": "bool"}
+                return {"a": "Registration failed, user not created"}
 
             # send_generated_email(email, "confirm", "registration-email.html")
 
