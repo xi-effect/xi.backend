@@ -3,10 +3,12 @@ from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_jwt_extended import get_jwt, jwt_required, unset_jwt_cookies
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
+from itsdangerous import URLSafeSerializer
 
 from componets import password_parser, Namespace, with_session, success_response
 from main import app
-from users.database import TokenBlockList, User
+from users.database import TokenBlockList, User, Invite
+
 # from users.emailer import send_generated_email, parse_code
 
 reglog_namespace: Namespace = Namespace("reglog", path="/")
@@ -22,24 +24,29 @@ class UserRegistration(Resource):  # [POST] /reg/
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="Email to be connected to new user's account")
     parser.add_argument("username", required=True, help="Username to be assigned to new user's account")
+    parser.add_argument("invite", required=True)
 
     @with_session
     @add_sets_cookie_response
     @reglog_namespace.argument_parser(parser)
-    def post(self, session, email: str, username: str, password: str):
+    def post(self, session, email: str, username: str, password: str, invite_code: str):
         """ Creates a new user if email is not used already, logs in automatically """
+        safe_serializer = URLSafeSerializer("secret-key")
+        try:
+            invite_id = safe_serializer.loads(invite_code)
+            invite = Invite.find_by_id(session, invite_id)
+            user: User = User.create(session, email, username, password, invite)
+            if not user:
+                return {"a": False}
 
-        user: User = User.create(session, email, username, password)
-        if not user:
-            return {"a": False}
+            # send_generated_email(email, "confirm", "registration-email.html")
 
-        # send_generated_email(email, "confirm", "registration-email.html")
-
-        response = jsonify({"a": True})
-        set_access_cookies(response, create_access_token(identity=user.id))
-        return response
-
-        # except: return {"a": False}, 500
+            response = jsonify({"a": True})
+            set_access_cookies(response, create_access_token(identity=user.id))
+            return response
+            # except: return {"a": False}, 500
+        except:
+            return {"a": "This code not working"}
 
 
 @reglog_namespace.route("/auth/")
