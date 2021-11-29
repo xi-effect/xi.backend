@@ -12,7 +12,7 @@ from education import Module, Page
 from file_system.keeper import WIPPage
 from main import versions
 from other.test_keeper import TestPoint
-from users import User
+from users import User, generate_code, dumps_feedback
 from webhooks import WebhookURLs, send_discord_message
 
 TEST_EMAIL: str = "test@test.test"

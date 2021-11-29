@@ -5,6 +5,7 @@ from pytest import mark
 from werkzeug.test import TestResponse
 
 from xieffect.test.components import check_status_code
+from xieffect.wsgi import generate_code, dumps_feedback
 
 
 # @mark.order(0)
@@ -21,4 +22,27 @@ def test_login(base_client: FlaskClient):
     assert "Set-Cookie" in response.headers.keys()
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
-    base_client.set_cookie("test", "access_token_cookie", cookie[1])
+    check_status_code(base_client.post("/logout/"))
+
+
+def assert_feedback(client: FlaskClient, data: dict, a: str):
+    assert check_status_code(client.post("/feedback/", json=data))["a"] == a
+
+
+@mark.order(30)
+def test_feedback(base_client: FlaskClient, client: FlaskClient):  # assumes user_id=1 (test) exists, user_id=-1 doesn't
+    feedback = {"type": "general", "data": {"lol": "hey"}}
+
+    assert_feedback(base_client, feedback, "Neither the user is authorized, nor the code is provided")
+    assert_feedback(base_client, dict(feedback, code="lol"), "Bad code signature")
+    assert_feedback(base_client, dict(feedback, code=generate_code(-1)), "Code refers to non-existing user")
+    assert_feedback(base_client, dict(feedback, code=generate_code(1)), "Success")
+    assert_feedback(client, feedback, "Success")
+
+    result = dumps_feedback()
+    assert len(result) == 2
+    result[0].pop("id")
+    result[1].pop("id")
+    assert result[0] == result[1]
+    assert result[0]["data"] == {"lol": "hey"}  # TODO use dict_equal after feat/socketio-test merge
+    assert result[0]["type"] == "general"

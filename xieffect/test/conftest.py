@@ -26,25 +26,26 @@ def base_client():
     remove("app.db")
 
 
-def login(client: FlaskClient, email: str, password: str) -> FlaskClient:
-    response: TestResponse = client.post("/auth/", follow_redirects=True, data={"email": email, "password": password})
-    assert response.status_code == 200
-    assert "Set-Cookie" in response.headers.keys()
-    cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
-    assert cookie[0] == "access_token_cookie"
-    client.set_cookie("test", "access_token_cookie", cookie[1])
-    return client
+def login(email: str, password: str) -> FlaskClient:
+    with app.test_client() as client:
+        response: TestResponse = client.post("/auth/", follow_redirects=True, data={"email": email, "password": password})
+        assert response.status_code == 200
+        assert "Set-Cookie" in response.headers.keys()
+        cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+        assert cookie[0] == "access_token_cookie"
+        client.set_cookie("test", "access_token_cookie", cookie[1])
+        return client
 
 
 @fixture
-def client(base_client: FlaskClient) -> FlaskClient:
-    return login(base_client, TEST_EMAIL, BASIC_PASS)
+def client() -> FlaskClient:
+    return login(TEST_EMAIL, BASIC_PASS)
 
 
 @fixture
 def multi_client(base_client: FlaskClient) -> Callable[[str], FlaskClient]:
     def multi_client_inner(user_email: str):
-        return login(base_client, user_email, BASIC_PASS)
+        return login(user_email, BASIC_PASS)
 
     return multi_client_inner
 
