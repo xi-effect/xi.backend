@@ -98,10 +98,10 @@ class User(Base, UserRole, Marshalable):
         return first_or_none(session.execute(select(cls).where(cls.email == email)))
 
     @classmethod
-    def create(cls, session: Session, email: str, username: str, password: str) -> Optional[User]:
+    def create(cls, session: Session, email: str, username: str, password: str, invite: str) -> Optional[User]:
         if cls.find_by_email_address(session, email):
             return None
-        new_user = cls(email=email, password=cls.generate_hash(password), username=username)
+        new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
         session.add(new_user)
         return new_user
 
