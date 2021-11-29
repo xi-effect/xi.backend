@@ -37,11 +37,11 @@ class UserRegistration(Resource):  # [POST] /reg/
             invite = Invite.find_by_id(session, invite_id)
             user: User = User.create(session, email, username, password, invite)
             if not user:
-                return {"a": False}
+                return {"a": "bool"}
 
             # send_generated_email(email, "confirm", "registration-email.html")
 
-            response = jsonify({"a": True})
+            response = jsonify({"a": "Success"})
             set_access_cookies(response, create_access_token(identity=user.id))
             return response
             # except: return {"a": False}, 500
