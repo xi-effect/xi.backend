@@ -7,7 +7,8 @@ from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON, Enum
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
+from sqlalchemy_enum34 import EnumType
 
 from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
 from componets.checkers import first_or_none
@@ -166,7 +167,7 @@ class Feedback(Base, Marshalable):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
-    type = Column(Enum(FeedbackType), nullable=False)
+    type = Column(EnumType(FeedbackType, by_name=True), nullable=False)
     data = Column(JSON, nullable=False)
 
     @classmethod

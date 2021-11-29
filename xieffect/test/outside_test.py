@@ -45,4 +45,4 @@ def test_feedback(base_client: FlaskClient, client: FlaskClient):  # assumes use
     result[1].pop("id")
     assert result[0] == result[1]
     assert result[0]["data"] == {"lol": "hey"}  # TODO use dict_equal after feat/socketio-test merge
-    # assert result[0]["type"] == "general"  # TODO get this back after fix/refactor merge
+    assert result[0]["type"] == "general"
