@@ -31,11 +31,15 @@ class UserRegistration(Resource):  # [POST] /reg/
     @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, username: str, password: str, invite_code: str):
         """ Creates a new user if email is not used already, logs in automatically """
-        safe_serializer = URLSafeSerializer("secret-key")
+        safe_serializer = Invite.serializer
         try:
             invite_id = safe_serializer.loads(invite_code)
             invite = Invite.find_by_id(session, invite_id)
-            user: User = User.create(session, email, username, password, invite)
+            if invite.limit != invite.accepted:
+                user: User = User.create(session, email, username, password, invite)
+                invite.accepted = invite.accepted + 1
+            else:
+                return {"a": "limit exceeded"}
             if not user:
                 return {"a": "Registration failed, user not created"}
 
