@@ -59,7 +59,7 @@ class UserLogin(Resource):  # [POST] /auth/
     @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, password: str):
         """ Tries to log in with credentials given """
-        if (user := User.find_by_email_address(session, email)) is not None:
+        if (user := User.find_by_email_address(session, email)) is None:
             return {"a": "User doesn't exist"}
 
         if User.verify_hash(password, user.password):

@@ -45,6 +45,7 @@ def init_folder_structure():
 @with_session
 def init_invite(session):
     if Invite.find_by_id(session, TEST_INVITE_ID) is None:
+        log_stuff("status", "Database has been reset")
         test_invite: Invite = Invite(id=TEST_INVITE_ID, name="TEST_INVITE")
         session.add(test_invite)
         session.flush()
@@ -52,9 +53,9 @@ def init_invite(session):
 
 @with_session
 def init_users(session):
+    invite = Invite.find_by_id(session, TEST_INVITE_ID)
+
     if (User.find_by_email_address(session, TEST_EMAIL)) is None:
-        invite = Invite.find_by_id(session, TEST_INVITE_ID)
-        log_stuff("status", "Database has been reset")
         test_user: User = User.create(session, TEST_EMAIL, "test", BASIC_PASS, invite)
         test_user.author = Author.create(session, test_user)
 
