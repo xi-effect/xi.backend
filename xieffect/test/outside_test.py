@@ -4,25 +4,44 @@ from flask.testing import FlaskClient
 from pytest import mark
 from werkzeug.test import TestResponse
 
+from xieffect.test.conftest import TEST_EMAIL, BASIC_PASS
 from xieffect.test.components import check_status_code
-from xieffect.wsgi import generate_code, dumps_feedback
+from xieffect.wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
 
 
 # @mark.order(0)
 # def test_startup(base_client: FlaskClient):
 #     assert check_status_code(base_client.get("/")) == {"hello": "word"}
 
+TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
+
 
 @mark.order(1)
 def test_login(base_client: FlaskClient):
-    response: TestResponse = check_status_code(base_client.post("/auth/", follow_redirects=True, data={
-        "email": "test@test.test",
-        "password": "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c" +
-                    "13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"}), get_json=False)
+    response: TestResponse = check_status_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
     assert "Set-Cookie" in response.headers.keys()
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
     check_status_code(base_client.post("/logout/"))
+
+
+@mark.order(10)
+def test_signup(base_client: FlaskClient):
+    credentials = {"email": "hey@hey.hey", "password": "12345", "username": "hey"}
+
+    def assert_with_code(code: str, status: int, message: str):
+        assert check_status_code(base_client.post("/reg/", json=dict(credentials, code=code)), status)["a"] == message
+
+    assert_with_code("hey", 400, "Malformed code (BadSignature)")
+    assert_with_code(Invite.serializer.dumps((-1, 0)), 404, "Invite not found")
+
+    data = dict(credentials, code=Invite.serializer.dumps((TEST_INVITE_ID, 0)))
+    response = check_status_code(base_client.post("/reg/", json=data), get_json=False)
+    assert "Set-Cookie" in response.headers.keys()
+    cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    assert cookie[0] == "access_token_cookie"
+    check_status_code(base_client.post("/logout/"))
+
 
 
 def assert_feedback(client: FlaskClient, data: dict, a: str):
