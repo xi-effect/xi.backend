@@ -31,11 +31,11 @@ class UserRegistration(Resource):  # [POST] /reg/
     def post(self, session, email: str, username: str, password: str, code: str):
         """ Creates a new user if email is not used already, logs in automatically """
         try:
-            invite_id = Invite.serializer.loads(code)
+            invite = Invite.find_by_code(session, code)
         except BadSignature:
             return {"a": "Malformed code (BadSignature)"}, 400
 
-        if (invite := Invite.find_by_id(session, invite_id)) is None:
+        if invite is None:
             return {"a": "Invite not found"}, 404
         if invite.limit == invite.accepted:
             return {"a": "Invite code limit exceeded"}

@@ -85,8 +85,10 @@ class User(Base, UserRole, Marshalable):
     # Chat-related
     chats = relationship("UserToChat", back_populates="user")
 
-    # invites code-related
+    # Invite-related
+    code = Column(String(100), nullable=True)
     invite_id = Column(Integer, ForeignKey("invites.id"), nullable=True)
+    invite = relationship("Invite", back_populates="invited")
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
@@ -101,10 +103,9 @@ class User(Base, UserRole, Marshalable):
     def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None) -> Optional[User]:
         if cls.find_by_email_address(session, email):
             return None
-        new_user = cls(email=email, password=cls.generate_hash(password), username=username)
-        if invite is not None:
-            new_user.invite_id = invite.id
+        new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
         session.add(new_user)
+        session.flush()
         return new_user
 
     @classmethod
@@ -157,6 +158,11 @@ class User(Base, UserRole, Marshalable):
     def set_filter_bind(self, bind: str = None) -> None:  # auto-commit
         self.filter_bind = bind
 
+    def get_invite_code(self) -> str:
+        if self.code is None:
+            self.code = self.invite.generate_code(self.id)
+        return self.code
+
 
 UserRole.default_role = User
 
@@ -168,21 +174,19 @@ class Invite(Base, UserRole, Marshalable):
     serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECRET_KEY"])
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=True)
-    code = Column(String, default="")
+    name = Column(String(100), nullable=False)
+    code = Column(String(100), nullable=False, default="")
     limit = Column(Integer, nullable=True)
     accepted = Column(Integer, nullable=False, default=0)
-    
-    creator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    creator = relationship("User", foreign_keys=[creator_id])
-    invited = relationship("User", foreign_keys=[User.invite_id])
+    invited = relationship("User", back_populates="invite")
 
     @classmethod
-    def create(cls, session: Session, name: str = None, limit: int = None, creator: User = None) -> Invite:
-        entry: cls = cls(name=name, limit=limit, creator=creator)
+    def create(cls, session: Session, name: str, limit: int = None) -> Invite:
+        entry: cls = cls(name=name, limit=limit)
         session.add(entry)
         session.flush()
-        entry.code = cls.serializer.dumps(entry.id)
+        entry.code = entry.generate_code(0)
+        session.flush()
         return entry
 
     @classmethod
@@ -190,9 +194,19 @@ class Invite(Base, UserRole, Marshalable):
         return first_or_none(session.execute(select(cls).filter(cls.id == entry_id)))
 
     @classmethod
+    def find_by_code(cls, session: Session, code: str) -> Optional[Invite]:
+        return cls.find_by_id(session, cls.serializer.loads(code)[0])
+
+    @classmethod
     def find_global(cls, session: Session, offset: int, limit: int) -> list[Invite]:
-        stmt = select(cls).filter(cls.creator_id.is_(None))
-        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
+        return session.execute(select(cls).offset(offset).limit(limit)).scalars().all()
+
+    def generate_code(self, user_id: int):
+        return self.serializer.dumps((self.id, user_id))
+
+    def delete(self, session: Session):
+        session.delete(self)
+        session.flush()
 
 
 class FeedbackType(TypeEnum):
