@@ -36,7 +36,7 @@ class TokenBlockList(Base):
 @create_marshal_model("user-index", "username", "id", "bio", "avatar")
 @create_marshal_model("profile", "name", "surname", "patronymic", "username",
                       "bio", "group", "avatar")
-@create_marshal_model("full-settings", "email", "email_confirmed", "avatar",
+@create_marshal_model("full-settings", "email", "email_confirmed", "avatar", "code",
                       "name", "surname", "patronymic", "bio", "group", inherit="main-settings")
 @create_marshal_model("main-settings", "id", "username", "dark_theme", "language")
 @create_marshal_model("role-settings")
@@ -106,6 +106,9 @@ class User(Base, UserRole, Marshalable):
         new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
         session.add(new_user)
         session.flush()
+        if invite is not None:
+            new_user.code = new_user.invite.generate_code(new_user.id)
+            session.flush()
         return new_user
 
     @classmethod
@@ -157,11 +160,6 @@ class User(Base, UserRole, Marshalable):
 
     def set_filter_bind(self, bind: str = None) -> None:  # auto-commit
         self.filter_bind = bind
-
-    def get_invite_code(self) -> str:
-        if self.code is None:
-            self.code = self.invite.generate_code(self.id)
-        return self.code
 
 
 UserRole.default_role = User
