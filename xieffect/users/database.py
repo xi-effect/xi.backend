@@ -174,12 +174,12 @@ class Invite(Base, UserRole, Marshalable):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     code = Column(String(100), nullable=False, default="")
-    limit = Column(Integer, nullable=True)
+    limit = Column(Integer, nullable=False, default=-1)
     accepted = Column(Integer, nullable=False, default=0)
     invited = relationship("User", back_populates="invite")
 
     @classmethod
-    def create(cls, session: Session, name: str, limit: int = None) -> Invite:
+    def create(cls, session: Session, name: str, limit: int = -1) -> Invite:
         entry: cls = cls(name=name, limit=limit)
         session.add(entry)
         session.flush()

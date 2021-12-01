@@ -56,7 +56,7 @@ class GlobalInviteManager(Resource):
 @invites_namespace.route("/<int:invite_id>/")
 class InviteManager(Resource):
     parser: RequestParser = RequestParser()
-    parser.add_argument("name", type=str, required=True)
+    parser.add_argument("name", type=str, required=False)
     parser.add_argument("limit", type=int, required=False)
 
     @admin_only()
@@ -70,7 +70,8 @@ class InviteManager(Resource):
     @invites_namespace.argument_parser(parser)
     @invites_namespace.a_response()
     def put(self, name: str, limit: int, invite: Invite) -> None:
-        invite.name = name
+        if name is not None:
+            invite.name = name
         if limit is not None:
             invite.limit = limit
 
