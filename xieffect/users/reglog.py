@@ -95,11 +95,15 @@ class Test(Resource):
         return response
 
 
-@reglog_namespace.route("/password-reset/<email>/")
-class PasswordResetSender(Resource):  # [GET] /password-reset/<email>/
+@reglog_namespace.route("/password-reset/")
+class PasswordResetSender(Resource):
+    parser: RequestParser = RequestParser()
+    parser.add_argument("email", required=True, help="User's email")
+
     @with_session
+    @reglog_namespace.argument_parser(parser)
     @reglog_namespace.a_response()
-    def get(self, session, email: str) -> bool:
+    def post(self, session, email: str) -> bool:
         """ First step of resetting password, tries sending a password-reset email by the address given """
         return User.find_by_email_address(session, email) is not None and email != "admin@admin.admin"
 
