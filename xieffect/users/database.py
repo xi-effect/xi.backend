@@ -98,10 +98,12 @@ class User(Base, UserRole, Marshalable):
         return first_or_none(session.execute(select(cls).where(cls.email == email)))
 
     @classmethod
-    def create(cls, session: Session, email: str, username: str, password: str, invite: str) -> Optional[User]:
+    def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None) -> Optional[User]:
         if cls.find_by_email_address(session, email):
             return None
-        new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
+        new_user = cls(email=email, password=cls.generate_hash(password), username=username)
+        if invite is not None:
+            new_user.invite_id = invite.id
         session.add(new_user)
         return new_user
 
@@ -172,8 +174,8 @@ class Invite(Base, UserRole, Marshalable):
     serializer = URLSafeSerializer("secret-key")
 
     @classmethod
-    def create(cls, session: Session, name_inv: str, limit: int, creator: User = None):
-        new_url = cls(name_inv=name_inv, limit=limit, creator=creator)
+    def create(cls, session: Session, name_inv: str = None, limit: int = None, creator: User = None):
+        new_url = cls(name=name_inv, limit=limit, creator=creator)
         session.add(new_url)
         session.flush()
         new_url.code = cls.serializer.dumps(new_url.id)
@@ -181,7 +183,7 @@ class Invite(Base, UserRole, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[Invite]:
-        return first_or_none(session.execute(select(cls).fillter(cls.id == entry_id)))
+        return first_or_none(session.execute(select(cls).filter(cls.id == entry_id)))
 
     @classmethod
     def find_global(cls, session: Session, offset: int, limit: int) -> list[Invite]:

@@ -12,7 +12,7 @@ from education import Module, Page
 from file_system.keeper import WIPPage
 from main import versions
 from other.test_keeper import TestPoint
-from users import User, generate_code, dumps_feedback
+from users import User, Invite, generate_code, dumps_feedback
 from webhooks import WebhookURLs, send_discord_message
 
 TEST_EMAIL: str = "test@test.test"
@@ -20,6 +20,8 @@ ADMIN_EMAIL: str = "admin@admin.admin"
 
 BASIC_PASS: str = "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"
 ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe"
+
+TEST_INVITE_ID: int = 0
 
 if __name__ == "__main__" or "pytest" in modules.keys():  # test only  # pytest here temporarily!!!
     application.debug = True
@@ -43,8 +45,9 @@ def init_folder_structure():
 @with_session
 def init_users(session):
     if (User.find_by_email_address(session, TEST_EMAIL)) is None:
+        invite = Invite.find_by_id(session, TEST_INVITE_ID)
         log_stuff("status", "Database has been reset")
-        test_user: User = User.create(session, TEST_EMAIL, "test", BASIC_PASS)
+        test_user: User = User.create(session, TEST_EMAIL, "test", BASIC_PASS, invite)
         test_user.author = Author.create(session, test_user)
 
     if (User.find_by_email_address(session, ADMIN_EMAIL)) is None:
@@ -98,6 +101,14 @@ def init_chats(session):
                     message.updated = datetime.fromisoformat(message_data["updated"])
 
 
+@with_session
+def init_invite(session):
+    if Invite.find_by_id(session, TEST_INVITE_ID) is None:
+        test_invite: Invite = Invite(id=TEST_INVITE_ID, name="TEST_INVITE")
+        session.add(test_invite)
+        session.flush()
+
+
 def version_check():
     if exists("../files/versions-lock.json"):
         versions_lock: dict[str, str] = load(open("../files/versions-lock.json", encoding="utf-8"))
@@ -114,6 +125,7 @@ def version_check():
 
 
 init_folder_structure()
+init_invite()
 init_users()
 init_knowledge()
 init_oct()
