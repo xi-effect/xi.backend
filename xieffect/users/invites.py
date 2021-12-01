@@ -17,18 +17,15 @@ class InviteManager(Resource):
     @invites_namespace.jwt_authorizer(User)
     @invites_namespace.marshal_with(invites_model)
     def get(self, session, user: User):
-        invite = Invite.find_by_id(session, user.invite_id)
-        if invite is None:
+        if (invite := Invite.find_by_id(session, user.invite_id)) is None:
             return {"a": "Invite not found"}, 404
-        else:
-            return invite
+        return invite
 
     @invites_namespace.jwt_authorizer(User)
     @invites_namespace.argument_parser(parser)
     @invites_namespace.a_response()
     def post(self, session, name: str, limit: int, user: User) -> None:
-        invite = Invite.find_by_id(session, user.invite_id)
-        if invite is None:
+        if (invite := Invite.find_by_id(session, user.invite_id)) is None:
             Invite.create(session, name, limit, user)
         else:
             invite.name = name
@@ -41,7 +38,6 @@ class GlobalInviteManager(Resource):
     @invites_namespace.argument_parser(counter_parser)
     @invites_namespace.lister(10, invites_model)
     def post(self, session, user: User, start: int, finish: int):
-        if user.email == "admin@admin.admin":
-            return Invite.find_global(session, start, finish)
-        else:
+        if user.email != "admin@admin.admin":
             return {"a": "Permission denied"}, 403
+        return Invite.find_global(session, start, finish)

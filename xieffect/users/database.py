@@ -13,7 +13,7 @@ from sqlalchemy_enum34 import EnumType
 
 from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
 from componets.checkers import first_or_none
-from main import Base, Session
+from main import Base, Session, app
 
 DEFAULT_AVATAR: str = '{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}'
 
@@ -158,28 +158,32 @@ class User(Base, UserRole, Marshalable):
         self.filter_bind = bind
 
 
-@create_marshal_model("invite", "name", "limit", "code", "accepted")
+UserRole.default_role = User
+
+
+@create_marshal_model("invite", "name", "code", "limit", "accepted")
 class Invite(Base, UserRole, Marshalable):
     # invites
     __tablename__ = "invites"
+    serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECRET_KEY"])
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=True)
-    accepted = Column(Integer, nullable=False, default=0)
+    code = Column(String, default="")
     limit = Column(Integer, nullable=True)
+    accepted = Column(Integer, nullable=False, default=0)
+    
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     creator = relationship("User", foreign_keys=[creator_id])
     invited = relationship("User", foreign_keys=[User.invite_id])
-    code = Column(String, default="")
-    serializer = URLSafeSerializer("secret-key")
 
     @classmethod
-    def create(cls, session: Session, name_inv: str = None, limit: int = None, creator: User = None):
-        new_url = cls(name=name_inv, limit=limit, creator=creator)
-        session.add(new_url)
+    def create(cls, session: Session, name: str = None, limit: int = None, creator: User = None) -> Invite:
+        entry: cls = cls(name=name, limit=limit, creator=creator)
+        session.add(entry)
         session.flush()
-        new_url.code = cls.serializer.dumps(new_url.id)
-        return new_url
+        entry.code = cls.serializer.dumps(entry.id)
+        return entry
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[Invite]:
@@ -189,9 +193,6 @@ class Invite(Base, UserRole, Marshalable):
     def find_global(cls, session: Session, offset: int, limit: int) -> list[Invite]:
         stmt = select(cls).filter(cls.creator_id.is_(None))
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
-
-
-UserRole.default_role = User
 
 
 class FeedbackType(TypeEnum):

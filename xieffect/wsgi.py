@@ -43,6 +43,14 @@ def init_folder_structure():
 
 
 @with_session
+def init_invite(session):
+    if Invite.find_by_id(session, TEST_INVITE_ID) is None:
+        test_invite: Invite = Invite(id=TEST_INVITE_ID, name="TEST_INVITE")
+        session.add(test_invite)
+        session.flush()
+
+
+@with_session
 def init_users(session):
     if (User.find_by_email_address(session, TEST_EMAIL)) is None:
         invite = Invite.find_by_id(session, TEST_INVITE_ID)
@@ -99,14 +107,6 @@ def init_chats(session):
                 message.sent = datetime.fromisoformat(message_data["sent"])
                 if message_data["updated"] is not None:
                     message.updated = datetime.fromisoformat(message_data["updated"])
-
-
-@with_session
-def init_invite(session):
-    if Invite.find_by_id(session, TEST_INVITE_ID) is None:
-        test_invite: Invite = Invite(id=TEST_INVITE_ID, name="TEST_INVITE")
-        session.add(test_invite)
-        session.flush()
 
 
 def version_check():
