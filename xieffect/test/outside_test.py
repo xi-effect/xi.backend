@@ -46,3 +46,39 @@ def test_feedback(base_client: FlaskClient, client: FlaskClient):  # assumes use
     assert result[0] == result[1]
     assert result[0]["data"] == {"lol": "hey"}  # TODO use dict_equal after feat/socketio-test merge
     assert result[0]["type"] == "general"
+
+
+@mark.order(50)
+def test_invite_curds(client: FlaskClient, admin_client: FlaskClient, list_tester):
+    def request_assert_admin(method, url: str, json=None):
+        assert check_status_code(method(client, url, json=json), 403)["a"] == "Permission denied"
+        return check_status_code(method(admin_client, url, json=json))
+
+    invite_data = {"name": "test", "limit": -1, "accepted": 0}
+    invite_data2 = {"name": "toast", "limit": 5, "accepted": 0}
+
+    assert (invite_id := request_assert_admin(FlaskClient.post, "/invites/", invite_data).get("id", None)) is not None
+    result = request_assert_admin(FlaskClient.get, f"/invites/{invite_id}/")
+    assert result["limit"] == invite_data["limit"]
+    assert result["name"] == invite_data["name"]  # TODO use dict_equal after feat/socketio-test merge
+    assert result["accepted"] == invite_data["accepted"]
+    invite_data2["code"] = result["code"]
+
+    results = request_assert_admin(FlaskClient.post, "/invites/index/", {"offset": 0})["results"]
+    assert any(invite == result for invite in results), results
+
+    assert request_assert_admin(FlaskClient.put, f"/invites/{invite_id}/", invite_data2)
+    result = request_assert_admin(FlaskClient.get, f"/invites/{invite_id}/")
+    assert result["limit"] == invite_data2["limit"]
+    assert result["name"] == invite_data2["name"]  # TODO use dict_equal after feat/socketio-test merge
+    assert result["accepted"] == invite_data2["accepted"]
+    assert result["code"] == invite_data2["code"]
+
+    results = request_assert_admin(FlaskClient.post, "/invites/index/", {"offset": 0})["results"]
+    assert any(invite == result for invite in results), results
+
+    assert request_assert_admin(FlaskClient.delete, f"/invites/{invite_id}/")["a"]
+    assert check_status_code(admin_client.get(f"/invites/{invite_id}/"), 404)["a"] == "Invite not found"
+
+    results = request_assert_admin(FlaskClient.post, "/invites/index/", {"offset": 0})["results"]
+    assert not any(invite == result for invite in results), results

@@ -5,7 +5,7 @@ from flask.testing import FlaskClient
 from pytest import fixture
 from werkzeug.test import TestResponse
 
-from wsgi import application as app, TEST_EMAIL, BASIC_PASS  # temp, return back to ``from api import app``
+from wsgi import application as app, TEST_EMAIL, BASIC_PASS, ADMIN_EMAIL, ADMIN_PASS
 from xieffect.test.components import check_status_code
 
 
@@ -40,6 +40,11 @@ def login(email: str, password: str) -> FlaskClient:
 @fixture
 def client() -> FlaskClient:
     return login(TEST_EMAIL, BASIC_PASS)
+
+
+@fixture
+def admin_client() -> FlaskClient:
+    return login(ADMIN_EMAIL, ADMIN_PASS)
 
 
 @fixture
