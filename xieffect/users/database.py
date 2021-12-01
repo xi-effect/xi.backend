@@ -167,8 +167,8 @@ UserRole.default_role = User
 
 @create_marshal_model("invite", "name", "code", "limit", "accepted")
 class Invite(Base, UserRole, Marshalable):
-    # invites
     __tablename__ = "invites"
+    not_found_text = "Invite not found"
     serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECRET_KEY"])
 
     id = Column(Integer, primary_key=True)

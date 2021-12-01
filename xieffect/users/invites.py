@@ -1,7 +1,8 @@
 from functools import wraps
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_restx import Resource
+from flask_restx import Resource, Model
+from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, counter_parser, ResponseDoc, with_session, get_or_pop
@@ -21,9 +22,8 @@ def admin_only(use_session: bool = False):
         @with_session
         def admin_only_inner(*args, **kwargs):
             admin = User.find_by_id(get_or_pop(kwargs, "session", use_session), get_jwt_identity())
-            if admin is None or admin.email == "admin@admin.admin":
+            if admin is None or admin.email != "admin@admin.admin":
                 return {"a": "Permission denied"}, 403
-            kwargs["admin"] = admin
             return function(*args, **kwargs)
 
         return admin_only_inner
@@ -37,16 +37,16 @@ class InviteCreator(Resource):
     parser.add_argument("name", type=str, required=True)
     parser.add_argument("limit", type=int, required=False)
 
+    @invites_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @admin_only(use_session=True)
     @invites_namespace.argument_parser(parser)
-    @invites_namespace.a_response()
-    def post(self, session, name: str, limit: int) -> None:
-        Invite.create(session, name, limit)
+    def post(self, session, name: str, limit: int):
+        return {"id": Invite.create(session, name, limit).id}
 
 
 @invites_namespace.route("/index/")
 class GlobalInviteManager(Resource):
-    @admin_only()
+    @admin_only(use_session=True)
     @invites_namespace.argument_parser(counter_parser)
     @invites_namespace.lister(50, invites_model)
     def post(self, session, start: int, finish: int):
@@ -62,7 +62,7 @@ class InviteManager(Resource):
     @admin_only()
     @invites_namespace.database_searcher(Invite)
     @invites_namespace.marshal_with(invites_model)
-    def get(self, invite):
+    def get(self, invite: Invite):
         return invite
 
     @admin_only()
