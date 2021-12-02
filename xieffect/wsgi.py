@@ -4,7 +4,7 @@ from os.path import exists
 from pathlib import Path
 from sys import modules
 
-from api import app as application, log_stuff  # noqa
+from api import app as application, log_stuff, db_meta  # noqa
 from authorship import Author, Moderator
 from communication.entities import Chat, ChatRole, Message
 from componets import with_session
@@ -25,6 +25,8 @@ TEST_INVITE_ID: int = 0
 
 if __name__ == "__main__" or "pytest" in modules.keys():  # test only  # pytest here temporarily!!!
     application.debug = True
+    db_meta.drop_all()
+    db_meta.create_all()
 else:  # works on server restart:
     send_discord_message(WebhookURLs.NOTIF, "Application restated")
     if any([send_discord_message(WebhookURLs.NOTIF, f"ERROR! No environmental variable for secret `{secret_name}`")
@@ -100,11 +102,11 @@ def init_chats(session):
             chat: Chat = Chat.create(session, chat_data["name"], owner)
             for email, role in chat_data["participants"]:
                 if email != owner.email:
-                    chat.add_participant(User.find_by_email_address(session, email),
+                    chat.add_participant(session, User.find_by_email_address(session, email),
                                          ChatRole.from_string(role))
             for message_data in chat_data["messages"]:
                 sender = User.find_by_email_address(session, message_data["sender-email"])
-                message: Message = Message.create(session, chat, message_data["content"], sender)
+                message: Message = Message.create(session, chat, message_data["content"], sender, False)
                 message.sent = datetime.fromisoformat(message_data["sent"])
                 if message_data["updated"] is not None:
                     message.updated = datetime.fromisoformat(message_data["updated"])

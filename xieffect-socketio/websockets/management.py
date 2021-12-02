@@ -45,51 +45,48 @@ def on_delete_chat(session: Session, chat_id: int):
 class UserToChat(BaseModel):
     chat_id: int = Field(alias="chat-id")
     target_id: int = Field(alias="user-id")
-
-
-class UserToChatWithRole(UserToChat):
     role: str
 
 
 invite_users = DuplexEvent.similar(create_model("InviteUsers", chat_id=(int, ...), user_ids=(list[int], ...)))
-invite_user = DuplexEvent.similar(UserToChatWithRole)
-assign_user = DuplexEvent.similar(UserToChatWithRole)
-kick_user = DuplexEvent.similar(UserToChat)
+invite_user = DuplexEvent.similar(UserToChat)
+assign_user = DuplexEvent.similar(UserToChat)
+kick_user = DuplexEvent.similar(create_model("KickUser", chat_id=(int, ...), target_id=(int, None)))
 
 
 @invite_users.bind
 @user_sessions.with_request_session()
 def on_invite_users(session: Session, chat_id: int, user_ids: list[int]):
-    # this does NOT check if invited users are already in the chat!
-    session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/add-all/", json={"ids": user_ids})
-    invite_users.emit(f"chat-{chat_id}", chat_id=chat_id, user_ids=user_ids)
+    r = session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/add-all/", json={"ids": user_ids}).json()
+    user_ids = [user_ids[i] for i in range(len(user_ids)) if r[i]]
 
-    chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
-    users_broadcast(add_chat, user_ids, chat_id=chat_id, name=chat_name)
+    if len(user_ids) > 0:
+        invite_users.emit(f"chat-{chat_id}", chat_id=chat_id, user_ids=user_ids)
+        chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
+        users_broadcast(add_chat, user_ids, chat_id=chat_id, name=chat_name)
 
 
 @invite_user.bind
 @user_sessions.with_request_session()
 def on_invite_user(session: Session, chat_id: int, target_id: int, role: str):
-    # this does NOT check if invited user is already in the chat!
-    session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/", json={"role": role})
-    invite_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
+    if session.post(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/", json={"role": role}).json()["a"]:
+        invite_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
 
-    chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
-    add_chat.emit(f"user-{target_id}", chat_id=chat_id, name=chat_name)
+        chat_name = session.get(f"{app.config['host']}/chats/{chat_id}/").json()["name"]
+        add_chat.emit(f"user-{target_id}", chat_id=chat_id, name=chat_name)
 
 
 @assign_user.bind
 @user_sessions.with_request_session()
 def on_assign_user(session: Session, chat_id: int, target_id: int, role: str):
-    session.put(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/", json={"role": role})
-    assign_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
+    if session.put(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/", json={"role": role}).json()["a"]:
+        assign_user.emit(f"chat-{chat_id}", chat_id=chat_id, target_id=target_id, role=role)
 
 
 @kick_user.bind
 @user_sessions.with_request_session(use_user_id=True)
-def on_kick_user(session: Session, user_id: int, chat_id: int, target_id: int):
-    if user_id == target_id:  # quit
+def on_kick_user(session: Session, user_id: int, chat_id: int, target_id: int = None):
+    if target_id is None or user_id == target_id:  # quit
         session.delete(f"{app.config['host']}/chat-temp/{chat_id}/membership/")
     else:  # kick
         session.delete(f"{app.config['host']}/chat-temp/{chat_id}/users/{target_id}/")

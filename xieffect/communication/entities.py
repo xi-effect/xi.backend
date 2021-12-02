@@ -38,16 +38,18 @@ class Message(Base, Marshalable):
     sender_avatar: LambdaFieldDef = LambdaFieldDef("message", JSON, lambda message: message.sender.avatar)
 
     @classmethod
-    def create(cls, session: Session, chat: Chat, content: str, sender: User) -> Message:
+    def create(cls, session: Session, chat: Chat, content: str, sender: User, update_unread: bool = True) -> Message:
         entry: cls = cls(id=chat.get_next_message_id(), content=content,  # noqa
                          sent=datetime.utcnow(), sender=sender, chat=chat)  # noqa
+        if update_unread:
+            UserToChat.update_unread_counts(session, chat.id, sender.id)
         session.add(entry)
         session.flush()
         return entry
 
     @classmethod
     def find_by_ids(cls, session: Session, chat_id: int, message_id: int) -> Optional[Message]:
-        return first_or_none(session.execute(select(cls).filter_by(chat_id=chat_id, id=message_id)).first())
+        return session.execute(select(cls).filter_by(chat_id=chat_id, id=message_id)).scalars().first()
 
     def delete(self, session: Session):
         session.delete(self)
@@ -89,8 +91,8 @@ class UserToChat(Base, Marshalable):
 
     # Other data:
     role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
-    online = Column(Integer, nullable=False, default=False)
-    unread = Column(Integer, nullable=True)
+    online = Column(Integer, nullable=False, default=0)
+    unread = Column(Integer, nullable=False, default=0)
     activity = Column(DateTime, nullable=True)
 
     @classmethod
@@ -119,6 +121,12 @@ class UserToChat(Base, Marshalable):
         stmt = select(cls).filter(cls.chat_id == chat_id, cls.online == 0)
         return session.execute(stmt).scalars().all()
 
+    @classmethod
+    def update_unread_counts(cls, session: Session, chat_id: int, sender_id: int, messages_count: int = 1):  # or -1
+        stmt = select(cls).filter(cls.chat_id == chat_id, cls.online == 0, cls.user_id != sender_id)
+        for u2c in session.execute(stmt).scalars().all():
+            u2c.unread += messages_count
+
     def delete(self, session: Session):
         session.delete(self)
         session.flush()
@@ -131,7 +139,7 @@ class Chat(Base, Marshalable, Identifiable):
     id = Column(Integer, Sequence("chat_id_seq"), primary_key=True)
     name = Column(String(100), nullable=False)
 
-    messages = relationship("Message", back_populates="chat", cascade="all, delete", order_by=Message.id)
+    messages = relationship("Message", back_populates="chat", cascade="all, delete", order_by=Message.sent.desc())
     participants = relationship("UserToChat", back_populates="chat", cascade="all, delete",
                                 order_by=UserToChat.activity.desc())
     next_message_id = Column(Integer, nullable=False, default=0)
@@ -148,8 +156,11 @@ class Chat(Base, Marshalable, Identifiable):
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[Chat]:
         return first_or_none(session.execute(select(cls).filter_by(id=entry_id)))
 
-    def add_participant(self, user: User, role: ChatRole = ChatRole.BASIC) -> None:
-        user.chats.append(UserToChat(chat=self, role=role))
+    def add_participant(self, session: Session, user: User, role: ChatRole = ChatRole.BASIC) -> bool:
+        if UserToChat.find_by_ids(session, self.id, user.id) is None:
+            user.chats.append(UserToChat(chat=self, role=role))
+            return True
+        return False
 
     def get_next_message_id(self):
         self.next_message_id += 1

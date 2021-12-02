@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Type, Any, Callable
 
@@ -49,7 +50,7 @@ class ClientEvent(Event):
         return self.model.parse_obj(data).dict()
 
     def bind(self, function):
-        self.handler = lambda data: function(**self.parse(data))
+        self.handler = lambda data = None: function(**self.parse(data))
 
     def create_doc(self, namespace: str):
         return {"publish": super().create_doc(namespace)}
@@ -66,6 +67,7 @@ class ServerEvent(Event):
             "exclude": exclude,
             "by_alias": True,
         }
+        self.model.Config.allow_population_by_field_name = True
 
     def emit(self, _room: str = None, _data: Any = None, **kwargs):
         if _data is None:
@@ -125,8 +127,8 @@ def kebabify_model(model: Type[BaseModel]):
 class Namespace(_Namespace):
     def __init__(self, namespace=None):
         super().__init__(namespace)
-        self.doc_channels = {}
-        self.doc_messages = {}
+        self.doc_channels = OrderedDict()
+        self.doc_messages = OrderedDict()
 
     def attach_event(self, event: BaseEvent, name: str = None, use_kebab_case: bool = False):
         if name is None:
@@ -136,12 +138,12 @@ class Namespace(_Namespace):
         if isinstance(event, ClientEvent):
             if event.handler is None:
                 pass  # error!
-            setattr(self, f"on_{name}", event.handler)
+            setattr(self, f"on_{name.replace('-', '_')}", event.handler)
 
         if isinstance(event, DuplexEvent):
             if event.client_event.handler is None:
                 pass  # error!
-            setattr(self, f"on_{name}", event.client_event.handler)
+            setattr(self, f"on_{name.replace('-', '_')}", event.client_event.handler)
 
             if use_kebab_case:
                 kebabify_model(event.client_event.model)
@@ -158,14 +160,14 @@ class Namespace(_Namespace):
     def attach_event_group(self, event_group: EventGroup, use_kebab_case: bool = False):
         for name, event in event_group.events.items():
             if event.name is None:
-                event.attach_name(name.lower())
+                event.attach_name(name.lower().replace("_", "-"))
             self.attach_event(event, use_kebab_case=use_kebab_case)
 
 
 class SocketIO(_SocketIO):
     def __init__(self, app=None, title: str = "SIO", version: str = "1.0.0", doc_path: str = "/doc/", **kwargs):
         self.async_api = {"asyncapi": "2.2.0", "info": {"title": title, "version": version},
-                          "channels": {}, "components": {"messages": {}}}
+                          "channels": OrderedDict(), "components": {"messages": OrderedDict()}}
         self.doc_path = doc_path
         super(SocketIO, self).__init__(app, **kwargs)
 
@@ -173,6 +175,8 @@ class SocketIO(_SocketIO):
         return self.async_api
 
     def init_app(self, app, **kwargs):
+        app.config["JSON_SORT_KEYS"] = False  # kinda bad for a library
+
         @app.route(self.doc_path)
         def documentation():
             return self.docs()

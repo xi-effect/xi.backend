@@ -1,10 +1,12 @@
 from datetime import datetime
 from functools import wraps
 
-from flask_restx import Resource
+from flask_restx import Resource, Model
+from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
 from componets import ResponseDoc
+from componets.marshals import DateTimeField
 from users import User
 from .entities import UserToChat, ChatRole, Chat, Message
 from .helpers import ChatNamespace
@@ -18,9 +20,9 @@ message_parser.add_argument("content", str, required=True)
 def search_message(use_session: bool, unmoderatable: bool = True):
     def search_message_wrapper(function):
         @messages_namespace.doc_responses(ResponseDoc.error_response(403, "Not your message"))
-        @messages_namespace.search_user_to_chat(use_user=True, use_chat=True, use_user_to_chat=True)
+        @messages_namespace.search_user_to_chat(None, True, True, True, True)
         @wraps(function)
-        def search_message_inner(session, user: User, chat: Chat, user_to_chat: UserToChat, message_id: int):
+        def search_message_inner(self, session, user: User, chat: Chat, user_to_chat: UserToChat, message_id: int):
             if (message := Message.find_by_ids(session, chat.id, message_id)) is None:
                 return {"a": "Message not found"}, 404
 
@@ -29,8 +31,8 @@ def search_message(use_session: bool, unmoderatable: bool = True):
                     return {"a": "Not your message"}, 403
 
             if use_session:
-                return function(session, message)
-            return function(message)
+                return function(self, session, message)
+            return function(self, message)
 
         return search_message_inner
 
@@ -39,24 +41,31 @@ def search_message(use_session: bool, unmoderatable: bool = True):
 
 @messages_namespace.route("/")
 class MessageAdder(Resource):  # temp pass-through
+    model = messages_namespace.model("Message", {"message_id": Integer, "sent": DateTimeField})
+
+    @messages_namespace.doc_responses(ResponseDoc(model=model))
     @messages_namespace.search_user_to_chat(ChatRole.BASIC, True, True, True, True)
     @messages_namespace.argument_parser(message_parser)
-    @messages_namespace.a_response()
-    def post(self, session, user: User, chat: Chat, user_to_chat: UserToChat, content: str) -> None:
+    @messages_namespace.marshal_with(model)
+    def post(self, session, user: User, chat: Chat, user_to_chat: UserToChat, content: str):
         """ For sending a new message [TEMP] """
         message = Message.create(session, chat, content, user)
         user_to_chat.activity = message.sent
+        return {"message_id": message.id, "sent": message.sent}
 
 
 @messages_namespace.route("/<int:message_id>/")
 class MessageProcessor(Resource):  # temp pass-through
+    model = messages_namespace.model("Updated Response", {"updated": DateTimeField})
+
     @search_message(False)
     @messages_namespace.argument_parser(message_parser)
-    @messages_namespace.a_response()
-    def put(self, message: Message, content: str) -> None:
+    @messages_namespace.marshal_with(model)
+    def put(self, message: Message, content: str):
         """ For editing a message (by the sender only) [TEMP] """
         message.content = content
         message.updated = datetime.utcnow()
+        return {"updated": message.updated}
 
     @search_message(True, False)
     @messages_namespace.a_response()

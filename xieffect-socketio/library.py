@@ -2,10 +2,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
 from typing import Union
+from urllib.parse import urlparse
 
 from flask import request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from flask_socketio import join_room, close_room
+from flask_socketio import join_room, close_room, emit
 from pydantic import BaseModel, Field
 from requests import Session as _Session, Response
 
@@ -52,14 +53,27 @@ def users_broadcast(_event: Union[ServerEvent, DuplexEvent], _user_ids: list[int
 
 
 class Session(_Session):
-    def request(self, *args, **kwargs):
-        response: Response = super(Session, self).request(*args, **kwargs)
-        if 400 <= response.status_code < 500:
-            if (a := response.json().get("a", None)) is not None:
+    testing: bool = False
+
+    def request(self, method, url, **kwargs):
+        req_json = kwargs.get("json", None)
+        response: Response = super(Session, self).request(method, url, **kwargs)
+        json = response.json()
+        # print("HEY! FlaskClient wasn't used!!!")
+        if 400 <= (code := response.status_code) < 500:
+            if (a := json.get("a", None)) is not None:
                 raise RequestException(response.status_code, a)
             else:
                 raise RequestException(response.status_code)
+        if self.testing:
+            emit("pass", {"method": method, "url": urlparse(url).path, "req": req_json, "res": json, "code": code})
         return response
+
+    def set_cookie(self, key, value):
+        # if self.client is not None and isinstance(self.client, FlaskClient):
+        #     self.client.set_cookie("what?", key, value)
+        # else:
+        self.cookies.set(key, value)
 
 
 class UserSession:
@@ -68,9 +82,9 @@ class UserSession:
         self.counters: dict[int, int] = dict()
 
     def connect(self, user_id: int):
-        if user_id in self.sessions.keys():
+        if user_id not in self.sessions.keys():
             self.sessions[user_id] = Session()
-            self.sessions[user_id].cookies.set("access_token_cookie", request.cookies["access_token_cookie"])
+            self.sessions[user_id].set_cookie("access_token_cookie", request.cookies["access_token_cookie"])
             self.counters[user_id] = 1
         else:
             self.counters[user_id] += 1
@@ -96,7 +110,7 @@ class UserSession:
                     return function(*args, **kwargs)
                 except RequestException as e:
                     if not ignore_errors:
-                        e.emit_error_event(function.__name__)
+                        e.emit_error_event(function.__name__[3:].replace("_", "-"))
 
             return with_request_session_inner
 
