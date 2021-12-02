@@ -1,11 +1,10 @@
-from urllib.parse import urlparse, urljoin
-
-from flask import redirect, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_restx import Api
 from flask_socketio import rooms
 
 from library import Session
 from setup import socketio, app, user_sessions
+from temp_api import reglog_namespace
 from websockets import Namespace, messaging_events, chat_management_events, user_management_events
 
 
@@ -31,13 +30,15 @@ messages_namespace.attach_event_group(chat_management_events, use_kebab_case=Tru
 messages_namespace.attach_event_group(user_management_events, use_kebab_case=True)
 
 socketio.on_namespace(messages_namespace)
+api = Api(app)
+api.add_namespace(reglog_namespace)
 
 
-@app.before_request
-def main_server():
-    path = urlparse(request.url).path
-    if path != "/socket.io/" and path != socketio.doc_path and path.endswith("/"):
-        return redirect(urljoin(app.config["host"], path))
+# @app.before_request
+# def main_server():
+#     path = urlparse(request.url).path
+#     if path != "/socket.io/" and path != socketio.doc_path and path.endswith("/"):
+#         return redirect(urljoin(app.config["host"], path))
 
 
 if __name__ == "__main__":

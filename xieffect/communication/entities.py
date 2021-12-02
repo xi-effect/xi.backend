@@ -3,10 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, Sequence, select, ForeignKey
+from sqlalchemy import Column, Sequence, select, ForeignKey, case
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON
-from sqlalchemy_enum34 import EnumType
+from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON, Enum
 
 from componets import create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
 from componets.checkers import first_or_none, Identifiable
@@ -90,10 +89,12 @@ class UserToChat(Base, Marshalable):
     chat_users: LambdaFieldDef = LambdaFieldDef("chat-user-full", int, lambda u2c: len(u2c.chat.participants), "users")
 
     # Other data:
-    role = Column(EnumType(ChatRole, by_name=True), nullable=False, default="BASIC")
+    role = Column(Enum(ChatRole), nullable=False, default=ChatRole.BASIC)
     online = Column(Integer, nullable=False, default=0)
     unread = Column(Integer, nullable=False, default=0)
     activity = Column(DateTime, nullable=True)
+
+    role_sorting = case(value=role, whens=ChatRole.form_whens()).label("role").desc()
 
     @classmethod
     def find_by_ids(cls, session: Session, chat_id: int, user_id: int) -> UserToChat:
@@ -126,6 +127,11 @@ class UserToChat(Base, Marshalable):
         stmt = select(cls).filter(cls.chat_id == chat_id, cls.online == 0, cls.user_id != sender_id)
         for u2c in session.execute(stmt).scalars().all():
             u2c.unread += messages_count
+
+    @classmethod
+    def find_successor(cls, session: Session, chat_id: int) -> UserToChat:
+        stmt = select(cls).filter_by(chat_id=chat_id).order_by(cls.role_sorting, cls.activity, cls.unread)
+        return session.execute(stmt.limit(1)).scalars().first()
 
     def delete(self, session: Session):
         session.delete(self)

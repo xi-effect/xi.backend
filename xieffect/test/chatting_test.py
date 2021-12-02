@@ -116,6 +116,40 @@ def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
                 assert code == 403 or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
 
 
+@mark.order(625)
+def test_ownership_transfer(multi_client: Callable[[str], FlaskClient]):
+    anatol, evgen, vasil = multi_client("1@user.user"), multi_client("2@user.user"), multi_client("3@user.user")
+    anatol_id, evgen_id, vasil_id = 4, 5, 6  # user ids are assumed
+
+    # Creating the chat
+    chat_id = check_status_code(anatol.post("/chat-temp/", json={"name": "test"})).get("id", None)
+    assert chat_id is not None
+
+    # Inviting evgen & vasil
+    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/users/{evgen_id}/", json={"role": "basic"}))["a"]
+    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/users/{vasil_id}/", json={"role": "basic"}))["a"]
+
+    # Transfer ownership
+    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/users/{vasil_id}/owner/"))["a"]
+    assert check_status_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "admin"
+    assert check_status_code(vasil.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
+
+    # Vasil quits, ownership transfers back to anatol
+    result = check_status_code(vasil.delete(f"/chat-temp/{chat_id}/membership/"))
+    assert dict_equal(result, {"branch": "assign-owner", "successor": anatol_id}, "branch", "successor")
+    assert check_status_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
+    assert check_status_code(vasil.get(f"/chats/{chat_id}/"), 403)["a"] == "User not in the chat"
+
+    # Evgen quits, nothing happens
+    assert check_status_code(evgen.delete(f"/chat-temp/{chat_id}/membership/"))["branch"] == "just-quit"
+    assert check_status_code(evgen.get(f"/chats/{chat_id}/"), 403)["a"] == "User not in the chat"
+    assert check_status_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
+
+    # Anatol quits, chat is deleted automagically
+    assert check_status_code(anatol.delete(f"/chat-temp/{chat_id}/membership/"))["branch"] == "delete-chat"
+    assert check_status_code(anatol.get(f"/chats/{chat_id}/"), 404)["a"] == "Chat not found"
+
+
 @mark.order(650)
 def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
                    multi_client: Callable[[str], FlaskClient]):  # relies on chat#4
@@ -144,10 +178,9 @@ def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
     fist_offline: dict[int, int] = form_offline()
     ensure_presence([], [anatol_id, vasil1_id, vasil2_id, evgen_id])
 
-    link, data = f"/chat-temp/{chat_id}/presence/", {"online": True}
-    assert check_status_code(anatol.post(link, json=data)) == {"a": fist_offline[anatol_id] != 0}
-    assert check_status_code(vasil1.post(link, json=data)) == {"a": fist_offline[vasil1_id] != 0}
-    assert check_status_code(vasil2.post(link, json=data)) == {"a": fist_offline[vasil2_id] != 0}
+    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
+    assert check_status_code(vasil1.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
+    assert check_status_code(vasil2.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
     ensure_presence([anatol_id, vasil1_id, vasil2_id], [evgen_id])
     notif_count = form_offline()
     messages = get_messages()
@@ -182,7 +215,6 @@ def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
     assert check_status_code(vasil2.delete(f"/chat-temp/{chat_id}/messages/{message['id']}/")) == {"a": True}
     check_status_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 404)
     assert messages == get_messages()
-    # TODO notif should probably change, cause message got deleted, use first_offline
 
     # Sending it again & deleting by anatol (moder)
     data = check_status_code(vasil2.post(f"/chat-temp/{chat_id}/messages/", json=message))

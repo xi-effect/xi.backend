@@ -9,7 +9,7 @@ from typing import Type, Dict, Tuple, Union, Optional, Callable, get_type_hints
 from flask_restx import Model, Namespace
 from flask_restx.fields import (Raw as RawField, Boolean as BooleanField,
                                 Integer as IntegerField, String as StringField)
-from sqlalchemy import Column, Sequence
+from sqlalchemy import Column, Sequence, Enum
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import Boolean, Integer, String, JSON, DateTime
 from sqlalchemy_enum34 import EnumType
@@ -46,7 +46,8 @@ column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
     Boolean: BooleanField,
     JSON: JSONLoadableField,
     DateTime: DateTimeField,
-    EnumType: EnumField,
+    Enum: EnumField,
+    EnumType: EnumField
 }
 
 

@@ -5,7 +5,7 @@ from pytest import mark
 from werkzeug.test import TestResponse
 
 from xieffect.test.conftest import TEST_EMAIL, BASIC_PASS
-from xieffect.test.components import check_status_code
+from xieffect.test.components import check_status_code, dict_equal
 from xieffect.wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
 
 
@@ -43,7 +43,6 @@ def test_signup(base_client: FlaskClient):
     check_status_code(base_client.post("/logout/"))
 
 
-
 def assert_feedback(client: FlaskClient, data: dict, a: str):
     assert check_status_code(client.post("/feedback/", json=data))["a"] == a
 
@@ -63,8 +62,7 @@ def test_feedback(base_client: FlaskClient, client: FlaskClient):  # assumes use
     result[0].pop("id")
     result[1].pop("id")
     assert result[0] == result[1]
-    assert result[0]["data"] == {"lol": "hey"}  # TODO use dict_equal after feat/socketio-test merge
-    assert result[0]["type"] == "general"
+    assert dict_equal(result[0], feedback, "data", "type")
 
 
 @mark.order(50)
@@ -78,9 +76,7 @@ def test_invite_curds(client: FlaskClient, admin_client: FlaskClient, list_teste
 
     assert (invite_id := request_assert_admin(FlaskClient.post, "/invites/", invite_data).get("id", None)) is not None
     result = request_assert_admin(FlaskClient.get, f"/invites/{invite_id}/")
-    assert result["limit"] == invite_data["limit"]
-    assert result["name"] == invite_data["name"]  # TODO use dict_equal after feat/socketio-test merge
-    assert result["accepted"] == invite_data["accepted"]
+    assert dict_equal(result, invite_data, "name", "limit", "accepted")
     invite_data2["code"] = result["code"]
 
     results = request_assert_admin(FlaskClient.post, "/invites/index/", {"offset": 0})["results"]
@@ -88,10 +84,7 @@ def test_invite_curds(client: FlaskClient, admin_client: FlaskClient, list_teste
 
     assert request_assert_admin(FlaskClient.put, f"/invites/{invite_id}/", invite_data2)
     result = request_assert_admin(FlaskClient.get, f"/invites/{invite_id}/")
-    assert result["limit"] == invite_data2["limit"]
-    assert result["name"] == invite_data2["name"]  # TODO use dict_equal after feat/socketio-test merge
-    assert result["accepted"] == invite_data2["accepted"]
-    assert result["code"] == invite_data2["code"]
+    assert dict_equal(result, invite_data2, "name", "limit", "accepted", "code")
 
     results = request_assert_admin(FlaskClient.post, "/invites/index/", {"offset": 0})["results"]
     assert any(invite == result for invite in results), results

@@ -80,7 +80,7 @@ class MessageReader(Resource):  # temp pass-through
 
 
 @chat_temp_namespace.route("/membership/")
-class ChatProcessor2(Resource):  # temp pass-through
+class ChatProcessor(Resource):  # temp pass-through
     # @chat_temp_namespace.jwt_authorizer(User)
     # @chat_temp_namespace.database_searcher(Chat)
     # @chat_temp_namespace.argument_parser(chat_meta_parser)
@@ -90,10 +90,16 @@ class ChatProcessor2(Resource):  # temp pass-through
     #     pass
 
     @chat_temp_namespace.search_user_to_chat(use_user_to_chat=True, use_session=True)
-    @chat_temp_namespace.a_response()
-    def delete(self, session, user_to_chat: UserToChat) -> None:  # redo as event
+    def delete(self, session, user_to_chat: UserToChat):  # redo as event
         """ Used for quitting the chat by the logged-in user [TEMP] """
         user_to_chat.delete(session)
+        if user_to_chat.role is ChatRole.OWNER:  # Automatic ownership transfer
+            if (successor := UserToChat.find_successor(session, user_to_chat.chat_id)) is None:
+                Chat.find_by_id(session, user_to_chat.chat_id).delete(session)
+                return {"branch": "delete-chat"}
+            successor.role = ChatRole.OWNER
+            return {"branch": "assign-owner", "successor": successor.user_id}
+        return {"branch": "just-quit"}
 
 
 @chat_temp_namespace.route("/manage/")
@@ -115,11 +121,10 @@ class ChatManager(Resource):  # temp pass-through
         # pass_through("delete-chat", {"chat-id": chat.id}, user_ids)
 
 
-def manage_user(with_current: bool = False):
+def manage_user(min_role: ChatRole):
     def manage_user_wrapper(function):
         @chat_temp_namespace.doc_responses(ResponseDoc.error_response(404, "Target user is not in the chat"))
-        @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.MODER if with_current else ChatRole.ADMIN,
-                                                 use_chat=True, use_user_to_chat=True)
+        @chat_temp_namespace.search_user_to_chat(min_role=min_role, use_chat=True, use_user_to_chat=True)
         @chat_temp_namespace.database_searcher(User, result_field_name="target", use_session=True)
         @wraps(function)
         def manage_user_inner(*args, session, user_to_chat: UserToChat, chat: Chat, target: User):
@@ -130,7 +135,7 @@ def manage_user(with_current: bool = False):
             if target_to_chat.role.value >= user_to_chat.role.value:
                 return {"a": "Your role is not higher that user's"}, 403
 
-            if with_current:
+            if min_role is ChatRole.MODER or min_role is ChatRole.OWNER:
                 return function(user_to_chat=user_to_chat, target_to_chat=target_to_chat, *args)
             return function(session=session, target_to_chat=target_to_chat, *args)
 
@@ -159,16 +164,26 @@ def with_role_check(function):
     return with_role_check_inner
 
 
+@chat_temp_namespace.route("/users/<int:user_id>/owner/")
+class OwnershipTransfer(Resource):
+    @manage_user(ChatRole.OWNER)
+    @chat_temp_namespace.a_response()
+    def post(self, user_to_chat: UserToChat, target_to_chat: UserToChat) -> None:
+        """ Ownership transfer [TEMP] """
+        user_to_chat.role = ChatRole.ADMIN
+        target_to_chat.role = ChatRole.OWNER
+
+
 @chat_temp_namespace.route("/users/<int:user_id>/")
 class ChatUserManager(Resource):  # temp pass-through
-    @chat_temp_namespace.search_user_to_chat(min_role=ChatRole.ADMIN, use_user_to_chat=True, use_session=True, use_chat=True)
+    @chat_temp_namespace.search_user_to_chat(ChatRole.ADMIN, True, True, False, True)
     @with_role_check
     @chat_temp_namespace.a_response()
     def post(self, session, chat: Chat, user_id: int, role: ChatRole) -> bool:  # redo as event
         """ Adds a user to the chat (admins only) [TEMP] """
         return chat.add_participant(session, User.find_by_id(session, user_id), role)
 
-    @manage_user(with_current=True)
+    @manage_user(ChatRole.MODER)
     @with_role_check
     @chat_temp_namespace.a_response()
     def put(self, target_to_chat: UserToChat, role: ChatRole) -> bool:  # redo as event
@@ -178,7 +193,7 @@ class ChatUserManager(Resource):  # temp pass-through
         target_to_chat.role = role
         return True
 
-    @manage_user()
+    @manage_user(ChatRole.ADMIN)
     @chat_temp_namespace.a_response()
     def delete(self, session, target_to_chat: UserToChat) -> None:  # redo as event
         """ Removes a user from the chat (admins only) [TEMP] """
