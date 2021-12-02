@@ -16,7 +16,8 @@ from main import app, db_meta, versions
 from other import (application_namespace, oct_namespace)
 from outside import (basic_namespace, webhook_namespace)
 from users import (TokenBlockList, reglog_namespace, email_namespace, users_namespace, feedback_namespace,
-                   settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
+                   settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace,
+                   invites_namespace)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
 # Initializing modules
@@ -42,6 +43,7 @@ api.add_namespace(settings_namespace)
 api.add_namespace(other_settings_namespace)
 api.add_namespace(protected_settings_namespace)
 api.add_namespace(feedback_namespace)
+api.add_namespace(invites_namespace)
 
 api.add_namespace(chats_namespace)
 api.add_namespace(chat_temp_namespace)

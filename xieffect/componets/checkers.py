@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Type, Optional, Any, List
+from typing import Type, Optional, Any, List, Union
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace as RestXNamespace, Model
@@ -40,7 +40,7 @@ class UserRole(Identifiable):
     Used in :ref:`.Namespace.jwt_authorizer`
     """
 
-    default_role = None
+    default_role: Union[UserRole, None] = None
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[UserRole]:
@@ -168,6 +168,11 @@ class Namespace(RestXNamespace):
 
         return searcher_wrapper
 
+    auth_errors: List[ResponseDoc] = [
+        ResponseDoc.error_response("401 ", "JWTError"),
+        ResponseDoc.error_response("422 ", "InvalidJWT")
+    ]
+
     def jwt_authorizer(self, role: Type[UserRole], optional: bool = False,
                        check_only: bool = False, use_session: bool = True):
         """
@@ -182,16 +187,10 @@ class Namespace(RestXNamespace):
         :param check_only: (default: False) if True, user object won't be passed to the decorated function
         :param use_session: (default: True) whether or not to pass the session to the decorated function
         """
-
-        auth_errors: List[ResponseDoc] = [
-            ResponseDoc.error_response("401 ", "JWTError"),
-            ResponseDoc.error_response("422 ", "InvalidJWT")
-        ]
-
         def authorizer_wrapper(function):
             error_code: int = 401 if role is UserRole.default_role else 403
 
-            @self.doc_responses(ResponseDoc.error_response(f"{error_code} ", role.not_found_text), *auth_errors)
+            @self.doc_responses(ResponseDoc.error_response(f"{error_code} ", role.not_found_text), *self.auth_errors)
             @self.doc(security="jwt")
             @wraps(function)
             @jwt_required(optional=optional)

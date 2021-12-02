@@ -3,8 +3,9 @@ from __future__ import annotations
 from json import dumps
 from typing import Dict, Union, Optional
 
+from itsdangerous.url_safe import URLSafeSerializer
 from passlib.hash import pbkdf2_sha256 as sha256
-from sqlalchemy import Column, Sequence, select
+from sqlalchemy import Column, Sequence, select, ForeignKey
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
@@ -12,7 +13,7 @@ from sqlalchemy_enum34 import EnumType
 
 from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
 from componets.checkers import first_or_none
-from main import Base, Session
+from main import Base, Session, app
 
 DEFAULT_AVATAR: str = '{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}'
 
@@ -35,7 +36,7 @@ class TokenBlockList(Base):
 @create_marshal_model("user-index", "username", "id", "bio", "avatar")
 @create_marshal_model("profile", "name", "surname", "patronymic", "username",
                       "bio", "group", "avatar")
-@create_marshal_model("full-settings", "email", "email_confirmed", "avatar",
+@create_marshal_model("full-settings", "email", "email_confirmed", "avatar", "code",
                       "name", "surname", "patronymic", "bio", "group", inherit="main-settings")
 @create_marshal_model("main-settings", "id", "username", "dark_theme", "language")
 @create_marshal_model("role-settings")
@@ -84,6 +85,11 @@ class User(Base, UserRole, Marshalable):
     # Chat-related
     chats = relationship("UserToChat", back_populates="user")
 
+    # Invite-related
+    code = Column(String(100), nullable=True)
+    invite_id = Column(Integer, ForeignKey("invites.id"), nullable=True)
+    invite = relationship("Invite", back_populates="invited")
+
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
         return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
@@ -94,11 +100,15 @@ class User(Base, UserRole, Marshalable):
         return first_or_none(session.execute(select(cls).where(cls.email == email)))
 
     @classmethod
-    def create(cls, session: Session, email: str, username: str, password: str) -> Optional[User]:
+    def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None) -> Optional[User]:
         if cls.find_by_email_address(session, email):
             return None
-        new_user = cls(email=email, password=cls.generate_hash(password), username=username)
+        new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
         session.add(new_user)
+        session.flush()
+        if invite is not None:
+            new_user.code = new_user.invite.generate_code(new_user.id)
+            session.flush()
         return new_user
 
     @classmethod
@@ -153,6 +163,48 @@ class User(Base, UserRole, Marshalable):
 
 
 UserRole.default_role = User
+
+
+@create_marshal_model("invite", "name", "code", "limit", "accepted")
+class Invite(Base, UserRole, Marshalable):
+    __tablename__ = "invites"
+    not_found_text = "Invite not found"
+    serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECRET_KEY"])
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    code = Column(String(100), nullable=False, default="")
+    limit = Column(Integer, nullable=False, default=-1)
+    accepted = Column(Integer, nullable=False, default=0)
+    invited = relationship("User", back_populates="invite")
+
+    @classmethod
+    def create(cls, session: Session, name: str, limit: int = -1) -> Invite:
+        entry: cls = cls(name=name, limit=limit)
+        session.add(entry)
+        session.flush()
+        entry.code = entry.generate_code(0)
+        session.flush()
+        return entry
+
+    @classmethod
+    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Invite]:
+        return first_or_none(session.execute(select(cls).filter(cls.id == entry_id)))
+
+    @classmethod
+    def find_by_code(cls, session: Session, code: str) -> Optional[Invite]:
+        return cls.find_by_id(session, cls.serializer.loads(code)[0])
+
+    @classmethod
+    def find_global(cls, session: Session, offset: int, limit: int) -> list[Invite]:
+        return session.execute(select(cls).offset(offset).limit(limit)).scalars().all()
+
+    def generate_code(self, user_id: int):
+        return self.serializer.dumps((self.id, user_id))
+
+    def delete(self, session: Session):
+        session.delete(self)
+        session.flush()
 
 
 class FeedbackType(TypeEnum):
