@@ -66,7 +66,6 @@ def on_edit_message(session: Session, chat_id: int, message_id: int, content: st
 def on_delete_message(session: Session, chat_id: int, message_id: int):
     session.delete(f"{app.config['host']}/chat-temp/{chat_id}/messages/{message_id}/")
     delete_message.emit(f"chat-{chat_id}", chat_id=chat_id, message_id=message_id)
-    notify_offline(session, chat_id)
 
 
 messaging_events: EventGroup = EventGroup(notif=notif, open_chat=open_chat, close_chat=close_chat,

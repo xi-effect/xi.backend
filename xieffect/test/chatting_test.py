@@ -215,7 +215,6 @@ def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
     assert check_status_code(vasil2.delete(f"/chat-temp/{chat_id}/messages/{message['id']}/")) == {"a": True}
     check_status_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 404)
     assert messages == get_messages()
-    # TODO notif should probably change, cause message got deleted, use first_offline
 
     # Sending it again & deleting by anatol (moder)
     data = check_status_code(vasil2.post(f"/chat-temp/{chat_id}/messages/", json=message))

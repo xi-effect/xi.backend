@@ -239,10 +239,6 @@ def test_messaging(socket_tr_io_client: MultiClient):  # relies on chat#4
     temp.pop("content")
     ensure_broadcast(anatol, "delete-message", temp, evgen)
     ensure_pass(anatol, form_pass("DELETE", f"/chat-temp/{chat_id}/messages/{message_id}/", None, {"a": True}))
-
-    # TODO notif has to be sent to vasil with !0! unread
-    assert_broadcast("notif", {"chat-id": chat_id, "unread": 1}, vasil)
-    assert_broadcast("notif", {"chat-id": chat_id, "unread": 1}, vasil2)
     assert_no_additional_messages(anatol, evgen, vasil, anatol2, evgen2, vasil2)
 
     # Close opened chats
