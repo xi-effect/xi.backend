@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Union
 
 from sqlalchemy import Column, select, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float, JSON
 
 from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
-from componets.checkers import first_or_none
 from main import Base, Session
 from users import User
 
@@ -25,8 +24,8 @@ class BaseModuleSession(Base):
         raise NotImplementedError
 
     @classmethod
-    def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Optional[BaseModuleSession]:
-        return first_or_none(session.execute(select(cls).filter(cls.user_id == user_id, cls.module_id == module_id)))
+    def find_by_ids(cls, session: Session, user_id: int, module_id: int) -> Union[BaseModuleSession, None]:
+        return session.execute(select(cls).filter(cls.user_id == user_id, cls.module_id == module_id)).scalars().first()
 
     @classmethod
     def find_or_create(cls, session: Session, user_id: int, module_id: int) -> BaseModuleSession:
@@ -62,7 +61,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         LambdaFieldDef("mfs", datetime, lambda mfs: mfs.last_visited if mfs.started else datetime.min)
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int) -> Optional[ModuleFilterSession]:
+    def create(cls, session: Session, user_id: int, module_id: int) -> Union[ModuleFilterSession, None]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
         # parameter check freaks out for no reason \/ \/ \/
@@ -109,7 +108,7 @@ class ModuleProgressSession(BaseModuleSession):
     theory_level = Column(Float, nullable=True)  # temp disabled for theory blocks
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int) -> Optional[ModuleProgressSession]:
+    def create(cls, session: Session, user_id: int, module_id: int) -> Union[ModuleProgressSession, None]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
         new_entry = cls(user_id=user_id, module_id=module_id)
@@ -117,7 +116,7 @@ class ModuleProgressSession(BaseModuleSession):
         session.flush()
         return new_entry
 
-    def get_theory_level(self, session: Session) -> Optional[float]:
+    def get_theory_level(self, session: Session) -> Union[float, None]:
         if self.theory_level is None:
             return None
         return User.find_by_id(session, self.user_id).theory_level * 0.2 + self.theory_level * 0.8
@@ -146,7 +145,7 @@ class TestModuleSession(BaseModuleSession):
         session.flush()
         return new_entry
 
-    def find_point_session(self, session: Session, point_id: int) -> Optional[TestPointSession]:
+    def find_point_session(self, session: Session, point_id: int) -> Union[TestPointSession, None]:
         return TestPointSession.find_by_ids(session, user_id=self.user_id, module_id=self.module_id, point_id=point_id)
 
     def collect_all(self, session: Session) -> list[TestPointSession]:
@@ -169,6 +168,6 @@ class TestPointSession(Base, Marshalable):
     answers = Column(JSON, nullable=True)
 
     @classmethod
-    def find_by_ids(cls, session: Session, user_id: int, module_id: int, point_id) -> Optional[TestModuleSession]:
-        return first_or_none(session.execute(
-            select(cls).filter(cls.user_id == user_id, cls.module_id == module_id, cls.point_id == point_id)))
+    def find_by_ids(cls, session: Session, user_id: int, module_id: int, point_id) -> Union[TestModuleSession, None]:
+        return session.execute(select(cls).filter(cls.user_id == user_id, cls.module_id == module_id,
+                                                  cls.point_id == point_id)).scalars().first()

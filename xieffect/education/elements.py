@@ -10,7 +10,6 @@ from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text
-from sqlalchemy_enum34 import EnumType
 
 from authorship import Author
 from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef
@@ -38,7 +37,7 @@ class Page(Base, Identifiable, Marshalable):
     author = relationship("Author")
     components = Column(JSON, nullable=False)
 
-    kind = Column(EnumType(PageKind, by_name=True), nullable=False)
+    kind = Column(TypeEnum(PageKind, by_name=True), nullable=False)
     name = Column(Text, nullable=False)
     theme = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
@@ -123,7 +122,7 @@ class Point(Base):
     module_id = Column(Integer, ForeignKey("modules.id"), primary_key=True)
     point_id = Column(Integer, primary_key=True)
 
-    type = Column(EnumType(PointType, by_name=True), nullable=False)
+    type = Column(TypeEnum(PointType, by_name=True), nullable=False)
     length = Column(Integer, nullable=False)
 
     pages = relationship("PointToPage", cascade="all, delete", order_by=PointToPage.position)
@@ -167,7 +166,7 @@ class Module(Base, Identifiable, Marshalable):
     # Essentials:
     id = Column(Integer, ForeignKey("wip-modules.id"), primary_key=True)
     length = Column(Integer, nullable=False)  # the amount of schedule or map points
-    type = Column(EnumType(ModuleType, by_name=True), nullable=False)
+    type = Column(TypeEnum(ModuleType, by_name=True), nullable=False)
 
     # Type-dependent:
     map = Column(JSON, nullable=True)

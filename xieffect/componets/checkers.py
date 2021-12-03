@@ -51,13 +51,6 @@ def get_or_pop(dictionary: dict, key, keep: bool = False):
     return dictionary[key] if keep else dictionary.pop(key)
 
 
-def first_or_none(result: Result) -> Optional[Any]:
-    """ Wrapper for database result object (gets the first one or None) """
-    if (first := result.first()) is None:
-        return None
-    return first[0]
-
-
 def register_as_searchable(*searchable: str):
     """
     - Registers database model as searchable with whoosh-sqlalchemy.

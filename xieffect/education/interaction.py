@@ -1,6 +1,6 @@
 from functools import wraps
 from json import dumps, loads
-from typing import Optional
+from typing import Union
 
 from flask import redirect
 from flask_restx import Resource, Model
@@ -70,7 +70,7 @@ class ModuleOpener(Resource):
     def get(self, session, user: User, module: Module, module_type: ModuleType):
         """ Endpoint for starting a Standard Module or Theory Block form the last visited point """
 
-        module_session: Optional[ModuleProgressSession] = ModuleProgressSession.find_by_ids(session, user.id, module.id)
+        module_session: Union[ModuleProgressSession, None] = ModuleProgressSession.find_by_ids(session, user.id, module.id)
         if module_type == ModuleType.STANDARD:
             if module_session is None or module_session.progress is None:
                 return module.execute_point(0, 0.4 + 0.2 * user.theory_level)

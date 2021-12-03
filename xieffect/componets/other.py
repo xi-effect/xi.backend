@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import Union
 
 
 class TypeEnum(Enum):
     @classmethod
-    def from_string(cls, string: str) -> Optional[TypeEnum]:
+    def from_string(cls, string: str) -> Union[TypeEnum, None]:
         return cls.__members__.get(string.upper().replace("-", "_"), None)
 
     @classmethod

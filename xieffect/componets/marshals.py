@@ -12,7 +12,6 @@ from flask_restx.fields import (Raw as RawField, Boolean as BooleanField,
 from sqlalchemy import Column, Sequence, Enum
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import Boolean, Integer, String, JSON, DateTime
-from sqlalchemy_enum34 import EnumType
 
 from .other import TypeEnum
 
@@ -46,8 +45,7 @@ column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
     Boolean: BooleanField,
     JSON: JSONLoadableField,
     DateTime: DateTimeField,
-    Enum: EnumField,
-    EnumType: EnumField
+    Enum: EnumField
 }
 
 

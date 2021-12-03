@@ -146,8 +146,8 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
 @pages_view_namespace.route("/<int:page_id>/report/")
 class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
     @pages_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
-    @pages_view_namespace.database_searcher(Page)
     @pages_view_namespace.argument_parser(report_parser)
+    @pages_view_namespace.database_searcher(Page)
     @modules_view_namespace.a_response()
     def post(self, page: Page, reason: str, message: str) -> None:
         pass
