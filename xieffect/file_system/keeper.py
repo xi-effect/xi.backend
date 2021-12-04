@@ -15,7 +15,7 @@ from education import PageKind, ModuleType
 from main import Base, Session
 
 
-class WIPStatus(Enum):
+class WIPStatus(TypeEnum):
     WIP = 0
     PUBLISHED = 1
 
