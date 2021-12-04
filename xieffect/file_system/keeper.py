@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from enum import Enum
+
 from json import dump, load
 from os import remove
 from typing import Union
 
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Text
+from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
 from authorship import Author
 from componets import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable
