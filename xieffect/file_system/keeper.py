@@ -126,7 +126,7 @@ class WIPModule(JSONFile, Marshalable):
     directory: str = "../files/tfs/wip-modules/"
 
     # Essentials:
-    type = Column(Text(ModuleType), nullable=False)
+    type = Column(Enum(ModuleType), nullable=False)
     name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
 
