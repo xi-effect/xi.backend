@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from json import dump, load
 from os import remove
 from typing import Union
@@ -14,7 +15,7 @@ from education import PageKind, ModuleType
 from main import Base, Session
 
 
-class WIPStatus(TypeEnum):
+class WIPStatus(Enum):
     WIP = 0
     PUBLISHED = 1
 
@@ -28,7 +29,7 @@ class CATFile(Base, Identifiable):
     owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
                    default=0)  # test-only
 
-    status = Column(TypeEnum(WIPStatus), nullable=False)
+    status = Column(Enum(WIPStatus), nullable=False)
 
     @classmethod
     def _create(cls, owner: Author) -> CATFile:
@@ -97,7 +98,7 @@ class WIPPage(JSONFile, Marshalable):
     not_found_text = "Page not found"
     directory: str = "../files/tfs/wip-pages/"
 
-    kind = Column(TypeEnum(PageKind), nullable=False)
+    kind = Column(Enum(PageKind), nullable=False)
 
     name = Column(String(100), nullable=False)
     theme = Column(String(100), nullable=False)
