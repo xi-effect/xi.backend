@@ -4,12 +4,11 @@ from datetime import datetime
 from enum import Enum
 from math import sqrt, ceil
 from random import randint
-from typing import Dict, Optional
+from typing import Union
 
 from sqlalchemy import Column, select
 from sqlalchemy.sql.sqltypes import Integer, String, DateTime, Text
 
-from componets.checkers import first_or_none
 from main import Base, Session
 
 
@@ -34,7 +33,7 @@ class TestPoint(Base):
         TestPoint.create(session, "S1", 8, "999999999 999999998", "999999999", 10)
         TestPoint.create(session, "S1", 9, "999999999 999999999", "999999999", 10)
 
-        temp: Dict[int, int] = {1: 1, 2: 1}
+        temp: dict[int, int] = {1: 1, 2: 1}
         f1, f2 = 1, 1
         for i in range(3, 1001):
             f1, f2 = f2, f1 + f2
@@ -75,12 +74,12 @@ class TestPoint(Base):
         return session.execute(select(cls).where(cls.task_name == task_name)).scalars().all()
 
     @classmethod
-    def find_exact(cls, session: Session, task_name: str, test_id: int) -> Optional[TestPoint]:
-        return first_or_none(session.execute(select(cls).where(cls.task_name == task_name, cls.test_id == test_id)))
+    def find_exact(cls, session: Session, task_name: str, test_id: int) -> Union[TestPoint, None]:
+        return session.execute(select(cls).where(cls.task_name == task_name, cls.test_id == test_id)).scalars().first()
 
     @classmethod
     def create(cls, session: Session, task_name: str, test_id: int, inp: str,
-               out: str, points: int) -> Optional[TestPoint]:
+               out: str, points: int) -> Union[TestPoint, None]:
         if cls.find_exact(session, task_name, test_id):
             return None
         new_test_point = cls(task_name=task_name, test_id=test_id, input=inp, output=out, points=points)
@@ -120,7 +119,7 @@ class UserSubmissions(Base):
 
     @classmethod
     def create(cls, session: Session, user_id: str, task_name: str, submission_id: int, code: int, points: int,
-               failed: int) -> Optional[UserSubmissions]:
+               failed: int) -> Union[UserSubmissions, None]:
         if cls.find_exact(session, user_id, task_name, submission_id):
             return None
         new_submission = cls(user_id=user_id, task_name=task_name, code=code,
@@ -130,7 +129,7 @@ class UserSubmissions(Base):
 
     @classmethod
     def create_next(cls, session: Session, user_id: str, task_name: str, code: int,
-                    points: int, failed: int) -> Optional[UserSubmissions]:
+                    points: int, failed: int) -> Union[UserSubmissions, None]:
         temp: list = cls.find_group(session, user_id, task_name)
         current_id: int = 0
         if len(temp):
