@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Optional
+from typing import Union
 
 from flask_restx import Resource, Model
 from flask_restx.fields import Integer
@@ -147,8 +147,8 @@ def manage_user(min_role: ChatRole):
 def with_role_check(function):
     @chat_temp_namespace.argument_parser(user_to_chat_parser)
     @wraps(function)
-    def with_role_check_inner(*args, user_to_chat: UserToChat, role: Optional[str] = None,
-                              target_to_chat: Optional[UserToChat] = None, **kwargs):
+    def with_role_check_inner(*args, user_to_chat: UserToChat, role: Union[str, None] = None,
+                              target_to_chat: Union[UserToChat, None] = None, **kwargs):
         try:
             role: ChatRole = ChatRole.BASIC if role is None else ChatRole.from_string(role)
         except (ValueError, KeyError):

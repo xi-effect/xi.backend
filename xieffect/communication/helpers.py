@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Optional
+from typing import Union
 
 from componets import Namespace, get_or_pop, ResponseDoc, message_response
 from users import User
@@ -11,7 +11,7 @@ def create_403_response(has_min_role: bool) -> ResponseDoc:
 
 
 class ChatNamespace(Namespace):
-    def search_user_to_chat(self, min_role: Optional[ChatRole] = None, use_user_to_chat: bool = False,
+    def search_user_to_chat(self, min_role: Union[ChatRole, None] = None, use_user_to_chat: bool = False,
                             use_chat: bool = False, use_user: bool = False, use_session: bool = False):
         def search_user_to_chat_wrapper(function):
             message_response.register_model(self)
