@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Union
 
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
@@ -57,7 +57,7 @@ class ModuleLister(Resource):  # [POST] /modules/
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(parser)
     @modules_view_namespace.lister(12, module_index_json)
-    def post(self, session, user: User, start: int, finish: int, filters: Dict[str, str], search: str, sort: str):
+    def post(self, session, user: User, start: int, finish: int, filters: Union[str, str, None], search: str, sort: str):
         """ Lists index of modules with metadata & user's relation """
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
@@ -127,7 +127,7 @@ class PageLister(Resource):  # POST /pages/
     @pages_view_namespace.jwt_authorizer(User, check_only=True)
     @pages_view_namespace.argument_parser(parser)
     @pages_view_namespace.lister(50, short_page_json)
-    def post(self, session, search: Optional[str], start: int, finish: int) -> list:
+    def post(self, session, search: Union[str, None], start: int, finish: int) -> list:
         """ Lists index of pages with metadata only """
         return Page.search(session, search, start, finish - start)
 
