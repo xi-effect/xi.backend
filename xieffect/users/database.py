@@ -8,7 +8,7 @@ from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select, ForeignKey
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON, Enum
 
 from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
 from main import Base, Session, app
