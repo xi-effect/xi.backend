@@ -66,8 +66,8 @@ class InviteManager(Resource):
         return invite
 
     @admin_only()
-    @invites_namespace.database_searcher(Invite)
     @invites_namespace.argument_parser(parser)
+    @invites_namespace.database_searcher(Invite)
     @invites_namespace.a_response()
     def put(self, name: str, limit: int, invite: Invite) -> None:
         if name is not None:
