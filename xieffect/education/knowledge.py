@@ -57,7 +57,7 @@ class ModuleLister(Resource):  # [POST] /modules/
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(parser)
     @modules_view_namespace.lister(12, module_index_json)
-    def post(self, session, user: User, start: int, finish: int, filters: Union[str, str, None], search: str, sort: str):
+    def post(self, session, user: User, start: int, finish: int, filters: dict[str, str], search: str, sort: str):
         """ Lists index of modules with metadata & user's relation """
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
