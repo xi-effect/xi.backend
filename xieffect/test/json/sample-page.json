@@ -5,7 +5,7 @@
   "reusable": false,
   "blueprint": false,
   "theme": "",
-  "kind": "task",
+  "kind": "theory",
   "components": [
     {
       "fontSize": 30,

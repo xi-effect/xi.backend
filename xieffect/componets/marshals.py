@@ -4,7 +4,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime
 from json import loads as json_loads
-from typing import Type, Union, get_type_hints
+from typing import Type, Union, get_type_hints, Callable
 
 from flask_restx import Model, Namespace
 from flask_restx.fields import (Raw as RawField, Boolean as BooleanField,
@@ -62,7 +62,7 @@ class LambdaFieldDef:
 
     model_name: str
     field_type: type
-    attribute: Union[str, None]
+    attribute: Union[str, Callable]
     name: Union[str, None] = None
 
     def to_field(self) -> Union[Type[RawField], RawField]:
