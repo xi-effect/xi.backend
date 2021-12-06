@@ -1,17 +1,16 @@
 from __future__ import annotations
 
+
 from json import dump, load
 from os import remove
-from typing import Optional
+from typing import Union
 
 from sqlalchemy import Column, Sequence, select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Text
-from sqlalchemy_enum34 import EnumType
+from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
 from authorship import Author
 from componets import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable
-from componets.checkers import first_or_none
 from education import PageKind, ModuleType
 from main import Base, Session
 
@@ -30,7 +29,7 @@ class CATFile(Base, Identifiable):
     owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
                    default=0)  # test-only
 
-    status = Column(EnumType(WIPStatus, by_name=True), nullable=False)
+    status = Column(Enum(WIPStatus), nullable=False)
 
     @classmethod
     def _create(cls, owner: Author) -> CATFile:
@@ -50,8 +49,8 @@ class CATFile(Base, Identifiable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[CATFile]:
-        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
+    def find_by_id(cls, session: Session, entry_id: int) -> Union[CATFile, None]:
+        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
     def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list[CATFile]:
@@ -99,7 +98,7 @@ class WIPPage(JSONFile, Marshalable):
     not_found_text = "Page not found"
     directory: str = "../files/tfs/wip-pages/"
 
-    kind = Column(EnumType(PageKind, by_name=True), nullable=False)
+    kind = Column(Enum(PageKind), nullable=False)
 
     name = Column(String(100), nullable=False)
     theme = Column(String(100), nullable=False)
@@ -116,7 +115,7 @@ class WIPPage(JSONFile, Marshalable):
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
-    def get_views(self) -> Optional[int]:
+    def get_views(self) -> Union[int, None]:
         return None if self.page is None else self.page.views
 
 
@@ -127,7 +126,7 @@ class WIPModule(JSONFile, Marshalable):
     directory: str = "../files/tfs/wip-modules/"
 
     # Essentials:
-    type = Column(EnumType(ModuleType, by_name=True), nullable=False)
+    type = Column(Enum(ModuleType), nullable=False)
     name = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
 
@@ -150,5 +149,5 @@ class WIPModule(JSONFile, Marshalable):
         self.category = json_data["category"]
         self.difficulty = json_data["difficulty"]
 
-    def get_views(self) -> Optional[int]:
+    def get_views(self) -> Union[int, None]:
         return None if self.module is None else self.module.views

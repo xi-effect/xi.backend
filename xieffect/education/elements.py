@@ -1,31 +1,28 @@
 from __future__ import annotations
 
 from datetime import datetime
-from json import dumps as json_dumps, load
+from json import dumps as json_dumps
 from random import randint
-from typing import Dict, List, Optional, Union, Any
+from typing import Union
 
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_, or_
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text
-from sqlalchemy_enum34 import EnumType
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
 from authorship import Author
 from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef
-from componets.checkers import first_or_none, register_as_searchable
-from main import Base, Session  # , whooshee
+from componets.checkers import register_as_searchable
+from main import Base, Session
 from .sessions import ModuleFilterSession as MFS
 
 
 class PageKind(TypeEnum):
     THEORY = 0
     PRACTICE = 1
-    TASK = 2
 
 
-# @whooshee.register_model("name", "theme", "description")
 @register_as_searchable("name", "theme", "description")
 @create_marshal_model("page-main", "components", inherit="page-base")
 @create_marshal_model("page-short", "author_id", "views", "updated", inherit="page-base")
@@ -40,7 +37,7 @@ class Page(Base, Identifiable, Marshalable):
     author = relationship("Author")
     components = Column(JSON, nullable=False)
 
-    kind = Column(EnumType(PageKind, by_name=True), nullable=False)
+    kind = Column(Enum(PageKind), nullable=False)
     name = Column(Text, nullable=False)
     theme = Column(Text, nullable=False)
     description = Column(Text, nullable=True)
@@ -56,7 +53,7 @@ class Page(Base, Identifiable, Marshalable):
     author_name: LambdaFieldDef = LambdaFieldDef("page-short", str, lambda page: page.author.pseudonym)
 
     @classmethod
-    def _create(cls, session: Session, json_data: Dict[str, Union[str, int, bool, list]], author: Author) -> Page:
+    def _create(cls, session: Session, json_data: dict[str, ...], author: Author) -> Page:
         json_data["kind"] = PageKind.from_string(json_data["kind"])
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
@@ -67,17 +64,17 @@ class Page(Base, Identifiable, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Page]:
-        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
+    def find_by_id(cls, session: Session, entry_id: int) -> Union[Page, None]:
+        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
-    def find_or_create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Page]:
+    def find_or_create(cls, session: Session, json_data: dict[str, ...], author: Author) -> Union[Page, None]:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls._create(session, json_data, author)
 
     @classmethod
-    def create_or_update(cls, session: Session, json_data: Dict[str, Any], author: Author = None) -> Page:
+    def create_or_update(cls, session: Session, json_data: dict[str, ...], author: Author = None) -> Page:
         entry: cls
         if (entry := cls.find_by_id(session, json_data["id"])) is None:
             return cls._create(session, json_data, author)
@@ -87,7 +84,7 @@ class Page(Base, Identifiable, Marshalable):
             cls._create(session, json_data, author)
 
     @classmethod
-    def search(cls, session: Session, search: Optional[str], start: int, limit: int) -> list[Page]:
+    def search(cls, session: Session, search: Union[str, None], start: int, limit: int) -> list[Page]:
         stmt: Select = select(cls).filter_by(public=True).offset(start).limit(limit)
         if search is not None and len(search) > 2:  # redo all search with pagination!!!
             stmt = cls.search_stmt(search, stmt=stmt)
@@ -125,13 +122,13 @@ class Point(Base):
     module_id = Column(Integer, ForeignKey("modules.id"), primary_key=True)
     point_id = Column(Integer, primary_key=True)
 
-    type = Column(EnumType(PointType, by_name=True), nullable=False)
+    type = Column(Enum(PointType), nullable=False)
     length = Column(Integer, nullable=False)
 
     pages = relationship("PointToPage", cascade="all, delete", order_by=PointToPage.position)
 
     @classmethod
-    def create(cls, session, module_id: int, point_id: int, point_data: Dict[str, str]) -> Point:
+    def create(cls, session, module_id: int, point_id: int, point_data: dict[str, str]) -> Point:
         point = cls(
             module_id=module_id, point_id=point_id, length=len(point_data["pages"]),
             type=PointType.from_string(point_data["type"])
@@ -169,7 +166,7 @@ class Module(Base, Identifiable, Marshalable):
     # Essentials:
     id = Column(Integer, ForeignKey("wip-modules.id"), primary_key=True)
     length = Column(Integer, nullable=False)  # the amount of schedule or map points
-    type = Column(EnumType(ModuleType, by_name=True), nullable=False)
+    type = Column(Enum(ModuleType), nullable=False)
 
     # Type-dependent:
     map = Column(JSON, nullable=True)
@@ -199,8 +196,8 @@ class Module(Base, Identifiable, Marshalable):
     points = relationship("Point", back_populates="module", cascade="all, delete", order_by=Point.point_id)
 
     @classmethod
-    def create(cls, session: Session, json_data: Dict[str, Any], author: Author,
-               force: bool = False) -> Optional[Module]:
+    def create(cls, session: Session, json_data: dict[str, ...], author: Author,
+               force: bool = False) -> Union[Module, None]:
         if cls.find_by_id(session, json_data["id"]):
             return
 
@@ -232,25 +229,25 @@ class Module(Base, Identifiable, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, module_id: int) -> Optional[Module]:
-        return first_or_none(session.execute(select(cls).where(cls.id == module_id)))
+    def find_by_id(cls, session: Session, module_id: int) -> Union[Module, None]:
+        return session.execute(select(cls).where(cls.id == module_id)).scalars().first()
 
     @classmethod
-    def find_or_create(cls, session: Session, json_data: Dict[str, Any], author: Author) -> Optional[Module]:
+    def find_or_create(cls, session: Session, json_data: dict[str, ...], author: Author) -> Union[Module, None]:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls.create(session, json_data, author)
 
     @classmethod
-    def find_with_relation(cls, session: Session, module_id: int, user_id: int) -> Optional[Row]:
+    def find_with_relation(cls, session: Session, module_id: int, user_id: int) -> Union[Row, None]:
         stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns, Author.pseudonym)
         stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id))
         result = session.execute(stmt.filter(cls.id == module_id).limit(1)).all()
         return result[0] if len(result) else None
 
     @classmethod
-    def get_module_list(cls, session: Session, filters: Optional[Dict[str, str]], search: str,
-                        sort: SortType, user_id: int, offset: int, limit: int) -> List[Row]:
+    def get_module_list(cls, session: Session, filters: Union[dict[str, str], None], search: str,
+                        sort: SortType, user_id: int, offset: int, limit: int) -> list[Row]:
 
         # print(filters, search, sort)
         # print([(mfs.module_id, mfs.user_id, mfs.to_json()) for mfs in session.execute(select(MFS)).scalars().all()])
@@ -264,7 +261,7 @@ class Module(Base, Identifiable, Marshalable):
 
         # print(len(session.execute(stmt).scalars().all()), stmt)
 
-        global_filter: Optional[str] = None
+        global_filter: Union[str, None] = None
         if filters is not None:
             if "global" in filters.keys():
                 global_filter = filters.pop("global")

@@ -1,6 +1,6 @@
-from collections import OrderedDict
+from collections import OrderedDict, Callable
 from dataclasses import dataclass
-from typing import Type, Any, Callable
+from typing import Type
 
 from flask_socketio import emit, Namespace as _Namespace, SocketIO as _SocketIO
 from pydantic import BaseModel
@@ -69,7 +69,7 @@ class ServerEvent(Event):
         }
         self.model.Config.allow_population_by_field_name = True
 
-    def emit(self, _room: str = None, _data: Any = None, **kwargs):
+    def emit(self, _room: str = None, _data: ... = None, **kwargs):
         if _data is None:
             _data: BaseModel = self.model(**kwargs)
         elif not isinstance(_data, self.model):
@@ -100,7 +100,7 @@ class DuplexEvent(BaseEvent):
         self.client_event.name = name
         self.server_event.name = name
 
-    def emit(self, _room: str = None, _data: Any = None, **kwargs):
+    def emit(self, _room: str = None, _data: ... = None, **kwargs):
         return self.server_event.emit(_room, _data, **kwargs)
 
     def bind(self, function):

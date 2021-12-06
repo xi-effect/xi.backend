@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Union
 
 from sqlalchemy import Column, Sequence, select, ForeignKey, case
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON, Enum
 
 from componets import create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
-from componets.checkers import first_or_none, Identifiable
+from componets.checkers import Identifiable
 from main import Base, Session
 from users import User
 
@@ -47,7 +47,7 @@ class Message(Base, Marshalable):
         return entry
 
     @classmethod
-    def find_by_ids(cls, session: Session, chat_id: int, message_id: int) -> Optional[Message]:
+    def find_by_ids(cls, session: Session, chat_id: int, message_id: int) -> Union[Message, None]:
         return session.execute(select(cls).filter_by(chat_id=chat_id, id=message_id)).scalars().first()
 
     def delete(self, session: Session):
@@ -98,7 +98,7 @@ class UserToChat(Base, Marshalable):
 
     @classmethod
     def find_by_ids(cls, session: Session, chat_id: int, user_id: int) -> UserToChat:
-        return first_or_none(session.execute(select(cls).filter_by(chat_id=chat_id, user_id=user_id)))
+        return session.execute(select(cls).filter_by(chat_id=chat_id, user_id=user_id)).scalars().first()
 
     @classmethod
     def find_and_delete(cls, session: Session, chat_id: int, user_id: int) -> bool:
@@ -159,8 +159,8 @@ class Chat(Base, Marshalable, Identifiable):
         return chat
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Chat]:
-        return first_or_none(session.execute(select(cls).filter_by(id=entry_id)))
+    def find_by_id(cls, session: Session, entry_id: int) -> Union[Chat, None]:
+        return session.execute(select(cls).filter_by(id=entry_id)).scalars().first()
 
     def add_participant(self, session: Session, user: User, role: ChatRole = ChatRole.BASIC) -> bool:
         if UserToChat.find_by_ids(session, self.id, user.id) is None:

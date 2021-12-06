@@ -2,7 +2,7 @@ from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
 from os import path, urandom
 from random import randint
-from typing import Optional, Dict, List
+from typing import Union
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -17,7 +17,7 @@ from webhooks import send_discord_message, WebhookURLs
 
 
 email_folder: str = "files/emails/"
-scopes: List[str] = ["https://mail.google.com/"]
+scopes: list[str] = ["https://mail.google.com/"]
 
 
 class EmailSender:
@@ -59,15 +59,15 @@ class EmailSender:
         self.service.users().messages().send(userId="me", body=message).execute()
 
 
-serializers: Dict[str, USS] = {k: USS(urandom(randint(32, 64))) for k in ["confirm", "change", "pass"]}
-themes: Dict[str, str] = {
+serializers: dict[str, USS] = {k: USS(urandom(randint(32, 64))) for k in ["confirm", "change", "pass"]}
+themes: dict[str, str] = {
     "confirm": "Подтверждение адреса электронной почты на xieffect.ru",
     "change": "Смена адреса электронной почты на xieffect.ru",
     "pass": "Смена пароля на xieffect.ru"
 }
 salt: str = app.config["SECURITY_PASSWORD_SALT"]
 
-sender: Optional[EmailSender] = None
+sender: Union[EmailSender, None] = None
 
 
 # try:
@@ -91,7 +91,7 @@ def generate_code(payload: str, code_type: str) -> str:
     return serializers[code_type].dumps(payload, salt=salt)
 
 
-def parse_code(code: str, code_type: str) -> Optional[str]:
+def parse_code(code: str, code_type: str) -> Union[str, None]:
     try:
         return serializers[code_type].loads(code, salt=salt)
     except BS:

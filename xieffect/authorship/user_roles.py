@@ -7,7 +7,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from componets import UserRole, create_marshal_model, Marshalable
-from componets.checkers import first_or_none
 from main import Base, Session
 from users import User
 
@@ -33,10 +32,10 @@ class Author(Base, UserRole, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False) -> Optional[Author]:
-        return first_or_none(session.execute(
+        return session.execute(
             select(cls).where(cls.id == entry_id) if include_banned
             else select(cls).where(cls.id == entry_id, cls.banned == False)
-        ))
+        ).scalars().first()
 
     @classmethod
     def find_or_create(cls, session: Session, user):  # User class
@@ -62,7 +61,7 @@ class Moderator(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Moderator:
-        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
+        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
     def create(cls, session: Session, user: User) -> bool:

@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 from json import dumps
-from typing import Dict, Union, Optional
+from typing import Union
 
 from itsdangerous.url_safe import URLSafeSerializer
 from passlib.hash import pbkdf2_sha256 as sha256
 from sqlalchemy import Column, Sequence, select, ForeignKey
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
-from sqlalchemy_enum34 import EnumType
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON, Enum
 
 from componets import UserRole, create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
-from componets.checkers import first_or_none
 from main import Base, Session, app
 
 DEFAULT_AVATAR: str = '{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}'
@@ -26,7 +24,7 @@ class TokenBlockList(Base):
 
     @classmethod
     def find_by_jti(cls, session: Session, jti) -> TokenBlockList:
-        return first_or_none(session.execute(select(cls).where(cls.jti == jti)))
+        return session.execute(select(cls).where(cls.jti == jti)).scalars().first()
 
     @classmethod
     def add_by_jti(cls, session: Session, jti) -> None:
@@ -91,16 +89,17 @@ class User(Base, UserRole, Marshalable):
     invite = relationship("Invite", back_populates="invited")
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[User]:
-        return first_or_none(session.execute(select(cls).where(cls.id == entry_id)))
+    def find_by_id(cls, session: Session, entry_id: int) -> Union[User, None]:
+        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
-    def find_by_email_address(cls, session: Session, email) -> Optional[User]:
+    def find_by_email_address(cls, session: Session, email) -> Union[User, None]:
         # send_generated_email(email, "pass", "password-reset-email.html")
-        return first_or_none(session.execute(select(cls).where(cls.email == email)))
+        return session.execute(select(cls).where(cls.email == email)).scalars().first()
 
     @classmethod
-    def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None) -> Optional[User]:
+    def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None) -> Union[
+        User, None]:
         if cls.find_by_email_address(session, email):
             return None
         new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
@@ -112,7 +111,7 @@ class User(Base, UserRole, Marshalable):
         return new_user
 
     @classmethod
-    def search_by_username(cls, session: Session, exclude_id: int, search: Optional[str],
+    def search_by_username(cls, session: Session, exclude_id: int, search: Union[str, None],
                            offset: int, limit: int) -> list[User]:
         stmt = select(cls).filter(cls.id != exclude_id)
         if search is not None:
@@ -132,7 +131,7 @@ class User(Base, UserRole, Marshalable):
     def change_password(self, new_password: str) -> None:  # auto-commit
         self.password = User.generate_hash(new_password)
 
-    def change_settings(self, new_values: Dict[str, Union[str, int, bool]]) -> None:  # auto-commit
+    def change_settings(self, new_values: dict[str, Union[str, int, bool]]) -> None:  # auto-commit
         if "username" in new_values.keys():
             self.username = new_values["username"]
         if "dark-theme" in new_values.keys():
@@ -188,11 +187,11 @@ class Invite(Base, UserRole, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Invite]:
-        return first_or_none(session.execute(select(cls).filter(cls.id == entry_id)))
+    def find_by_id(cls, session: Session, entry_id: int) -> Union[Invite, None]:
+        return session.execute(select(cls).filter(cls.id == entry_id)).scalars().first()
 
     @classmethod
-    def find_by_code(cls, session: Session, code: str) -> Optional[Invite]:
+    def find_by_code(cls, session: Session, code: str) -> Union[Invite, None]:
         return cls.find_by_id(session, cls.serializer.loads(code)[0])
 
     @classmethod
@@ -219,7 +218,7 @@ class Feedback(Base, Marshalable):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
-    type = Column(EnumType(FeedbackType, by_name=True), nullable=False)
+    type = Column(Enum(FeedbackType), nullable=False)
     data = Column(JSON, nullable=False)
 
     @classmethod
