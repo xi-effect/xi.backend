@@ -8,7 +8,6 @@ from itsdangerous import BadSignature
 from componets import password_parser, Namespace, with_session, success_response
 from main import app
 from users.database import TokenBlockList, User, Invite
-
 # from users.emailer import send_generated_email, parse_code
 
 reglog_namespace: Namespace = Namespace("reglog", path="/")

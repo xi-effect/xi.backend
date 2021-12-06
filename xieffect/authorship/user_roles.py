@@ -7,7 +7,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from componets import UserRole, create_marshal_model, Marshalable
-
 from main import Base, Session
 from users import User
 

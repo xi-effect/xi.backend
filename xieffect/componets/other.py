@@ -7,7 +7,7 @@ from typing import Union
 class TypeEnum(Enum):
     @classmethod
     def from_string(cls, string: str) -> Union[TypeEnum, None]:
-        return cls.__members__.get(string.upper().replace("-", "_"), None)
+        return cls.__members__.get(string.upper().replace("-", "_"), None)  # TODO NonePointer!!!
 
     @classmethod
     def get_all_field_names(cls) -> list[str]:

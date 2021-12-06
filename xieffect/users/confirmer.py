@@ -3,7 +3,6 @@ from flask_restx.reqparse import RequestParser
 
 from componets import Namespace, with_session, message_response
 from users.database import User
-
 # from users.emailer import send_generated_email, parse_code
 
 email_namespace: Namespace = Namespace("email", path="/")
