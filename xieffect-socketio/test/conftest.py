@@ -1,5 +1,5 @@
 from time import sleep
-from typing import Optional
+from typing import Union
 
 from flask.testing import FlaskClient
 from pytest import fixture
@@ -26,7 +26,7 @@ app.test_client_class = RedirectedFlaskClient
 
 
 class MultiClient(_MultiClient):
-    def auth_user(self, email: str, password: str) -> Optional[DoubleClient]:
+    def auth_user(self, email: str, password: str) -> Union[DoubleClient, None]:
         flask_client = app.test_client()
         response = flask_client.post(f"/auth/", json={"email": email, "password": password})
         assert response.status_code == 200 and response.get_json() == {"a": True}, response.get_json()
