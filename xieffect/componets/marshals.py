@@ -4,7 +4,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime
 from json import loads as json_loads
-from typing import Type, Dict, Tuple, Union, Optional, Callable, get_type_hints
+from typing import Type, Union, get_type_hints
 
 from flask_restx import Model, Namespace
 from flask_restx.fields import (Raw as RawField, Boolean as BooleanField,
@@ -31,7 +31,7 @@ class JSONLoadableField(RawField):
         return json_loads(value)
 
 
-type_to_field: Dict[type, Type[RawField]] = {
+type_to_field: dict[type, Type[RawField]] = {
     bool: BooleanField,
     int: IntegerField,
     str: StringField,
@@ -39,7 +39,7 @@ type_to_field: Dict[type, Type[RawField]] = {
     datetime: DateTimeField,
 }
 
-column_to_field: Dict[Type[TypeEngine], Type[RawField]] = {
+column_to_field: dict[Type[TypeEngine], Type[RawField]] = {
     Integer: IntegerField,
     String: StringField,
     Boolean: BooleanField,
@@ -62,8 +62,8 @@ class LambdaFieldDef:
 
     model_name: str
     field_type: type
-    attribute: Union[str, Callable]
-    name: Optional[str] = None
+    attribute: Union[str, None]
+    name: Union[str, None] = None
 
     def to_field(self) -> Union[Type[RawField], RawField]:
         field_type: Type[RawField] = RawField
@@ -74,7 +74,7 @@ class LambdaFieldDef:
         return field_type(attribute=self.attribute)
 
 
-def create_marshal_model(model_name: str, *fields: str, inherit: Optional[str] = None, use_defaults: bool = False):
+def create_marshal_model(model_name: str, *fields: str, inherit: Union[str, None] = None, use_defaults: bool = False):
     """
     - Adds a marshal model to a database object, marked as :class:`Marshalable`.
     - Automatically adds all :class:`LambdaFieldDef`-marked class fields to the model.
@@ -123,10 +123,10 @@ def create_marshal_model(model_name: str, *fields: str, inherit: Optional[str] =
 
 class Marshalable:
     """ Marker-class for classes that can be decorated with ``create_marshal_model`` """
-    marshal_models: Dict[str, OrderedDict[str, Type[RawField]]] = {}
+    marshal_models: dict[str, OrderedDict[str, Type[RawField]]] = {}
 
 
-def unite_models(*models: Dict[str, Union[Type[RawField], RawField]]):
+def unite_models(*models: dict[str, Union[Type[RawField], RawField]]):
     """
     - Unites several field dicts (models) into one.
     - If some fields are present in more than one model, the last encounter will be used.
@@ -151,7 +151,7 @@ class ResponseDoc:
 
     code: Union[int, str] = 200
     description: str = None
-    model: Optional[Model] = None
+    model: Union[Model, None] = None
 
     @classmethod
     def error_response(cls, code: Union[int, str], description: str) -> ResponseDoc:
@@ -162,7 +162,7 @@ class ResponseDoc:
         if self.model is not None:
             self.model = ns.model(self.model.name, self.model)
 
-    def get_args(self) -> Union[Tuple[Union[int, str], str], Tuple[Union[int, str], str, Model]]:
+    def get_args(self) -> Union[tuple[Union[int, str], str], tuple[Union[int, str], str, Model]]:
         if self.model is None:
             return self.code, self.description
         return self.code, self.description, self.model

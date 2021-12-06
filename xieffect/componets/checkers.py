@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Type, Optional, Any, List, Union
+from typing import Union, Type
 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Namespace as RestXNamespace, Model, abort as default_abort
@@ -29,7 +29,7 @@ class Identifiable:
         pass
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[Identifiable]:
+    def find_by_id(cls, session: Session, entry_id: int) -> Union[Identifiable, None]:
         raise NotImplementedError
 
 
@@ -43,7 +43,7 @@ class UserRole(Identifiable):
     default_role: Union[UserRole, None] = None
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Optional[UserRole]:
+    def find_by_id(cls, session: Session, entry_id: int) -> Union[UserRole, None]:
         raise NotImplementedError
 
 
@@ -126,7 +126,7 @@ class _Namespace(RestXNamespace):  # for the lib
 
     def _database_searcher(self, identifiable: Type[Identifiable], check_only: bool, no_id: bool,
                            use_session: bool, error_code: int, callback, args, kwargs, *,
-                           input_field_name: Optional[str] = None, result_field_name: Optional[str] = None):
+                           input_field_name: Union[str, None] = None, result_field_name: Union[str, None] = None):
         if input_field_name is None:
             input_field_name = identifiable.__name__.lower() + "_id"
         if result_field_name is None:
@@ -140,7 +140,7 @@ class _Namespace(RestXNamespace):  # for the lib
                 kwargs[result_field_name] = result
             return callback(*args, **kwargs)
 
-    def database_searcher(self, identifiable: Type[Identifiable], *, result_field_name: Optional[str] = None,
+    def database_searcher(self, identifiable: Type[Identifiable], *, result_field_name: Union[str, None] = None,
                           check_only: bool = False, use_session: bool = False):
         """
         - Uses incoming id argument to find something :class:`Identifiable` in the database.
@@ -165,7 +165,7 @@ class _Namespace(RestXNamespace):  # for the lib
 
         return searcher_wrapper
 
-    auth_errors: List[ResponseDoc] = [
+    auth_errors: list[ResponseDoc] = [
         ResponseDoc.error_response("401 ", "JWTError"),
         ResponseDoc.error_response("422 ", "InvalidJWT")
     ]
