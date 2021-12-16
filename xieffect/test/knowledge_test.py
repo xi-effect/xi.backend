@@ -123,6 +123,49 @@ def test_simple_module_filtering(list_tester: Callable[[str, dict, int], Iterato
             assert success, f"No modules found for filter: {filter_name} == {filter_value}"
 
 
+def temp_list_tester(client: FlaskClient, module_id: int, include: bool):
+    link: str = "/modules/"
+    request_json: dict = {"filters": {"global": "starred"}}
+    page_size: int = 12
+    status_code: int = 200
+
+    # copied from !list_tester! TODO make list_tester multiuser
+    counter = 0
+    amount = page_size
+    while amount == page_size:
+        request_json["counter"] = counter
+        response_json: dict = check_status_code(client.post(link, json=request_json), status_code)
+
+        assert "results" in response_json
+        assert isinstance(response_json["results"], list)
+        for content in response_json["results"]:
+            # yield content
+            # changed from !list_tester!
+            assert "id" in content.keys()
+            assert (content["id"] == module_id) == include
+
+        amount = len(response_json["results"])
+        assert amount <= page_size
+
+        counter += 1
+
+    assert counter > 0
+
+
+@mark.order(423)
+def test_module_filtering_multiuser(multi_client: Callable[[str], FlaskClient],
+                                    list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    user1: FlaskClient = multi_client("1@user.user")
+    user2: FlaskClient = multi_client("2@user.user")
+    module_id: int = get_some_module_id(list_tester)
+
+    assert check_status_code(user1.post(f"/modules/{module_id}/preference/", json={"a": "star"})) == {"a": True}
+    assert check_status_code(user2.post(f"/modules/{module_id}/preference/", json={"a": "unstar"})) == {"a": True}
+
+    temp_list_tester(user1, module_id, True)
+    temp_list_tester(user2, module_id, False)
+
+
 # @mark.order(423)
 # def test_complex_module_filtering(list_tester: Callable[[str, dict, int], Iterator[dict]]):
 #     pass
