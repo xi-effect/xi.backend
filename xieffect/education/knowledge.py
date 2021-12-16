@@ -105,7 +105,11 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     @modules_view_namespace.a_response()
     def post(self, session, module_id: int, user: User, operation: str) -> None:
         """ Changes user relation to some module """
-        module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
+        module: Union[ModuleFilterSession, None] = ModuleFilterSession.find_by_ids(session, user.id, module_id)
+        if module is None:
+            if operation.startswith("un"):
+                return
+            module = ModuleFilterSession.create(session, user.id, module_id)
         module.change_preference(session, PreferenceOperation.from_string(operation))
 
 

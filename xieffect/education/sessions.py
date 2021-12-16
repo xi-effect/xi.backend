@@ -67,6 +67,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         # parameter check freaks out for no reason \/ \/ \/
         new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())  # noqa
         session.add(new_entry)
+        session.flush()
         return new_entry
 
     @classmethod
