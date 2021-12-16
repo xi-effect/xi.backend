@@ -29,18 +29,20 @@ class FeedbackSaver(Resource):
     def post(self, session, user: Union[User, None], feedback_type: str, data: dict, code: Union[str, None]) -> str:
         feedback_type = FeedbackType.from_string(feedback_type)
         if feedback_type is None:
-            feedback_namespace.abort(400, "Unsupported type")
+            feedback_namespace.abort(400, "Unsupported feedback type")
 
-        if user is None:
-            if code is None:
-                return "Neither the user is authorized, nor the code is provided"
+        if code is not None:
             try:
                 user_id: int = feedback_serializer.loads(code)
             except BadSignature:
                 return "Bad code signature"
-            user = User.find_by_id(session, user_id)
+            if user is None or user.id != user_id:
+                user = User.find_by_id(session, user_id)
             if user is None:
                 return "Code refers to non-existing user"
+        elif user is None:
+            return "Neither the user is authorized, nor the code is provided"
+
         Feedback.create(session, user, feedback_type, data)
         return "Success"
 
