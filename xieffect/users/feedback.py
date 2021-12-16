@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Union
 
 from flask import request
@@ -23,6 +24,12 @@ class FeedbackSaver(Resource):
     parser.add_argument("data", required=True, type=dict)
     parser.add_argument("code", required=False)
 
+    class Responses(Enum):
+        BAD_SIGNATURE = "Bad code signature"
+        USER_NOT_FOUND = "Code refers to non-existing user"
+        NO_AUTH_PROVIDED = "Neither the user is authorized, nor the code is provided"
+        SUCCESS = "Success"
+
     @feedback_namespace.jwt_authorizer(User, optional=True)
     @feedback_namespace.argument_parser(parser)
     @feedback_namespace.a_response()
@@ -35,16 +42,16 @@ class FeedbackSaver(Resource):
             try:
                 user_id: int = feedback_serializer.loads(code)
             except BadSignature:
-                return "Bad code signature"
+                return self.Responses.BAD_SIGNATURE.value
             if user is None or user.id != user_id:
                 user = User.find_by_id(session, user_id)
             if user is None:
-                return "Code refers to non-existing user"
+                return self.Responses.USER_NOT_FOUND.value
         elif user is None:
-            return "Neither the user is authorized, nor the code is provided"
+            return self.Responses.NO_AUTH_PROVIDED.value
 
         Feedback.create(session, user, feedback_type, data)
-        return "Success"
+        return self.Responses.SUCCESS.value
 
 
 @feedback_namespace.route("/images/")
