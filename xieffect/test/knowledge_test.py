@@ -47,8 +47,12 @@ def test_page_view_counter(client: FlaskClient, list_tester: Callable[[str, dict
 
 
 @mark.order(420)
-def test_module_list(list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_module_list(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/modules/", {}, MODULES_PER_REQUEST))) > 0
+    assert check_status_code(client.post("/modules/", json={"counter": 0, "filters": "lol"}), 400)
+    assert check_status_code(client.post("/modules/", json={"counter": 0, "filters": {"global": "lol"}}), 400)
+    assert check_status_code(client.post("/modules/", json={"counter": 0, "filters": {"global": ["lol"]}}), 400)
+    assert check_status_code(client.post("/modules/", json={"counter": 0, "sort": "lol"}), 400)
 
 
 def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
