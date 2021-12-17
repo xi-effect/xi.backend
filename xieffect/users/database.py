@@ -98,8 +98,8 @@ class User(Base, UserRole, Marshalable):
         return session.execute(select(cls).where(cls.email == email)).scalars().first()
 
     @classmethod
-    def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None) -> Union[
-        User, None]:
+    def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None)\
+            -> Union[User, None]:
         if cls.find_by_email_address(session, email):
             return None
         new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
@@ -153,12 +153,6 @@ class User(Base, UserRole, Marshalable):
 
     def get_author_status(self) -> str:
         return "not-yet" if self.author is None else "banned" if self.author.banned else "current"
-
-    def get_filter_bind(self) -> str:
-        return self.filter_bind
-
-    def set_filter_bind(self, bind: str = None) -> None:  # auto-commit
-        self.filter_bind = bind
 
 
 UserRole.default_role = User

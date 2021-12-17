@@ -62,15 +62,19 @@ class ModuleLister(Resource):  # [POST] /modules/
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
         except ValueError:
-            return {"a": f"Sorting '{sort}' is not supported"}, 400
+            modules_view_namespace.abort(400, f"Sorting '{sort}' is not supported")
 
-        if filters is not None and "global" in filters.keys():
-            user.set_filter_bind(filters["global"])
-        else:
-            user.set_filter_bind()
-        user_id: int = user.id
+        if filters is None:
+            filters = {}
+        elif any(not isinstance(value, str) for value in filters.values()):
+            modules_view_namespace.abort(400, "Malformed filters parameter: use strings as values only")
 
-        return Module.get_module_list(session, filters, search, sort, user_id, start, finish - start)
+        global_filter = filters.get("global", None)
+        if global_filter not in ("pinned", "starred", "started", "", None):
+            modules_view_namespace.abort(400, f"Global filter '{global_filter}' is not supported")
+        user.filter_bind = global_filter
+
+        return Module.get_module_list(session, filters, search, sort, user.id, start, finish - start)
 
 
 @modules_view_namespace.route("/hidden/")
