@@ -13,7 +13,6 @@ from componets import with_session
 from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
 from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace, wip_index_namespace)
 from main import app, db_meta, versions
-from other import (application_namespace, oct_namespace)
 from outside import (basic_namespace, webhook_namespace)
 from users import (TokenBlockList, reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
@@ -29,7 +28,6 @@ authorizations = {
 }
 api: Api = Api(app, doc="/doc/", version=versions["API"], authorizations=authorizations)
 
-api.add_namespace(application_namespace)
 api.add_namespace(basic_namespace)
 api.add_namespace(reglog_namespace)
 
@@ -59,7 +57,6 @@ api.add_namespace(wip_json_file_namespace)
 api.add_namespace(wip_index_namespace)
 
 api.add_namespace(webhook_namespace)
-api.add_namespace(oct_namespace)
 
 
 # from flask import redirect, request

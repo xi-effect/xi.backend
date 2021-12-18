@@ -11,8 +11,7 @@ from componets import with_session
 from education import Module, Page
 from file_system.keeper import WIPPage
 from main import versions
-from other.test_keeper import TestPoint
-from users import User, Invite, generate_code, dumps_feedback
+from users import User, Invite
 from webhooks import WebhookURLs, send_discord_message
 
 TEST_EMAIL: str = "test@test.test"
@@ -88,11 +87,6 @@ def init_knowledge(session):
 
 
 @with_session
-def init_oct(session):
-    TestPoint.test(session)
-
-
-@with_session
 def init_chats(session):
     with open("../files/test/chat-bundle.json", encoding="utf-8") as f:
         for i, chat_data in enumerate(load(f)):
@@ -131,7 +125,6 @@ init_folder_structure()
 init_invite()
 init_users()
 init_knowledge()
-init_oct()
 init_chats()
 version_check()
 
