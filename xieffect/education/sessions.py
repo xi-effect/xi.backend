@@ -70,12 +70,6 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         session.flush()
         return new_entry
 
-    @classmethod
-    def change_preference_by_user(cls, session: Session, user_id: int, operation: PreferenceOperation) -> None:
-        filter_session: cls
-        for filter_session in select(cls).filter_by(user_id=user_id).scalars().all():
-            filter_session.change_preference(session, operation)
-
     def note_change(self) -> None:  # auto-commit
         self.last_changed = datetime.utcnow()
 

@@ -159,12 +159,3 @@ class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
     @modules_view_namespace.a_response()
     def post(self, page: Page, reason: str, message: str) -> None:
         pass
-
-
-@modules_view_namespace.route("/reset-hidden/")
-class ShowAllModules(Resource):  # GET /modules/reset-hidden/
-    @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.a_response()
-    def get(self, session, user: User) -> None:
-        """ TEST-ONLY, marks all modules as shown """
-        ModuleFilterSession.change_preference_by_user(session, user.id, PreferenceOperation.SHOW)
