@@ -152,7 +152,7 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
 
 
 @pages_view_namespace.route("/<int:page_id>/report/")
-class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
+class PageReporter(Resource):
     @pages_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @pages_view_namespace.argument_parser(report_parser)
     @pages_view_namespace.database_searcher(Page)

@@ -15,7 +15,7 @@ class TypeEnum(Enum):
 
     @classmethod
     def form_whens(cls) -> list[tuple[str, int]]:
-        return [(name, value.value) for name, value in cls.__members__.items()]
+        return [(name, value.value) for name, value in cls.__members__.items()]  # TODO IntEnum needed
 
     def to_string(self) -> str:
         return self.name.lower().replace("_", "-")

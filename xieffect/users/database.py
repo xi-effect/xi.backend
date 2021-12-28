@@ -73,7 +73,7 @@ class User(Base, UserRole, Marshalable):
     theory_level = Column(Float, nullable=False, default=0.5)
     filter_bind = Column(String(10), nullable=True)
 
-    # Role-related:  # need to redo user_roles with relations
+    # Role-related:
     author = relationship("Author", backref="user", uselist=False)
     moderator = relationship("Moderator", backref="user", uselist=False)
 
@@ -117,9 +117,6 @@ class User(Base, UserRole, Marshalable):
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
-
-    def confirm_email(self) -> None:  # auto-commit
-        self.email_confirmed = True
 
     def change_email(self, session: Session, new_email: str) -> bool:
         if User.find_by_email_address(session, new_email):
@@ -217,7 +214,7 @@ class Feedback(Base, Marshalable):
 
     @classmethod
     def create(cls, session: Session, user: User, feedback_type: FeedbackType, data) -> Feedback:
-        new_user = cls(user_id=user.id, type=feedback_type, data=dumps(data, ensure_ascii=False))
+        new_user = cls(user_id=user.id, type=feedback_type, data=dumps(data, ensure_ascii=False))  # noqa
         session.add(new_user)
         return new_user
 
@@ -239,4 +236,5 @@ class FeedbackImage(Base):
     @classmethod
     def create(cls, session: Session) -> FeedbackImage:
         session.add(new_user := cls())
+        session.flush()
         return new_user

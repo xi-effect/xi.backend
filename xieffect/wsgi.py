@@ -4,14 +4,14 @@ from os.path import exists
 from pathlib import Path
 from sys import modules
 
-from api import app as application, log_stuff, db_meta  # noqa
-from authorship import Author, Moderator
+from api import app as application, log_stuff, db_meta
+from authorship import Author
 from communication.entities import Chat, ChatRole, Message
 from componets import with_session
 from education import Module, Page
 from file_system.keeper import WIPPage
 from main import versions
-from users import User, Invite
+from users import User, Invite, generate_code, dumps_feedback  # noqa
 from webhooks import WebhookURLs, send_discord_message
 
 TEST_EMAIL: str = "test@test.test"
@@ -22,16 +22,16 @@ ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f4
 
 TEST_INVITE_ID: int = 0
 
-if __name__ == "__main__" or "pytest" in modules.keys():  # test only  # pytest here temporarily!!!
+if __name__ == "__main__" or "pytest" in modules.keys():  # test only
     application.debug = True
     db_meta.drop_all()
     db_meta.create_all()
-else:  # works on server restart:
-    send_discord_message(WebhookURLs.NOTIF, "Application restated")
-    if any([send_discord_message(WebhookURLs.NOTIF, f"ERROR! No environmental variable for secret `{secret_name}`")
+else:  # works on server restart
+    send_discord_message(WebhookURLs.NOTIFY, "Application restated")
+    if any([send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for secret `{secret_name}`")
             for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY", "API_KEY"]
             if application.config[secret_name] == "hope it's local"]):
-        send_discord_message(WebhookURLs.NOTIF, "Production environment setup failed")
+        send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
 
 
 def init_folder_structure():
@@ -129,4 +129,4 @@ init_chats()
 version_check()
 
 if __name__ == "__main__":  # test only
-    application.run()  # (ssl_context="adhoc")
+    application.run()

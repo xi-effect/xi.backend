@@ -28,6 +28,7 @@ class Author(Base, UserRole, Marshalable):
         new_entry = cls(pseudonym=user.username)
         user.author = new_entry
         session.add(new_entry)
+        session.flush()
         return new_entry
 
     @classmethod
@@ -70,4 +71,5 @@ class Moderator(Base, UserRole):
         new_entry = cls()
         user.moderator = new_entry
         session.add(new_entry)
+        session.flush()
         return True

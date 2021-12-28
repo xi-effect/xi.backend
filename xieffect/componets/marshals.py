@@ -83,7 +83,7 @@ def create_marshal_model(model_name: str, *fields: str, inherit: Union[str, None
     :param model_name: the **global** name for the new model or model to be overwritten.
     :param fields: filed names of columns to be added to the model.
     :param inherit: model name to inherit fields from.
-    :param use_defaults: whether or not to describe columns' defaults in the model.
+    :param use_defaults: whether to describe columns' defaults in the model.
     """
 
     def create_marshal_model_wrapper(cls):
@@ -132,7 +132,7 @@ def unite_models(*models: dict[str, Union[Type[RawField], RawField]]):
     - If some fields are present in more than one model, the last encounter will be used.
     - Sorts modules keys by alphabet and puts ``id`` field on top if present.
 
-    :param models: models to unite
+    :param models: models (dicts of field definitions) to unite
     :return: united model with all fields
     """
 
