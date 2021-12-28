@@ -170,15 +170,9 @@ def test_module_filtering_multiuser(multi_client: Callable[[str], FlaskClient],
     temp_list_tester(user2, module_id, False)
 
 
-# @mark.order(423)
-# def test_complex_module_filtering(list_tester: Callable[[str, dict, int], Iterator[dict]]):
-#     pass
-
-
 def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
                                 /, revert: bool = False) -> Callable[[dict, dict], None]:
     def assert_non_descending_order_inner(module1: dict, module2: dict):
-        # print(module2.get(dict_key, default), module1.get(dict_key, default))
         if revert:
             module1, module2 = module2, module1
         if default is None:

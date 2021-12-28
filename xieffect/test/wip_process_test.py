@@ -9,9 +9,6 @@ from xieffect.test.components import check_status_code
 PER_REQUEST = 50
 
 
-# https://discord.com/channels/706806130348785715/843536940083314728/880041704651108432
-
-
 class WIPRecycler:
     def __init__(self, client: FlaskClient, file_type: str, file_name1: str, file_name2: str,
                  list_tester: Callable[[str, dict, int], Iterator[dict]]):
@@ -25,7 +22,7 @@ class WIPRecycler:
         self.file_id: Optional[Union[int, str]] = None
 
         with open(f"test/json/{file_name1}.json", "rb") as f:
-            self.file_content1 = load(f)  # content shouldn't have any id info!
+            self.file_content1 = load(f)  # TODO content shouldn't have any id info!
 
         with open(f"test/json/{file_name2}.json", "rb") as f:
             self.file_content2 = load(f)
@@ -86,6 +83,7 @@ class WIPRecycler:
             content.pop("points")
         else:
             assert self.is_in_list(f"/{self.file_type}/") is not None
+        # TODO add using assert_same_on_server:
         # self.assert_same_on_server(f"/{self.file_type}/{self.file_id}/", content)
         # Doesn't work because of the modules' test-bundle!
 
