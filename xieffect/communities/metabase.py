@@ -61,6 +61,10 @@ class Participant(Base):
 
     role = Column(Enum(ParticipantRole), nullable=False)
 
+    @classmethod
+    def find_by_ids(cls, session: Session, community_id: int, user_id: int) -> Union[Participant, None]:
+        return session.execute(select(cls).filter_by(community_id=community_id, user_id=user_id)).scalars().first()
+
 
 class Invite(Base, Marshalable):
     __tablename__ = "community_invites"
@@ -98,6 +102,15 @@ class Invite(Base, Marshalable):
         if not isinstance(community_id, int) or not isinstance(invite_id, int):
             raise TypeError
         return cls.find_by_ids(session, community_id, invite_id)
+
+    def accept(self, session: Session, acceptor: User) -> bool:
+        if Participant.find_by_ids(session, self.community_id, acceptor.id) is not None:
+            return False
+        participant = Participant(user=acceptor, role=self.role)
+        self.community.participants.append(participant)
+        session.add(participant)
+        session.flush()
+        return True
 
     def generate_code(self):
         return self.serializer.dumps((self.community_id, self.invite_id))
