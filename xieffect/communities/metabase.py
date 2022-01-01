@@ -42,6 +42,11 @@ class Community(Base, Identifiable, Marshalable):
     def find_by_id(cls, session: Session, entry_id: int) -> Union[Community, None]:
         return session.execute(select(cls).filter_by(id=entry_id)).scalars().first()
 
+    @classmethod
+    def find_by_user(cls, session: Session, user: User, offset: int, limit: int) -> list[Community]:
+        ids = session.execute(select(Participant.community_id).filter_by(user_id=user.id).offset(offset).limit(limit))
+        return session.execute(select(cls).filter(cls.id.in_(ids.scalars().all()))).scalars().all()
+
     def invites(self, session: Session, offset: int, limit: int) -> list[Invite]:
         return session.execute(
             select(Invite).filter_by(community_id=self.id).offset(offset).limit(limit)).scalars().all()
