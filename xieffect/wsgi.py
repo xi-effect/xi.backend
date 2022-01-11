@@ -5,11 +5,11 @@ from pathlib import Path
 from sys import modules
 
 from api import app as application, log_stuff, db_meta
-from authorship import Author
+from education.authorship import Author
 from communication.entities import Chat, ChatRole, Message
 from common import User, with_session
-from education import Module, Page
-from file_system.keeper import WIPPage
+from education.knowledge import Module, Page
+from education.studio import WIPPage
 from main import versions
 from users import Invite, generate_code, dumps_feedback  # noqa
 from webhooks import WebhookURLs, send_discord_message

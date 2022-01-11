@@ -7,11 +7,11 @@ from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_acc
 from flask_restx import Api
 from werkzeug.exceptions import NotFound
 
-from authorship import (authors_namespace)
-from communication import (chats_namespace, chat_temp_namespace, chat_index_temp_namespace, messages_namespace)
 from common import TokenBlockList, with_session
-from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
-from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace, wip_index_namespace)
+from communication import (chats_namespace, chat_temp_namespace, chat_index_temp_namespace, messages_namespace)
+from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
+                       images_view_namespace, wip_index_namespace, modules_view_namespace,
+                       pages_view_namespace, education_namespace, interaction_namespace)
 from main import app, db_meta, versions
 from outside import (webhook_namespace)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,

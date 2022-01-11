@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from json import dump
 from os import remove
 from typing import Union
@@ -9,10 +8,10 @@ from sqlalchemy import Column, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from authorship import Author
 from common import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable
-from education import PageKind, ModuleType
+from education.authorship.user_roles_db import Author
 from main import Base, Session
+from ..knowledge import PageKind, ModuleType
 
 
 class WIPStatus(TypeEnum):

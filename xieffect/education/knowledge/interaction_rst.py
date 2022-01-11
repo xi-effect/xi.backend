@@ -8,8 +8,8 @@ from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
 from common import Namespace, ResponseDoc, User
-from .elements import Module, ModuleType
-from .sessions import ModuleProgressSession, TestModuleSession, TestPointSession
+from .interaction_db import ModuleProgressSession, TestModuleSession, TestPointSession
+from .modules_db import Module, ModuleType
 
 interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
 test_model = interaction_namespace.model("test_model", TestPointSession.marshal_models["TestPointSession"])
@@ -69,7 +69,8 @@ class ModuleOpener(Resource):
     def get(self, session, user: User, module: Module, module_type: ModuleType):
         """ Endpoint for starting a Standard Module or Theory Block from the last visited point """
 
-        module_session: Union[ModuleProgressSession, None] = ModuleProgressSession.find_by_ids(session, user.id, module.id)
+        module_session: Union[ModuleProgressSession, None] = ModuleProgressSession.find_by_ids(session, user.id,
+                                                                                               module.id)
         if module_type == ModuleType.STANDARD:
             if module_session is None or module_session.progress is None:
                 return module.execute_point(0, 0.4 + 0.2 * user.theory_level)

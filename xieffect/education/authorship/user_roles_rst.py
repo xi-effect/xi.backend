@@ -2,7 +2,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from common import Namespace, User
-from .user_roles import Author, Moderator
+from .user_roles_db import Author, Moderator
 
 authors_namespace: Namespace = Namespace("authors", path="/authors")
 author_settings_model = Author.marshal_models["author-settings"]

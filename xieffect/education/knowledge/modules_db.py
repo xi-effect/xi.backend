@@ -11,91 +11,72 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
-from authorship import Author
 from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef, register_as_searchable
 from main import Base, Session
-from .sessions import ModuleFilterSession as MFS
+from ._base_session import BaseModuleSession
+from ..authorship.user_roles_db import Author
 
 
-class PageKind(TypeEnum):
-    THEORY = 0
-    PRACTICE = 1
+class PreferenceOperation(TypeEnum):
+    HIDE = 0
+    SHOW = 1
+    STAR = 2
+    UNSTAR = 3
+    PIN = 4
+    UNPIN = 5
 
 
-@register_as_searchable("name", "theme", "description")
-@create_marshal_model("page-main", "components", inherit="page-base")
-@create_marshal_model("page-short", "author_id", "views", "updated", inherit="page-base")
-@create_marshal_model("page-base", "id", "name", "kind", "theme", "description")
-class Page(Base, Identifiable, Marshalable):
-    __tablename__ = "pages"
-    not_found_text = "Page not found"
+@create_marshal_model("mfs-full", "started", "starred", "pinned", use_defaults=True)
+class ModuleFilterSession(BaseModuleSession, Marshalable):
+    __tablename__ = "module-filter-sessions"
+    not_found_text = "Session not found"
 
-    id = Column(Integer, ForeignKey("wip-pages.id"), primary_key=True)
-    author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
-    author = relationship("Author")
-    components = Column(JSON, nullable=False)
+    started = Column(Boolean, nullable=False, default=False)
+    starred = Column(Boolean, nullable=False, default=False)
+    pinned = Column(Boolean, nullable=False, default=False)
+    hidden = Column(Boolean, nullable=False, default=False)
 
-    kind = Column(Enum(PageKind), nullable=False)
-    name = Column(Text, nullable=False)
-    theme = Column(Text, nullable=False)
-    description = Column(Text, nullable=True)
+    last_visited = Column(DateTime, nullable=True)  # None for not visited
+    last_changed = Column(DateTime, nullable=True)
 
-    reusable = Column(Boolean, nullable=False)
-    public = Column(Boolean, nullable=False)
-    blueprint = Column(Boolean, nullable=False)
-    suspended = Column(Boolean, nullable=False, default=False)
-
-    views = Column(Integer, nullable=False, default=0)
-    updated = Column(DateTime, nullable=False)
-
-    author_name: LambdaFieldDef = LambdaFieldDef("page-short", str, lambda page: page.author.pseudonym)
+    visited: LambdaFieldDef = \
+        LambdaFieldDef("mfs", datetime, lambda mfs: mfs.last_visited if mfs.started else datetime.min)
 
     @classmethod
-    def _create(cls, session: Session, json_data: dict[str, ...], author: Author) -> Page:
-        json_data["kind"] = PageKind.from_string(json_data["kind"])
-        entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
-                                                            "reusable", "public", "blueprint")})
-        entry.components = json_dumps(json_data["components"], ensure_ascii=False)
-        entry.updated = datetime.utcnow()
-        entry.author = author
-        session.add(entry)
-        session.flush()
-        return entry
-
-    @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[Page, None]:
-        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
-
-    @classmethod
-    def find_or_create(cls, session: Session, json_data: dict[str, ...], author: Author) -> Union[Page, None]:
-        if cls.find_by_id(session, json_data["id"]):
+    def create(cls, session: Session, user_id: int, module_id: int) -> Union[ModuleFilterSession, None]:
+        if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
-        return cls._create(session, json_data, author)
-
-    @classmethod
-    def create_or_update(cls, session: Session, json_data: dict[str, ...], author: Author = None) -> Page:
-        # TODO utilize this, currently never used
-        entry: cls
-        if (entry := cls.find_by_id(session, json_data["id"])) is None:
-            return cls._create(session, json_data, author)
-        else:  # redo... maybe...
-            session.delete(entry)
-            session.commit()
-            cls._create(session, json_data, author)
-
-    @classmethod
-    def search(cls, session: Session, search: Union[str, None], start: int, limit: int) -> list[Page]:
-        stmt: Select = select(cls).filter_by(public=True).offset(start).limit(limit)
-        if search is not None and len(search) > 2:  # redo all search with pagination!!!
-            stmt = cls.search_stmt(search, stmt=stmt)
-        return session.execute(stmt).scalars().all()
-
-    def view(self) -> None:  # auto-commit
-        self.views += 1
-
-    def delete(self, session: Session) -> None:
-        session.delete(self)
+        # parameter check freaks out for no reason \/ \/ \/
+        new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())  # noqa
+        session.add(new_entry)
         session.flush()
+        return new_entry
+
+    def note_change(self) -> None:  # auto-commit
+        self.last_changed = datetime.utcnow()
+
+    def visit_now(self) -> None:  # auto-commit
+        self.last_visited = datetime.utcnow()
+        self.note_change()
+
+    def change_preference(self, session: Session, operation: PreferenceOperation) -> None:
+        if operation == PreferenceOperation.HIDE:
+            self.hidden = True
+        elif operation == PreferenceOperation.SHOW:
+            self.hidden = False
+        elif operation == PreferenceOperation.STAR:
+            self.starred = True
+        elif operation == PreferenceOperation.UNSTAR:
+            self.starred = False
+        elif operation == PreferenceOperation.PIN:
+            self.pinned = True
+        elif operation == PreferenceOperation.UNPIN:
+            self.pinned = False
+        if not any((self.hidden, self.pinned, self.starred, self.started)):
+            session.delete(self)
+            session.flush()
+        else:
+            self.note_change()
 
 
 class PointToPage(Base):
@@ -242,8 +223,9 @@ class Module(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_with_relation(cls, session: Session, module_id: int, user_id: int) -> Union[Row, None]:
-        stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns, Author.pseudonym)
-        stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id))
+        stmt: Select = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
+        stmt = stmt.outerjoin(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
+                                                        ModuleFilterSession.user_id == user_id))
         result = session.execute(stmt.filter(cls.id == module_id).limit(1)).all()
         return result[0] if len(result) else None
 
@@ -252,9 +234,10 @@ class Module(Base, Identifiable, Marshalable):
                         sort: SortType, user_id: int, offset: int, limit: int) -> list[Row]:
 
         # print(filters, search, sort)
-        # print([(mfs.module_id, mfs.user_id, mfs.to_json()) for mfs in session.execute(select(MFS)).scalars().all()])
+        # print([(mfs.module_id, mfs.user_id, mfs.to_json())
+        # for mfs in session.execute(select(ModuleFilterSession)).scalars().all()])
 
-        stmt: Select = select(*cls.__table__.columns, *MFS.__table__.columns, Author.pseudonym)
+        stmt: Select = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
 
         # print(len(session.execute(stmt).all()), stmt)
 
@@ -271,12 +254,13 @@ class Module(Base, Identifiable, Marshalable):
 
         # print(len(session.execute(stmt).scalars().all()), stmt)
 
-        stmt = stmt.outerjoin(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id))
+        stmt = stmt.outerjoin(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
+                                                        ModuleFilterSession.user_id == user_id))
         # if session exists for another user, would it pick it up???
 
         # print(len(session.execute(stmt).all()))
 
-        stmt = stmt.filter(or_(MFS.hidden != True, MFS.hidden.is_(None)))
+        stmt = stmt.filter(or_(ModuleFilterSession.hidden != True, ModuleFilterSession.hidden.is_(None)))
 
         # print(len(session.execute(stmt).scalars().all()), stmt)
 
@@ -288,7 +272,7 @@ class Module(Base, Identifiable, Marshalable):
         elif sort == SortType.CREATION_DATE:
             stmt = stmt.order_by(cls.created.desc())
         elif sort == SortType.VISIT_DATE:
-            stmt = stmt.order_by(MFS.last_visited.desc())
+            stmt = stmt.order_by(ModuleFilterSession.last_visited.desc())
 
         # print(len(session.execute(stmt.offset(offset).limit(limit)).scalars().all()), stmt)
         # print(stmt)
@@ -299,10 +283,12 @@ class Module(Base, Identifiable, Marshalable):
     @classmethod
     def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int) -> list[Row]:
         stmt: Select = select(*cls.__table__.columns, Author.pseudonym)
-        stmt = stmt.join(MFS, and_(MFS.module_id == cls.id, MFS.user_id == user_id, MFS.hidden == True))
-        stmt = stmt.order_by(MFS.last_changed.desc())
+        stmt = stmt.join(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
+                                                   ModuleFilterSession.user_id == user_id,
+                                                   ModuleFilterSession.hidden == True))
+        stmt = stmt.order_by(ModuleFilterSession.last_changed.desc())
         # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
-        #         for mfs in session.execute(select(MFS)).scalars().all() if mfs.hidden], sep="\n")
+        #         for mfs in session.execute(select(ModuleFilterSession)).scalars().all() if mfs.hidden], sep="\n")
         # print(stmt)
         return session.execute(stmt.offset(offset).limit(limit)).all()
 
