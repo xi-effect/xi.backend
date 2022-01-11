@@ -5,7 +5,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 from flask_socketio.test_client import SocketIOTestClient as _SocketIOTestClient
 
-from library0 import SocketIO
+from common import SocketIO
 
 
 @dataclass

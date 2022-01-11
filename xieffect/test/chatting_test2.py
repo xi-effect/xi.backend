@@ -1,10 +1,11 @@
 from pytest import mark
 
-from .components import (assert_one, assert_one_with_data, form_pass, assert_broadcast, ensure_broadcast, ensure_pass,
-                         assert_no_additional_messages)
-from .conftest import MultiClient, BASIC_PASS
+from .components2 import (assert_one, assert_one_with_data, form_pass, assert_broadcast, ensure_broadcast, ensure_pass,
+                          assert_no_additional_messages)
+# from .conftest import MultiClient, BASIC_PASS
 
 
+@mark.skip
 @mark.order(600)
 def test_chat_owning(socket_tr_io_client: MultiClient):  # assumes test's id == 1
     anatol, evgen, vasil = socket_tr_io_client.get_tr_io()
@@ -39,6 +40,7 @@ def test_chat_owning(socket_tr_io_client: MultiClient):  # assumes test's id == 
     assert event_data == {"code": 404, "message": "Chat not found", "event": "delete-chat"}
 
 
+@mark.skip
 @mark.order(610)
 def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  # assumes vasil's id == 10
     anatol1, evgen1, vasil1, anatol2, evgen2, vasil2 = socket_tr_io_client.get_dtr_io()
@@ -130,6 +132,7 @@ def test_user_managing(socket_tr_io_client: MultiClient):  # relies on chat#3  #
     assert_no_additional_messages(anatol1, evgen1, vasil1, anatol2, evgen2, vasil2)
 
 
+@mark.skip
 @mark.order(625)
 def test_ownership_transfer(multi_client: MultiClient):  # user ids are assumed
     multi_client.attach_auth_user("Anatol-1", "1@user.user", BASIC_PASS)
@@ -195,6 +198,7 @@ def test_ownership_transfer(multi_client: MultiClient):  # user ids are assumed
     assert_no_additional_messages(anatol, evgen, vasil, anatol2, evgen2, vasil2)
 
 
+@mark.skip
 @mark.order(650)
 def test_messaging(socket_tr_io_client: MultiClient):  # relies on chat#4
     anatol, evgen, vasil, anatol2, evgen2, vasil2 = socket_tr_io_client.get_dtr_io()

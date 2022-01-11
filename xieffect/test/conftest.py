@@ -1,4 +1,4 @@
-from typing import Tuple, Iterator, Callable
+from typing import Tuple, Iterator, Callable  # , Union
 
 from flask.testing import FlaskClient
 from pytest import fixture
@@ -6,6 +6,7 @@ from werkzeug.test import TestResponse
 
 from wsgi import application as app, TEST_EMAIL, BASIC_PASS, ADMIN_EMAIL, ADMIN_PASS
 from xieffect.test.components import check_status_code
+# from .library2 import MultiClient as _MultiClient, DoubleClient, SocketIOTestClient
 
 
 class RedirectedFlaskClient(FlaskClient):
@@ -75,3 +76,39 @@ def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator
         assert counter > 0
 
     return list_tester_inner
+
+
+# class MultiClient(_MultiClient):
+#     def auth_user(self, email: str, password: str) -> Union[DoubleClient, None]:
+#         raise NotImplementedError
+#
+#     def attach_auth_user(self, username: str, email: str, password: str) -> bool:
+#         if (client := self.auth_user(email, password)) is not None:
+#             self.users[username] = client
+#             return True
+#         return False
+#
+#     def get_tr_io(self, i: str = "1") -> tuple[SocketIOTestClient, SocketIOTestClient, SocketIOTestClient]:
+#         return self.users["Anatol-" + i].sio, self.users["Evgen-" + i].sio, self.users["Vasil-" + i].sio
+#
+#     def get_dtr_io(self) -> tuple[SocketIOTestClient, SocketIOTestClient, SocketIOTestClient,
+#                                   SocketIOTestClient, SocketIOTestClient, SocketIOTestClient]:
+#         return *self.get_tr_io("1"), *self.get_tr_io("2")  # noqa # I know better
+#
+#
+# @fixture(scope="session", autouse=True)
+# def multi_client():
+#     with MultiClient(app, socketio) as multi_client:
+#         yield multi_client
+#
+#
+# @fixture()
+# def socket_tr_io_client():  # add to library2.py
+#     with MultiClient(app, socketio) as multi_client:
+#         multi_client.attach_auth_user("Anatol-1", "8@user.user", BASIC_PASS)
+#         multi_client.attach_auth_user("Anatol-2", "8@user.user", BASIC_PASS)
+#         multi_client.attach_auth_user("Evgen-1", "test@test.test", BASIC_PASS)
+#         multi_client.attach_auth_user("Evgen-2", "test@test.test", BASIC_PASS)
+#         multi_client.attach_auth_user("Vasil-1", "7@user.user", BASIC_PASS)
+#         multi_client.attach_auth_user("Vasil-2", "7@user.user", BASIC_PASS)
+#         yield multi_client
