@@ -1,8 +1,7 @@
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace
-from users import User
+from common import Namespace, User
 from .user_roles import Author, Moderator
 
 authors_namespace: Namespace = Namespace("authors", path="/authors")

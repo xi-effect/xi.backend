@@ -13,7 +13,7 @@ from sqlalchemy import Column, Sequence, Enum
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import Boolean, Integer, String, JSON, DateTime
 
-from .other import TypeEnum
+from ._other import TypeEnum
 
 
 class EnumField(StringField):

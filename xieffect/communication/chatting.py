@@ -1,7 +1,6 @@
 from flask_restx import Resource
 
-from componets import counter_parser
-from users import User
+from common import counter_parser, User
 from .entities import UserToChat, Chat, Message
 from .helpers import ChatNamespace
 

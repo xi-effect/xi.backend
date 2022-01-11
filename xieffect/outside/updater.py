@@ -1,7 +1,7 @@
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace
+from common import Namespace
 from webhooks import send_discord_message, WebhookURLs
 
 github_token: str = ""

@@ -3,8 +3,7 @@ from typing import Union
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, counter_parser, unite_models
-from users import User
+from common import Namespace, counter_parser, unite_models, User
 from .elements import Module, Page, SortType
 from .sessions import ModuleFilterSession, PreferenceOperation
 

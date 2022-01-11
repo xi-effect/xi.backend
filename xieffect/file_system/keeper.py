@@ -10,7 +10,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
 from authorship import Author
-from componets import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable
+from common import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable
 from education import PageKind, ModuleType
 from main import Base, Session
 

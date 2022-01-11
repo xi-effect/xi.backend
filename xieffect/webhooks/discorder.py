@@ -1,7 +1,7 @@
 from discord_webhook import DiscordWebhook
 from requests import post, Response
 
-from componets import TypeEnum
+from common import TypeEnum
 
 
 class WebhookURLs(TypeEnum):

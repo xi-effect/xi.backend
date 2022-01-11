@@ -10,8 +10,8 @@ from flask_restx.marshalling import marshal
 from flask_restx.reqparse import RequestParser
 
 from main import Session, Base, index_service
-from .add_whoosh import Searcher
-from .marshals import ResponseDoc, success_response, message_response
+from common._whoosh import Searcher
+from ._marshals import ResponseDoc, success_response, message_response
 
 
 class Identifiable:

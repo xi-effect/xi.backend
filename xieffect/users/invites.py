@@ -5,8 +5,8 @@ from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, counter_parser, ResponseDoc, with_session, get_or_pop
-from .database import User, Invite
+from common import Namespace, counter_parser, ResponseDoc, with_session, get_or_pop, User
+from .database import Invite
 
 invites_namespace: Namespace = Namespace("invites", path="/invites/")
 invites_model = invites_namespace.model("Invite", Invite.marshal_models["invite"])

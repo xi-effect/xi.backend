@@ -10,7 +10,7 @@ from flask_cors import CORS
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from componets.add_whoosh import IndexService
+from common._whoosh import IndexService  # noqa
 
 dictConfig({
     "version": 1,

@@ -1,13 +1,11 @@
 from datetime import datetime
 from functools import wraps
 
-from flask_restx import Resource, Model
+from flask_restx import Resource
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
-from componets import ResponseDoc
-from componets.marshals import DateTimeField
-from users import User
+from common import ResponseDoc, DateTimeField, User
 from .entities import UserToChat, ChatRole, Chat, Message
 from .helpers import ChatNamespace
 

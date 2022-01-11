@@ -7,7 +7,7 @@ from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 
 from authorship import Author
-from componets import Namespace, counter_parser, ResponseDoc
+from common import Namespace, counter_parser, ResponseDoc
 from education import Page, Module
 from .keeper import JSONFile, WIPModule, WIPPage
 

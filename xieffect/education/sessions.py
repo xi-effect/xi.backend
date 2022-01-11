@@ -7,9 +7,8 @@ from sqlalchemy import Column, select, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Boolean, DateTime, Float, JSON
 
-from componets import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum
+from common import LambdaFieldDef, create_marshal_model, Marshalable, TypeEnum, User
 from main import Base, Session
-from users import User
 
 
 class BaseModuleSession(Base):

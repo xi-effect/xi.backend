@@ -1,8 +1,7 @@
 from functools import wraps
 from typing import Union
 
-from componets import Namespace, get_or_pop, ResponseDoc, message_response
-from users import User
+from common import Namespace, get_or_pop, ResponseDoc, message_response, User
 from .entities import ChatRole, UserToChat, Chat
 
 

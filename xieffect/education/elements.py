@@ -12,8 +12,7 @@ from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
 from authorship import Author
-from componets import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef
-from componets.checkers import register_as_searchable
+from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef, register_as_searchable
 from main import Base, Session
 from .sessions import ModuleFilterSession as MFS
 

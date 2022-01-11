@@ -5,9 +5,9 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
-from componets import password_parser, Namespace, with_session, success_response
+from common import password_parser, Namespace, with_session, success_response, TokenBlockList, User
 from main import app
-from users.database import TokenBlockList, User, Invite
+from .database import Invite
 # from users.emailer import send_generated_email, parse_code
 
 reglog_namespace: Namespace = Namespace("reglog", path="/")

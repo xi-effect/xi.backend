@@ -5,8 +5,7 @@ from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
-from componets import ResponseDoc
-from users import User
+from common import ResponseDoc, User
 from .entities import UserToChat, Chat, ChatRole
 from .helpers import ChatNamespace
 

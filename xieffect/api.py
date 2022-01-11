@@ -9,12 +9,12 @@ from werkzeug.exceptions import NotFound
 
 from authorship import (authors_namespace)
 from communication import (chats_namespace, chat_temp_namespace, chat_index_temp_namespace, messages_namespace)
-from componets import with_session
+from common import TokenBlockList, with_session
 from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
 from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace, wip_index_namespace)
 from main import app, db_meta, versions
 from outside import (webhook_namespace)
-from users import (TokenBlockList, reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
+from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 

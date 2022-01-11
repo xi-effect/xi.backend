@@ -4,9 +4,7 @@ from flask import request, send_from_directory
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, password_parser, ResponseDoc
-from users.database import User
-
+from common import Namespace, password_parser, ResponseDoc, User
 # from users.emailer import send_generated_email
 
 settings_namespace: Namespace = Namespace("settings")

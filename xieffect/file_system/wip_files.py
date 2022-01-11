@@ -5,8 +5,7 @@ from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 
 from authorship import Author
-from componets.checkers import Namespace, ResponseDoc
-from users import User
+from common import Namespace, ResponseDoc, User
 
 wip_images_namespace: Namespace = Namespace("wip-images", path="/wip/images/")
 images_view_namespace: Namespace = Namespace("images", path="/images/")

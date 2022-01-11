@@ -1,4 +1,4 @@
-from .database import User, TokenBlockList, Invite
+from .database import Invite
 from .profiles import profiles_namespace, users_namespace
 from .reglog import reglog_namespace
 from .settings import other_settings_namespace, settings_namespace, protected_settings_namespace

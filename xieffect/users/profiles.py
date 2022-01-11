@@ -4,8 +4,7 @@ from flask import send_from_directory
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, counter_parser
-from users import User
+from common import Namespace, counter_parser, User
 
 users_namespace: Namespace = Namespace("profiles", path="/users/")
 user_index_view = users_namespace.model("UserIndex", User.marshal_models["user-index"])

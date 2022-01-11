@@ -7,10 +7,8 @@ from sqlalchemy import Column, Sequence, select, ForeignKey, case
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text, DateTime, String, JSON, Enum
 
-from componets import create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum
-from componets.checkers import Identifiable
+from common import create_marshal_model, Marshalable, LambdaFieldDef, TypeEnum, Identifiable,  User
 from main import Base, Session
-from users import User
 
 
 @create_marshal_model("message", "id", "content", "sender_id", "sent", "updated")
