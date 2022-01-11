@@ -10,7 +10,7 @@ from itsdangerous import URLSafeSerializer, BadSignature
 
 from common import User, Namespace, unite_models, with_session, ResponseDoc
 from main import app
-from .database import Feedback, FeedbackType, FeedbackImage
+from .feedback_db import Feedback, FeedbackType, FeedbackImage
 
 feedback_namespace: Namespace = Namespace("feedback", path="/feedback/")
 feedback_serializer: URLSafeSerializer = URLSafeSerializer(app.config["JWT_SECRET_KEY"])

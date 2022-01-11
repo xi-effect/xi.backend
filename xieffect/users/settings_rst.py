@@ -1,4 +1,4 @@
-import os
+from os import remove
 
 from flask import request, send_from_directory
 from flask_restx import Resource
@@ -40,7 +40,7 @@ class Avatar(Resource):
     @other_settings_namespace.a_response()
     def delete(self, user: User) -> None:
         """Delete avatar"""
-        os.remove(f"../files/avatars/{user.id}.png")
+        remove(f"../files/avatars/{user.id}.png")
 
 
 def changed(value):

@@ -7,8 +7,8 @@ from itsdangerous import BadSignature
 
 from common import password_parser, Namespace, with_session, success_response, TokenBlockList, User
 from main import app
-from .database import Invite
-# from users.emailer import send_generated_email, parse_code
+from .invites_db import Invite
+# from .emailer import send_generated_email, parse_code
 
 reglog_namespace: Namespace = Namespace("reglog", path="/")
 success_response.register_model(reglog_namespace)
