@@ -1,4 +1,3 @@
-from .confirmer import email_namespace
 from .database import User, TokenBlockList, Invite
 from .profiles import profiles_namespace, users_namespace
 from .reglog import reglog_namespace

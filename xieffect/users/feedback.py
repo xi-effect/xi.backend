@@ -1,8 +1,10 @@
-from typing import Union
+from enum import Enum
+from functools import wraps
+from typing import Union, Type
 
 from flask import request
 from flask_restx import Resource, marshal, Model
-from flask_restx.fields import Integer
+from flask_restx.fields import Integer, String as StringField
 from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
@@ -16,6 +18,21 @@ feedback_json = feedback_namespace.model("Feedback", unite_models(
     User.marshal_models["full-settings"], Feedback.marshal_models["feedback-full"]))
 
 
+def enum_response(enum: Type[Enum]):
+    model = {"a": StringField(enum=[member.value for member in enum.__members__.values()])}
+    model = feedback_namespace.model(enum.__name__, model=model)
+
+    def enum_response_wrapper(function):
+        @feedback_namespace.response(*ResponseDoc(model=model).get_args())
+        @wraps(function)
+        def enum_response_inner(*args, **kwargs):
+            return {"a": function(*args, **kwargs).value}
+
+        return enum_response_inner
+
+    return enum_response_wrapper
+
+
 @feedback_namespace.route("/")
 class FeedbackSaver(Resource):
     parser = RequestParser()
@@ -23,26 +40,34 @@ class FeedbackSaver(Resource):
     parser.add_argument("data", required=True, type=dict)
     parser.add_argument("code", required=False)
 
+    class Responses(Enum):
+        SUCCESS = "Success"
+        BAD_SIGNATURE = "Bad code signature"
+        USER_NOT_FOUND = "Code refers to non-existing user"
+        NO_AUTH_PROVIDED = "Neither the user is authorized, nor the code is provided"
+
     @feedback_namespace.jwt_authorizer(User, optional=True)
     @feedback_namespace.argument_parser(parser)
-    @feedback_namespace.a_response()
-    def post(self, session, user: Union[User, None], feedback_type: str, data: dict, code: Union[str, None]) -> str:
+    @enum_response(Responses)
+    def post(self, session, user: Union[User, None], feedback_type: str, data: dict, code: Union[str, None]):
         feedback_type = FeedbackType.from_string(feedback_type)
         if feedback_type is None:
-            feedback_namespace.abort(400, "Unsupported type")
+            feedback_namespace.abort(400, "Unsupported feedback type")
 
-        if user is None:
-            if code is None:
-                return "Neither the user is authorized, nor the code is provided"
+        if code is not None:
             try:
                 user_id: int = feedback_serializer.loads(code)
             except BadSignature:
-                return "Bad code signature"
-            user = User.find_by_id(session, user_id)
+                return self.Responses.BAD_SIGNATURE
+            if user is None or user.id != user_id:
+                user = User.find_by_id(session, user_id)
             if user is None:
-                return "Code refers to non-existing user"
+                return self.Responses.USER_NOT_FOUND
+        elif user is None:
+            return self.Responses.NO_AUTH_PROVIDED
+
         Feedback.create(session, user, feedback_type, data)
-        return "Success"
+        return self.Responses.SUCCESS
 
 
 @feedback_namespace.route("/images/")

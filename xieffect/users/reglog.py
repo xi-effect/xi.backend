@@ -19,7 +19,7 @@ add_unsets_cookie_response = reglog_namespace.response(*success_response.get_arg
 
 
 @reglog_namespace.route("/reg/")
-class UserRegistration(Resource):  # [POST] /reg/
+class UserRegistration(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="Email to be connected to new user's account")
     parser.add_argument("username", required=True, help="Username to be assigned to new user's account")
@@ -50,7 +50,7 @@ class UserRegistration(Resource):  # [POST] /reg/
 
 
 @reglog_namespace.route("/auth/")
-class UserLogin(Resource):  # [POST] /auth/
+class UserLogin(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="User's email")
 
@@ -70,7 +70,7 @@ class UserLogin(Resource):  # [POST] /auth/
 
 
 @reglog_namespace.route("/logout/")
-class UserLogout(Resource):  # [POST] /logout/
+class UserLogout(Resource):
     @with_session
     @add_unsets_cookie_response
     @jwt_required()

@@ -27,9 +27,9 @@ class UserFinder(Resource):
 
 
 @profiles_namespace.route("/avatar/")
-class AvatarViewer(Resource):  # GET /authors/<int:user_id>/avatar/ (temp, change to /users/.../)
+class AvatarViewer(Resource):
     @profiles_namespace.deprecated
-    @profiles_namespace.jwt_authorizer(User, check_only=True, use_session=False)  # will it delete user_id?
+    @profiles_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     def get(self, user_id: int):
         """ Loads user's avatar """
         return send_from_directory(r"../files/avatars", f"{user_id}.png")

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 
-from json import dump, load
+from json import dump
 from os import remove
 from typing import Union
 
-from sqlalchemy import Column, Sequence, select
+from sqlalchemy import Column, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
@@ -25,9 +25,9 @@ class CATFile(Base, Identifiable):
     mimetype: str = ""
     directory: str = "../files/tfs/other/"
 
-    id = Column(Integer, Sequence('cat_file_id_seq'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
-                   default=0)  # test-only
+                   default=0)  # TODO add relation to author
 
     status = Column(Enum(WIPStatus), nullable=False)
 
@@ -39,6 +39,7 @@ class CATFile(Base, Identifiable):
     def create(cls, session: Session, owner: Author) -> CATFile:
         entry: cls = cls.create(session, owner)
         session.add(entry)
+        session.flush()
         return entry
 
     @classmethod
@@ -46,6 +47,7 @@ class CATFile(Base, Identifiable):
         entry: cls = cls._create(owner)
         entry.update(data)
         session.add(entry)
+        session.flush()
         return entry
 
     @classmethod
@@ -66,6 +68,7 @@ class CATFile(Base, Identifiable):
     def delete(self, session: Session) -> None:
         remove(self.get_link())
         session.delete(self)
+        session.flush()
 
 
 class JSONFile(CATFile):
@@ -106,8 +109,7 @@ class WIPPage(JSONFile, Marshalable):
 
     page = relationship("Page", backref="wip", uselist=False, cascade="all, delete")
 
-    views: LambdaFieldDef = LambdaFieldDef("wip-page", int,
-                                           lambda wip_page: wip_page.get_views())
+    views: LambdaFieldDef = LambdaFieldDef("wip-page", int, lambda wip_page: wip_page.get_views())
 
     def update_metadata(self, json_data: dict) -> None:
         self.kind = PageKind.from_string(json_data["kind"])

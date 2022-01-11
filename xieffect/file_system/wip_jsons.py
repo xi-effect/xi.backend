@@ -18,7 +18,7 @@ wip_short_module_json = wip_index_namespace.model("WIPModuleShort", WIPModule.ma
 
 
 @wip_index_namespace.route("/modules/index/")
-class WIPModuleLister(Resource):  # [POST] /wip/modules/index/
+class WIPModuleLister(Resource):
     @wip_index_namespace.jwt_authorizer(Author)
     @wip_index_namespace.argument_parser(counter_parser)
     @wip_index_namespace.lister(50, wip_short_module_json, skip_none=False)
@@ -28,7 +28,7 @@ class WIPModuleLister(Resource):  # [POST] /wip/modules/index/
 
 
 @wip_index_namespace.route("/pages/index/")
-class WIPPageLister(Resource):  # [POST] /wip/pages/index/
+class WIPPageLister(Resource):
     @wip_index_namespace.jwt_authorizer(Author)
     @wip_index_namespace.argument_parser(counter_parser)
     @wip_index_namespace.lister(50, wip_short_page_json, skip_none=False)
@@ -74,7 +74,7 @@ def file_getter(type_only: bool = True, use_session: bool = True, use_author: bo
 
 
 @wip_json_file_namespace.route("/")
-class FileCreator(Resource):  # [POST] /wip/<file_type>/
+class FileCreator(Resource):
     @wip_json_file_namespace.doc_file_param("json")
     @wip_json_file_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @file_getter()
@@ -89,7 +89,7 @@ class FileCreator(Resource):  # [POST] /wip/<file_type>/
 
 
 @wip_json_file_namespace.route("/<int:file_id>/")
-class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id>/
+class FileProcessor(Resource):
     @wip_json_file_namespace.response(200, "JSON-file of the file type")
     @file_getter(type_only=False, use_session=False)
     def get(self, file: JSONFile):
@@ -108,7 +108,6 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
     def put(self, session, file: JSONFile) -> None:
         """ Overwrites author's wip-file's contents and modifies index accordingly """
         file.update_json(session, request.get_json())
-        # file.update(request.get_data())
 
     @wip_json_file_namespace.doc_file_param("json")
     @file_getter(type_only=False)
@@ -119,7 +118,7 @@ class FileProcessor(Resource):  # [GET|PUT|DELETE] /wip/<file_type>/<int:file_id
 
 
 @wip_json_file_namespace.route("/<int:file_id>/publication/")
-class FilePublisher(Resource):  # POST /wip/<file_type>/<int:file_id>/publication/
+class FilePublisher(Resource):
     @file_getter(type_only=False, use_session=True, use_author=True)
     @wip_json_file_namespace.a_response()
     def post(self, session, file: JSONFile, author: Author) -> str:

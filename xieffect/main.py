@@ -1,7 +1,7 @@
 from datetime import timedelta
 from json import load
-from os import getenv, urandom
-from random import randint
+from logging.config import dictConfig
+from os import getenv
 from typing import Dict
 
 from dotenv import load_dotenv
@@ -11,6 +11,22 @@ from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from componets.add_whoosh import IndexService
+
+dictConfig({
+    "version": 1,
+    "formatters": {"default": {
+        "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+    }},
+    "handlers": {"wsgi": {
+        "class": "logging.StreamHandler",
+        "stream": "ext://flask.logging.wsgi_errors_stream",
+        "formatter": "default"
+    }},
+    "root": {
+        "level": "DEBUG",
+        "handlers": ["wsgi"]
+    }
+})
 
 load_dotenv("../.env")
 
@@ -38,7 +54,7 @@ for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY", "A
     app.config[secret_name] = getenv(secret_name, "hope it's local")
 
 # CORS config:
-CORS(app, supports_credentials=True)  # , resources={r"/*": {"origins": "https://xieffect.vercel.app"}})
+CORS(app, supports_credentials=True)
 
 # Database config:
 app.config["WHOOSHEE_MIN_STRING_LEN"] = 0

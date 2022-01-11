@@ -73,7 +73,7 @@ class User(Base, UserRole, Marshalable):
     theory_level = Column(Float, nullable=False, default=0.5)
     filter_bind = Column(String(10), nullable=True)
 
-    # Role-related:  # need to redo user_roles with relations
+    # Role-related:
     author = relationship("Author", backref="user", uselist=False)
     moderator = relationship("Moderator", backref="user", uselist=False)
 
@@ -98,8 +98,8 @@ class User(Base, UserRole, Marshalable):
         return session.execute(select(cls).where(cls.email == email)).scalars().first()
 
     @classmethod
-    def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None) -> Union[
-        User, None]:
+    def create(cls, session: Session, email: str, username: str, password: str, invite: Invite = None)\
+            -> Union[User, None]:
         if cls.find_by_email_address(session, email):
             return None
         new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
@@ -117,9 +117,6 @@ class User(Base, UserRole, Marshalable):
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
-
-    def confirm_email(self) -> None:  # auto-commit
-        self.email_confirmed = True
 
     def change_email(self, session: Session, new_email: str) -> bool:
         if User.find_by_email_address(session, new_email):
@@ -153,12 +150,6 @@ class User(Base, UserRole, Marshalable):
 
     def get_author_status(self) -> str:
         return "not-yet" if self.author is None else "banned" if self.author.banned else "current"
-
-    def get_filter_bind(self) -> str:
-        return self.filter_bind
-
-    def set_filter_bind(self, bind: str = None) -> None:  # auto-commit
-        self.filter_bind = bind
 
 
 UserRole.default_role = User
@@ -223,7 +214,7 @@ class Feedback(Base, Marshalable):
 
     @classmethod
     def create(cls, session: Session, user: User, feedback_type: FeedbackType, data) -> Feedback:
-        new_user = cls(user_id=user.id, type=feedback_type, data=dumps(data, ensure_ascii=False))
+        new_user = cls(user_id=user.id, type=feedback_type, data=dumps(data, ensure_ascii=False))  # noqa
         session.add(new_user)
         return new_user
 
@@ -245,4 +236,5 @@ class FeedbackImage(Base):
     @classmethod
     def create(cls, session: Session) -> FeedbackImage:
         session.add(new_user := cls())
+        session.flush()
         return new_user

@@ -62,15 +62,19 @@ class ModuleLister(Resource):  # [POST] /modules/
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
         except ValueError:
-            return {"a": f"Sorting '{sort}' is not supported"}, 400
+            modules_view_namespace.abort(400, f"Sorting '{sort}' is not supported")
 
-        if filters is not None and "global" in filters.keys():
-            user.set_filter_bind(filters["global"])
-        else:
-            user.set_filter_bind()
-        user_id: int = user.id
+        if filters is None:
+            filters = {}
+        elif any(not isinstance(value, str) for value in filters.values()):
+            modules_view_namespace.abort(400, "Malformed filters parameter: use strings as values only")
 
-        return Module.get_module_list(session, filters, search, sort, user_id, start, finish - start)
+        global_filter = filters.get("global", None)
+        if global_filter not in ("pinned", "starred", "started", "", None):
+            modules_view_namespace.abort(400, f"Global filter '{global_filter}' is not supported")
+        user.filter_bind = global_filter
+
+        return Module.get_module_list(session, filters, search, sort, user.id, start, finish - start)
 
 
 @modules_view_namespace.route("/hidden/")
@@ -105,7 +109,11 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     @modules_view_namespace.a_response()
     def post(self, session, module_id: int, user: User, operation: str) -> None:
         """ Changes user relation to some module """
-        module: ModuleFilterSession = ModuleFilterSession.find_or_create(session, user.id, module_id)
+        module: Union[ModuleFilterSession, None] = ModuleFilterSession.find_by_ids(session, user.id, module_id)
+        if module is None:
+            if operation.startswith("un"):
+                return
+            module = ModuleFilterSession.create(session, user.id, module_id)
         module.change_preference(session, PreferenceOperation.from_string(operation))
 
 
@@ -144,19 +152,10 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
 
 
 @pages_view_namespace.route("/<int:page_id>/report/")
-class PageReporter(Resource):  # POST /pages/<int:page_id>/report/
+class PageReporter(Resource):
     @pages_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @pages_view_namespace.argument_parser(report_parser)
     @pages_view_namespace.database_searcher(Page)
     @modules_view_namespace.a_response()
     def post(self, page: Page, reason: str, message: str) -> None:
         pass
-
-
-@modules_view_namespace.route("/reset-hidden/")
-class ShowAllModules(Resource):  # GET /modules/reset-hidden/
-    @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.a_response()
-    def get(self, session, user: User) -> None:
-        """ TEST-ONLY, marks all modules as shown """
-        ModuleFilterSession.change_preference_by_user(session, user.id, PreferenceOperation.SHOW)

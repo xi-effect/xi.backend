@@ -13,14 +13,11 @@ from componets import with_session
 from education import (modules_view_namespace, pages_view_namespace, education_namespace, interaction_namespace)
 from file_system import (wip_json_file_namespace, wip_images_namespace, images_view_namespace, wip_index_namespace)
 from main import app, db_meta, versions
-from other import (application_namespace, oct_namespace)
-from outside import (basic_namespace, webhook_namespace)
-from users import (TokenBlockList, reglog_namespace, email_namespace, users_namespace, feedback_namespace,
-                   settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace,
-                   invites_namespace)
+from outside import (webhook_namespace)
+from users import (TokenBlockList, reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
+                   settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 from webhooks import send_discord_message, send_file_discord_message, WebhookURLs
 
-# Initializing modules
 authorizations = {
     "jwt": {
         "type": "apiKey",
@@ -30,12 +27,7 @@ authorizations = {
 }
 api: Api = Api(app, doc="/doc/", version=versions["API"], authorizations=authorizations)
 
-api.add_namespace(application_namespace)
-api.add_namespace(basic_namespace)
-
-api.add_namespace(email_namespace)
 api.add_namespace(reglog_namespace)
-
 api.add_namespace(users_namespace)
 api.add_namespace(profiles_namespace)
 
@@ -62,31 +54,6 @@ api.add_namespace(wip_json_file_namespace)
 api.add_namespace(wip_index_namespace)
 
 api.add_namespace(webhook_namespace)
-api.add_namespace(oct_namespace)
-
-
-# from flask import redirect, request
-# from flask_restx import Namespace, Resource
-# from users import User
-#
-# other_namespace = Namespace("hey", path="/")
-#
-#
-# @other_namespace.route("/socket.io/")
-# class TEMP(Resource):
-#     @chats_namespace.jwt_authorizer(User, use_session=False, check_only=True)
-#     def get(self):
-#         return redirect("https://457f-188-242-138-193.ngrok.io/socket.io/?"
-#                         + request.query_string.decode("utf-8"), code=307)
-#
-#     @chats_namespace.jwt_authorizer(User, use_session=False, check_only=True)
-#     def post(self):
-#         return redirect("https://457f-188-242-138-193.ngrok.io/socket.io/?"
-#                         + request.query_string.decode("utf-8"), code=307)
-#
-#
-# api.add_namespace(other_namespace)
-
 
 jwt: JWTManager = JWTManager(app)
 
@@ -109,7 +76,6 @@ def log_stuff(level: str, message: str):
                 send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
 
 
-# Some error handlers:
 @jwt.token_in_blocklist_loader
 @with_session
 def check_if_token_revoked(_, jwt_payload, session):
@@ -163,11 +129,4 @@ def unauthorized_callback(callback):
         log_stuff("error", f"Unauthorized: {callback}\n[`{datetime.utcnow()}`]")
     return {"a": f"unauthorized: {callback}"}, 401
 
-# CURL:
 # remove-item alias:\curl
-# curl -v --cookie -X
-# curl -H "Content-Type: application/json" http://localhost:5000/settings/
-# -X POST -v -d "{\"changed\": {\"username\": \"new\"}}"
-# curl "https://xieffect.pythonanywhere.com/auth/?email=test@test.test&password=0a989ebc4a77b56a6e2bb7b19d995d185ce4409
-# 0c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454" -X POST -v
-# curl "https://xieffect.pythonanywhere.com/" -X POST -v --cookie "access_token_cookie="

@@ -10,7 +10,7 @@ from users.database import User
 # from users.emailer import send_generated_email
 
 settings_namespace: Namespace = Namespace("settings")
-other_settings_namespace: Namespace = Namespace("settings", path="/")  # redo (unite with settings_namespace)
+other_settings_namespace: Namespace = Namespace("settings", path="/")  # TODO unite with settings_namespace
 protected_settings_namespace: Namespace = Namespace("settings", path="/")
 
 full_settings = settings_namespace.model("FullSettings", User.marshal_models["full-settings"])
@@ -19,7 +19,7 @@ role_settings = settings_namespace.model("RoleSettings", User.marshal_models["ro
 
 
 @other_settings_namespace.route("/avatar/")
-class Avatar(Resource):  # [GET|POST] /avatar/
+class Avatar(Resource):
     @other_settings_namespace.deprecated
     @other_settings_namespace.response(200, "PNG image as a byte string")
     @other_settings_namespace.doc_responses(ResponseDoc(404, "Avatar not found"))
@@ -59,11 +59,10 @@ changed.__schema__ = {
 
 
 @settings_namespace.route("/")
-class Settings(Resource):  # [GET|POST] /settings/
+class Settings(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("changed", type=changed, required=True, help="A dict of changed settings")
 
-    # В marshal_with full_settings
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(full_settings, skip_none=True)
     def get(self, user: User):
@@ -71,7 +70,7 @@ class Settings(Resource):  # [GET|POST] /settings/
         return user
 
     @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.argument_parser(parser)  # fix with json (marshal?)
+    @settings_namespace.argument_parser(parser)  # TODO fix with json schema validation
     @settings_namespace.a_response()
     def post(self, user: User, changed: dict) -> None:
         """ Overwrites values in user's settings with ones form payload """
@@ -79,7 +78,7 @@ class Settings(Resource):  # [GET|POST] /settings/
 
 
 @settings_namespace.route("/main/")
-class MainSettings(Resource):  # [GET] /settings/main/
+class MainSettings(Resource):
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(main_settings, skip_none=True)
     def get(self, user: User):
@@ -88,7 +87,7 @@ class MainSettings(Resource):  # [GET] /settings/main/
 
 
 @settings_namespace.route("/roles/")
-class RoleSettings(Resource):  # [GET] /settings/roles/
+class RoleSettings(Resource):
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(role_settings, skip_none=True)
     def get(self, user: User):
@@ -97,7 +96,7 @@ class RoleSettings(Resource):  # [GET] /settings/roles/
 
 
 @protected_settings_namespace.route("/email-change/")
-class EmailChanger(Resource):  # [POST] /email-change/
+class EmailChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", dest="new_email", required=True, help="Email to be connected to the user")
 
@@ -119,7 +118,7 @@ class EmailChanger(Resource):  # [POST] /email-change/
 
 
 @protected_settings_namespace.route("/password-change/")
-class PasswordChanger(Resource):  # [POST] /password-change/
+class PasswordChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", dest="new_password", required=True, help="Password that will be used in future")
 

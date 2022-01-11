@@ -9,7 +9,7 @@ webhook_namespace: Namespace = Namespace("webhooks")
 
 
 @webhook_namespace.route("/update/")
-class GithubWebhook(Resource):  # [POST] /update/
+class GithubWebhook(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, dest="event_type", location="headers")
 
@@ -29,7 +29,7 @@ class GithubWebhook(Resource):  # [POST] /update/
 
 
 @webhook_namespace.route("/update-docs/")
-class GithubDocumentsWebhook(Resource):  # [POST] /update-docs/
+class GithubDocumentsWebhook(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, dest="event_type", location="headers")
 

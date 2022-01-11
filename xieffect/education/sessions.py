@@ -67,13 +67,8 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         # parameter check freaks out for no reason \/ \/ \/
         new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())  # noqa
         session.add(new_entry)
+        session.flush()
         return new_entry
-
-    @classmethod
-    def change_preference_by_user(cls, session: Session, user_id: int, operation: PreferenceOperation) -> None:
-        filter_session: cls
-        for filter_session in select(cls).filter_by(user_id=user_id).scalars().all():
-            filter_session.change_preference(session, operation)
 
     def note_change(self) -> None:  # auto-commit
         self.last_changed = datetime.utcnow()

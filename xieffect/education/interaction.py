@@ -68,7 +68,7 @@ class ModuleOpener(Resource):
     @interaction_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @redirected_to_pages("progress saving", ModuleType.STANDARD, ModuleType.THEORY_BLOCK)
     def get(self, session, user: User, module: Module, module_type: ModuleType):
-        """ Endpoint for starting a Standard Module or Theory Block form the last visited point """
+        """ Endpoint for starting a Standard Module or Theory Block from the last visited point """
 
         module_session: Union[ModuleProgressSession, None] = ModuleProgressSession.find_by_ids(session, user.id, module.id)
         if module_type == ModuleType.STANDARD:

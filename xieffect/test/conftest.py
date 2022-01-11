@@ -1,4 +1,3 @@
-from os import remove
 from typing import Tuple, Iterator, Callable
 
 from flask.testing import FlaskClient
@@ -23,7 +22,6 @@ def base_client():
     app.debug = True
     with app.test_client() as client:
         yield client
-    remove("app.db")
 
 
 def login(email: str, password: str) -> FlaskClient:

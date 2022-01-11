@@ -30,7 +30,6 @@ class PageKind(TypeEnum):
 class Page(Base, Identifiable, Marshalable):
     __tablename__ = "pages"
     not_found_text = "Page not found"
-    directory = "files/tfs/cat-pages/"
 
     id = Column(Integer, ForeignKey("wip-pages.id"), primary_key=True)
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
@@ -61,6 +60,7 @@ class Page(Base, Identifiable, Marshalable):
         entry.updated = datetime.utcnow()
         entry.author = author
         session.add(entry)
+        session.flush()
         return entry
 
     @classmethod
@@ -75,6 +75,7 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def create_or_update(cls, session: Session, json_data: dict[str, ...], author: Author = None) -> Page:
+        # TODO utilize this, currently never used
         entry: cls
         if (entry := cls.find_by_id(session, json_data["id"])) is None:
             return cls._create(session, json_data, author)
@@ -95,6 +96,7 @@ class Page(Base, Identifiable, Marshalable):
 
     def delete(self, session: Session) -> None:
         session.delete(self)
+        session.flush()
 
 
 class PointToPage(Base):
@@ -138,6 +140,7 @@ class Point(Base):
             for i, page_id in enumerate(point_data["pages"])
         ])
         session.add(point)
+        session.flush()
         return point
 
 
@@ -324,3 +327,4 @@ class Module(Base, Identifiable, Marshalable):
 
     def delete(self, session: Session) -> None:
         session.delete(self)
+        session.flush()

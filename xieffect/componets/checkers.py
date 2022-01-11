@@ -8,7 +8,6 @@ from flask_restx import Namespace as RestXNamespace, Model, abort as default_abo
 from flask_restx.fields import List as ListField, Boolean as BoolField, Nested
 from flask_restx.marshalling import marshal
 from flask_restx.reqparse import RequestParser
-from sqlalchemy.engine import Result
 
 from main import Session, Base, index_service
 from .add_whoosh import Searcher
@@ -150,7 +149,7 @@ class _Namespace(RestXNamespace):  # for the lib
         :param identifiable: identifiable to search for
         :param result_field_name: overrides default name of found object [default is identifiable.__name__.lower()]
         :param check_only: (default: False) if True, checks if entity exists and passes id to the decorated function
-        :param use_session: (default: False) whether or not to pass the session to the decorated function
+        :param use_session: (default: False) whether to pass the session to the decorated function
         """
 
         def searcher_wrapper(function):
@@ -182,8 +181,9 @@ class _Namespace(RestXNamespace):  # for the lib
         :param role: role to expect
         :param optional: (default: False)
         :param check_only: (default: False) if True, user object won't be passed to the decorated function
-        :param use_session: (default: True) whether or not to pass the session to the decorated function
+        :param use_session: (default: True) whether to pass the session to the decorated function
         """
+
         def authorizer_wrapper(function):
             error_code: int = 401 if role is UserRole.default_role else 403
 

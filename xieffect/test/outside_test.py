@@ -8,11 +8,6 @@ from xieffect.test.conftest import TEST_EMAIL, BASIC_PASS
 from xieffect.test.components import check_status_code, dict_equal
 from xieffect.wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
 
-
-# @mark.order(0)
-# def test_startup(base_client: FlaskClient):
-#     assert check_status_code(base_client.get("/")) == {"hello": "word"}
-
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
 
 
