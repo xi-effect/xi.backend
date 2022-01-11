@@ -8,7 +8,7 @@ from flask_restx import Api
 from werkzeug.exceptions import NotFound
 
 from common import TokenBlockList, with_session
-from communication import (chats_namespace)
+# from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace)
@@ -36,10 +36,7 @@ api.add_namespace(protected_settings_namespace)
 api.add_namespace(feedback_namespace)
 api.add_namespace(invites_namespace)
 
-api.add_namespace(chats_namespace)
-api.add_namespace(chat_temp_namespace)
-api.add_namespace(chat_index_temp_namespace)
-api.add_namespace(messages_namespace)
+# api.add_namespace(chats_namespace)
 
 api.add_namespace(education_namespace)
 api.add_namespace(images_view_namespace)
@@ -55,6 +52,24 @@ api.add_namespace(wip_index_namespace)
 api.add_namespace(webhook_namespace)
 
 jwt: JWTManager = JWTManager(app)
+
+# class MessagesNamespace(Namespace):
+#     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
+#     def on_connect(self, _):
+#         join_room(f"user-{get_jwt_identity()}")
+#
+#     # def on_disconnect(self, session, user_id: int):
+#     #     chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
+#     #     if len(chat_ids):
+#     #        UserToChat.find_and_close(session, user.id, ids)
+#
+#
+# messages_namespace = MessagesNamespace("/")
+# messages_namespace.attach_event_group(messaging_events, use_kebab_case=True)
+# messages_namespace.attach_event_group(chat_management_events, use_kebab_case=True)
+# messages_namespace.attach_event_group(user_management_events, use_kebab_case=True)
+#
+# socketio.on_namespace(messages_namespace)
 
 db_meta.create_all()
 

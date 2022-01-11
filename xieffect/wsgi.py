@@ -130,3 +130,6 @@ version_check()
 
 if __name__ == "__main__":  # test only
     application.run()
+
+# if __name__ == "__main__":
+#     socketio.run(app, port=5050, debug=True)
