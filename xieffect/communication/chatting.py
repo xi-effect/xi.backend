@@ -4,7 +4,7 @@ from typing import Union
 from flask_restx.reqparse import RequestParser
 
 from common import Namespace, get_or_pop, ResponseDoc, message_response, User
-from .chatting_db import ChatRole, UserToChat, Chat
+from .chatting_db import ChatRole, UserToChat, Chat, Message
 
 
 def create_403_response(has_min_role: bool) -> ResponseDoc:
@@ -87,3 +87,24 @@ class ChatNamespace(Namespace):
             return with_role_check_inner
 
         return with_role_check_wrapper
+
+    def search_message(self, use_session: bool, unmoderatable: bool = True):
+        def search_message_wrapper(function):
+            @self.doc_responses(ResponseDoc.error_response(403, "Not your message"))
+            @self.search_user_to_chat(None, True, True, True, True)
+            @wraps(function)
+            def search_message_inner(self, session, user: User, chat: Chat, user_to_chat: UserToChat, message_id: int):
+                if (message := Message.find_by_ids(session, chat.id, message_id)) is None:
+                    return {"a": "Message not found"}, 404
+
+                if unmoderatable or user_to_chat.role.value < ChatRole.MODER.value:
+                    if message.sender.id != user.id:
+                        return {"a": "Not your message"}, 403
+
+                if use_session:
+                    return function(self, session, message)
+                return function(self, message)
+
+            return search_message_inner
+
+        return search_message_wrapper

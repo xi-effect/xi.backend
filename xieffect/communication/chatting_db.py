@@ -61,15 +61,12 @@ class ChatRole(TypeEnum):
     OWNER = 4  # delete the chat
 
 
-@create_marshal_model("temp-u2c", "unread")
 @create_marshal_model("user-in-chat", "role")
 @create_marshal_model("chat-user-full", "role", inherit="chat-user-base")
 @create_marshal_model("chat-user-index", inherit="chat-user-base")
 @create_marshal_model("chat-user-base", "unread")
 class UserToChat(Base, Marshalable):
     __tablename__ = "user_to_chat"
-    _user_id2: LambdaFieldDef = LambdaFieldDef("temp-u2c", int, "user_id", "user-id")  # temp!!!
-
     # User-related
     user_id = Column(ForeignKey("users.id"), primary_key=True)
     user = relationship("User", back_populates="chats")

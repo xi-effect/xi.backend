@@ -8,7 +8,7 @@ from flask_restx import Api
 from werkzeug.exceptions import NotFound
 
 from common import TokenBlockList, with_session
-from communication import (chats_namespace, chat_temp_namespace, chat_index_temp_namespace, messages_namespace)
+from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace)
