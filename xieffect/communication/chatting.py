@@ -1,6 +1,8 @@
 from functools import wraps
 from typing import Union
 
+from flask_restx.reqparse import RequestParser
+
 from common import Namespace, get_or_pop, ResponseDoc, message_response, User
 from .chatting_db import ChatRole, UserToChat, Chat
 
@@ -38,3 +40,50 @@ class ChatNamespace(Namespace):
             return search_user_to_chat_inner
 
         return search_user_to_chat_wrapper
+
+    def manage_user(self, min_role: ChatRole):
+        def manage_user_wrapper(function):
+            @self.doc_responses(ResponseDoc.error_response(404, "Target user is not in the chat"))
+            @self.search_user_to_chat(min_role=min_role, use_chat=True, use_user_to_chat=True)
+            @self.database_searcher(User, result_field_name="target", use_session=True)
+            @wraps(function)
+            def manage_user_inner(*args, session, user_to_chat: UserToChat, chat: Chat, target: User):
+                target_to_chat: UserToChat = UserToChat.find_by_ids(session, chat.id, target.id)
+                if target_to_chat is None:
+                    return {"a": "Target user is not in the chat"}, 404
+
+                if target_to_chat.role.value >= user_to_chat.role.value:
+                    return {"a": "Your role is not higher that user's"}, 403
+
+                if min_role is ChatRole.MODER or min_role is ChatRole.OWNER:
+                    return function(user_to_chat=user_to_chat, target_to_chat=target_to_chat, *args)
+                return function(session=session, target_to_chat=target_to_chat, *args)
+
+            return manage_user_inner
+
+        return manage_user_wrapper
+
+    def with_role_check(self):
+        user_to_chat_parser: RequestParser = RequestParser()
+        user_to_chat_parser.add_argument("role", str, required=True, choices=ChatRole.get_all_field_names())
+        
+        def with_role_check_wrapper(function):
+            @self.argument_parser(user_to_chat_parser)
+            @wraps(function)
+            def with_role_check_inner(*args, user_to_chat: UserToChat, role: Union[str, None] = None,
+                                      target_to_chat: Union[UserToChat, None] = None, **kwargs):
+                try:
+                    role: ChatRole = ChatRole.BASIC if role is None else ChatRole.from_string(role)
+                except (ValueError, KeyError):
+                    return {"a": f"Chat role '{role}' is not supported"}, 400  # redo!
+
+                if role.value >= user_to_chat.role.value:
+                    return {"a": "You can only set roles below your own"}, 403
+
+                if target_to_chat is None:
+                    return function(role=role, *args, **kwargs)
+                return function(target_to_chat=target_to_chat, role=role, *args, **kwargs)
+
+            return with_role_check_inner
+
+        return with_role_check_wrapper
