@@ -1,4 +1,3 @@
-from .feedback_db import Invite
 from .profiles_rst import profiles_namespace, users_namespace
 from .reglog_rst import reglog_namespace
 from .settings_rst import other_settings_namespace, settings_namespace, protected_settings_namespace

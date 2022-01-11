@@ -2,7 +2,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from common import Namespace
-from webhooks import send_discord_message, WebhookURLs
+from .discorder import send_message as send_discord_message, WebhookURLs
 
 github_token: str = ""
 webhook_namespace: Namespace = Namespace("webhooks")

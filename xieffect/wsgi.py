@@ -12,7 +12,8 @@ from education.knowledge import Module, Page
 from education.studio import WIPPage
 from main import versions
 from other import WebhookURLs, send_discord_message
-from users import Invite, generate_code, dumps_feedback  # noqa
+from users.invites_db import Invite
+from users.feedback_rst import generate_code, dumps_feedback  # noqa
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
