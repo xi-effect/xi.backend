@@ -6,8 +6,8 @@ from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
 from common import ResponseDoc, User
-from .entities import UserToChat, Chat, ChatRole
-from .helpers import ChatNamespace
+from .chatting_db import UserToChat, Chat, ChatRole
+from .chatting import ChatNamespace
 
 chat_index_temp_namespace = ChatNamespace("chat-temp", path="/chat-temp/")
 chat_temp_namespace = ChatNamespace("chat-temp", path="/chat-temp/<int:chat_id>/")

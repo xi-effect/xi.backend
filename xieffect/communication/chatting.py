@@ -1,51 +1,40 @@
-from flask_restx import Resource
+from functools import wraps
+from typing import Union
 
-from common import counter_parser, User
-from .entities import UserToChat, Chat, Message
-from .helpers import ChatNamespace
-
-chats_namespace = ChatNamespace("chats", path="/chats/")
-
-chat_index_view = chats_namespace.model("ChatIndex", UserToChat.marshal_models["chat-user-index"])
-chat_full_view = chats_namespace.model("ChatFull", UserToChat.marshal_models["chat-user-full"])
-chat_user_view = chats_namespace.model("ChatUser", UserToChat.marshal_models["user-in-chat"])
-
-message_view = chats_namespace.model("Message", Message.marshal_models["message"])
+from common import Namespace, get_or_pop, ResponseDoc, message_response, User
+from .chatting_db import ChatRole, UserToChat, Chat
 
 
-@chats_namespace.route("/index/")
-class ChatLister(Resource):
-    @chats_namespace.jwt_authorizer(User)
-    @chats_namespace.argument_parser(counter_parser)
-    @chats_namespace.lister(50, chat_index_view)
-    def post(self, session, user: User, start: int, finish: int):  # dunno how to pagination yet
-        """ Get all chats with metadata """
-        return UserToChat.find_by_user(session, user.id, start, finish - start)
+def create_403_response(has_min_role: bool) -> ResponseDoc:
+    return ResponseDoc.error_response(403, "User not in chat" if has_min_role else "Chat role is lower than needed")
 
 
-@chats_namespace.route("/<int:chat_id>/")
-class ChatProcessor(Resource):
-    @chats_namespace.search_user_to_chat(use_user_to_chat=True)
-    @chats_namespace.marshal_with(chat_full_view, skip_none=True)
-    def get(self, user_to_chat: UserToChat):
-        """ Returns chat's full info + user's role """
-        return user_to_chat
+class ChatNamespace(Namespace):
+    def search_user_to_chat(self, min_role: Union[ChatRole, None] = None, use_user_to_chat: bool = False,
+                            use_chat: bool = False, use_user: bool = False, use_session: bool = False):
+        def search_user_to_chat_wrapper(function):
+            message_response.register_model(self)
 
+            @self.doc_responses(create_403_response(min_role is None))
+            @self.jwt_authorizer(User)
+            @self.database_searcher(Chat, use_session=True)
+            @wraps(function)
+            def search_user_to_chat_inner(*args, **kwargs):
+                session = get_or_pop(kwargs, "session", use_session)
+                user = get_or_pop(kwargs, "user", use_user)
+                chat = get_or_pop(kwargs, "chat", use_chat)
 
-@chats_namespace.route("/<int:chat_id>/users/")
-class ChatUserLister(Resource):
-    @chats_namespace.search_user_to_chat(use_chat=True)
-    @chats_namespace.argument_parser(counter_parser)
-    @chats_namespace.lister(50, chat_user_view)
-    def post(self, chat: Chat, start: int, finish: int) -> list[UserToChat]:
-        return chat.participants[start:finish]
+                if (user_to_chat := UserToChat.find_by_ids(session, chat.id, user.id)) is None:
+                    return {"a": "User not in the chat"}, 403
 
+                if min_role is not None and user_to_chat.role.value < min_role.value:
+                    return {"a": f"You have to be at least chat's {min_role.to_string()}"}, 403
 
-@chats_namespace.route("/<int:chat_id>/message-history/")
-class MessageLister(Resource):
-    @chats_namespace.search_user_to_chat(use_chat=True)
-    @chats_namespace.argument_parser(counter_parser)
-    @chats_namespace.lister(50, message_view)
-    def post(self, chat: Chat, start: int, finish: int) -> list[Message]:
-        """ Lists chat's messages (new on top) """
-        return chat.messages[start:finish]
+                if use_user_to_chat:
+                    kwargs["user_to_chat"] = user_to_chat
+
+                return function(*args, **kwargs)
+
+            return search_user_to_chat_inner
+
+        return search_user_to_chat_wrapper

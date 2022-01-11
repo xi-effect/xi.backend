@@ -6,7 +6,7 @@ from sys import modules
 
 from api import app as application, log_stuff, db_meta
 from common import User, with_session
-from communication.entities import Chat, ChatRole, Message
+from communication.chatting_db import Chat, ChatRole, Message
 from education.authorship import Author
 from education.knowledge import Module, Page
 from education.studio import WIPPage
