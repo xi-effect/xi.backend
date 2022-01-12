@@ -1,8 +1,9 @@
-yeet
 .archive
-ngrok.exe
 .idea
-/xieffect/wsgi.py
-/database/app.db
-/xieffect/app.db
-/test/.pytest_cache
+.env
+venv/
+xieffect/app.db
+xieffect/test/.pytest_cache
+files/temp/*
+files/tfs/wip-*
+files/versions-lock.json

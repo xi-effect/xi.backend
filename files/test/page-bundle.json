@@ -1,0 +1,701 @@
+[
+  {
+    "id": 1,
+    "name": "Первая страница ",
+    "description": "Описание первой страницы test",
+    "theme": "Тематика ",
+    "kind": "practice",
+    "components": [
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "h",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "заголовок"
+      },
+      {
+        "type": "h",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "заголовок"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      }
+    ],
+    "blueprint": false,
+    "reusable": true,
+    "public": true
+  },
+  {
+    "id": 2,
+    "name": "Вторая страница",
+    "description": "Очень интересная страница про интересные вещи",
+    "theme": "Математика 8 класс профильной школы",
+    "kind": "theory",
+    "components": [
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "h",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "заголовок"
+      },
+      {
+        "type": "h",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "заголовок"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      }
+    ],
+    "blueprint": false,
+    "reusable": true,
+    "public": true
+  },
+  {
+    "id": 3,
+    "name": "234567809786543781292131241341234123",
+    "description": null,
+    "theme": "Контурные карты Караганды 1673 года",
+    "kind": "theory",
+    "components": [
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "h",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "заголовок"
+      },
+      {
+        "type": "h",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "заголовок"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      },
+      {
+        "type": "text",
+        "fontSize": 30,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "label": "текст"
+      }
+    ],
+    "blueprint": false,
+    "reusable": true,
+    "public": true
+  },
+  {
+    "id": 4,
+    "name": "Ipsum adipisci",
+    "description": "Magnam numquam amet aliquam. Non adipisci amet sit quiquia ipsum magnam. Numquam labore est quisquam. Velit dolor eius quaerat dolore ut sed numquam. Dolor dolor quiquia quaerat ipsum. Non aliquam sed velit. Amet etincidunt numquam tempora dolor dolor dolorem amet. test",
+    "theme": "Velit adipisci consectetur consectetur quaerat.",
+    "kind": "theory",
+    "blueprint": false,
+    "reusable": true,
+    "public": true,
+    "components": [
+      {
+        "type": "quiz",
+        "quizType": "multiple",
+        "fontSize": 12,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Sit adipisci etincidunt non."
+          },
+          {
+            "label": "Consectetur etincidunt amet aliquam voluptatem."
+          },
+          {
+            "label": "Consectetur voluptatem adipisci quiquia."
+          },
+          {
+            "label": "Dolor dolorem dolore ipsum."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          2,
+          3
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "multiple",
+        "fontSize": 16,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Modi voluptatem aliquam aliquam dolorem sit."
+          },
+          {
+            "label": "Modi dolore dolorem etincidunt numquam velit."
+          },
+          {
+            "label": "Sed velit modi magnam magnam."
+          },
+          {
+            "label": "Ipsum labore est eius numquam modi quiquia."
+          },
+          {
+            "label": "Voluptatem ipsum sed dolorem etincidunt eius consectetur labore."
+          },
+          {
+            "label": "Amet ut sed dolor sit sed."
+          },
+          {
+            "label": "Quaerat porro numquam numquam sed."
+          },
+          {
+            "label": "Sed tempora labore non magnam."
+          },
+          {
+            "label": "Labore amet dolorem amet non."
+          },
+          {
+            "label": "Voluptatem labore modi dolore est neque velit."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          3,
+          4,
+          5,
+          6,
+          9
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "single",
+        "fontSize": 17,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Consectetur eius amet aliquam porro modi velit neque."
+          },
+          {
+            "label": "Quiquia est aliquam sed."
+          },
+          {
+            "label": "Labore dolorem quiquia quisquam etincidunt."
+          },
+          {
+            "label": "Ut aliquam non aliquam magnam ipsum dolore."
+          },
+          {
+            "label": "Eius etincidunt amet adipisci aliquam labore adipisci."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          3
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "multiple",
+        "fontSize": 15,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Quaerat velit quaerat numquam quaerat."
+          },
+          {
+            "label": "Labore quiquia eius ut voluptatem."
+          },
+          {
+            "label": "Dolor velit sed sed quiquia aliquam neque quisquam."
+          },
+          {
+            "label": "Etincidunt non neque quisquam ut velit quaerat sed."
+          },
+          {
+            "label": "Numquam consectetur velit sit."
+          },
+          {
+            "label": "Ipsum quaerat voluptatem quaerat ipsum ipsum quisquam ut."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          1,
+          3,
+          4
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "single",
+        "fontSize": 16,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Porro numquam voluptatem consectetur est."
+          },
+          {
+            "label": "Quiquia labore magnam numquam numquam est."
+          },
+          {
+            "label": "Sed ut dolorem eius ipsum etincidunt."
+          },
+          {
+            "label": "Modi ut etincidunt tempora ut."
+          },
+          {
+            "label": "Tempora voluptatem ipsum porro sit adipisci consectetur."
+          },
+          {
+            "label": "Voluptatem numquam voluptatem labore non sit."
+          },
+          {
+            "label": "Neque sit est sit porro amet dolorem."
+          },
+          {
+            "label": "Labore porro aliquam voluptatem dolore."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          6
+        ],
+        "userAnswers": []
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Sed modi",
+    "description": "Est non adipisci magnam porro est amet quisquam. Tempora non sit quiquia dolore. Sed labore modi voluptatem sed porro dolorem quaerat. Ipsum adipisci velit magnam adipisci etincidunt. Porro sed dolore magnam velit est magnam. Velit sit quaerat amet eius eius. Eius quiquia modi quiquia eius ipsum neque. Modi voluptatem quisquam modi quiquia quisquam numquam tempora. Magnam magnam velit magnam dolor numquam non velit. Modi labore aliquam adipisci. test",
+    "theme": "Quaerat ut est quaerat.",
+    "kind": "practice",
+    "blueprint": false,
+    "reusable": true,
+    "public": true,
+    "components": [
+      {
+        "type": "quiz",
+        "quizType": "multiple",
+        "fontSize": 16,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Tempora amet sed aliquam."
+          },
+          {
+            "label": "Dolorem ut amet sed quaerat dolor quaerat numquam."
+          },
+          {
+            "label": "Sed porro eius numquam dolore modi consectetur amet."
+          },
+          {
+            "label": "Porro amet est consectetur velit."
+          },
+          {
+            "label": "Quaerat eius labore consectetur."
+          },
+          {
+            "label": "Ipsum numquam magnam modi quisquam velit quisquam."
+          },
+          {
+            "label": "Non sit modi quaerat modi."
+          },
+          {
+            "label": "Sed tempora porro tempora ut tempora."
+          },
+          {
+            "label": "Adipisci quaerat aliquam quisquam quaerat magnam."
+          },
+          {
+            "label": "Sed ipsum velit sit sed etincidunt neque."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          0,
+          3,
+          4,
+          7
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "multiple",
+        "fontSize": 13,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Eius tempora quaerat quaerat voluptatem eius est."
+          },
+          {
+            "label": "Dolore numquam sit labore magnam non quaerat sed."
+          },
+          {
+            "label": "Quisquam voluptatem tempora porro dolorem quisquam neque."
+          },
+          {
+            "label": "Etincidunt magnam non sit est modi aliquam."
+          },
+          {
+            "label": "Sed modi labore aliquam quiquia numquam consectetur amet."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          0,
+          1,
+          2,
+          4
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "single",
+        "fontSize": 16,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Dolore quaerat sed sed."
+          },
+          {
+            "label": "Quaerat magnam quisquam quiquia."
+          },
+          {
+            "label": "Voluptatem quaerat quiquia eius sed labore magnam."
+          },
+          {
+            "label": "Sit non neque magnam velit dolorem modi velit."
+          },
+          {
+            "label": "Dolore ipsum sit voluptatem etincidunt modi amet."
+          },
+          {
+            "label": "Quaerat etincidunt porro voluptatem adipisci consectetur est."
+          },
+          {
+            "label": "Neque non quaerat voluptatem neque."
+          },
+          {
+            "label": "Voluptatem aliquam magnam voluptatem."
+          },
+          {
+            "label": "Sit ut labore etincidunt eius dolor amet adipisci."
+          },
+          {
+            "label": "Dolorem sed amet adipisci quiquia labore."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          8
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "single",
+        "fontSize": 17,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Porro quiquia sit tempora sed labore dolorem."
+          },
+          {
+            "label": "Sed quiquia sit tempora dolorem velit."
+          },
+          {
+            "label": "Quaerat consectetur consectetur adipisci."
+          },
+          {
+            "label": "Dolore aliquam velit sed dolor etincidunt labore."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          1
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "multiple",
+        "fontSize": 17,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Eius labore amet ut neque dolorem amet voluptatem."
+          },
+          {
+            "label": "Sit sed modi magnam sed."
+          },
+          {
+            "label": "Voluptatem eius tempora tempora."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          1
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "multiple",
+        "fontSize": 19,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Dolor dolor aliquam dolorem quaerat."
+          },
+          {
+            "label": "Sed ipsum ipsum aliquam voluptatem velit ut velit."
+          },
+          {
+            "label": "Ipsum consectetur sit labore."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          0,
+          1
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "single",
+        "fontSize": 18,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Non dolore labore dolore amet porro."
+          },
+          {
+            "label": "Dolore quiquia labore quaerat eius quiquia sed."
+          },
+          {
+            "label": "Dolorem ut dolore neque quiquia labore."
+          },
+          {
+            "label": "Ipsum quaerat non porro magnam."
+          },
+          {
+            "label": "Ipsum labore quaerat est est porro dolorem."
+          },
+          {
+            "label": "Ut non dolor sed magnam porro modi eius."
+          },
+          {
+            "label": "Ut eius quaerat non etincidunt velit neque numquam."
+          },
+          {
+            "label": "Amet non quaerat dolorem quisquam porro sed."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          1
+        ],
+        "userAnswers": []
+      },
+      {
+        "type": "quiz",
+        "quizType": "single",
+        "fontSize": 18,
+        "textAlign": "left",
+        "fontWeight": "normal",
+        "fontStyle": "normal",
+        "textDecoration": "none",
+        "content": [
+          {
+            "label": "Quaerat neque aliquam sit non consectetur."
+          },
+          {
+            "label": "Dolorem eius ut consectetur aliquam est."
+          },
+          {
+            "label": "Amet numquam labore adipisci neque tempora velit."
+          },
+          {
+            "label": "Amet numquam quiquia eius porro adipisci."
+          },
+          {
+            "label": "Ut amet quisquam sit."
+          },
+          {
+            "label": "Amet dolore dolore dolorem."
+          },
+          {
+            "label": "Quisquam non modi voluptatem voluptatem quisquam quisquam magnam."
+          },
+          {
+            "label": "Dolor numquam tempora dolore labore sed non sed."
+          },
+          {
+            "label": "Ut labore dolorem amet."
+          }
+        ],
+        "successAnswer": null,
+        "rightAnswers": [
+          4
+        ],
+        "userAnswers": []
+      }
+    ]
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "version": "0.0.1",
+  "variables": {
+    "v1": {
+      "type": "random-integer",
+      "min": 1,
+      "max": 100
+    },
+    "v2": {
+      "type": "randint",
+      "min": 1,
+      "max": 100
+    },
+    "t_2": {
+      "type": "randint",
+      "min": 0,
+      "max": 500
+    },
+    "t": {
+      "type": "residue",
+      "$expression": "2 * $t_2"
+    },
+    "S": {
+      "type": "residue",
+      "$expression": "$t_2 * ($v1 + $v2)"
+    },
+    "motion_type": {
+      "type": "residue",
+      "$expression": "'ускоренно' if $v2 > $v1 else 'замедленно'"
+    },
+    "change_type": {
+      "type": "residue",
+      "$expression": "'увеличился' if $v2 > $v1 else 'уменьшился'"
+    }
+  },
+  "content": {
+    "task": "Тело движется равно${motion_type}, не изменяя направления движения. За $t секунды модуль скорости тела $change_type от $v1 м/с до $v2 м/с. Какой путь прошло тело за это время?",
+    "solution": "a = (v_2 - v_1) / t\nS = (v^2_2 - v^2_1) / 2a\nS = t(v_2 - v_1)(v_2 + v_1) / 2(v_2 - v_1) = t(v_1 + v_2) / 2\nS = $t ($v1 + $v2) / 2 = $S (м/с)",
+    "answer": "$S м"
+  }
+}

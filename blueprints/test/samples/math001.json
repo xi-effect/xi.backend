@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "variables": {
+    "x": {
+      "type": "random-integer",
+      "min": -100000,
+      "max": 0
+    },
+    "p": {
+      "type": "residue",
+      "$expression": "$x * (-2)"
+    },
+    "q": {
+      "type": "residue",
+      "$expression": "($x) ** 2"
+    }
+  },
+  "content": {
+    "task": "Найдите корень уравнения: x**2 + ${p}x + $q = 0",
+    "answer": "$x"
+  }
+}
