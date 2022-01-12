@@ -7,6 +7,7 @@ from pytest import mark
 from .components import check_status_code, dict_equal
 
 
+@mark.skip
 @mark.order(600)
 def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     # Creating a new chat:
@@ -81,6 +82,7 @@ def get_roles_to_user(multi_client: Callable[[str], FlaskClient], chat):
             for role in roles]
 
 
+@mark.skip
 @mark.order(620)
 def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
                     multi_client: Callable[[str], FlaskClient]):  # relies on chat#4
@@ -116,6 +118,7 @@ def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
                 assert code == 403 or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
 
 
+@mark.skip
 @mark.order(625)
 def test_ownership_transfer(multi_client: Callable[[str], FlaskClient]):
     anatol, evgen, vasil = multi_client("1@user.user"), multi_client("2@user.user"), multi_client("3@user.user")
@@ -150,6 +153,7 @@ def test_ownership_transfer(multi_client: Callable[[str], FlaskClient]):
     assert check_status_code(anatol.get(f"/chats/{chat_id}/"), 404)["a"] == "Chat not found"
 
 
+@mark.skip
 @mark.order(650)
 def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
                    multi_client: Callable[[str], FlaskClient]):  # relies on chat#4

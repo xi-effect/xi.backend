@@ -5,14 +5,15 @@ from pathlib import Path
 from sys import modules
 
 from api import app as application, log_stuff, db_meta
-from authorship import Author
-from communication.entities import Chat, ChatRole, Message
-from componets import with_session
-from education import Module, Page
-from file_system.keeper import WIPPage
+from common import User, with_session
+from communication.chatting_db import Chat, ChatRole, Message
+from education.authorship import Author
+from education.knowledge import Module, Page
+from education.studio import WIPPage
 from main import versions
-from users import User, Invite, generate_code, dumps_feedback  # noqa
-from webhooks import WebhookURLs, send_discord_message
+from other import WebhookURLs, send_discord_message
+from users.invites_db import Invite
+from users.feedback_rst import generate_code, dumps_feedback  # noqa
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
@@ -130,3 +131,6 @@ version_check()
 
 if __name__ == "__main__":  # test only
     application.run()
+
+# if __name__ == "__main__":
+#     socketio.run(app, port=5050, debug=True)

@@ -10,7 +10,8 @@ from flask_cors import CORS
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from componets.add_whoosh import IndexService
+# from common import SocketIO
+from common._whoosh import IndexService  # noqa
 
 dictConfig({
     "version": 1,
@@ -65,6 +66,8 @@ engine = create_engine("sqlite:///app.db", pool_recycle=280)  # , echo=True)
 db_meta = MetaData(bind=engine)
 Base = declarative_base(metadata=db_meta)
 Session = sessionmaker(bind=engine)
+
+# socketio = SocketIO(app, cors_allowed_origins="*")
 
 index_service = IndexService(config=app.config, session=Session())
 
