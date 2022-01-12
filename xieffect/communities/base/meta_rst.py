@@ -3,9 +3,8 @@ from typing import Union
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from componets import Namespace, counter_parser
-from users import User
-from .metabase import Community
+from common import Namespace, counter_parser, User
+from .meta_db import Community
 
 communities_namespace: Namespace = Namespace("communities-meta", path="/communities/")
 community_base = communities_namespace.model("CommunityBase", Community.marshal_models["community-base"])
