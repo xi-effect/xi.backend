@@ -34,7 +34,7 @@ load_dotenv("../.env")
 # Version control:
 versions: Dict[str, str] = load(open("../files/versions.json", encoding="utf-8"))
 
-app: Flask = Flask(__name__)
+app: Flask = Flask(__name__, static_folder="../files/static", static_url_path="/static/")
 
 # Basic config:
 app.config["PROPAGATE_EXCEPTIONS"] = True
