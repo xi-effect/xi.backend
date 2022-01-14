@@ -173,10 +173,13 @@ class TestReplyManager(Resource):
 
 
 @interaction_namespace.route("/results/")
-class TestResultGetter(Resource):
+class TestResultGetter(Resource):  # TODO remove
     @module_typed("results functionality", ModuleType.TEST)
     @interaction_namespace.marshal_list_with(test_model)
     def get(self, session, user: User, module: Module):
         """ Ends the test & returns the results / result page """
         new_test_session = TestModuleSession.find_or_create(session, user.id, module.id)
         return new_test_session.collect_all(session)
+        # result - поле в бд, тип: JSON
+        # test_result - объект типа TestResult
+        # test_result.result = json.dumps(marshal(new_test_session.collect_all(session), test_model))
