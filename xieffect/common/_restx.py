@@ -9,9 +9,10 @@ from flask_restx.fields import List as ListField, Boolean as BoolField, Nested
 from flask_restx.marshalling import marshal
 from flask_restx.reqparse import RequestParser
 
-from main import Session, Base, index_service
-from common._whoosh import Searcher
+from main import Session
 from ._marshals import ResponseDoc, success_response, message_response
+from ._sqlalchemy import with_session
+from ._utils import get_or_pop
 
 
 class Identifiable:
@@ -44,55 +45,6 @@ class UserRole(Identifiable):
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Union[UserRole, None]:
         raise NotImplementedError
-
-
-def get_or_pop(dictionary: dict, key, keep: bool = False):
-    return dictionary[key] if keep else dictionary.pop(key)
-
-
-def register_as_searchable(*searchable: str):
-    """
-    - Registers database model as searchable with whoosh-sqlalchemy.
-    - Adds ``search_stmt`` field (:class:`Searcher`) to the class for searching.
-
-    :param searchable: names of model's fields to create the whoosh schema on
-    """
-
-    def register_as_searchable_wrapper(model: Type[Base]):
-        model.__searchable__ = list(searchable)
-        index_service.register_class(model)
-
-        searcher = model.search_query
-        model.search_stmt = Searcher(searcher.model_class, searcher.primary, searcher.index)
-
-        return model
-
-    return register_as_searchable_wrapper
-
-
-def with_session(function):
-    """ Wraps the function with Session.begin() and passes session object to the decorated function """
-
-    @wraps(function)
-    def with_session_inner(*args, **kwargs):
-        if "session" in kwargs.keys():
-            return function(*args, **kwargs)
-        with Session.begin() as session:
-            kwargs["session"] = session
-            return function(*args, **kwargs)
-
-    return with_session_inner
-
-
-def with_auto_session(function):
-    """ Wraps the function with Session.begin() for automatic commits after the decorated function """
-
-    @wraps(function)
-    def with_auto_session_inner(*args, **kwargs):
-        with Session.begin() as _:
-            return function(*args, **kwargs)
-
-    return with_auto_session_inner
 
 
 class _Namespace(RestXNamespace):  # for the lib
@@ -290,7 +242,7 @@ class _Namespace(RestXNamespace):  # for the lib
         return lister_wrapper
 
 
-class Namespace(_Namespace):  # xi-effect specific
+class Namespace(_Namespace):  # xieffect specific
     def abort(self, code: int, message: str = None, **kwargs):
         default_abort(code, a=message, **kwargs)
 
