@@ -1,5 +1,6 @@
-from ._restx import UserRole, Identifiable, Namespace
+from ._restx import Namespace
 from ._eventor import error_event, Namespace as SIONamespace, users_broadcast
+from ._interfaces import UserRole, Identifiable
 from ._marshals import LambdaFieldDef, Marshalable, ResponseDoc
 from ._marshals import create_marshal_model, unite_models, message_response, success_response, DateTimeField
 from ._parsers import counter_parser, password_parser

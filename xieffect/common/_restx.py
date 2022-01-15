@@ -9,42 +9,10 @@ from flask_restx.fields import List as ListField, Boolean as BoolField, Nested
 from flask_restx.marshalling import marshal
 from flask_restx.reqparse import RequestParser
 
-from main import Session
+from ._interfaces import Identifiable, UserRole
 from ._marshals import ResponseDoc, success_response, message_response
 from ._sqlalchemy import with_session
 from ._utils import get_or_pop
-
-
-class Identifiable:
-    """
-    An interface to mark database classes that have an id and can be identified by it.
-
-    Used in :ref:`.Namespace.database_searcher`
-    """
-
-    not_found_text: str = ""
-    """ Customizable error message to be used for missing ids """
-
-    def __init__(self, **kwargs):
-        pass
-
-    @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[Identifiable, None]:
-        raise NotImplementedError
-
-
-class UserRole(Identifiable):
-    """
-    An interface to mark database classes as user roles, that can be used for authorization.
-
-    Used in :ref:`.Namespace.jwt_authorizer`
-    """
-
-    default_role: Union[UserRole, None] = None
-
-    @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[UserRole, None]:
-        raise NotImplementedError
 
 
 class _Namespace(RestXNamespace):  # for the lib
@@ -208,7 +176,6 @@ class _Namespace(RestXNamespace):  # for the lib
         - Marshals the return of the decorated function as a list with `marshal_model`.
         - Adds information on the response to documentation automatically.
 
-        :raises KeyError: if counter argument is not provided
         :param per_request:
         :param marshal_model:
         :param skip_none:
