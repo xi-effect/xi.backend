@@ -3,7 +3,7 @@ from typing import Union
 
 from pydantic import BaseModel, Field
 
-from .flask_siox import Namespace as _Namespace, ServerEvent, DuplexEvent
+from .flask_siox import Namespace as _Namespace, EventGroup, ServerEvent, DuplexEvent
 
 
 class Error(BaseModel):
@@ -13,13 +13,14 @@ class Error(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 
-error_event = ServerEvent(Error, "error")
+error_group = EventGroup(True)
+error_event = error_group.bind_sub("error", "Emitted if something goes wrong", Error)
 
 
 class Namespace(_Namespace):
-    def __init__(self, namespace: str):
-        super().__init__(namespace)
-        self.attach_event(error_event)
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.attach_event_group(error_group)
 
     def trigger_event(self, event, *args):
         super().trigger_event(event.replace("-", "_"), *args)
