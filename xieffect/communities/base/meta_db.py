@@ -44,6 +44,10 @@ class Community(Base, Identifiable, Marshalable):
         ids = session.execute(select(Participant.community_id).filter_by(user_id=user.id).offset(offset).limit(limit))
         return session.execute(select(cls).filter(cls.id.in_(ids.scalars().all()))).scalars().all()
 
+    def delete(self, session: Session):
+        session.delete(self)
+        session.flush()
+
 
 class ParticipantRole(TypeEnum):
     BASE = 0

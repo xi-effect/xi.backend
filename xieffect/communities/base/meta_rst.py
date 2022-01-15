@@ -31,3 +31,26 @@ class CommunityLister(Resource):
     @communities_namespace.lister(20, community_base)
     def post(self, session, user: User, start: int, finish: int):
         return Community.find_by_user(session, user, start, finish - start)
+
+
+@communities_namespace.route("/communities/<int:community_id>/")
+class CommunityEditor(Resource):
+    parser: RequestParser = RequestParser()
+    parser.add_argument("name", required=False, type=str)
+    parser.add_argument("description", required=False, type=str)
+
+    @communities_namespace.jwt_authorizer(User)
+    @communities_namespace.argument_parser(parser)
+    @communities_namespace.database_searcher(Community)
+    @communities_namespace.a_response()
+    def put(self, name: str, description: str, community: Community) -> None:
+        if name is not None:
+            community.name = name
+        if description is not None:
+            community.description = description
+
+    @communities_namespace.jwt_authorizer(User)
+    @communities_namespace.database_searcher(Community)
+    @communities_namespace.a_response()
+    def delete(self, session, community: Community):
+        community.delete(session)
