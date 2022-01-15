@@ -30,8 +30,8 @@ if __name__ == "__main__" or "pytest" in modules.keys():  # test only
 else:  # works on server restart
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
     if any([send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for secret `{secret_name}`")
-            for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY", "API_KEY"]
-            if application.config[secret_name] == "hope it's local"]):
+            for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY", "API_KEY", "DB_LINK"]
+            if application.config[secret_name] in ("hope it's local", "sqlite:///app.db")]):
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
 
 

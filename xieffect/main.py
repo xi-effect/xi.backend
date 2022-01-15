@@ -62,7 +62,7 @@ app.config["WHOOSHEE_MIN_STRING_LEN"] = 0
 app.config["WHOOSHEE_ENABLE_INDEXING"] = True
 app.config["WHOOSH_BASE"] = "../files/temp/whoosh"
 
-engine = create_engine("sqlite:///app.db", pool_recycle=280)  # , echo=True)
+engine = create_engine(getenv("DB_LINK", "sqlite:///app.db"), pool_recycle=280)  # , echo=True)
 db_meta = MetaData(bind=engine)
 Base = declarative_base(metadata=db_meta)
 Session = sessionmaker(bind=engine)
@@ -70,5 +70,3 @@ Session = sessionmaker(bind=engine)
 # socketio = SocketIO(app, cors_allowed_origins="*")
 
 index_service = IndexService(config=app.config, session=Session())
-
-# "mysql+mysqldb://qwert45hi:7b[-2duvd44sgoi1=pwfpji0i@qwert45hi.mysql.pythonanywhere-services.com/development"
