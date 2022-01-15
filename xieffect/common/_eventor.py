@@ -19,6 +19,21 @@ class EventException(Exception):
 
 
 class EventGroup(_EventGroup):
+    def triggers(self, event: ServerEvent, condition: str = None, data: ... = None):
+        def triggers_wrapper(function):
+            if not hasattr(function, "__sio_doc__"):
+                setattr(function, "__sio_doc__", {"x-triggers": []})
+            if (x_triggers := function.__sio_doc__.get("x-triggers", None)) is None:
+                function.__sio_doc__["x-triggers"] = []
+                x_triggers = function.__sio_doc__["x-triggers"]
+            x_triggers.append({
+                "event": event.name,
+                "condition": condition,
+                "data": data
+            })
+
+        return triggers_wrapper
+
     def abort(self, error_code: Union[int, str], description: str):
         raise EventException(error_code, description)
 
@@ -53,6 +68,7 @@ class EventGroup(_EventGroup):
 
         def searcher_wrapper(function):
             @wraps(function)
+            @self.triggers(error_event, identifiable.not_found_text, {"code": 404})
             @with_session
             def searcher_inner(*args, **kwargs):
                 return self._database_searcher(identifiable, check_only, False, use_session, 404,
@@ -81,6 +97,7 @@ class EventGroup(_EventGroup):
             error_code: int = 401 if role is UserRole.default_role else 403
 
             @wraps(function)
+            @self.triggers(error_event, role.not_found_text, {"code": error_code})
             @jwt_required(optional=optional)
             @with_session
             def authorizer_inner(*args, **kwargs):
