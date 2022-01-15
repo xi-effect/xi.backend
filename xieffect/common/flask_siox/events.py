@@ -17,7 +17,7 @@ class BaseEvent:  # do not instantiate!
     def attach_name(self, name: str):
         raise NotImplementedError
 
-    def create_doc(self, namespace: str):
+    def create_doc(self, namespace: str, additional_docs: dict = None):
         raise NotImplementedError
 
 
@@ -30,12 +30,12 @@ class Event(BaseEvent):  # do not instantiate!
     def attach_name(self, name: str):
         self.name = name
 
-    def create_doc(self, namespace: str):
+    def create_doc(self, namespace: str, additional_docs: dict = None):
         return remove_none({
             "description": self.description,
             "tags": [{"name": f"namespace-{namespace}"}],
             "message": {"$ref": f"#/components/messages/{self.model.__name__}"}
-        })
+        }, **additional_docs)
 
 
 @dataclass()
@@ -50,8 +50,8 @@ class ClientEvent(Event):
     def bind(self, function):
         self.handler = lambda data=None: function(**self.parse(data))
 
-    def create_doc(self, namespace: str):
-        return {"publish": super().create_doc(namespace)}
+    def create_doc(self, namespace: str, additional_docs: dict = None):
+        return {"publish": super().create_doc(namespace, additional_docs)}
 
 
 @dataclass()
@@ -74,8 +74,8 @@ class ServerEvent(Event):
             _data: BaseModel = self.model.parse_obj(_data)
         emit(self.name, _data.dict(**self._emit_kwargs), to=_room)
 
-    def create_doc(self, namespace: str):
-        return {"subscribe": super().create_doc(namespace)}
+    def create_doc(self, namespace: str, additional_docs: dict = None):
+        return {"subscribe": super().create_doc(namespace, additional_docs)}
 
 
 @dataclass()
@@ -104,9 +104,9 @@ class DuplexEvent(BaseEvent):
     def bind(self, function):
         return self.client_event.bind(function)
 
-    def create_doc(self, namespace: str):
-        result: dict = self.client_event.create_doc(namespace)
-        result.update(self.server_event.create_doc(namespace))
+    def create_doc(self, namespace: str, additional_docs: dict = None):
+        result: dict = self.client_event.create_doc(namespace, additional_docs)
+        result.update(self.server_event.create_doc(namespace, additional_docs))
         if self.description is not None:
             result["description"] = self.description
         return result

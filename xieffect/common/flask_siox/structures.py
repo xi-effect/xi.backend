@@ -25,8 +25,8 @@ class EventGroup:
         kebabify_model(model)
         return name.replace("_", "-")
 
-    def _doc_event(self, event: BaseEvent, model: Type[BaseModel]):
-        self.doc_channels[event.name] = event.create_doc("/")
+    def _doc_event(self, event: BaseEvent, model: Type[BaseModel], additional_docs: dict = None):
+        self.doc_channels[event.name] = event.create_doc("/", additional_docs)
         self.doc_messages[model.__name__] = {"payload": model.schema()}
         # {"name": "", "title": "", "summary": "", "description": ""}
 
@@ -37,10 +37,10 @@ class EventGroup:
         if self.use_kebab_case:
             name = self._kebabify(name, model)
         event = ClientEvent(model, name, description)
-        self._doc_event(event, model)
 
         def bind_pub_wrapper(function) -> ClientEvent:
             self._add_handler(name, model, function)
+            self._doc_event(event, model, getattr(function, "__sio_doc__", None))
             return event
 
         return bind_pub_wrapper
@@ -57,10 +57,10 @@ class EventGroup:
             name = self._kebabify(name, model)
         event = DuplexEvent.similar(model, name)
         event.description = description
-        self._doc_event(event, model)
 
         def bind_dup_wrapper(function) -> DuplexEvent:
             self._add_handler(name, model, function)
+            self._doc_event(event, model, getattr(function, "__sio_doc__", None))
             return event
 
         return bind_dup_wrapper
