@@ -8,11 +8,12 @@ from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
-from common import Marshalable, User
+from common import Marshalable, User, create_marshal_model
 from main import Base, Session, app
 from .meta_db import Community, Participant, ParticipantRole
 
 
+@create_marshal_model("community_invites", "role", "code", "limit", "accepted", "community_id")
 class Invite(Base, Marshalable):
     __tablename__ = "community_invites"
     serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECURITY_PASSWORD_SALT"])
@@ -61,3 +62,7 @@ class Invite(Base, Marshalable):
 
     def generate_code(self):
         return self.serializer.dumps((self.community_id, self.invite_id))
+
+    def delete(self, session):
+        session.delite(self)
+        session.flush()
