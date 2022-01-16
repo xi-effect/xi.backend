@@ -23,10 +23,9 @@ class InviteCreator(Resource):
     @invitations_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @invitations_namespace.jwt_authorizer(User)
     @invitations_namespace.argument_parser(parser)
-    @invitations_namespace.database_searcher(Invite)
     @invitations_namespace.database_searcher(Community)
-    def post(self, session, community: Community, limit: int, role: Participant):
-        return {"id": Invite.create(session, community, role, limit).invite_id}
+    def post(self, session, community: Community, limit: int, role: Participant, time_limit: int):
+        return {"id": Invite.create(session, community, role, limit, time_limit).invite_id}
 
 
 @invitations_namespace.route("/communities/<int:community_id>/invitations/<int:invite_id>/")

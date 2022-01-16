@@ -11,25 +11,26 @@ from sqlalchemy.sql.sqltypes import Integer, String, Enum, DateTime
 from common import Marshalable, User, create_marshal_model
 from main import Base, Session, app
 from .meta_db import Community, Participant, ParticipantRole
+from datetime import datetime, timedelta
 
 
 @create_marshal_model("community_invites", "role", "code", "limit", "accepted", "time_limit")
 class Invite(Base, Marshalable):
     __tablename__ = "community_invites"
     serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECURITY_PASSWORD_SALT"])
-
     community = relationship("Community")
     community_id = Column(Integer, ForeignKey(Community.id), primary_key=True)
     invite_id = Column(Integer, primary_key=True)
     code = Column(String(100), nullable=False, default="")
-    time_limit = (DateTime())
+    time_limit = (DateTime(timezone=True))
     role = Column(Enum(ParticipantRole), nullable=False)
     limit = Column(Integer, nullable=False, default=-1)
     accepted = Column(Integer, nullable=False, default=0)
 
     @classmethod
-    def create(cls, session: Session, community: Community, role: ParticipantRole, limit: int = -1) -> Invite:
-        entry: cls = cls(role=role, limit=limit, community=community, invite_id=community.invite_count)  # noqa
+    def create(cls, session: Session, community: Community, role: ParticipantRole, limit: int = -1, time_limit: int = 0) -> Invite:
+        time = datetime.utcnow() + timedelta(hours=time_limit) if time_limit != 0 else None
+        entry: cls = cls(role=role, limit=limit, community=community, invite_id=community.invite_count, time=time)  # noqa
         community.invite_count += 1
         session.add(entry)
         session.flush()
