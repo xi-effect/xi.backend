@@ -13,7 +13,7 @@ invitations_namespace: Namespace = Namespace("invitations", path="/communities/"
 invitations_model = invitations_namespace.model("Invite", Invite.marshal_models["community_invites"])
 
 
-@invitations_namespace.route("/communities/invites/<int:community_id>/")
+@invitations_namespace.route("/communities/invitations/<int:community_id>/")
 class InviteCreator(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("limit", type=int, required=False)
@@ -28,7 +28,7 @@ class InviteCreator(Resource):
         return {"id": Invite.create(session, community, role, limit).invite_id}
 
 
-@invitations_namespace.route("/communities/invites/<int:community_id>/")
+@invitations_namespace.route("/communities/invitations/<int:community_id>/")
 class InviteManager(Resource):
     @invitations_namespace.jwt_authorizer(User)
     @invitations_namespace.database_searcher(Invite)
