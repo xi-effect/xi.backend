@@ -6,14 +6,14 @@ from typing import Union
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Enum
+from sqlalchemy.sql.sqltypes import Integer, String, Enum, DateTime
 
 from common import Marshalable, User, create_marshal_model
 from main import Base, Session, app
 from .meta_db import Community, Participant, ParticipantRole
 
 
-@create_marshal_model("community_invites", "role", "code", "limit", "accepted", "community_id")
+@create_marshal_model("community_invites", "role", "code", "limit", "accepted", "time_limit")
 class Invite(Base, Marshalable):
     __tablename__ = "community_invites"
     serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECURITY_PASSWORD_SALT"])
@@ -22,7 +22,7 @@ class Invite(Base, Marshalable):
     community_id = Column(Integer, ForeignKey(Community.id), primary_key=True)
     invite_id = Column(Integer, primary_key=True)
     code = Column(String(100), nullable=False, default="")
-
+    time_limit = (DateTime())
     role = Column(Enum(ParticipantRole), nullable=False)
     limit = Column(Integer, nullable=False, default=-1)
     accepted = Column(Integer, nullable=False, default=0)
