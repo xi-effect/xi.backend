@@ -14,7 +14,7 @@ from .meta_db import Community, Participant, ParticipantRole
 from datetime import datetime, timedelta
 
 
-@create_marshal_model("community_invites", "role", "code", "limit", "accepted", "time_limit")
+@create_marshal_model("community_invites", "role", "code", "limit", "time_limit")
 class Invite(Base, Marshalable):
     __tablename__ = "community_invites"
     serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECURITY_PASSWORD_SALT"])
@@ -51,6 +51,10 @@ class Invite(Base, Marshalable):
         if not isinstance(community_id, int) or not isinstance(invite_id, int):
             raise TypeError
         return cls.find_by_ids(session, community_id, invite_id)
+
+    @classmethod
+    def find_global(cls, session: Session, offset: int, limit: int) -> list[Invite]:
+        return session.execute(select(cls).offset(offset).limit(limit)).scalars().all()
 
     def accept(self, session: Session, acceptor: User) -> bool:
         if Participant.find_by_ids(session, self.community_id, acceptor.id) is not None:
