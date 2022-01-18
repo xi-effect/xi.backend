@@ -62,7 +62,9 @@ app.config["WHOOSHEE_MIN_STRING_LEN"] = 0
 app.config["WHOOSHEE_ENABLE_INDEXING"] = True
 app.config["WHOOSH_BASE"] = "../files/temp/whoosh"
 
-engine = create_engine(getenv("DB_LINK", "sqlite:///app.db"), pool_recycle=280)  # , echo=True)
+db_url: str = getenv("DB_LINK", "sqlite:///app.db")
+
+engine = create_engine(db_url, pool_recycle=280)  # , echo=True)
 db_meta = MetaData(bind=engine)
 Base = declarative_base(metadata=db_meta)
 Session = sessionmaker(bind=engine)

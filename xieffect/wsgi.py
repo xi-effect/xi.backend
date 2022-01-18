@@ -10,10 +10,10 @@ from communication.chatting_db import Chat, ChatRole, Message
 from education.authorship import Author
 from education.knowledge import Module, Page
 from education.studio import WIPPage
-from main import versions
+from main import versions, db_url
 from other import WebhookURLs, send_discord_message
-from users.invites_db import Invite
 from users.feedback_rst import generate_code, dumps_feedback  # noqa
+from users.invites_db import Invite
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
@@ -29,9 +29,16 @@ if __name__ == "__main__" or "pytest" in modules.keys():  # test only
     db_meta.create_all()
 else:  # works on server restart
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
-    if any([send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for secret `{secret_name}`")
-            for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY", "API_KEY", "DB_LINK"]
-            if application.config[secret_name] in ("hope it's local", "sqlite:///app.db")]):
+
+    setup_fail: bool = False
+    for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY", "API_KEY"]:
+        if application.config[secret_name] == "hope it's local":
+            send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for secret `{secret_name}`")
+            setup_fail = True
+    if db_url == "sqlite:///app.db":
+        send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for db url!")
+        setup_fail = True
+    if setup_fail:
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
 
 
