@@ -1,8 +1,8 @@
-"""Test mirgation 10
+"""Initial Setup
 
-Revision ID: da92b1dd19b4
+Revision ID: 7ff753c32df0
 Revises: 
-Create Date: 2021-09-08 14:55:51.359123
+Create Date: 2022-01-18 18:45:39.279389
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'da92b1dd19b4'
+revision = '7ff753c32df0'
 down_revision = None
 branch_labels = None
 depends_on = None
