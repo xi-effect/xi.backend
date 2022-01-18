@@ -9,7 +9,7 @@ from common import User, with_session
 from communication.chatting_db import Chat, ChatRole, Message
 from education.authorship import Author
 from education.knowledge import Module, Page
-from education.studio import WIPPage
+from education.studio import WIPPage, WIPModule
 from main import versions, db_url
 from other import WebhookURLs, send_discord_message
 from users.feedback_rst import generate_code, dumps_feedback  # noqa
@@ -91,6 +91,9 @@ def init_knowledge(session):
 
     with open("../files/test/module-bundle.json", encoding="utf-8") as f:
         for module_data in load(f):
+            module = WIPModule.create_from_json(session, test_author, module_data)
+            module.id = module_data["id"]
+            session.flush()
             Module.create(session, module_data, test_author, force=True)
 
 
