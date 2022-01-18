@@ -25,8 +25,9 @@ TEST_INVITE_ID: int = 0
 
 if __name__ == "__main__" or "pytest" in modules.keys():  # test only
     application.debug = True
-    db_meta.drop_all()
-    db_meta.create_all()
+    if db_url == "sqlite:///app.db":
+        db_meta.drop_all()
+        db_meta.create_all()
 else:  # works on server restart
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 

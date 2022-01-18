@@ -12,7 +12,7 @@ from common import TokenBlockList, with_session
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace)
-from main import app, db_meta, versions
+from main import app, db_meta, versions  # noqa
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
@@ -70,8 +70,6 @@ jwt: JWTManager = JWTManager(app)
 # messages_namespace.attach_event_group(user_management_events, use_kebab_case=True)
 #
 # socketio.on_namespace(messages_namespace)
-
-db_meta.create_all()
 
 
 def log_stuff(level: str, message: str):

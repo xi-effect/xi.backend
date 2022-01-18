@@ -3,6 +3,7 @@
 .env
 venv/
 xieffect/app.db
+xieffect/alembic.db
 xieffect/test/.pytest_cache
 files/temp/*
 files/tfs/wip-*
