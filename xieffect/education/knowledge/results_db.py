@@ -6,20 +6,20 @@ from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
-from common import Identifiable, Marshalable, LambdaFieldDef, create_marshal_model, register_as_searchable, TypeEnum, User
+from common import Identifiable, Marshalable, LambdaFieldDef, create_marshal_model, register_as_searchable, TypeEnum, \
+    User
 from education.knowledge.interaction_db import TestModuleSession
 from main import Base, Session
 
 
-@create_marshal_model("TestResult", "short_result", "result")
 class TestResult(Base):
     __tablename__ = "TestResult"
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     module_id = Column(Integer, ForeignKey("module.id"), nullable=False)
-    short_result = Column(JSON)
-    result = Column(JSON)
+    short_result = Column(JSON, nullable=False)
+    result = Column(JSON, nullable=False)
 
     @classmethod
     def create(cls, session: Session, user_id: int, module_id: int) -> TestResult:
