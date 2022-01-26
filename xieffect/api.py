@@ -13,6 +13,8 @@ from common._marshals import flask_restx_has_bad_design  # noqa
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace)
+from education.knowledge.results_rst import result_namespace
+from main import app, db_meta, versions
 from main import app, db_meta, versions  # noqa
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
@@ -30,7 +32,7 @@ api: Api = Api(app, doc="/doc/", version=versions["API"], authorizations=authori
 api.add_namespace(reglog_namespace)
 api.add_namespace(users_namespace)
 api.add_namespace(profiles_namespace)
-
+api.add_namespace(result_namespace)
 api.add_namespace(settings_namespace)
 api.add_namespace(other_settings_namespace)
 api.add_namespace(protected_settings_namespace)
