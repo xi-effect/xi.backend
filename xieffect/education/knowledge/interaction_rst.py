@@ -2,11 +2,12 @@ from functools import wraps
 from typing import Union
 
 from flask import redirect
-from flask_restx import Resource, Model
+from flask_restx import Resource, Model, marshal
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
 from common import Namespace, ResponseDoc, User
+from .results_db import TestResult
 from .interaction_db import ModuleProgressSession, TestModuleSession, TestPointSession
 from .modules_db import Module, ModuleType
 
@@ -173,13 +174,14 @@ class TestReplyManager(Resource):
 
 
 @interaction_namespace.route("/results/")
-class TestResultGetter(Resource):  # TODO remove
-    @module_typed("results functionality", ModuleType.TEST)
-    @interaction_namespace.marshal_list_with(test_model)
+class TestSaver(Resource):
+
+    @interaction_namespace.jwt_authorizer(User)
+    @interaction_namespace.database_searcher(Module, use_session=True)
     def get(self, session, user: User, module: Module):
-        """ Ends the test & returns the results / result page """
-        new_test_session = TestModuleSession.find_or_create(session, user.id, module.id)
-        return new_test_session.collect_all(session)
-        # result - поле в бд, тип: JSON
-        # test_result - объект типа TestResult
-        # test_result.result = json.dumps(marshal(new_test_session.collect_all(session), test_model))
+        new_test_session = TestModuleSession.find_by_ids(session, module.id, user.id)
+        if new_test_session is None:
+            interaction_namespace.abort(400, 'Test not started')
+        new_result = TestResult.create(session, user.id, module.id)
+        new_result.result = dumps(marshal(new_test_session.collect_all(session), test_model))
+        return new_result.result
