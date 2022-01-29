@@ -1,17 +1,12 @@
 from __future__ import annotations
 
-import json
 from typing import Union
 
-from flask_restx import marshal
 from sqlalchemy import Column, ForeignKey, select
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
+from sqlalchemy.sql.sqltypes import Integer, JSON
 
-from common import Identifiable, Marshalable, LambdaFieldDef, create_marshal_model, register_as_searchable, TypeEnum, \
-    User
-from education.knowledge.interaction_db import TestModuleSession, TestPointSession
-from education.knowledge.modules_db import Module
+from common import User
+from education.knowledge.interaction_db import TestModuleSession
 from main import Base, Session
 
 

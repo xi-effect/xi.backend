@@ -1,13 +1,7 @@
-import json
-from typing import Union
+from flask_restx import Resource
 
-from flask import request, send_from_directory, redirect
-from flask_restx import Resource, marshal
-from flask_restx.reqparse import RequestParser
-
-from common import Namespace, ResponseDoc, User, counter_parser
+from common import Namespace, User
 from .results_db import TestResult
-from .interaction_db import TestModuleSession, TestPointSession
 
 result_namespace: Namespace = Namespace("result", path='/modules/<int:module_id>/result/')
 
@@ -22,11 +16,12 @@ result_namespace: Namespace = Namespace("result", path='/modules/<int:module_id>
 @result_namespace.route("/<int:result_id>/")
 class Result(Resource):
     @result_namespace.jwt_authorizer(User, use_session=True)
-    def get(self, session, result_id):
+    def get(self, session, result_id, user: User, module_id: int):
         entry: TestResult = TestResult.find_by_id(session, result_id)
         return entry.result
 
     @result_namespace.jwt_authorizer(User, use_session=True)
-    def delete(self, session, result_id):
+    @result_namespace.a_response()
+    def delete(self, session, result_id, user: User, module_id: int) -> None:
         entry: TestResult = TestResult.find_by_id(session, result_id)
-        return session.delete(entry)
+        session.delete(entry)
