@@ -1,23 +1,26 @@
 from __future__ import annotations
 
+import json
 from typing import Union
 
+from flask_restx import marshal
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
 from common import Identifiable, Marshalable, LambdaFieldDef, create_marshal_model, register_as_searchable, TypeEnum, \
     User
-from education.knowledge.interaction_db import TestModuleSession
+from education.knowledge.interaction_db import TestModuleSession, TestPointSession
+from education.knowledge.modules_db import Module
 from main import Base, Session
 
 
 class TestResult(Base):
     __tablename__ = "TestResult"
-
+    not_found_text = "Test not found"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    module_id = Column(Integer, ForeignKey("module.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
     short_result = Column(JSON, nullable=False)
     result = Column(JSON, nullable=False)
 
@@ -35,3 +38,6 @@ class TestResult(Base):
     @classmethod
     def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[User]:
         return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
+
+    def collect_all(self, session: Session):
+        return self.result
