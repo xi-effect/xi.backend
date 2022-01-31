@@ -1,20 +1,69 @@
 from collections import OrderedDict
+from collections.abc import Callable
 from typing import Type
 
 from flask_socketio import Namespace as _Namespace, SocketIO as _SocketIO
 from pydantic import BaseModel
 
-from .events import BaseEvent, ClientEvent, DuplexEvent
-
-
-class EventGroup:
-    def __init__(self, **events: [str, BaseEvent]):
-        self.events: dict[str, BaseEvent] = events
+from .events import ClientEvent, ServerEvent, DuplexEvent, BaseEvent
 
 
 def kebabify_model(model: Type[BaseModel]):
     for f_name, field in model.__fields__.items():
         field.alias = field.name.replace("_", "-")
+
+
+class EventGroup:
+    def __init__(self, use_kebab_case: bool = False):
+        self.use_kebab_case: bool = use_kebab_case
+        self.doc_channels = OrderedDict()
+        self.doc_messages = OrderedDict()
+        self.handlers = {}
+
+    @staticmethod
+    def _kebabify(name: str, model: Type[BaseModel]) -> str:
+        kebabify_model(model)
+        return name.replace("_", "-")
+
+    def _doc_event(self, event: BaseEvent, model: Type[BaseModel], additional_docs: dict = None):
+        self.doc_channels[event.name] = event.create_doc("/", additional_docs)
+        self.doc_messages[model.__name__] = {"payload": model.schema()}
+        # {"name": "", "title": "", "summary": "", "description": ""}
+
+    def _add_handler(self, name: str, model: Type[BaseModel], function: Callable):
+        self.handlers[name] = lambda data=None: function(**model.parse_obj(data).dict())
+
+    def bind_pub(self, name: str, description: str, model: Type[BaseModel]) -> Callable[[Callable], ClientEvent]:
+        if self.use_kebab_case:
+            name = self._kebabify(name, model)
+        event = ClientEvent(model, name, description)
+
+        def bind_pub_wrapper(function) -> ClientEvent:
+            self._add_handler(name, model, function)
+            self._doc_event(event, model, getattr(function, "__sio_doc__", None))
+            return event
+
+        return bind_pub_wrapper
+
+    def bind_sub(self, name: str, description: str, model: Type[BaseModel]) -> ServerEvent:
+        if self.use_kebab_case:
+            name = self._kebabify(name, model)
+        event = ServerEvent(model, name, description)
+        self._doc_event(event, model)
+        return event
+
+    def bind_dup(self, name: str, description: str, model: Type[BaseModel]) -> Callable[[Callable], DuplexEvent]:
+        if self.use_kebab_case:
+            name = self._kebabify(name, model)
+        event = DuplexEvent.similar(model, name)
+        event.description = description
+
+        def bind_dup_wrapper(function) -> DuplexEvent:
+            self._add_handler(name, model, function)
+            self._doc_event(event, model, getattr(function, "__sio_doc__", None))
+            return event
+
+        return bind_dup_wrapper
 
 
 class Namespace(_Namespace):
@@ -23,38 +72,11 @@ class Namespace(_Namespace):
         self.doc_channels = OrderedDict()
         self.doc_messages = OrderedDict()
 
-    def attach_event(self, event: BaseEvent, name: str = None, use_kebab_case: bool = False):
-        if name is None:
-            name = event.name
-        self.doc_channels[name.replace("_", "-") if use_kebab_case else name] = event.create_doc(self.namespace)
-
-        if isinstance(event, ClientEvent):
-            if event.handler is None:
-                pass  # TODO error / warning
-            setattr(self, f"on_{name.replace('-', '_')}", event.handler)
-
-        if isinstance(event, DuplexEvent):
-            if event.client_event.handler is None:
-                pass  # TODO error / warning
-            setattr(self, f"on_{name.replace('-', '_')}", event.client_event.handler)
-
-            if use_kebab_case:
-                kebabify_model(event.client_event.model)
-                kebabify_model(event.server_event.model)
-
-            self.doc_messages[event.client_event.model.__name__] = {"payload": event.client_event.model.schema()}
-            self.doc_messages[event.server_event.model.__name__] = {"payload": event.server_event.model.schema()}
-        else:
-            if use_kebab_case:
-                kebabify_model(event.model)
-            self.doc_messages[event.model.__name__] = {"payload": event.model.schema()}
-        # {"name": "", "title": "", "summary": "", "description": ""}
-
-    def attach_event_group(self, event_group: EventGroup, use_kebab_case: bool = False):
-        for name, event in event_group.events.items():
-            if event.name is None:
-                event.attach_name(name.lower().replace("_", "-"))
-            self.attach_event(event, use_kebab_case=use_kebab_case)
+    def attach_event_group(self, event_group: EventGroup):
+        self.doc_channels.update(event_group.doc_channels)
+        self.doc_messages.update(event_group.doc_messages)
+        for name, handler in event_group.handlers.items():
+            setattr(self, f"on_{name.replace('-', '_')}", handler)
 
 
 class SocketIO(_SocketIO):

@@ -19,3 +19,7 @@ class TypeEnum(Enum):
 
     def to_string(self) -> str:
         return self.name.lower().replace("_", "-")
+
+
+def get_or_pop(dictionary: dict, key, keep: bool = False):
+    return dictionary[key] if keep else dictionary.pop(key)
