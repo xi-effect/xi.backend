@@ -6,6 +6,7 @@ from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.sql.sqltypes import Integer, JSON
 
 from common import User
+
 from education.knowledge.interaction_db import TestModuleSession
 from main import Base, Session
 
@@ -33,6 +34,10 @@ class TestResult(Base):
     @classmethod
     def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[User]:
         return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
+
+    @classmethod
+    def find_by_module(cls, session: Session, user_id: int, module_id: int):
+        return session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)).scalars().first()
 
     def collect_all(self, session: Session):
         return self.result
