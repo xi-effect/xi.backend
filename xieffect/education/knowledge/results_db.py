@@ -35,8 +35,9 @@ class TestResult(Base):
         return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
 
     @classmethod
-    def find_by_module(cls, session: Session, user_id: int, module_id: int):
-        return session.execute(select(cls).where(cls.user_id == user_id, cls.module_id == module_id)).scalars().first()
+    def find_by_module(cls, session: Session, user_id: int, module_id: int, offset: int, limit: int):
+        return session.execute(
+            select(cls).filter_by(user_id=user_id, module_id=module_id).offset(offset).limit(limit)).scalars().all()
 
     def collect_all(self, session: Session):
         return self.result
