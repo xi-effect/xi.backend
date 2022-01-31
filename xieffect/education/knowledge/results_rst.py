@@ -1,6 +1,6 @@
 from flask_restx import Resource, fields, Model
 
-from common import Namespace, User, counter_parser
+from common import Namespace, User, counter_parser, ResponseDoc
 from .results_db import TestResult
 
 result_namespace: Namespace = Namespace("result", path="/modules/<int:module_id>/result/")
@@ -22,6 +22,7 @@ result_model = Model("ResultModel", {
 
 @result_namespace.route("/")
 class PagesResult(Resource):
+    @result_namespace.doc_responses(ResponseDoc(200, "", result_model))
     @result_namespace.jwt_authorizer(User)
     @result_namespace.argument_parser(counter_parser)
     @result_namespace.lister(50, result_model)
@@ -31,6 +32,7 @@ class PagesResult(Resource):
 
 @result_namespace.route("/<int:result_id>/")
 class Result(Resource):
+    @result_namespace.doc_responses(ResponseDoc(200, "", result_model))
     @result_namespace.jwt_authorizer(User, use_session=True)
     def get(self, session, result_id, user: User, module_id: int):
         entry: TestResult = TestResult.find_by_id(session, result_id)
