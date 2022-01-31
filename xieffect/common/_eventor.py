@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Union, Type
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_socketio import disconnect
 from pydantic import BaseModel, Field
 
 from ._interfaces import Identifiable, UserRole
@@ -134,6 +135,7 @@ class Namespace(_Namespace):
             super().trigger_event(event.replace("-", "_"), *args)
         except EventException as e:
             error_event.emit(code=e.code, message=e.message, event=event)
+            disconnect()
 
 
 def users_broadcast(_event: Union[ServerEvent, DuplexEvent], _user_ids: list[int], **data):

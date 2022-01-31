@@ -35,7 +35,7 @@ class Event(BaseEvent):  # do not instantiate!
             "description": self.description,
             "tags": [{"name": f"namespace-{namespace}"}],
             "message": {"$ref": f"#/components/messages/{self.model.__name__}"}
-        }, **additional_docs)
+        }, **(additional_docs or {}))
 
 
 @dataclass()
