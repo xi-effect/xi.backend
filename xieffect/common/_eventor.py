@@ -10,7 +10,8 @@ from pydantic import BaseModel, Field
 from ._interfaces import Identifiable, UserRole
 from ._sqlalchemy import with_session
 from ._utils import get_or_pop
-from .flask_siox import Namespace as _Namespace, EventGroup as _EventGroup, ServerEvent, DuplexEvent
+from .flask_siox import Namespace as _Namespace, EventGroup as _EventGroup, SocketIO as _SocketIO
+from .flask_siox import ServerEvent, DuplexEvent
 
 
 @dataclass
@@ -94,7 +95,7 @@ class EventGroup(_EventGroup):
         :param use_session: (default: True) whether to pass the session to the decorated function
         """
 
-        def authorizer_wrapper(function):
+        def authorizer_wrapper(function):  # TODO see notes in SocketIO.__init__ below!
             error_code: int = 401 if role is UserRole.default_role else 403
 
             @wraps(function)
@@ -136,6 +137,18 @@ class Namespace(_Namespace):
         except EventException as e:
             error_event.emit(code=e.code, message=e.message, event=event)
             disconnect()
+
+
+class SocketIO(_SocketIO):
+    def __init__(self, app=None, title: str = "SIO", version: str = "1.0.0", doc_path: str = "/doc/", **kwargs):
+        super().__init__(app, title, version, doc_path, **kwargs)
+
+        # @self.on("connect")  # check everytime or save in session?
+        # def connect_user():  # https://python-socketio.readthedocs.io/en/latest/server.html#user-sessions
+        #     pass             # sio = main.socketio.server
+
+    def get_user(self):
+        pass
 
 
 def users_broadcast(_event: Union[ServerEvent, DuplexEvent], _user_ids: list[int], **data):
