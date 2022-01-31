@@ -6,7 +6,6 @@ from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.sql.sqltypes import Integer, JSON
 
 from common import User
-
 from education.knowledge.interaction_db import TestModuleSession
 from main import Base, Session
 

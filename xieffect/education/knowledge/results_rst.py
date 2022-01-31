@@ -1,9 +1,21 @@
-from flask_restx import Resource
+from flask_restx import Resource, fields, Model
 
 from common import Namespace, User
 from .results_db import TestResult
 
 result_namespace: Namespace = Namespace("result", path='/modules/<int:module_id>/result/')
+result_dict = {
+    'right-answers': fields.Integer,
+    'total-answers': fields.Integer,
+    'percent': fields.Integer,
+}
+# result_dict['percent'] = (result_dict['total-answers'] / 100) * result_dict['right-answers']
+result_model = Model('ResultModel', {
+    'module-name': fields.String,
+    'author-name': fields.String,
+    'author-id': fields.Integer,
+    'result': fields.List(fields.Nested(result_dict))
+})
 
 
 # TODO /modules/<module_id>/results/ -> пагинация, минимальная информация
@@ -25,3 +37,6 @@ class Result(Resource):
     def delete(self, session, result_id, user: User, module_id: int) -> None:
         entry: TestResult = TestResult.find_by_id(session, result_id)
         session.delete(entry)
+
+
+m
