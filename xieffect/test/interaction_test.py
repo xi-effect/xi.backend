@@ -50,8 +50,8 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             reply = check_status_code(client.get(f"/modules/{module_id}/points/{map_length}/reply"))
             assert reply == json_test["answers"]
 
-            # reply = check_status_code(client.get(f"/modules/{module_id}/results/"))[0]
-            # assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
+            reply = check_status_code(client.get(f"/modules/{module_id}/results/"))["result"][0]
+            assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
 
     assert len(types_set) == 0
 
@@ -118,7 +118,7 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
 
     replies: list[dict] = [{
         "right-answers": (right := randint(0, 10)),
-        "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right*2))),
+        "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right * 2))),
         "answers": {str(k): int(k) for k in range(randint(right, total))}
     } for _ in range(length)]
 
@@ -135,7 +135,7 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
         assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == reply["answers"]
 
     point_id: Optional[int] = None
-    for i, reply in enumerate(check_status_code(client.get(f"/modules/7/results/"))):
+    for i, reply in enumerate(check_status_code(client.get(f"/modules/7/results/"))["result"]):
         assert dict_equal(reply, replies[i], "right-answers", "total-answers", "answers")
         assert point_id is None or reply["point-id"] > point_id
         point_id = reply["point-id"]
