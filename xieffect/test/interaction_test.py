@@ -50,8 +50,8 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             reply = check_status_code(client.get(f"/modules/{module_id}/points/{map_length}/reply"))
             assert reply == json_test["answers"]
 
-            reply = check_status_code(client.get(f"/modules/{module_id}/results/"))[0]
-            assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
+            # reply = check_status_code(client.get(f"/modules/{module_id}/results/"))[0]
+            # assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
 
     assert len(types_set) == 0
 

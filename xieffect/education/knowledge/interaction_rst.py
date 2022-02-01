@@ -182,7 +182,7 @@ class TestSaver(Resource):
     @interaction_namespace.database_searcher(Module, use_session=True)
     @interaction_namespace.marshal_with(full_result_model)
     def get(self, session, user: User, module: Module):
-        test_session = TestModuleSession.find_by_ids(session, module.id, user.id)
+        test_session = TestModuleSession.find_by_ids(session, user.id, module.id)
         if test_session is None:
             interaction_namespace.abort(400, "Test not started")
         return TestResult.create(session, user.id, module, marshal(test_session.collect_all(session), test_model))
