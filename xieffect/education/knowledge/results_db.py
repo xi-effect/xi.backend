@@ -6,8 +6,9 @@ from flask_restx import fields
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import User, JSONWithModel, create_marshal_model, Marshalable
+from common import JSONWithModel, create_marshal_model, Marshalable
 from main import Base, Session
+from .modules_db import Module
 from .interaction_db import TestModuleSession
 
 result_model = {
@@ -37,12 +38,22 @@ class TestResult(Base, Marshalable):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
 
+    # TODO start_date = Column(DateTime, nullable=False)
+    # TODO finish_date = Column(DateTime, nullable=False)
     short_result = Column(JSONWithModel("ShortResult", short_result_model), nullable=False)
     result = Column(JSONWithModel("FullResult", result_model, as_list=True), nullable=False)
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int) -> TestResult:
-        new_entry = cls(user_id=user_id, module_id=module_id)
+    def create(cls, session: Session, user_id: int, module: Module, result) -> TestResult:
+        short_result = {
+            "module-name": module.name,
+            "author-id": module.author.id,
+            "author-name": module.author.pseudonym,
+            "right-answers": sum(r["right-answers"] for r in result),
+            "total-answers": sum(r["total-answers"] for r in result),
+        }
+
+        new_entry = cls(user_id=user_id, module_id=module.id, short_result=short_result, result=result)  # noqa
         session.add(new_entry)
         session.flush()
         return new_entry
@@ -60,3 +71,7 @@ class TestResult(Base, Marshalable):
                        offset: int, limit: int) -> list[TestModuleSession]:
         return session.execute(select(cls).filter_by(user_id=user_id, module_id=module_id)
                                .offset(offset).limit(limit)).scalars().all()
+
+    def delete(self, session: Session):
+        session.delete(self)
+        session.flush()
