@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from json import dumps as json_dumps
 from typing import Union
 
 from sqlalchemy import Column, ForeignKey, select
@@ -52,7 +51,7 @@ class Page(Base, Identifiable, Marshalable):
         json_data["kind"] = PageKind.from_string(json_data["kind"])
         entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
                                                             "reusable", "public", "blueprint")})
-        entry.components = json_dumps(json_data["components"], ensure_ascii=False)
+        entry.components = json_data["components"]
         entry.updated = datetime.utcnow()
         entry.author = author
         session.add(entry)

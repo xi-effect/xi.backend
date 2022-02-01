@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from json import dumps
 from typing import Union
 
 from passlib.hash import pbkdf2_sha256
@@ -11,7 +10,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 from common import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
 from main import Base, Session
 
-DEFAULT_AVATAR: str = '{"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}'
+DEFAULT_AVATAR: dict = {"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}
 
 
 class TokenBlockList(Base):
@@ -143,7 +142,7 @@ class User(Base, UserRole, Marshalable):
         if "group" in new_values.keys():
             self.group = new_values["group"]
         if "avatar" in new_values.keys():
-            self.avatar = dumps(new_values["avatar"])
+            self.avatar = new_values["avatar"]
 
     def get_author_status(self) -> str:
         return "not-yet" if self.author is None else "banned" if self.author.banned else "current"

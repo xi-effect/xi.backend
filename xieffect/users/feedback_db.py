@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from json import dumps
-
 from sqlalchemy import Column, select
 from sqlalchemy.engine import Row
 from sqlalchemy.sql.sqltypes import Integer, JSON, Enum
@@ -27,7 +25,7 @@ class Feedback(Base, Marshalable):
 
     @classmethod
     def create(cls, session: Session, user: User, feedback_type: FeedbackType, data) -> Feedback:
-        new_user = cls(user_id=user.id, type=feedback_type, data=dumps(data, ensure_ascii=False))  # noqa
+        new_user = cls(user_id=user.id, type=feedback_type, data=data)  # noqa
         session.add(new_user)
         return new_user
 

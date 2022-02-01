@@ -1,5 +1,4 @@
 from functools import wraps
-from json import dumps, loads
 from typing import Union
 
 from flask import redirect
@@ -155,7 +154,7 @@ class TestReplyManager(Resource):
         point_session: TestPointSession = TestPointSession.find_by_ids(session, user.id, module.id, point_id)
         if point_session is None or point_session.answers is None:
             return {}
-        return loads(point_session.answers)
+        return point_session.answers
 
     @module_typed("reply functionality", ModuleType.TEST)
     @with_point_id
@@ -168,7 +167,7 @@ class TestReplyManager(Resource):
         if point_session is not None:
             point_session.right_answers = right_answers
             point_session.total_answers = total_answers
-            point_session.answers = dumps(answers, ensure_ascii=False)
+            point_session.answers = answers
             return True
         return False
 

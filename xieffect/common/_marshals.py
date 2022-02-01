@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime
-from json import loads as json_loads
 from typing import Type, Union, get_type_hints, Callable
 
 from flask_restx import Model, Namespace
@@ -32,8 +31,8 @@ class DateTimeField(StringField):
 
 class JSONLoadableField(RawField):
     # TODO https://docs.sqlalchemy.org/en/14/core/type_basics.html#sqlalchemy.types.JSON
-    def format(self, value: str) -> list:
-        return json_loads(value)
+    def format(self, value):
+        return value
 
 
 # class ConfigurableField:
@@ -73,13 +72,13 @@ type_to_field: dict[type, Type[RawField]] = {
 }
 
 column_to_field: dict[Type[TypeEngine], Type[RawField]] = {
-    Integer: IntegerField,
-    String: StringField,
-    Boolean: BooleanField,
     JSONWithModel: JSONWithModelField,
     JSON: JSONLoadableField,
     DateTime: DateTimeField,
-    Enum: EnumField
+    Enum: EnumField,
+    Boolean: BooleanField,
+    Integer: IntegerField,
+    String: StringField,
 }
 
 
@@ -123,6 +122,13 @@ def create_marshal_model(model_name: str, *fields: str, inherit: Union[str, None
     """
 
     def create_marshal_model_wrapper(cls):
+        def move_field_attribute(root_name: str, field_name: str, field_def: Union[Type[RawField], RawField]):
+            attribute_name: str = f"{root_name}.{field_name}"
+            if isinstance(field_def, type):
+                return field_def(attribute=attribute_name)
+            field_def.attribute = attribute_name
+            return field_def
+
         def create_fields(column: Column, column_type: Union[Type[TypeEngine], TypeEngine]) -> dict[str, ...]:
             if not use_defaults or column.default is None or column.nullable or isinstance(column.default, Sequence):
                 default = None
@@ -130,11 +136,10 @@ def create_marshal_model(model_name: str, *fields: str, inherit: Union[str, None
                 default = column.default.arg
 
             field_type: Type[RawField] = column_to_field[column_type]
-            if column.name == "components":
-                print(field_type, column.name)
             if issubclass(field_type, JSONWithModelField):
-                if flatten_jsons:
-                    return column.type.model
+                if flatten_jsons and not column.type.as_list:
+                    root_name: str = column.name.replace("_", "-")
+                    return {k: move_field_attribute(root_name, k, v) for k, v in column.type.model.items()}
                 field = NestedField(flask_restx_has_bad_design.model(column.type.model_name, column.type.model))
                 if column.type.as_list:
                     field = ListField(field)

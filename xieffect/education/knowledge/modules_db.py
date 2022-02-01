@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from json import dumps as json_dumps
 from random import randint
 from typing import Union
 
@@ -191,7 +190,7 @@ class Module(Base, Identifiable, Marshalable):
                                                             "theme", "category", "difficulty")})
         entry.image_id = json_data.get("image-id", None)
         if "map" in json_data.keys():
-            entry.map = json_dumps(json_data["map"], ensure_ascii=False)
+            entry.map = json_data["map"]
 
         if force:
             entry.views = json_data.get("views", 0)
