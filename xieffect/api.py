@@ -8,6 +8,7 @@ from flask_restx import Api
 from werkzeug.exceptions import NotFound
 
 from common import TokenBlockList, with_session
+from common._marshals import flask_restx_has_bad_design  # noqa
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
@@ -50,6 +51,7 @@ api.add_namespace(wip_json_file_namespace)
 api.add_namespace(wip_index_namespace)
 
 api.add_namespace(webhook_namespace)
+api.add_namespace(flask_restx_has_bad_design)  # TODO workaround
 
 jwt: JWTManager = JWTManager(app)
 

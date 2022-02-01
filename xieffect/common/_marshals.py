@@ -7,13 +7,17 @@ from json import loads as json_loads
 from typing import Type, Union, get_type_hints, Callable
 
 from flask_restx import Model, Namespace
-from flask_restx.fields import (Raw as RawField, Boolean as BooleanField,
-                                Integer as IntegerField, String as StringField)
+from flask_restx.fields import (Raw as RawField, Nested as NestedField, List as ListField,
+                                Boolean as BooleanField, Integer as IntegerField, String as StringField)
 from sqlalchemy import Column, Sequence, Enum
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import Boolean, Integer, String, JSON, DateTime
 
 from ._utils import TypeEnum
+from ._sqlalchemy import JSONWithModel
+
+
+flask_restx_has_bad_design: Namespace = Namespace("this-is-dumb")
 
 
 class EnumField(StringField):
@@ -27,8 +31,37 @@ class DateTimeField(StringField):
 
 
 class JSONLoadableField(RawField):
+    # TODO https://docs.sqlalchemy.org/en/14/core/type_basics.html#sqlalchemy.types.JSON
     def format(self, value: str) -> list:
         return json_loads(value)
+
+
+# class ConfigurableField:
+#     @classmethod
+#     def create(cls, column: Column, column_type: Union[Type[TypeEngine], TypeEngine],
+#                default=None) -> Union[RawField, Type[RawField]]:
+#         raise NotImplementedError
+
+
+class JSONWithModelField:  # (ConfigurableField):
+    # @classmethod
+    # def create(cls, column: Column, *_) -> RawField:
+    #     field = NestedField(flask_restx_has_bad_design.model(column.type.model_name, column.type.model))
+    #     if column.type.as_list:
+    #         return ListField(field)
+    #     return field
+    pass
+
+
+# class JSONWithSchemaField(ConfigurableField):
+#     @classmethod
+#     def create(cls, column: Column, column_type: JSONWithSchema, default=None) -> Type[JSONLoadableField]:
+#         class JSONField(JSONLoadableField):
+#             __schema_type__ = column.type.schema_type
+#             __schema_format__ = column.type.schema_format  # doesn't work!
+#             __schema_example__ = column.type.schema_example or default
+#
+#         return JSONField
 
 
 type_to_field: dict[type, Type[RawField]] = {
@@ -43,6 +76,7 @@ column_to_field: dict[Type[TypeEngine], Type[RawField]] = {
     Integer: IntegerField,
     String: StringField,
     Boolean: BooleanField,
+    JSONWithModel: JSONWithModelField,
     JSON: JSONLoadableField,
     DateTime: DateTimeField,
     Enum: EnumField
@@ -74,7 +108,8 @@ class LambdaFieldDef:
         return field_type(attribute=self.attribute)
 
 
-def create_marshal_model(model_name: str, *fields: str, inherit: Union[str, None] = None, use_defaults: bool = False):
+def create_marshal_model(model_name: str, *fields: str, inherit: Union[str, None] = None,
+                         use_defaults: bool = False, flatten_jsons: bool = False):
     """
     - Adds a marshal model to a database object, marked as :class:`Marshalable`.
     - Automatically adds all :class:`LambdaFieldDef`-marked class fields to the model.
@@ -84,25 +119,44 @@ def create_marshal_model(model_name: str, *fields: str, inherit: Union[str, None
     :param fields: filed names of columns to be added to the model.
     :param inherit: model name to inherit fields from.
     :param use_defaults: whether to describe columns' defaults in the model.
+    :param flatten_jsons: whether to put inner JSON fields in the root model or as a Nested field
     """
 
     def create_marshal_model_wrapper(cls):
-        def create_field(column: Column, column_type: Type[TypeEngine]):
-            field_type: Type[RawField] = column_to_field[column_type]
-
+        def create_fields(column: Column, column_type: Union[Type[TypeEngine], TypeEngine]) -> dict[str, ...]:
             if not use_defaults or column.default is None or column.nullable or isinstance(column.default, Sequence):
-                return field_type(attribute=column.name)
+                default = None
             else:
-                return field_type(attribute=column.name, default=column.default.arg)
+                default = column.default.arg
+
+            field_type: Type[RawField] = column_to_field[column_type]
+            if column.name == "components":
+                print(field_type, column.name)
+            if issubclass(field_type, JSONWithModelField):
+                if flatten_jsons:
+                    return column.type.model
+                field = NestedField(flask_restx_has_bad_design.model(column.type.model_name, column.type.model))
+                if column.type.as_list:
+                    field = ListField(field)
+                # field: RawField = field_type.create(column, column_type, default)
+            else:
+                field = field_type(attribute=column.name, default=default)
+
+            return {column.name.replace("_", "-"): field}
+
+        def detect_field_type(column):
+            for supported_type in column_to_field.keys():
+                if isinstance(column.type, supported_type):
+                    return supported_type
 
         model_dict = {} if inherit is None else cls.marshal_models[inherit].copy()
 
         model_dict.update({
-            column.name.replace("_", "-"): create_field(column, supported_type)
+            k: v
             for column in cls.__table__.columns
             if column.name in fields
-            for supported_type in column_to_field.keys()
-            if isinstance(column.type, supported_type)
+            if (field_type := detect_field_type(column)) is not None
+            for k, v in create_fields(column, field_type).items()
         })
 
         model_dict.update({
