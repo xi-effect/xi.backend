@@ -2,22 +2,43 @@ from __future__ import annotations
 
 from typing import Union
 
+from flask_restx import fields
 from sqlalchemy import Column, ForeignKey, select
-from sqlalchemy.sql.sqltypes import Integer, JSON
+from sqlalchemy.sql.sqltypes import Integer
 
-from common import User
-from education.knowledge.interaction_db import TestModuleSession
+from common import User, JSONWithModel, create_marshal_model, Marshalable
 from main import Base, Session
+from .interaction_db import TestModuleSession
+
+result_model = {
+    "right-answers": fields.Integer,
+    "total-answers": fields.Integer,
+    "page-id": fields.Integer,
+    "point-id": fields.Integer,
+    "answers": fields.Raw
+}
+
+short_result_model = {
+    "module-name": fields.String,
+    "author-id": fields.Integer,
+    "author-name": fields.String,
+    "right-answers": fields.Integer,
+    "total-answers": fields.Integer,
+}
 
 
-class TestResult(Base):
+@create_marshal_model("full-result", "result", flatten_jsons=True, inherit="base-result")
+@create_marshal_model("short-result", "short_result", flatten_jsons=True, inherit="base-result")
+@create_marshal_model("base-result", "id", "module_id")
+class TestResult(Base, Marshalable):
     __tablename__ = "TestResult"
-    not_found_text = "Test not found"
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
-    short_result = Column(JSON, nullable=False)
-    result = Column(JSON, nullable=False)
+
+    short_result = Column(JSONWithModel("ShortResult", short_result_model), nullable=False)
+    result = Column(JSONWithModel("FullResult", result_model, as_list=True), nullable=False)
 
     @classmethod
     def create(cls, session: Session, user_id: int, module_id: int) -> TestResult:
@@ -28,16 +49,14 @@ class TestResult(Base):
 
     @classmethod
     def find_by_id(cls, session: Session, entry_id: int) -> Union[TestModuleSession, None]:
-        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
+        return session.execute(select(cls).filter_by(id=entry_id)).scalars().first()
 
     @classmethod
-    def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[User]:
+    def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[TestModuleSession]:
         return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
 
     @classmethod
-    def find_by_module(cls, session: Session, user_id: int, module_id: int, offset: int, limit: int):
-        return session.execute(
-            select(cls).filter_by(user_id=user_id, module_id=module_id).offset(offset).limit(limit)).scalars().all()
-
-    def collect_all(self, session: Session):
-        return self.result
+    def find_by_module(cls, session: Session, user_id: int, module_id: int,
+                       offset: int, limit: int) -> list[TestModuleSession]:
+        return session.execute(select(cls).filter_by(user_id=user_id, module_id=module_id)
+                               .offset(offset).limit(limit)).scalars().all()
