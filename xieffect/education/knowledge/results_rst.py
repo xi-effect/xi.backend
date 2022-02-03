@@ -19,14 +19,15 @@ class PagesResult(Resource):
         return TestResult.find_by_module(session, user.id, module_id, start, finish - start)
 
 
-@result_namespace.route("/<int:result_id>/")
+@result_namespace.route("/<int:testresult_id>/")
 class Result(Resource):
     @result_namespace.jwt_authorizer(User, check_only=True, use_session=True)
     @result_namespace.marshal_with(full_result_model)
-    def get(self, session, result_id):
-        return TestResult.find_by_id(session, result_id)
+    def get(self, session, testresult_id):
+        return TestResult.find_by_id(session, testresult_id)
 
     @result_namespace.jwt_authorizer(User, check_only=True, use_session=True)
+    @result_namespace.database_searcher(TestResult, use_session=True)
     @result_namespace.a_response()
-    def delete(self, session, result_id) -> None:
-        TestResult.find_by_id(session, result_id).delete(session)
+    def delete(self, session, result: TestResult) -> None:
+        result.delete(session)

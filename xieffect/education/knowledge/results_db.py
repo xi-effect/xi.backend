@@ -8,8 +8,8 @@ from sqlalchemy.sql.sqltypes import Integer
 
 from common import JSONWithModel, create_marshal_model, Marshalable
 from main import Base, Session
-from .modules_db import Module
 from .interaction_db import TestModuleSession
+from .modules_db import Module
 
 result_model = {
     "right-answers": fields.Integer,
@@ -28,20 +28,20 @@ short_result_model = {
 }
 
 
-@create_marshal_model("full-result", "result", flatten_jsons=True, inherit="base-result")
+@create_marshal_model("full-result", "result", inherit="base-result")
 @create_marshal_model("short-result", "short_result", flatten_jsons=True, inherit="base-result")
 @create_marshal_model("base-result", "id", "module_id")
 class TestResult(Base, Marshalable):
     __tablename__ = "TestResult"
-
+    not_found_text = "not found result"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
 
     # TODO start_date = Column(DateTime, nullable=False)
     # TODO finish_date = Column(DateTime, nullable=False)
-    short_result = Column(JSONWithModel("ShortResult", short_result_model), nullable=False)
-    result = Column(JSONWithModel("FullResult", result_model, as_list=True), nullable=False)
+    short_result = Column(JSONWithModel("ShortResultInner", short_result_model), nullable=False)
+    result = Column(JSONWithModel("FullResultInner", result_model, as_list=True), nullable=False)
 
     @classmethod
     def create(cls, session: Session, user_id: int, module: Module, result) -> TestResult:
