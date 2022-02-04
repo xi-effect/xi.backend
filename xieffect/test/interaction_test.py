@@ -126,13 +126,13 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
     shuffle(point_ids)
 
     for point in point_ids:
-        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == {}
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply/")) == {}
         check_status_code(client.get(f"/modules/7/points/{point}/"))
-        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == {}
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply/")) == {}
 
         reply = replies[point]
         assert check_status_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)) == {"a": True}
-        assert check_status_code(client.get(f"/modules/7/points/{point}/reply")) == reply["answers"]
+        assert check_status_code(client.get(f"/modules/7/points/{point}/reply/")) == reply["answers"]
 
     point_id: Optional[int] = None
     for i, reply in enumerate(check_status_code(client.get(f"/modules/7/results/"))["result"]):
