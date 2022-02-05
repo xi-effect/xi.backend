@@ -2,13 +2,14 @@ from functools import wraps
 from typing import Union
 
 from flask import redirect
-from flask_restx import Resource, Model
+from flask_restx import Resource, Model, marshal
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
 from common import Namespace, ResponseDoc, User
 from .interaction_db import ModuleProgressSession, TestModuleSession, TestPointSession
 from .modules_db import Module, ModuleType
+from .results_db import TestResult
 
 interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
 test_model = interaction_namespace.model("test_model", TestPointSession.marshal_models["TestPointSession"])
@@ -172,11 +173,16 @@ class TestReplyManager(Resource):
         return False
 
 
+full_result_model = interaction_namespace.model("FullResult", TestResult.marshal_models["full-result"])  # TODO move
+
+
 @interaction_namespace.route("/results/")
-class TestResultGetter(Resource):
-    @module_typed("results functionality", ModuleType.TEST)
-    @interaction_namespace.marshal_list_with(test_model)
+class TestSaver(Resource):
+    @interaction_namespace.jwt_authorizer(User)
+    @interaction_namespace.database_searcher(Module, use_session=True)
+    @interaction_namespace.marshal_with(full_result_model)
     def get(self, session, user: User, module: Module):
-        """ Ends the test & returns the results / result page """
-        new_test_session = TestModuleSession.find_or_create(session, user.id, module.id)
-        return new_test_session.collect_all(session)
+        test_session = TestModuleSession.find_by_ids(session, user.id, module.id)
+        if test_session is None:
+            interaction_namespace.abort(400, "Test not started")
+        return TestResult.create(session, user.id, module, marshal(test_session.collect_all(session), test_model))
