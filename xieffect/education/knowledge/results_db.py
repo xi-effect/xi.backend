@@ -64,13 +64,14 @@ class TestResult(Base, Marshalable):
 
     @classmethod
     def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[TestModuleSession]:
-        return session.execute(select(cls).filter_by(user_id=user_id).offset(offset).limit(limit)).scalars().all()
+        stmt = select(cls).filter_by(user_id=user_id).order_by(cls.id.desc())
+        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
     @classmethod
     def find_by_module(cls, session: Session, user_id: int, module_id: int,
                        offset: int, limit: int) -> list[TestModuleSession]:
-        return session.execute(select(cls).filter_by(user_id=user_id, module_id=module_id)
-                               .offset(offset).limit(limit)).scalars().all()
+        stmt = select(cls).filter_by(user_id=user_id, module_id=module_id).order_by(cls.id.desc())
+        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
     def delete(self, session: Session):
         session.delete(self)

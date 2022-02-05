@@ -1,16 +1,16 @@
 from random import randint
 from typing import Iterator, Callable
 
+from pytest import mark
 from flask.testing import FlaskClient
 
 from .components import check_status_code, dict_equal
 
 
+@mark.order(545)
 def test_result(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    # solver test
-
+    # solve test
     module = check_status_code(client.get(f"/modules/7/"))
-    print(module)
     assert module["type"] == "test"
     assert "map" in module.keys()
 
@@ -33,15 +33,16 @@ def test_result(client: FlaskClient, list_tester: Callable[[str, dict, int], Ite
         assert check_status_code(client.get(f"/modules/7/points/{point}/reply/")) == reply["answers"]
 
     result1 = check_status_code(client.get(f"/modules/7/results/"))
+    result_id = result1["id"]
+
     results = list(list_tester("/results/modules/7/", {}, 50))
     assert len(results) > 0
-    result_id = results[0]["id"]
+    dict_equal(result1, results[0], "id", "module_id")
 
     result2 = check_status_code(client.get(f"/results/{result_id}/"))
     assert result2 == result1
     for i in range(len(result2["result"])):
         dict_equal(result2["result"][i], replies[i], "right-answers", "total-answers", "answers")
 
-    # Delete one result
-    assert check_status_code(client.delete(f"/results/{result_id}/"))
-    assert check_status_code(client.get(f"/results/{result_id}/"), 404)
+    check_status_code(client.delete(f"/results/{result_id}/"))
+    check_status_code(client.get(f"/results/{result_id}/"), 404)

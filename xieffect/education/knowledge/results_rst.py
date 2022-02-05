@@ -21,13 +21,14 @@ class PagesResult(Resource):
 
 @result_namespace.route("/<int:testresult_id>/")
 class Result(Resource):
-    @result_namespace.jwt_authorizer(User, check_only=True, use_session=True)
+    @result_namespace.jwt_authorizer(User, check_only=True)
+    @result_namespace.database_searcher(TestResult)
     @result_namespace.marshal_with(full_result_model)
-    def get(self, session, testresult_id):
-        return TestResult.find_by_id(session, testresult_id)
+    def get(self, testresult: TestResult):
+        return testresult
 
-    @result_namespace.jwt_authorizer(User, check_only=True, use_session=True)
+    @result_namespace.jwt_authorizer(User, check_only=True)
     @result_namespace.database_searcher(TestResult, use_session=True)
     @result_namespace.a_response()
-    def delete(self, session, result: TestResult) -> None:
-        result.delete(session)
+    def delete(self, session, testresult: TestResult) -> None:
+        testresult.delete(session)
