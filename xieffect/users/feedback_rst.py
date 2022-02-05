@@ -1,5 +1,6 @@
 from enum import Enum
 from functools import wraps
+from os import getenv
 from typing import Union, Type
 
 from flask import request
@@ -9,11 +10,10 @@ from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
 from common import User, Namespace, unite_models, with_session, ResponseDoc
-from main import app
 from .feedback_db import Feedback, FeedbackType, FeedbackImage
 
 feedback_namespace: Namespace = Namespace("feedback", path="/feedback/")
-feedback_serializer: URLSafeSerializer = URLSafeSerializer(app.config["JWT_SECRET_KEY"])
+feedback_serializer: URLSafeSerializer = URLSafeSerializer(getenv("JWT_SECRET_KEY", "local only"))  # TODO redo
 feedback_json = feedback_namespace.model("Feedback", unite_models(
     User.marshal_models["full-settings"], Feedback.marshal_models["feedback-full"]))
 

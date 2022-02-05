@@ -6,7 +6,6 @@ from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
 from common import password_parser, Namespace, with_session, success_response, TokenBlockList, User
-from main import app
 from .invites_db import Invite
 # from .emailer import send_generated_email, parse_code
 
@@ -84,10 +83,12 @@ class UserLogout(Resource):
 
 @reglog_namespace.route("/go/")
 class Test(Resource):
+    from api import app
+
     @add_sets_cookie_response
     def get(self):
         """ Localhost-only endpoint for logging in from the docs """
-        if not app.debug:
+        if not self.app.debug:
             return {"a": False}
 
         response: Response = jsonify({"a": True})

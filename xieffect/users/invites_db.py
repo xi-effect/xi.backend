@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from os import getenv
 from typing import Union
 
 from itsdangerous.url_safe import URLSafeSerializer
@@ -8,14 +9,14 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String
 
 from common import create_marshal_model, Marshalable
-from main import Base, Session, app
+from main import Base, Session
 
 
 @create_marshal_model("invite", "name", "code", "limit", "accepted")
 class Invite(Base, Marshalable):
     __tablename__ = "invites"
     not_found_text = "Invite not found"
-    serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECRET_KEY"])
+    serializer: URLSafeSerializer = URLSafeSerializer(getenv("SECRET_KEY", "local"))  # TODO redo
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
