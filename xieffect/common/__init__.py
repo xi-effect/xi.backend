@@ -1,3 +1,4 @@
+from ._core import Flask
 from ._eventor import error_event, Namespace as SIONamespace, users_broadcast, EventGroup
 from ._interfaces import UserRole, Identifiable
 from ._marshals import LambdaFieldDef, Marshalable, ResponseDoc

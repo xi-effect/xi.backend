@@ -1,38 +1,52 @@
-from datetime import datetime, timedelta, timezone
-from json import dumps
+from datetime import datetime, timedelta
+from json import load
 from sys import stderr
 from traceback import format_tb
 
-from flask import Response, request
-from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
-from flask_restx import Api
-from werkzeug.exceptions import NotFound, HTTPException
+from flask import request
+from werkzeug.exceptions import NotFound
 
-from common import TokenBlockList, with_session
+from common._core import configure_logging, Flask  # noqa
 from common._marshals import flask_restx_has_bad_design  # noqa
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace)
 from education.knowledge.results_rst import result_namespace
-from main import app, db_meta, versions  # noqa
+from main import db_meta  # noqa
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 
-authorizations = {
-    "jwt": {
-        "type": "apiKey",
-        "in": "cookie",
-        "name": "access_token_cookie"
+configure_logging({
+    "version": 1,
+    "formatters": {"default": {
+        "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+    }},
+    "handlers": {"wsgi": {
+        "class": "logging.StreamHandler",
+        "stream": "ext://flask.logging.wsgi_errors_stream",
+        "formatter": "default"
+    }},
+    "root": {
+        "level": "DEBUG",
+        "handlers": ["wsgi"]
     }
-}
-api: Api = Api(app, doc="/doc/", version=versions["API"], authorizations=authorizations)
+})
+
+versions = load(open("../files/versions.json", encoding="utf-8"))
+
+app: Flask = Flask(__name__, static_folder="../files/static", static_url_path="/static/", versions=versions)
+app.secrets_from_env("hope it's local")  # TODO DI to use secrets in `URLSafeSerializer`s
+app.configure_cors()
+
+jwt = app.configure_jwt_manager(["cookies"], timedelta(hours=72))
+api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
 api.add_namespace(users_namespace)
 api.add_namespace(profiles_namespace)
-api.add_namespace(result_namespace)
+
 api.add_namespace(settings_namespace)
 api.add_namespace(other_settings_namespace)
 api.add_namespace(protected_settings_namespace)
@@ -42,10 +56,12 @@ api.add_namespace(invites_namespace)
 # api.add_namespace(chats_namespace)
 
 api.add_namespace(education_namespace)
-api.add_namespace(images_view_namespace)
-api.add_namespace(pages_view_namespace)
 api.add_namespace(modules_view_namespace)
+api.add_namespace(pages_view_namespace)
+api.add_namespace(images_view_namespace)
+
 api.add_namespace(interaction_namespace)
+api.add_namespace(result_namespace)
 
 api.add_namespace(authors_namespace)
 api.add_namespace(wip_images_namespace)
@@ -55,7 +71,6 @@ api.add_namespace(wip_index_namespace)
 api.add_namespace(webhook_namespace)
 api.add_namespace(flask_restx_has_bad_design)  # TODO workaround
 
-jwt: JWTManager = JWTManager(app)
 
 # class MessagesNamespace(Namespace):
 #     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
@@ -92,41 +107,9 @@ def log_stuff(level: str, message: str):
                 send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
 
 
-@jwt.token_in_blocklist_loader
-@with_session
-def check_if_token_revoked(_, jwt_payload, session):
-    return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
-
-
-@app.after_request
-def refresh_expiring_jwt(response: Response):
-    try:
-        target_timestamp = datetime.timestamp(datetime.now(timezone.utc) + timedelta(hours=36))
-        if target_timestamp > get_jwt()["exp"]:
-            set_access_cookies(response, create_access_token(identity=get_jwt_identity()))
-        return response
-    except (RuntimeError, KeyError):
-        return response
-
-
 @app.errorhandler(NotFound)
 def on_not_found(_):
     return {"a": "Not found"}, 404
-
-
-@app.errorhandler(HTTPException)
-def handle_exception(e):
-    """Return JSON instead of HTML for HTTP errors."""
-    # start with the correct headers and status code from the error
-    response = e.get_response()
-    # replace the body with JSON
-    response.data = dumps({
-        "code": e.code,
-        "name": e.name,
-        "description": e.description,
-    })
-    response.content_type = "application/json"
-    return response
 
 
 @app.errorhandler(Exception)
