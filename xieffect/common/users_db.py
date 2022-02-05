@@ -78,7 +78,7 @@ class User(Base, UserRole, Marshalable):
     moderator_status: LambdaFieldDef = LambdaFieldDef("role-settings", bool, lambda user: user.moderator is not None)
 
     # Chat-related
-    chats = relationship("UserToChat", back_populates="user")  # TODO remove non-common reference
+    # chats = relationship("UserToChat", back_populates="user")  # TODO remove non-common reference
 
     # Invite-related
     code = Column(String(100), nullable=True)

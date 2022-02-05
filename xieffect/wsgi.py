@@ -137,7 +137,7 @@ def version_check():
 init_folder_structure()
 init_users()
 init_knowledge()
-init_chats()
+# init_chats()
 version_check()
 
 if __name__ == "__main__":  # test only
