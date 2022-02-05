@@ -6,14 +6,10 @@ from sys import modules
 
 from api import app as application, log_stuff, db_meta
 from common import User, with_session
-from communication.chatting_db import Chat, ChatRole, Message
-from education.authorship import Author
-from education.knowledge import Module, Page
-from education.studio import WIPPage, WIPModule
 from main import versions, db_url
 from other import WebhookURLs, send_discord_message
-from users.feedback_rst import generate_code, dumps_feedback  # noqa
-from users.invites_db import Invite
+from users.invites_db import Invite  # noqa  # passthrough for tests
+from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
@@ -53,17 +49,16 @@ def init_folder_structure():
 
 
 @with_session
-def init_invite(session):
-    if Invite.find_by_id(session, TEST_INVITE_ID) is None:
+def init_users(session):
+    from users.invites_db import Invite
+
+    if (invite := Invite.find_by_id(session, TEST_INVITE_ID)) is None:
         log_stuff("status", "Database has been reset")
-        test_invite: Invite = Invite(id=TEST_INVITE_ID, name="TEST_INVITE")
-        session.add(test_invite)
+        invite: Invite = Invite(id=TEST_INVITE_ID, name="TEST_INVITE")
+        session.add(invite)
         session.flush()
 
-
-@with_session
-def init_users(session):
-    invite = Invite.find_by_id(session, TEST_INVITE_ID)
+    from education.authorship import Author, Moderator  # noqa
 
     if (User.find_by_email_address(session, TEST_EMAIL)) is None:
         test_user: User = User.create(session, TEST_EMAIL, "test", BASIC_PASS, invite)
@@ -83,6 +78,10 @@ def init_users(session):
 
 @with_session
 def init_knowledge(session):
+    from education.authorship import Author
+    from education.knowledge import Module, Page
+    from education.studio import WIPPage, WIPModule
+
     test_author: Author = User.find_by_email_address(session, TEST_EMAIL).author
 
     with open(f"../files/test/page-bundle.json", "rb") as f:
@@ -100,6 +99,8 @@ def init_knowledge(session):
 
 @with_session
 def init_chats(session):
+    from communication.chatting_db import Chat, ChatRole, Message
+
     with open("../files/test/chat-bundle.json", encoding="utf-8") as f:
         for i, chat_data in enumerate(load(f)):
             if Chat.find_by_id(session, i + 1):
@@ -134,7 +135,6 @@ def version_check():
 
 
 init_folder_structure()
-init_invite()
 init_users()
 init_knowledge()
 init_chats()
