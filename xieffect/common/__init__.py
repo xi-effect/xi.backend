@@ -1,4 +1,4 @@
-from ._core import db_url, db_meta, Base, sessionmaker, index_service, versions, app, jwt
+from ._core import db_url, db_meta, Base, sessionmaker, index_service, versions, app
 from ._eventor import error_event, Namespace as SIONamespace, users_broadcast, EventGroup
 from ._marshals import message_response, success_response, ResponseDoc
 from ._restx import Namespace

@@ -1,22 +1,20 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from sys import stderr
 from traceback import format_tb
 
 from flask import request
 from werkzeug.exceptions import NotFound
 
-from common._core import app, jwt
-from common._marshals import flask_restx_has_bad_design  # noqa
+from common import app, sessionmaker, db_meta  # noqa
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
-                       pages_view_namespace, education_namespace, interaction_namespace)
-from education.knowledge.results_rst import result_namespace
-from main import db_meta  # noqa
+                       pages_view_namespace, education_namespace, interaction_namespace, result_namespace)
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 
+jwt = app.configure_jwt_manager(sessionmaker, ["cookies"], timedelta(hours=72))
 api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
@@ -45,7 +43,6 @@ api.add_namespace(wip_json_file_namespace)
 api.add_namespace(wip_index_namespace)
 
 api.add_namespace(webhook_namespace)
-api.add_namespace(flask_restx_has_bad_design)  # TODO workaround
 
 
 # class MessagesNamespace(Namespace):

@@ -109,7 +109,7 @@ class Error(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 
-error_group = EventGroup(None, True)  # TODO fix
+error_group = EventGroup(use_kebab_case=True)
 error_event = error_group.bind_sub("error", "Emitted if something goes wrong", Error)
 
 

@@ -7,8 +7,8 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 
-from common import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
 from ._core import Base, sessionmaker
+from .flask_fullstack import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
 
 DEFAULT_AVATAR: dict = {"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}
 

@@ -5,7 +5,7 @@ from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace, counter_parser, ResponseDoc, with_session, get_or_pop, User
+from common import Namespace, counter_parser, ResponseDoc, get_or_pop, User
 from .invites_db import Invite
 
 invites_namespace: Namespace = Namespace("invites", path="/invites/")
@@ -19,7 +19,7 @@ def admin_only(use_session: bool = False):
         @invites_namespace.doc(security="jwt")
         @wraps(function)
         @jwt_required()
-        @with_session
+        @invites_namespace.with_begin
         def admin_only_inner(*args, **kwargs):
             admin = User.find_by_id(get_or_pop(kwargs, "session", use_session), get_jwt_identity())
             if admin is None or admin.email != "admin@admin.admin":

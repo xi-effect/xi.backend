@@ -8,9 +8,8 @@ from sqlalchemy import Column, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable
-from education.authorship.user_roles_db import Author
-from main import Base, Session
+from common import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable, sessionmaker
+from education.authorship.user_roles_db import Author, Base
 from ..knowledge import PageKind, ModuleType
 
 
@@ -35,14 +34,14 @@ class CATFile(Base, Identifiable):
         return cls(owner=owner.id, status=WIPStatus.WIP)
 
     @classmethod
-    def create(cls, session: Session, owner: Author) -> CATFile:
+    def create(cls, session: sessionmaker, owner: Author) -> CATFile:
         entry: cls = cls.create(session, owner)
         session.add(entry)
         session.flush()
         return entry
 
     @classmethod
-    def create_with_file(cls, session: Session, owner: Author, data: bytes) -> CATFile:
+    def create_with_file(cls, session: sessionmaker, owner: Author, data: bytes) -> CATFile:
         entry: cls = cls._create(owner)
         entry.update(data)
         session.add(entry)
@@ -50,11 +49,11 @@ class CATFile(Base, Identifiable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[CATFile, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[CATFile, None]:
         return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
-    def find_by_owner(cls, session: Session, owner: Author, start: int, limit: int) -> list[CATFile]:
+    def find_by_owner(cls, session: sessionmaker, owner: Author, start: int, limit: int) -> list[CATFile]:
         return session.execute(select(cls).where(cls.owner == owner.id).offset(start).limit(limit)).scalars().all()
 
     def get_link(self) -> str:
@@ -64,7 +63,7 @@ class CATFile(Base, Identifiable):
         with open(self.get_link(), "wb") as f:
             f.write(data)
 
-    def delete(self, session: Session) -> None:
+    def delete(self, session: sessionmaker) -> None:
         remove(self.get_link())
         session.delete(self)
         session.flush()
@@ -75,13 +74,13 @@ class JSONFile(CATFile):
     mimetype: str = "json"
 
     @classmethod
-    def create_from_json(cls, session: Session, owner: Author, json_data: dict) -> CATFile:
+    def create_from_json(cls, session: sessionmaker, owner: Author, json_data: dict) -> CATFile:
         if "id" not in json_data.keys() or (entry := cls.find_by_id(session, json_data["id"])) is None:
             entry: cls = cls._create(owner)
             entry.update_json(session, json_data)
         return entry
 
-    def update_json(self, session: Session, json_data: dict) -> None:
+    def update_json(self, session: sessionmaker, json_data: dict) -> None:
         self.update_metadata(json_data)
         session.add(self)
         session.flush()

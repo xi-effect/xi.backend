@@ -6,8 +6,7 @@ from flask_restx import fields
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import JSONWithModel, create_marshal_model, Marshalable
-from main import Base, Session
+from common import JSONWithModel, create_marshal_model, Marshalable, Base, sessionmaker
 from .interaction_db import TestModuleSession
 from .modules_db import Module
 
@@ -44,7 +43,7 @@ class TestResult(Base, Marshalable):
     result = Column(JSONWithModel("FullResultInner", result_model, as_list=True), nullable=False)
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module: Module, result) -> TestResult:
+    def create(cls, session: sessionmaker, user_id: int, module: Module, result) -> TestResult:
         short_result = {
             "module-name": module.name,
             "author-id": module.author.id,
@@ -59,20 +58,20 @@ class TestResult(Base, Marshalable):
         return new_entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[TestModuleSession, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[TestModuleSession, None]:
         return session.execute(select(cls).filter_by(id=entry_id)).scalars().first()
 
     @classmethod
-    def find_by_user(cls, session: Session, user_id: int, offset: int, limit: int) -> list[TestModuleSession]:
+    def find_by_user(cls, session: sessionmaker, user_id: int, offset: int, limit: int) -> list[TestModuleSession]:
         stmt = select(cls).filter_by(user_id=user_id).order_by(cls.id.desc())
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
     @classmethod
-    def find_by_module(cls, session: Session, user_id: int, module_id: int,
+    def find_by_module(cls, session: sessionmaker, user_id: int, module_id: int,
                        offset: int, limit: int) -> list[TestModuleSession]:
         stmt = select(cls).filter_by(user_id=user_id, module_id=module_id).order_by(cls.id.desc())
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
-    def delete(self, session: Session):
+    def delete(self, session: sessionmaker):
         session.delete(self)
         session.flush()

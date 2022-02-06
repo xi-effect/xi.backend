@@ -9,6 +9,7 @@ from flask_restx import Api
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import DeclarativeMeta, declarative_base
 
+from .marshals import flask_restx_has_bad_design
 from .sqlalchemy import Sessionmaker
 from .whoosh import IndexService
 
@@ -34,7 +35,9 @@ class Flask(_Flask):
                 "name": "access_token_cookie"
             }
         } if use_jwt else None
-        return Api(self, doc="/doc/", version=self.versions["API"], authorizations=authorizations)
+        api = Api(self, doc="/doc/", version=self.versions["API"], authorizations=authorizations)
+        api.add_namespace(flask_restx_has_bad_design)  # TODO workaround
+        return api
 
     def configure_jwt_manager(self, sessionmaker: Sessionmaker, location: list[str],
                               access_expires: timedelta) -> JWTManager:
@@ -57,13 +60,6 @@ class Flask(_Flask):
                 return response
             except (RuntimeError, KeyError):
                 return response
-
-        from common import TokenBlockList
-
-        @jwt.token_in_blocklist_loader
-        @sessionmaker.with_begin
-        def check_if_token_revoked(_, jwt_payload, session):
-            return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
 
         return jwt
 

@@ -9,7 +9,7 @@ from flask_restx.fields import Integer, String as StringField
 from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import User, Namespace, unite_models, with_session, ResponseDoc
+from common import User, Namespace, unite_models, ResponseDoc
 from .feedback_db import Feedback, FeedbackType, FeedbackImage
 
 feedback_namespace: Namespace = Namespace("feedback", path="/feedback/")
@@ -95,6 +95,6 @@ def generate_code(user_id: int):
     return feedback_serializer.dumps(user_id)
 
 
-@with_session
+@feedback_namespace.with_begin
 def dumps_feedback(session) -> list[dict]:
     return marshal(Feedback.dump_all(session), feedback_json)
