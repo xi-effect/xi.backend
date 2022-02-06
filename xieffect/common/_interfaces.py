@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Union
 
-from main import Session
-
 
 class Identifiable:
     """
@@ -19,7 +17,7 @@ class Identifiable:
         pass
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[Identifiable, None]:
+    def find_by_id(cls, session, entry_id: int) -> Union[Identifiable, None]:
         raise NotImplementedError
 
 
@@ -33,5 +31,5 @@ class UserRole(Identifiable):
     default_role: Union[UserRole, None] = None
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[UserRole, None]:
+    def find_by_id(cls, session, entry_id: int) -> Union[UserRole, None]:
         raise NotImplementedError

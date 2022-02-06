@@ -154,26 +154,6 @@ class _Namespace(RestXNamespace):
 
         return doc_responses_wrapper
 
-    def a_response(self):
-        """
-        - Wraps Resource's method return with ``{"a": <something>}`` response and updates documentation.
-        - Defines response type automatically by looking at method's return type annotation.
-        """
-
-        def a_response_wrapper(function):
-            return_type: Type = getattr(function, "__annotations__")["return"]
-            is_bool = return_type is None or issubclass(return_type, bool)
-
-            @self.response(*(success_response if is_bool else message_response).get_args())
-            @wraps(function)
-            def a_response_inner(*args, **kwargs):
-                result = function(*args, **kwargs)
-                return {"a": True if return_type is None else result}
-
-            return a_response_inner
-
-        return a_response_wrapper
-
     def lister(self, per_request: int, marshal_model: Model, skip_none: bool = True):
         """
         - Used for organising pagination.
@@ -216,8 +196,35 @@ class _Namespace(RestXNamespace):
 
 
 class Namespace(_Namespace):  # xieffect specific
+    from ._core import sessionmaker
+
+    def __init__(self, *args, **kwargs):
+        kwargs["sessionmaker"] = kwargs.get("sessionmaker", self.sessionmaker)
+        super().__init__(*args, **kwargs)
+
     def abort(self, code: int, message: str = None, **kwargs):
         default_abort(code, a=message, **kwargs)
+
+    def a_response(self):
+        """
+        - Wraps Resource's method return with ``{"a": <something>}`` response and updates documentation.
+        - Defines response type automatically by looking at method's return type annotation.
+        - If the return type is not specified, assumes None!
+        """
+
+        def a_response_wrapper(function):
+            return_type: Type = getattr(function, "__annotations__").get("return", None)
+            is_bool = return_type is None or issubclass(return_type, bool)
+
+            @self.response(*(success_response if is_bool else message_response).get_args())
+            @wraps(function)
+            def a_response_inner(*args, **kwargs):
+                result = function(*args, **kwargs)
+                return {"a": True if return_type is None else result}
+
+            return a_response_inner
+
+        return a_response_wrapper
 
 
 """

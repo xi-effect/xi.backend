@@ -12,9 +12,8 @@ from sqlalchemy import Column, Sequence, Enum
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import Boolean, Integer, String, JSON, DateTime
 
-from ._utils import TypeEnum
 from ._sqlalchemy import JSONWithModel
-
+from ._utils import TypeEnum
 
 flask_restx_has_bad_design: Namespace = Namespace("this-is-dumb")
 
@@ -113,6 +112,7 @@ def create_marshal_model(model_name: str, *fields: str, inherit: Union[str, None
     - Adds a marshal model to a database object, marked as :class:`Marshalable`.
     - Automatically adds all :class:`LambdaFieldDef`-marked class fields to the model.
     - Sorts modules keys by alphabet and puts ``id`` field on top if present.
+    - Uses kebab-case for json-names. TODO allow different cases
 
     :param model_name: the **global** name for the new model or model to be overwritten.
     :param fields: filed names of columns to be added to the model.
@@ -205,17 +205,12 @@ def unite_models(*models: dict[str, Union[Type[RawField], RawField]]):
 
 
 @dataclass()
-class ResponseDoc:
+class _ResponseDoc:
     """ Dataclass to keep the response description is one place """
 
     code: Union[int, str] = 200
     description: str = None
     model: Union[Model, None] = None
-
-    @classmethod
-    def error_response(cls, code: Union[int, str], description: str) -> ResponseDoc:
-        """ Creates an instance of an :class:`ResponseDoc` with a message response model for the response body """
-        return cls(code, description, Model("Message Response", {"a": StringField}))
 
     def register_model(self, ns: Namespace):
         if self.model is not None:
@@ -225,6 +220,15 @@ class ResponseDoc:
         if self.model is None:
             return self.code, self.description
         return self.code, self.description, self.model
+
+
+# xieffect specific:
+
+class ResponseDoc(_ResponseDoc):
+    @classmethod
+    def error_response(cls, code: Union[int, str], description: str) -> ResponseDoc:
+        """ Creates an instance of an :class:`ResponseDoc` with a message response model for the response body """
+        return cls(code, description, Model("Message Response", {"a": StringField}))
 
 
 success_response: ResponseDoc = ResponseDoc(model=Model("Default Response", {"a": BooleanField}))

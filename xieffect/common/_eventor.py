@@ -14,37 +14,13 @@ from .flask_siox import Namespace as _Namespace, EventGroup as _EventGroup, Sock
 from .flask_siox import ServerEvent, DuplexEvent
 
 
-# TODO `from .main import sessionmaker` for xieffect-specific
-
-
-@dataclass
-class EventException(Exception):
-    code: int
-    message: str
-
-
-class EventGroup(_EventGroup):
+class EventGroup_(_EventGroup):  # TODO externalize to flask-fullstack
     def __init__(self, sessionmaker: Sessionmaker, use_kebab_case: bool = False):
         super().__init__(use_kebab_case)
         self.with_begin = sessionmaker.with_begin
 
-    def triggers(self, event: ServerEvent, condition: str = None, data: ... = None):
-        def triggers_wrapper(function):
-            if not hasattr(function, "__sio_doc__"):
-                setattr(function, "__sio_doc__", {"x-triggers": []})
-            if (x_triggers := function.__sio_doc__.get("x-triggers", None)) is None:
-                function.__sio_doc__["x-triggers"] = []
-                x_triggers = function.__sio_doc__["x-triggers"]
-            x_triggers.append({
-                "event": event.name,
-                "condition": condition,
-                "data": data
-            })
-
-        return triggers_wrapper
-
     def abort(self, error_code: Union[int, str], description: str):
-        raise EventException(error_code, description)
+        raise NotImplementedError
 
     def _database_searcher(self, identifiable: Type[Identifiable], check_only: bool, no_id: bool,
                            use_session: bool, error_code: int, callback, args, kwargs, *,
@@ -62,8 +38,40 @@ class EventGroup(_EventGroup):
                 kwargs[result_field_name] = result
             return callback(*args, **kwargs)
 
+
+@dataclass
+class EventException(Exception):
+    code: int
+    message: str
+
+
+class EventGroup(EventGroup_):
+    from ._core import sessionmaker
+
+    def __init__(self, *args, **kwargs):
+        kwargs["sessionmaker"] = kwargs.get("sessionmaker", self.sessionmaker)
+        super().__init__(*args, **kwargs)
+
+    def abort(self, error_code: Union[int, str], description: str):
+        raise EventException(error_code, description)
+
+    def triggers(self, event: ServerEvent, condition: str = None, data: ... = None):
+        def triggers_wrapper(function):
+            if not hasattr(function, "__sio_doc__"):
+                setattr(function, "__sio_doc__", {"x-triggers": []})
+            if (x_triggers := function.__sio_doc__.get("x-triggers", None)) is None:
+                function.__sio_doc__["x-triggers"] = []
+                x_triggers = function.__sio_doc__["x-triggers"]
+            x_triggers.append({
+                "event": event.name,
+                "condition": condition,
+                "data": data
+            })
+
+        return triggers_wrapper
+
     def database_searcher(self, identifiable: Type[Identifiable], *, result_field_name: Union[str, None] = None,
-                          check_only: bool = False, use_session: bool = False):
+                          check_only: bool = False, use_session: bool = False):  # TODO externalize to flask-fullstack
         """
         - Uses incoming id argument to find something :class:`Identifiable` in the database.
         - If the entity wasn't found, will return a 404 response, which is documented automatically.
@@ -88,7 +96,7 @@ class EventGroup(_EventGroup):
         return searcher_wrapper
 
     def jwt_authorizer(self, role: Type[UserRole], optional: bool = False,
-                       check_only: bool = False, use_session: bool = True):
+                       check_only: bool = False, use_session: bool = True):  # TODO externalize to flask-fullstack
         """
         - Authorizes user by JWT-token.
         - If token is missing or is not processable, falls back on flask-jwt-extended error handlers.
