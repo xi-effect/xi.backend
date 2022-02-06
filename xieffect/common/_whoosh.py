@@ -11,6 +11,25 @@ class IndexService(IndexServiceBase):
         event.listen(Session, "before_flush", lambda session, *_: self.before_commit(session))
         event.listen(Session, "after_flush", lambda session, *_: self.after_commit(session))
 
+    def register_as_searchable(self, *searchable: str):  # TODO whoosh specific, move
+        """
+        - Registers database model as searchable with whoosh-sqlalchemy.
+        - Adds ``search_stmt`` field (:class:`Searcher`) to the class for searching.
+
+        :param searchable: names of model's fields to create the whoosh schema on
+        """
+
+        def register_as_searchable_wrapper(model):
+            model.__searchable__ = list(searchable)
+            self.register_class(model)
+
+            searcher = model.search_query
+            model.search_stmt = Searcher(searcher.model_class, searcher.primary, searcher.index)
+
+            return model
+
+        return register_as_searchable_wrapper
+
 
 class Searcher(SearcherBase):
     def __call__(self, query, limit=None, stmt: Select = None):

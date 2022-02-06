@@ -11,17 +11,23 @@ from flask_restx.reqparse import RequestParser
 
 from ._interfaces import Identifiable, UserRole
 from ._marshals import ResponseDoc, success_response, message_response
-from ._sqlalchemy import with_session
+from ._sqlalchemy import Sessionmaker
 from ._utils import get_or_pop
 
 
-class _Namespace(RestXNamespace):  # for the lib
+class _Namespace(RestXNamespace):
     """
     Expansion of :class:`RestXNamespace`, which adds decorators for methods of :class:`Resource`.
 
     Methods of this class (used as decorators) allow parsing request parameters,
     modifying responses and automatic updating Swagger documentation where possible
     """
+
+    def __init__(self, name: str, *, sessionmaker: Sessionmaker, description: str = None, path: str = None,
+                 decorators=None, validate=None, authorizations=None, ordered: bool = False, **kwargs):
+        super().__init__(name, description, path, decorators, validate, authorizations, ordered, **kwargs)
+        self.with_begin = sessionmaker.with_begin
+        self.with_autocommit = sessionmaker.with_autocommit
 
     def abort(self, code: int, message: str = None, **kwargs):
         default_abort(code, message, **kwargs)
@@ -75,7 +81,7 @@ class _Namespace(RestXNamespace):  # for the lib
         def searcher_wrapper(function):
             @self.response(*ResponseDoc.error_response("404 ", identifiable.not_found_text).get_args())
             @wraps(function)
-            @with_session
+            @self.with_begin
             def searcher_inner(*args, **kwargs):
                 return self._database_searcher(identifiable, check_only, False, use_session, 404,
                                                function, args, kwargs, result_field_name=result_field_name)
@@ -111,7 +117,7 @@ class _Namespace(RestXNamespace):  # for the lib
             @self.doc(security="jwt")
             @wraps(function)
             @jwt_required(optional=optional)
-            @with_session
+            @self.with_begin
             def authorizer_inner(*args, **kwargs):
                 if (jwt := get_jwt_identity()) is None and optional:
                     kwargs[role.__name__.lower()] = None

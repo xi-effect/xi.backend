@@ -1,56 +1,34 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Type
 
-from main import Session, Base, index_service
 from sqlalchemy import JSON
-from ._whoosh import Searcher
+from sqlalchemy.orm import sessionmaker
 
 
-def register_as_searchable(*searchable: str):
-    """
-    - Registers database model as searchable with whoosh-sqlalchemy.
-    - Adds ``search_stmt`` field (:class:`Searcher`) to the class for searching.
+class Sessionmaker(sessionmaker):
+    def with_begin(self, function):
+        """ Wraps the function with Session.begin() and passes session object to the decorated function """
 
-    :param searchable: names of model's fields to create the whoosh schema on
-    """
+        @wraps(function)
+        def with_begin_inner(*args, **kwargs):
+            if "session" in kwargs.keys():
+                return function(*args, **kwargs)
+            with self.begin() as session:
+                kwargs["session"] = session
+                return function(*args, **kwargs)
 
-    def register_as_searchable_wrapper(model: Type[Base]):
-        model.__searchable__ = list(searchable)
-        index_service.register_class(model)
+        return with_begin_inner
 
-        searcher = model.search_query
-        model.search_stmt = Searcher(searcher.model_class, searcher.primary, searcher.index)
+    def with_autocommit(self, function):
+        """ Wraps the function with Session.begin() for automatic commits after the decorated function """
 
-        return model
+        @wraps(function)
+        def with_autocommit_inner(*args, **kwargs):
+            with self.begin() as _:
+                return function(*args, **kwargs)
 
-    return register_as_searchable_wrapper
-
-
-def with_session(function):
-    """ Wraps the function with Session.begin() and passes session object to the decorated function """
-
-    @wraps(function)
-    def with_session_inner(*args, **kwargs):
-        if "session" in kwargs.keys():
-            return function(*args, **kwargs)
-        with Session.begin() as session:
-            kwargs["session"] = session
-            return function(*args, **kwargs)
-
-    return with_session_inner
-
-
-def with_auto_session(function):
-    """ Wraps the function with Session.begin() for automatic commits after the decorated function """
-
-    @wraps(function)
-    def with_auto_session_inner(*args, **kwargs):
-        with Session.begin() as _:
-            return function(*args, **kwargs)
-
-    return with_auto_session_inner
+        return with_autocommit_inner
 
 
 class JSONWithModel(JSON):

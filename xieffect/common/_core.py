@@ -7,8 +7,9 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, get_jwt, set_access_cookies, create_access_token, get_jwt_identity
 from flask_restx import Api
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import DeclarativeMeta, declarative_base, sessionmaker
+from sqlalchemy.orm import DeclarativeMeta, declarative_base
 
+from ._sqlalchemy import Sessionmaker
 from ._whoosh import IndexService
 
 
@@ -35,7 +36,8 @@ class Flask(_Flask):
         } if use_jwt else None
         return Api(self, doc="/doc/", version=self.versions["API"], authorizations=authorizations)
 
-    def configure_jwt_manager(self, location: list[str], access_expires: timedelta) -> JWTManager:
+    def configure_jwt_manager(self, sessionmaker: Sessionmaker, location: list[str],
+                              access_expires: timedelta) -> JWTManager:
         self.config["JWT_TOKEN_LOCATION"] = location
         self.config["JWT_COOKIE_CSRF_PROTECT"] = False
         self.config["JWT_COOKIE_SAMESITE"] = "None"
@@ -56,10 +58,10 @@ class Flask(_Flask):
             except (RuntimeError, KeyError):
                 return response
 
-        from common import with_session, TokenBlockList
+        from common import TokenBlockList
 
         @jwt.token_in_blocklist_loader
-        @with_session
+        @sessionmaker.with_begin
         def check_if_token_revoked(_, jwt_payload, session):
             return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
 
@@ -70,15 +72,15 @@ def configure_logging(config: dict):
     dictConfig(config)
 
 
-def configure_sqlalchemy(db_url: str) -> tuple[MetaData, DeclarativeMeta, sessionmaker]:
+def configure_sqlalchemy(db_url: str) -> tuple[MetaData, DeclarativeMeta, Sessionmaker]:
     engine = create_engine(db_url, pool_recycle=280)  # , echo=True)
-    return (db_meta := MetaData(bind=engine)), declarative_base(metadata=db_meta), sessionmaker(bind=engine)
+    return (db_meta := MetaData(bind=engine)), declarative_base(metadata=db_meta), Sessionmaker(bind=engine)
 
 
-def configure_whooshee(session: sessionmaker):
+def configure_whooshee(sessionmaker: Sessionmaker):
     whooshee_config = {
         "WHOOSHEE_MIN_STRING_LEN": 0,
         "WHOOSHEE_ENABLE_INDEXING": True,
         "WHOOSH_BASE": "../files/temp/whoosh"
     }
-    return IndexService(config=whooshee_config, session=session())
+    return IndexService(config=whooshee_config, session=sessionmaker())

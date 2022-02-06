@@ -8,10 +8,13 @@ from flask_socketio import disconnect
 from pydantic import BaseModel, Field
 
 from ._interfaces import Identifiable, UserRole
-from ._sqlalchemy import with_session
+from ._sqlalchemy import Sessionmaker
 from ._utils import get_or_pop
 from .flask_siox import Namespace as _Namespace, EventGroup as _EventGroup, SocketIO as _SocketIO
 from .flask_siox import ServerEvent, DuplexEvent
+
+
+# TODO `from .main import sessionmaker` for xieffect-specific
 
 
 @dataclass
@@ -21,6 +24,10 @@ class EventException(Exception):
 
 
 class EventGroup(_EventGroup):
+    def __init__(self, sessionmaker: Sessionmaker, use_kebab_case: bool = False):
+        super().__init__(use_kebab_case)
+        self.with_begin = sessionmaker.with_begin
+
     def triggers(self, event: ServerEvent, condition: str = None, data: ... = None):
         def triggers_wrapper(function):
             if not hasattr(function, "__sio_doc__"):
@@ -71,7 +78,7 @@ class EventGroup(_EventGroup):
         def searcher_wrapper(function):
             @wraps(function)
             @self.triggers(error_event, identifiable.not_found_text, {"code": 404})
-            @with_session
+            @self.with_begin
             def searcher_inner(*args, **kwargs):
                 return self._database_searcher(identifiable, check_only, False, use_session, 404,
                                                function, args, kwargs, result_field_name=result_field_name)
@@ -101,7 +108,7 @@ class EventGroup(_EventGroup):
             @wraps(function)
             @self.triggers(error_event, role.not_found_text, {"code": error_code})
             @jwt_required(optional=optional)
-            @with_session
+            @self.with_begin
             def authorizer_inner(*args, **kwargs):
                 if (jwt := get_jwt_identity()) is None and optional:
                     kwargs[role.__name__.lower()] = None
@@ -122,7 +129,7 @@ class Error(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 
-error_group = EventGroup(True)
+error_group = EventGroup(None, True)  # TODO fix
 error_event = error_group.bind_sub("error", "Emitted if something goes wrong", Error)
 
 
