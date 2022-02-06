@@ -4,9 +4,9 @@ from os.path import exists
 from pathlib import Path
 from sys import modules
 
-from api import app as application, log_stuff, db_meta
+from api import app as application, log_stuff
 from common import User, with_session
-from main import versions, db_url
+from common._core import versions, db_url, db_meta
 from other import WebhookURLs, send_discord_message
 from users.invites_db import Invite  # noqa  # passthrough for tests
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests

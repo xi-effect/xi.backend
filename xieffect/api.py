@@ -1,12 +1,11 @@
-from datetime import datetime, timedelta
-from json import load
+from datetime import datetime
 from sys import stderr
 from traceback import format_tb
 
 from flask import request
 from werkzeug.exceptions import NotFound
 
-from common._core import configure_logging, Flask  # noqa
+from common._core import app, jwt
 from common._marshals import flask_restx_has_bad_design  # noqa
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
@@ -18,29 +17,6 @@ from other import (webhook_namespace, send_discord_message, send_file_discord_me
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 
-configure_logging({
-    "version": 1,
-    "formatters": {"default": {
-        "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
-    }},
-    "handlers": {"wsgi": {
-        "class": "logging.StreamHandler",
-        "stream": "ext://flask.logging.wsgi_errors_stream",
-        "formatter": "default"
-    }},
-    "root": {
-        "level": "DEBUG",
-        "handlers": ["wsgi"]
-    }
-})
-
-versions = load(open("../files/versions.json", encoding="utf-8"))
-
-app: Flask = Flask(__name__, static_folder="../files/static", static_url_path="/static/", versions=versions)
-app.secrets_from_env("hope it's local")  # TODO DI to use secrets in `URLSafeSerializer`s
-app.configure_cors()
-
-jwt = app.configure_jwt_manager(["cookies"], timedelta(hours=72))
 api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
