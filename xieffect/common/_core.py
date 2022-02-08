@@ -2,7 +2,7 @@ from os import getenv
 
 from flask_jwt_extended import JWTManager
 
-from .flask_fullstack import Flask as _Flask, configure_logging, configure_whooshee, configure_sqlalchemy
+from __lib__.flask_fullstack import Flask as _Flask, configure_logging, configure_whooshee, configure_sqlalchemy
 
 
 class Flask(_Flask):

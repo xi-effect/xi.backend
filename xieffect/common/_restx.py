@@ -5,8 +5,8 @@ from typing import Type
 
 from flask_restx import abort as default_abort
 
+from __lib__.flask_fullstack import RestXNamespace
 from ._marshals import success_response, message_response
-from .flask_fullstack import RestXNamespace
 
 
 class Namespace(RestXNamespace):  # xieffect specific

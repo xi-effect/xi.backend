@@ -7,8 +7,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_socketio import disconnect
 from pydantic import BaseModel, Field
 
-from .flask_fullstack import Identifiable, UserRole, EventGroup as _EventGroup
-from .flask_siox import Namespace as _Namespace, SocketIO as _SocketIO, ServerEvent, DuplexEvent
+from __lib__.flask_fullstack import Identifiable, UserRole, EventGroup as _EventGroup
+from __lib__.flask_siox import Namespace as _Namespace, SocketIO as _SocketIO, ServerEvent, DuplexEvent
 
 
 @dataclass
