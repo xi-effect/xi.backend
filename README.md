@@ -2,9 +2,10 @@
 
 ## Работа над проектом
 1. Скачать репозиторий (через `git clone` или PyCharm)
-2. Временно сменить ветку на `prod`, далее см. [Раздел про GIT](#GIT)
-3. Настроить виртуальное окружение или глобальный интерпретатор python. Используется [**3.9.7**](https://www.python.org/downloads/release/python-397/) ради совместимости с хостингом
-4. Установить все библиотеки через `pip install -r requirements.txt`
+2. Инициализировать субмодули (`git submodule init` и `git submodule update`)
+3. Временно сменить ветку на `prod`, далее см. [Раздел про GIT](#GIT)
+4. Настроить виртуальное окружение или глобальный интерпретатор python. Используется [**3.9.7**](https://www.python.org/downloads/release/python-397/) ради совместимости с хостингом
+5. Установить все библиотеки через `pip install -r requirements.txt`
 
 ### Для PyCharm
 1. Пометить папки `xieffect`, `xieffect-socketio` и `blueprints` как *Sources Root*
