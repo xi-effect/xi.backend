@@ -14,8 +14,8 @@ invites_model = invites_namespace.model("Invite", Invite.marshal_models["invite"
 
 def admin_only(use_session: bool = False):
     def admin_only_wrapper(function):
-        @invites_namespace.doc_responses(ResponseDoc.error_response(f"403 ", "Permission denied"),
-                                         *invites_namespace.auth_errors)
+        @invites_namespace.doc_aborts(*invites_namespace.auth_errors)
+        @invites_namespace.doc_responses(ResponseDoc.error_response(f"403 ", "Permission denied"))
         @invites_namespace.doc(security="jwt")
         @wraps(function)
         @jwt_required()

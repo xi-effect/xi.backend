@@ -1,21 +1,17 @@
 from os import getenv
 
-from flask_jwt_extended import JWTManager
-
 from __lib__.flask_fullstack import Flask as _Flask, configure_logging, configure_whooshee, configure_sqlalchemy
 
 
 class Flask(_Flask):
-    def configure_jwt_manager(self, *args, **kwargs) -> JWTManager:
+    def configure_jwt_with_loaders(self, *args, **kwargs) -> None:
         from .users_db import TokenBlockList
-        jwt = super().configure_jwt_manager(*args, **kwargs)
+        jwt = super().configure_jwt_with_loaders(*args, **kwargs)
 
         @jwt.token_in_blocklist_loader
         @sessionmaker.with_begin
         def check_if_token_revoked(_, jwt_payload, session):
             return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
-
-        return jwt
 
 
 def init_xieffect():  # xieffect specific:

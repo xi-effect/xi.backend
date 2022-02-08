@@ -1,9 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from sys import stderr
-from traceback import format_tb
-
-from flask import request
-from werkzeug.exceptions import NotFound
 
 from common import app, sessionmaker, db_meta  # noqa
 # from communication import (chats_namespace)
@@ -14,7 +10,24 @@ from other import (webhook_namespace, send_discord_message, send_file_discord_me
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 
-jwt = app.configure_jwt_manager(sessionmaker, ["cookies"], timedelta(hours=72))
+
+def log_stuff(level: str, message: str):
+    if app.debug:
+        print(message, **({"file": stderr} if level == "error" else {}))
+    else:
+        if level == "status":
+            send_discord_message(WebhookURLs.STATUS, message)
+        else:
+            if len(message) < 200:
+                response = send_discord_message(WebhookURLs.ERRORS, message)
+            else:
+                response = send_file_discord_message(
+                    WebhookURLs.ERRORS, message, "error_message.txt", "Server error appeared!")
+            if response.status_code < 200 or response.status_code > 299:
+                send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
+
+
+jwt = app.configure_jwt_with_loaders(["cookies"], timedelta(hours=72), log_stuff)
 api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
@@ -62,58 +75,5 @@ api.add_namespace(webhook_namespace)
 # messages_namespace.attach_event_group(user_management_events, use_kebab_case=True)
 #
 # socketio.on_namespace(messages_namespace)
-
-
-def log_stuff(level: str, message: str):
-    if app.debug:
-        print(message, **({"file": stderr} if level == "error" else {}))
-    else:
-        if level == "status":
-            send_discord_message(WebhookURLs.STATUS, message)
-        else:
-            if len(message) < 200:
-                response = send_discord_message(WebhookURLs.ERRORS, message)
-            else:
-                response = send_file_discord_message(
-                    WebhookURLs.ERRORS, message, "error_message.txt", "Server error appeared!")
-            if response.status_code < 200 or response.status_code > 299:
-                send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
-
-
-@app.errorhandler(NotFound)
-def on_not_found(_):
-    return {"a": "Not found"}, 404
-
-
-@app.errorhandler(Exception)
-def on_any_exception(error: Exception):
-    error_text: str = f"Requested URL: {request.path}\nError: {repr(error)}\n" + \
-                      "".join(format_tb(error.__traceback__))
-    log_stuff("error", error_text)
-    return {"a": error_text}, 500
-
-
-@jwt.expired_token_loader
-def expired_token_callback(*_):
-    return {"a": "expired token"}, 401
-
-
-@jwt.token_verification_failed_loader
-def verification_failed_callback(*_):
-    log_stuff("error", f"Token verification somehow failed\n[`{datetime.utcnow()}`]")
-    return {"a": f"token verification failed"}, 401
-
-
-@jwt.invalid_token_loader
-def invalid_token_callback(callback):
-    log_stuff("error", f"Invalid token: {callback}\n[`{datetime.utcnow()}`]")
-    return {"a": f"invalid token: {callback}"}, 422
-
-
-@jwt.unauthorized_loader
-def unauthorized_callback(callback):
-    if callback != "Missing cookie \"access_token_cookie\"":
-        log_stuff("error", f"Unauthorized: {callback}\n[`{datetime.utcnow()}`]")
-    return {"a": f"unauthorized: {callback}"}, 401
 
 # remove-item alias:\curl
