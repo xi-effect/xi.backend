@@ -4,8 +4,10 @@ from flask.testing import FlaskClient
 from pytest import fixture
 from werkzeug.test import TestResponse
 
+from __lib__.flask_fullstack import check_code
 from wsgi import application as app, TEST_EMAIL, BASIC_PASS, ADMIN_EMAIL, ADMIN_PASS
-from xieffect.test.components import check_status_code
+
+
 # from .library2 import MultiClient as _MultiClient, DoubleClient, SocketIOTestClient
 
 
@@ -27,7 +29,8 @@ def base_client():
 
 def login(email: str, password: str) -> FlaskClient:
     with app.test_client() as client:
-        response: TestResponse = client.post("/auth/", follow_redirects=True, data={"email": email, "password": password})
+        response: TestResponse = client.post("/auth/", follow_redirects=True,
+                                             data={"email": email, "password": password})
         assert response.status_code == 200
         assert "Set-Cookie" in response.headers.keys()
         cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
@@ -61,7 +64,7 @@ def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator
         amount = page_size
         while amount == page_size:
             request_json["counter"] = counter
-            response_json: dict = check_status_code(client.post(link, json=request_json), status_code)
+            response_json: dict = check_code(client.post(link, json=request_json), status_code)
 
             assert "results" in response_json
             assert isinstance(response_json["results"], list)
@@ -76,7 +79,6 @@ def list_tester(client: FlaskClient) -> Callable[[str, dict, int, int], Iterator
         assert counter > 0
 
     return list_tester_inner
-
 
 # class MultiClient(_MultiClient):
 #     def auth_user(self, email: str, password: str) -> Union[DoubleClient, None]:

@@ -4,7 +4,7 @@ from typing import Callable, Iterator
 from flask.testing import FlaskClient
 from pytest import mark
 
-from .components import check_status_code, dict_equal
+from __lib__.flask_fullstack import check_code, dict_equal
 
 
 @mark.skip
@@ -12,12 +12,12 @@ from .components import check_status_code, dict_equal
 def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     # Creating a new chat:
     chat_name1, chat_name2 = "test", "production"
-    chat_id = check_status_code(client.post("/chat-temp/", json={"name": chat_name1})).get("id", None)
+    chat_id = check_code(client.post("/chat-temp/", json={"name": chat_name1})).get("id", None)
     assert chat_id is not None
 
     # Checking initial chat metadata & message-history:
     data = {"name": chat_name1, "role": "owner", "users": 1, "unread": 0}
-    assert check_status_code(client.get(f"/chats/{chat_id}/")) == data
+    assert check_code(client.get(f"/chats/{chat_id}/")) == data
     assert any(chat["id"] == chat_id and chat["name"] == chat_name1 for chat in list_tester("/chats/index/", {}, 50))
     assert len(list(list_tester(f"/chats/{chat_id}/message-history/", {}, 50))) == 0
 
@@ -33,12 +33,12 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     an_id = bulk[-1]
 
     # Inviting users:
-    assert all(check_status_code(client.post(f"/chat-temp/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})))
-    assert check_status_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))["a"]
+    assert all(check_code(client.post(f"/chat-temp/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})))
+    assert check_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))["a"]
 
     # Fail to invite the same users:
-    assert not any(check_status_code(client.post(f"/chat-temp/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})))
-    assert not check_status_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))["a"]
+    assert not any(check_code(client.post(f"/chat-temp/{chat_id}/users/add-all/", json={"ids": bulk[:-1]})))
+    assert not check_code(client.post(f"/chat-temp/{chat_id}/users/{an_id}/", json={"role": invited[an_id]}))["a"]
 
     # Changing users' roles:
     assert all(client.put(f"/chat-temp/{chat_id}/users/{user_id}/", json={"role": role}).status_code == 200
@@ -47,10 +47,10 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
     # MB add a check for inviting already invited users
 
     # Editing chat metadata:
-    assert check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name2})) == {"a": True}
+    assert check_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name2})) == {"a": True}
     # Checking chat metadata:
     chat_data = {"name": chat_name2, "role": "owner", "users": len(invited), "unread": 0}
-    assert check_status_code(client.get(f"/chats/{chat_id}/")) == chat_data
+    assert check_code(client.get(f"/chats/{chat_id}/")) == chat_data
     assert any(chat["id"] == chat_id and chat["name"] == chat_name2 for chat in list_tester("/chats/index/", {}, 50))
 
     # Check the updated user-list:
@@ -60,14 +60,14 @@ def test_chat_owning(client: FlaskClient, list_tester: Callable[[str, dict, int]
         assert user["role"] == invited[user["id"]]
 
     # Kick one user:
-    check_status_code(client.delete(f"/chat-temp/{chat_id}/users/{(removed_user_id := list(invited)[2])}/"))
+    check_code(client.delete(f"/chat-temp/{chat_id}/users/{(removed_user_id := list(invited)[2])}/"))
     # Check the updated user-list
     assert all(user["id"] != removed_user_id for user in list_tester(f"/chats/{chat_id}/users/", {}, 50))
 
     # Delete the chat:
-    assert check_status_code(client.delete(f"/chat-temp/{chat_id}/manage/")) == {"a": True}
+    assert check_code(client.delete(f"/chat-temp/{chat_id}/manage/")) == {"a": True}
     # Check chat's absence:
-    assert check_status_code(client.get(f"/chats/{chat_id}/"), 404)
+    assert check_code(client.get(f"/chats/{chat_id}/"), 404)
     assert all(chat["id"] != chat_id for chat in list_tester("/chats/index/", {}, 50))
 
 
@@ -78,7 +78,7 @@ def get_roles_to_user(multi_client: Callable[[str], FlaskClient], chat):
                      for email, role in chat["participants"]
                      if role in not_found_roles}
     assert len(not_found_roles) == 0
-    return [(role, (email := role_to_email[role]), check_status_code(multi_client(email).get("/settings/main/"))["id"])
+    return [(role, (email := role_to_email[role]), check_code(multi_client(email).get("/settings/main/"))["id"])
             for role in roles]
 
 
@@ -98,24 +98,24 @@ def test_chat_roles(list_tester: Callable[[str, dict, int], Iterator[dict]],
         client = multi_client(email)
         code = 200 if role == "admin" else 403
 
-        check_status_code(client.delete(f"/chat-temp/{chat_id}/manage/"), 403)
-        check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": "new_name"}), code)
+        check_code(client.delete(f"/chat-temp/{chat_id}/manage/"), 403)
+        check_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": "new_name"}), code)
         if role == "admin":
-            assert check_status_code(client.get(f"/chats/{chat_id}/"))["name"] == "new_name"
-        check_status_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name}), code)
+            assert check_code(client.get(f"/chats/{chat_id}/"))["name"] == "new_name"
+        check_code(client.put(f"/chat-temp/{chat_id}/manage/", json={"name": chat_name}), code)
         if role == "admin":
-            assert check_status_code(client.get(f"/chats/{chat_id}/"))["name"] == chat_name
+            assert check_code(client.get(f"/chats/{chat_id}/"))["name"] == chat_name
 
         for target in list_tester(f"/chats/{chat_id}/users/", {}, 50):
             target_id = target["id"]
             code = 200 if role == "admin" and target["role"] not in ("owner", "admin") else 403
             if target_id != user_id:
-                check_status_code(client.delete(f"/chat-temp/{chat_id}/users/{target_id}/"), code)
-                assert code == 403 or (check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc - 1)
+                check_code(client.delete(f"/chat-temp/{chat_id}/users/{target_id}/"), code)
+                assert code == 403 or (check_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc - 1)
 
-                check_status_code(client.post(f"/chat-temp/{chat_id}/users/{target_id}/",
-                                              json={"role": target["role"]}), code)
-                assert code == 403 or check_status_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
+                check_code(client.post(f"/chat-temp/{chat_id}/users/{target_id}/",
+                                       json={"role": target["role"]}), code)
+                assert code == 403 or check_code(client.get(f"/chats/{chat_id}/"))["users"] == chat_uc
 
 
 @mark.skip
@@ -125,32 +125,32 @@ def test_ownership_transfer(multi_client: Callable[[str], FlaskClient]):
     anatol_id, evgen_id, vasil_id = 4, 5, 6  # user ids are assumed
 
     # Creating the chat
-    chat_id = check_status_code(anatol.post("/chat-temp/", json={"name": "test"})).get("id", None)
+    chat_id = check_code(anatol.post("/chat-temp/", json={"name": "test"})).get("id", None)
     assert chat_id is not None
 
     # Inviting evgen & vasil
-    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/users/{evgen_id}/", json={"role": "basic"}))["a"]
-    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/users/{vasil_id}/", json={"role": "basic"}))["a"]
+    assert check_code(anatol.post(f"/chat-temp/{chat_id}/users/{evgen_id}/", json={"role": "basic"}))["a"]
+    assert check_code(anatol.post(f"/chat-temp/{chat_id}/users/{vasil_id}/", json={"role": "basic"}))["a"]
 
     # Transfer ownership
-    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/users/{vasil_id}/owner/"))["a"]
-    assert check_status_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "admin"
-    assert check_status_code(vasil.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
+    assert check_code(anatol.post(f"/chat-temp/{chat_id}/users/{vasil_id}/owner/"))["a"]
+    assert check_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "admin"
+    assert check_code(vasil.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
 
     # Vasil quits, ownership transfers back to anatol
-    result = check_status_code(vasil.delete(f"/chat-temp/{chat_id}/membership/"))
+    result = check_code(vasil.delete(f"/chat-temp/{chat_id}/membership/"))
     assert dict_equal(result, {"branch": "assign-owner", "successor": anatol_id}, "branch", "successor")
-    assert check_status_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
-    assert check_status_code(vasil.get(f"/chats/{chat_id}/"), 403)["a"] == "User not in the chat"
+    assert check_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
+    assert check_code(vasil.get(f"/chats/{chat_id}/"), 403)["a"] == "User not in the chat"
 
     # Evgen quits, nothing happens
-    assert check_status_code(evgen.delete(f"/chat-temp/{chat_id}/membership/"))["branch"] == "just-quit"
-    assert check_status_code(evgen.get(f"/chats/{chat_id}/"), 403)["a"] == "User not in the chat"
-    assert check_status_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
+    assert check_code(evgen.delete(f"/chat-temp/{chat_id}/membership/"))["branch"] == "just-quit"
+    assert check_code(evgen.get(f"/chats/{chat_id}/"), 403)["a"] == "User not in the chat"
+    assert check_code(anatol.get(f"/chats/{chat_id}/")).get("role", None) == "owner"
 
     # Anatol quits, chat is deleted automagically
-    assert check_status_code(anatol.delete(f"/chat-temp/{chat_id}/membership/"))["branch"] == "delete-chat"
-    assert check_status_code(anatol.get(f"/chats/{chat_id}/"), 404)["a"] == "Chat not found"
+    assert check_code(anatol.delete(f"/chat-temp/{chat_id}/membership/"))["branch"] == "delete-chat"
+    assert check_code(anatol.get(f"/chats/{chat_id}/"), 404)["a"] == "Chat not found"
 
 
 @mark.skip
@@ -158,7 +158,7 @@ def test_ownership_transfer(multi_client: Callable[[str], FlaskClient]):
 def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
                    multi_client: Callable[[str], FlaskClient]):  # relies on chat#4
     def form_offline() -> dict[int, int]:
-        offline_data: list[dict[str, int]] = check_status_code(anatol.get(f"/chat-temp/{chat_id}/users/offline/"))
+        offline_data: list[dict[str, int]] = check_code(anatol.get(f"/chat-temp/{chat_id}/users/offline/"))
         assert all("unread" in data.keys() and "user-id" in data.keys() for data in offline_data)
         return {data["user-id"]: data["unread"] for data in offline_data}
 
@@ -182,18 +182,18 @@ def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
     fist_offline: dict[int, int] = form_offline()
     ensure_presence([], [anatol_id, vasil1_id, vasil2_id, evgen_id])
 
-    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
-    assert check_status_code(vasil1.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
-    assert check_status_code(vasil2.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
+    assert check_code(anatol.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
+    assert check_code(vasil1.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
+    assert check_code(vasil2.post(f"/chat-temp/{chat_id}/presence/", json={"online": True})) == {"a": False}
     ensure_presence([anatol_id, vasil1_id, vasil2_id], [evgen_id])
     notif_count = form_offline()
     messages = get_messages()
 
     # Sending a message
     message = {"content": content1}
-    data = check_status_code(vasil1.post(f"/chat-temp/{chat_id}/messages/", json=message), 403)
+    data = check_code(vasil1.post(f"/chat-temp/{chat_id}/messages/", json=message), 403)
     assert data == {"a": "You have to be at least chat's basic"}
-    data = check_status_code(vasil2.post(f"/chat-temp/{chat_id}/messages/", json=message))
+    data = check_code(vasil2.post(f"/chat-temp/{chat_id}/messages/", json=message))
     assert "message_id" in data.keys() and "sent" in data.keys()
 
     # Checking message list & unread counts
@@ -204,9 +204,9 @@ def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
 
     # Updating a message
     message["content"] = content2
-    data = check_status_code(anatol.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 403)
+    data = check_code(anatol.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 403)
     assert data == {"a": "Not your message"}
-    data = check_status_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message))
+    data = check_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message))
     assert "updated" in data.keys()
 
     # Checking message list & unread counts
@@ -216,20 +216,20 @@ def test_messaging(list_tester: Callable[[str, dict, int], Iterator[dict]],
     assert notif_count == form_offline()
 
     # Deleting the message (by vasil)
-    assert check_status_code(vasil2.delete(f"/chat-temp/{chat_id}/messages/{message['id']}/")) == {"a": True}
-    check_status_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 404)
+    assert check_code(vasil2.delete(f"/chat-temp/{chat_id}/messages/{message['id']}/")) == {"a": True}
+    check_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 404)
     assert messages == get_messages()
 
     # Sending it again & deleting by anatol (moder)
-    data = check_status_code(vasil2.post(f"/chat-temp/{chat_id}/messages/", json=message))
-    assert check_status_code(anatol.delete(f"/chat-temp/{chat_id}/messages/{data['message_id']}/")) == {"a": True}
-    check_status_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 404)
+    data = check_code(vasil2.post(f"/chat-temp/{chat_id}/messages/", json=message))
+    assert check_code(anatol.delete(f"/chat-temp/{chat_id}/messages/{data['message_id']}/")) == {"a": True}
+    check_code(vasil2.put(f"/chat-temp/{chat_id}/messages/{message['id']}/", json=message), 404)
     assert messages == get_messages()
 
     # Check going offline
-    assert check_status_code(anatol.post(f"/chat-temp/{chat_id}/presence/", json={"online": False})) == {"a": False}
-    assert check_status_code(vasil1.post(f"/chat-temp/{chat_id}/presence/", json={"online": False})) == {"a": False}
-    assert check_status_code(vasil2.post(f"/chat-temp/close-all/", json={"ids": [chat_id]})) == {"a": True}
+    assert check_code(anatol.post(f"/chat-temp/{chat_id}/presence/", json={"online": False})) == {"a": False}
+    assert check_code(vasil1.post(f"/chat-temp/{chat_id}/presence/", json={"online": False})) == {"a": False}
+    assert check_code(vasil2.post(f"/chat-temp/close-all/", json={"ids": [chat_id]})) == {"a": True}
 
     last_offline = form_offline()
     for user_id, unread in fist_offline.items():

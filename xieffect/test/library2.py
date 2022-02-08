@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 from collections import Callable
+from dataclasses import dataclass
 
 from flask import Flask
 from flask.testing import FlaskClient
