@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta, timezone
+from json import dumps
 from sys import stderr
 from traceback import format_tb
 
 from flask import Response, request
 from flask_jwt_extended import JWTManager, get_jwt, get_jwt_identity, create_access_token, set_access_cookies
 from flask_restx import Api
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import NotFound, HTTPException
 
 from common import TokenBlockList, with_session
 from common._marshals import flask_restx_has_bad_design  # noqa
@@ -14,7 +15,6 @@ from education import (authors_namespace, wip_json_file_namespace, wip_images_na
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace)
 from education.knowledge.results_rst import result_namespace
-from main import app, db_meta, versions
 from main import app, db_meta, versions  # noqa
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
@@ -112,6 +112,21 @@ def refresh_expiring_jwt(response: Response):
 @app.errorhandler(NotFound)
 def on_not_found(_):
     return {"a": "Not found"}, 404
+
+
+@app.errorhandler(HTTPException)
+def handle_exception(e):
+    """Return JSON instead of HTML for HTTP errors."""
+    # start with the correct headers and status code from the error
+    response = e.get_response()
+    # replace the body with JSON
+    response.data = dumps({
+        "code": e.code,
+        "name": e.name,
+        "description": e.description,
+    })
+    response.content_type = "application/json"
+    return response
 
 
 @app.errorhandler(Exception)
