@@ -29,11 +29,11 @@ class Invite(Base, Marshalable):
     @classmethod
     def create(cls, session: Session, community: Community, role: ParticipantRole, limit: int = -1) -> Invite:
         entry: cls = cls(role=role, limit=limit, community=community, invite_id=community.invite_count)  # noqa
-        community.invite_count += 1
+        community.invite_count += 1  # keep
         session.add(entry)
-        session.flush()
+        session.flush()  # saves & generates the id!
         entry.code = entry.generate_code()
-        session.flush()
+        session.flush()  # saves
         return entry
 
     @classmethod
@@ -41,7 +41,7 @@ class Invite(Base, Marshalable):
         return session.execute(select(cls).filter_by(community_id=community_id, invite_id=invite_id)).scalars().first()
 
     @classmethod
-    def find_by_code(cls, session: Session, code: str) -> Union[Invite, None]:
+    def find_by_code(cls, session: Session, code: str) -> Union[Invite, None]:  # TODO redo with unique code field
         temp = cls.serializer.loads(code)
         if not isinstance(temp, Sequence) or len(temp) != 2:
             raise TypeError
@@ -50,7 +50,7 @@ class Invite(Base, Marshalable):
             raise TypeError
         return cls.find_by_ids(session, community_id, invite_id)
 
-    def accept(self, session: Session, acceptor: User) -> bool:
+    def accept(self, session: Session, acceptor: User) -> bool:  # keep
         if Participant.find_by_ids(session, self.community_id, acceptor.id) is not None:
             return False
         participant = Participant(user=acceptor, role=self.role)
