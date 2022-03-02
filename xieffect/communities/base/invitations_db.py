@@ -1,72 +1,33 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Union
-
 from itsdangerous import URLSafeSerializer
-from sqlalchemy import Column, ForeignKey, select
+from sqlalchemy import Column
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Enum, DateTime
+from sqlalchemy.sql.sqltypes import Integer, DateTime
 
-from common import Marshalable, User, create_marshal_model
+from common import Marshalable, create_marshal_model
 from main import Base, Session, app
-from .meta_db import Community, Participant, ParticipantRole
-from datetime import datetime, timedelta
+from .meta_db import Community
+from datetime import datetime
 
 
 @create_marshal_model("community_invites", "role", "code", "limit", "time_limit")
-class Invite(Base, Marshalable):
+class Invitations(Base, Marshalable):
     __tablename__ = "community_invites"
     serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECURITY_PASSWORD_SALT"])
-    community = relationship("Community")
-    community_id = Column(Integer, ForeignKey(Community.id), primary_key=True)
+
     invite_id = Column(Integer, primary_key=True)
-    code = Column(String(100), nullable=False, default="")
-    time_limit = (DateTime(timezone=True))
-    role = Column(Enum(ParticipantRole), nullable=False)
-    limit = Column(Integer, nullable=False, default=-1)
-    accepted = Column(Integer, nullable=False, default=0)
+    time_limit = Column(DateTime, default=datetime.now())
+    role = Column(Integer, default=1)
+    count_limit = Column(Integer, nullable=False, default=-1)
+    community = relationship("Community")
 
     @classmethod
-    def create(cls, session: Session, community: Community, role: ParticipantRole, limit: int = -1, time_limit: int = 0) -> Invite:
-        time = datetime.utcnow() + timedelta(hours=time_limit) if time_limit != 0 else None
-        entry: cls = cls(role=role, limit=limit, community=community, invite_id=community.invite_count, time=time)  # noqa
-        community.invite_count += 1
+    def create(cls, session: Session, community: Community, role: int = 1, count_limit: int = -1, time_limit: int = datetime.now()) -> Invitations:
+        entry: cls = cls(role=role, count_limit=count_limit, community=community, time_limit=time_limit)
         session.add(entry)
         session.flush()
-        entry.code = entry.generate_code()
-        session.flush()
         return entry
-
-    @classmethod
-    def find_by_ids(cls, session: Session, community_id: int, invite_id: int) -> Union[Invite, None]:
-        return session.execute(select(cls).filter_by(community_id=community_id, invite_id=invite_id)).scalars().first()
-
-    @classmethod
-    def find_by_code(cls, session: Session, code: str) -> Union[Invite, None]:
-        temp = cls.serializer.loads(code)
-        if not isinstance(temp, Sequence) or len(temp) != 2:
-            raise TypeError
-        community_id, invite_id = temp
-        if not isinstance(community_id, int) or not isinstance(invite_id, int):
-            raise TypeError
-        return cls.find_by_ids(session, community_id, invite_id)
-
-    @classmethod
-    def find_global(cls, session: Session, offset: int, limit: int) -> list[Invite]:
-        return session.execute(select(cls).offset(offset).limit(limit)).scalars().all()
-
-    def accept(self, session: Session, acceptor: User) -> bool:
-        if Participant.find_by_ids(session, self.community_id, acceptor.id) is not None:
-            return False
-        participant = Participant(user=acceptor, role=self.role)
-        self.community.participants.append(participant)
-        session.add(participant)
-        session.flush()
-        return True
-
-    def generate_code(self):
-        return self.serializer.dumps((self.community_id, self.invite_id))
 
     def delete(self, session):
         session.delite(self)
