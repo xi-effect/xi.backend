@@ -20,6 +20,8 @@ from other import (webhook_namespace, send_discord_message, send_file_discord_me
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
 
+from communities import (communities_namespace, invitation_namespace)
+
 authorizations = {
     "jwt": {
         "type": "apiKey",
@@ -28,6 +30,9 @@ authorizations = {
     }
 }
 api: Api = Api(app, doc="/doc/", version=versions["API"], authorizations=authorizations)
+
+api.add_namespace(communities_namespace)
+api.add_namespace(invitation_namespace)
 
 api.add_namespace(reglog_namespace)
 api.add_namespace(users_namespace)
