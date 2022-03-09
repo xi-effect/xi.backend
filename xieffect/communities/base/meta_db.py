@@ -60,5 +60,13 @@ class Participant(Base):
     role = Column(Enum(ParticipantRole), nullable=False)
 
     @classmethod
+    def create(cls, session: Session, community_id: int, user_id: int):
+        entry: cls = cls(community_id=community_id, user_id=user_id, role=ParticipantRole.BASE)
+        session.add(entry)
+        session.flush()
+
+        return entry
+
+    @classmethod
     def find_by_ids(cls, session: Session, community_id: int, user_id: int) -> Union[Participant, None]:
         return session.execute(select(cls).filter_by(community_id=community_id, user_id=user_id)).scalars().first()

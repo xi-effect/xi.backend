@@ -1,1 +1,1 @@
-from .base import communities_namespace
+from .base import communities_namespace, invitation_namespace
