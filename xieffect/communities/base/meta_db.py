@@ -60,8 +60,12 @@ class Participant(Base):
     role = Column(Enum(ParticipantRole), nullable=False)
 
     @classmethod
-    def create(cls, session: Session, community_id: int, user_id: int):
-        entry: cls = cls(community_id=community_id, user_id=user_id, role=ParticipantRole.BASE)
+    def create(cls, session: Session, community_id: int, user_id: int, role: int):
+        if role == 0:
+            role = ParticipantRole.BASE
+        else:
+            role = ParticipantRole.OWNER
+        entry: cls = cls(community_id=community_id, user_id=user_id, role=role)
         session.add(entry)
         session.flush()
 

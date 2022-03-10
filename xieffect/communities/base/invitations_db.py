@@ -21,14 +21,13 @@ class Invitation(Base, Identifiable, Marshalable):
     community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
     community = relationship("Community")
 
-    time_limit = Column(DateTime, default=datetime.now().date())
-    code = Column(String(100), default='')
+    time_limit = Column(DateTime, nullable=True)
+    code = Column(String(100), default="")
     role = Column(Integer, default=1)
     count_limit = Column(Integer, nullable=False, default=-1)
 
     @classmethod
-    def create(cls, session: Session, community_id: int, role: int = 1, count_limit: int = -1,
-               time_limit: DateTime = datetime.now()) -> Invitation:
+    def create(cls, session: Session, community_id: int, role: int = 1, count_limit: int = -1, time_limit: Union[DateTime, None] = None) -> Invitation:
         entry: cls = cls(role=role, count_limit=count_limit, community=Community.find_by_id(session, community_id),
                          time_limit=time_limit)
         session.add(entry)
@@ -42,23 +41,25 @@ class Invitation(Base, Identifiable, Marshalable):
         return session.execute(select(cls).filter_by(invitation_id=invitation_id)).scalars().first()
 
     @classmethod
-    def find_invitation_by_community_id(cls, session: Session, community_id: int, offset: int, limit: int) -> list[Invitation]:
+    def find_by_community_id(cls, session: Session, community_id: int, offset: int, limit: int) -> list[Invitation]:
         query = session.execute(select(cls).filter(cls.community_id == community_id).offset(offset).limit(limit)).scalars().all()
         return query
 
     @classmethod
-    def find_community_by_id(cls, session: Session, community_id: int) -> Union[Community, None]:
-        return Community.find_by_id(session, community_id)
-
-    @classmethod
-    def get_invitation_by_url(cls, session: Session, url: str):
-        return session.execute(select(cls).filter_by(code=url)).scalars().first()
+    def get_invitation_by_code(cls, session: Session, code: str):
+        return session.execute(select(cls).filter_by(code=code)).scalars().first()
 
     def generate_code(self):
-        return self.serializer.dumps(([self.community_id, self.invitation_id]))
+        return self.serializer.dumps([self.community_id, self.invitation_id])
 
     def get_code(self):
         return self.code
+
+    def check_availabel(self, date: DateTime):
+        if self.count_limit != 0 and self.time_limit > date:
+            return True
+        else:
+            return False
 
     def delete(self, session):
         session.delete(self)
