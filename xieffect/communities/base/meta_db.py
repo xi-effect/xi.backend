@@ -10,7 +10,7 @@ from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, Us
 from main import Base, Session
 
 
-@create_marshal_model("community-base", "name", "description")
+@create_marshal_model("community-base", "id", "name", "description")
 class Community(Base, Identifiable, Marshalable):
     __tablename__ = "community"
     not_found_text = "Community not found"
@@ -60,11 +60,7 @@ class Participant(Base):
     role = Column(Enum(ParticipantRole), nullable=False)
 
     @classmethod
-    def create(cls, session: Session, community_id: int, user_id: int, role: int):
-        if role == 0:
-            role = ParticipantRole.BASE
-        else:
-            role = ParticipantRole.OWNER
+    def create(cls, session: Session, community_id: int, user_id: int, role: ParticipantRole):
         entry: cls = cls(community_id=community_id, user_id=user_id, role=role)
         session.add(entry)
         session.flush()

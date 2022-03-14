@@ -3,11 +3,11 @@ from typing import Union
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, DateTime, String
+from sqlalchemy.sql.sqltypes import Integer, DateTime, String, Enum
 
 from common import Marshalable, create_marshal_model, Identifiable
 from main import Base, Session, app
-from .meta_db import Community
+from .meta_db import Community, ParticipantRole
 from datetime import datetime
 
 
@@ -23,11 +23,11 @@ class Invitation(Base, Identifiable, Marshalable):
 
     time_limit = Column(DateTime, nullable=True)
     code = Column(String(100), default="")
-    role = Column(Integer, default=1)
+    role = Column(Enum(ParticipantRole), default=1)
     count_limit = Column(Integer, nullable=False, default=-1)
 
     @classmethod
-    def create(cls, session: Session, community_id: int, role: int = 1, count_limit: int = -1, time_limit: Union[DateTime, None] = None) -> Invitation:
+    def create(cls, session: Session, community_id: int, role: ParticipantRole, count_limit: int = -1, time_limit: Union[DateTime, None] = None) -> Invitation:
         entry: cls = cls(role=role, count_limit=count_limit, community=Community.find_by_id(session, community_id),
                          time_limit=time_limit)
         session.add(entry)
@@ -46,14 +46,11 @@ class Invitation(Base, Identifiable, Marshalable):
         return query
 
     @classmethod
-    def get_invitation_by_code(cls, session: Session, code: str):
+    def find_by_code(cls, session: Session, code: str):
         return session.execute(select(cls).filter_by(code=code)).scalars().first()
 
     def generate_code(self):
-        return self.serializer.dumps([self.community_id, self.invitation_id])
-
-    def get_code(self):
-        return self.code
+        return self.serializer.dumps((self.community_id, self.invitation_id))
 
     def check_availabel(self, date: DateTime):
         if self.count_limit != 0 and self.time_limit > date:
