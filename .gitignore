@@ -1,6 +1,6 @@
 .archive
 .idea
-.env
+*.env
 venv/
 xieffect/app.db
 xieffect/alembic.db

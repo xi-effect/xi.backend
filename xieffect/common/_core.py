@@ -26,21 +26,21 @@ def init_xieffect():  # xieffect specific:
     db_url: str = getenv("DB_LINK", "sqlite:///app.db")
     db_meta, Base, sessionmaker = configure_sqlalchemy(db_url)
     index_service = configure_whooshee(sessionmaker, "../files/temp/whoosh")
-    configure_logging({
-        "version": 1,
-        "formatters": {"default": {
-            "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
-        }},
-        "handlers": {"wsgi": {
-            "class": "logging.StreamHandler",
-            "stream": "ext://flask.logging.wsgi_errors_stream",
-            "formatter": "default"
-        }},
-        "root": {
-            "level": "DEBUG",
-            "handlers": ["wsgi"]
-        }
-    })
+    # configure_logging({
+    #     "version": 1,
+    #     "formatters": {"default": {
+    #         "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+    #     }},
+    #     "handlers": {"wsgi": {
+    #         "class": "logging.StreamHandler",
+    #         "stream": "ext://flask.logging.wsgi_errors_stream",
+    #         "formatter": "default"
+    #     }},
+    #     "root": {
+    #         "level": "DEBUG",
+    #         "handlers": ["wsgi"]
+    #     }
+    # })
 
     versions = load(open("../files/versions.json", encoding="utf-8"))
 
