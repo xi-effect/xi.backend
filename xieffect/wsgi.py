@@ -18,8 +18,6 @@ ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f4
 
 TEST_INVITE_ID: int = 0
 
-db_meta.create_all()
-
 if __name__ == "__main__" or "pytest" in modules.keys() or db_url == "sqlite:///test.db":  # test only
     application.debug = True
     if db_url == "sqlite:///app.db":
