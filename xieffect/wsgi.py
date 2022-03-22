@@ -69,7 +69,7 @@ def init_users(session):
         admin_user: User = User.create(session, ADMIN_EMAIL, "admin", ADMIN_PASS)
         # admin_user.moderator = Moderator.create(session, admin_user)
 
-    with open("../files/test/user-bundle.json", encoding="utf-8") as f:
+    with open("../static/test/user-bundle.json", encoding="utf-8") as f:
         for i, user_settings in enumerate(load(f)):
             email: str = f"{i}@user.user"
             if (user := User.find_by_email_address(session, email)) is None:
@@ -85,12 +85,12 @@ def init_knowledge(session):
 
     test_author: Author = User.find_by_email_address(session, TEST_EMAIL).author
 
-    with open(f"../files/test/page-bundle.json", "rb") as f:
+    with open(f"../static/test/page-bundle.json", "rb") as f:
         for page_data in load(f):
             WIPPage.create_from_json(session, test_author, page_data)
             Page.find_or_create(session, page_data, test_author)
 
-    with open("../files/test/module-bundle.json", encoding="utf-8") as f:
+    with open("../static/test/module-bundle.json", encoding="utf-8") as f:
         for module_data in load(f):
             module = WIPModule.create_from_json(session, test_author, module_data)
             module.id = module_data["id"]
@@ -102,7 +102,7 @@ def init_knowledge(session):
 def init_chats(session):
     from communication.chatting_db import Chat, ChatRole, Message
 
-    with open("../files/test/chat-bundle.json", encoding="utf-8") as f:
+    with open("../static/test/chat-bundle.json", encoding="utf-8") as f:
         for i, chat_data in enumerate(load(f)):
             if Chat.find_by_id(session, i + 1):
                 continue

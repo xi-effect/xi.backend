@@ -42,9 +42,9 @@ def init_xieffect():  # xieffect specific:
     #     }
     # })
 
-    versions = load(open("../files/versions.json", encoding="utf-8"))
+    versions = load(open("../static/versions.json", encoding="utf-8"))
 
-    app: Flask = Flask(__name__, static_folder="../files/static", static_url_path="/static/", versions=versions)
+    app: Flask = Flask(__name__, static_folder="../static/public/", static_url_path="/static/", versions=versions)
     app.secrets_from_env("hope it's local")  # TODO DI to use secrets in `URLSafeSerializer`s
     app.configure_cors()
 

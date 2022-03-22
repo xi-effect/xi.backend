@@ -8,7 +8,7 @@ from __lib__.flask_fullstack import check_code
 
 
 def test_user_search(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    with open("../files/test/user-bundle.json", encoding="utf-8") as f:
+    with open("../static/test/user-bundle.json", encoding="utf-8") as f:
         usernames = [user_data["username"] for user_data in load(f)]
     usernames.append("hey")  # TODO add user deleting & use it in test_signup + remove this line
 

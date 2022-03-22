@@ -24,7 +24,7 @@ def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[dict]]
 def test_getting_pages(client: FlaskClient):
     page_json: dict = check_code(client.get("/pages/1/"))
 
-    with open("../files/test/page-bundle.json", "rb") as f:
+    with open("../static/test/page-bundle.json", "rb") as f:
         file_content: dict = load(f)[0]
     for key in ("blueprint", "reusable", "public"):
         file_content.pop(key)
