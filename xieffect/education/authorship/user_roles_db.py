@@ -6,8 +6,7 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
-from common import User, UserRole, create_marshal_model, Marshalable
-from main import Base, Session
+from common import User, UserRole, create_marshal_model, Marshalable, Base, sessionmaker
 
 
 @create_marshal_model("author-settings", "pseudonym", "banned")
@@ -23,7 +22,7 @@ class Author(Base, UserRole, Marshalable):
     modules = relationship("Module", back_populates="author")
 
     @classmethod
-    def create(cls, session: Session, user: User) -> Author:
+    def create(cls, session: sessionmaker, user: User) -> Author:
         new_entry = cls(pseudonym=user.username)
         user.author = new_entry
         session.add(new_entry)
@@ -31,20 +30,20 @@ class Author(Base, UserRole, Marshalable):
         return new_entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int, include_banned: bool = False) -> Optional[Author]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int, include_banned: bool = False) -> Optional[Author]:
         return session.execute(
             select(cls).where(cls.id == entry_id) if include_banned
             else select(cls).where(cls.id == entry_id, cls.banned == False)
         ).scalars().first()
 
     @classmethod
-    def find_or_create(cls, session: Session, user):  # User class
+    def find_or_create(cls, session: sessionmaker, user):  # User class
         if (author := cls.find_by_id(session, user.id, True)) is None:
             author = cls.create(session, user)
         return author
 
     @classmethod
-    def initialize(cls, session: Session, user: User) -> bool:
+    def initialize(cls, session: sessionmaker, user: User) -> bool:
         author = cls.find_or_create(session, user)
         return not author.banned
 
@@ -60,11 +59,11 @@ class Moderator(Base, UserRole):
     id = Column(Integer, ForeignKey(User.id), primary_key=True)
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Moderator:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Moderator:
         return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
-    def create(cls, session: Session, user: User) -> bool:
+    def create(cls, session: sessionmaker, user: User) -> bool:
         if cls.find_by_id(session, user.id):
             return False
         new_entry = cls()

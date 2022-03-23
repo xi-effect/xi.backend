@@ -1,9 +1,7 @@
 .archive
 .idea
-.env
+*.env
 venv/
-xieffect/app.db
+*.db
 xieffect/test/.pytest_cache
-files/temp/*
-files/tfs/wip-*
-files/versions-lock.json
+files/

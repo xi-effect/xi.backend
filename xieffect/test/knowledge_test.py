@@ -4,7 +4,7 @@ from typing import Callable, Iterator, Optional, Dict, Any
 from flask.testing import FlaskClient
 from pytest import mark
 
-from xieffect.test.components import check_status_code
+from __lib__.flask_fullstack import check_code
 
 PAGES_PER_REQUEST: int = 50
 MODULES_PER_REQUEST: int = 12
@@ -22,9 +22,9 @@ def test_searching_pages(list_tester: Callable[[str, dict, int], Iterator[dict]]
 
 @mark.order(406)
 def test_getting_pages(client: FlaskClient):
-    page_json: dict = check_status_code(client.get("/pages/1/"))
+    page_json: dict = check_code(client.get("/pages/1/"))
 
-    with open("../files/test/page-bundle.json", "rb") as f:
+    with open("../static/test/page-bundle.json", "rb") as f:
         file_content: dict = load(f)[0]
     for key in ("blueprint", "reusable", "public"):
         file_content.pop(key)
@@ -34,9 +34,9 @@ def test_getting_pages(client: FlaskClient):
 
 @mark.order(407)
 def test_page_view_counter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    page_json: dict = check_status_code(client.post("/pages/", json={"counter": 0}))["results"][0]
+    page_json: dict = check_code(client.post("/pages/", json={"counter": 0}))["results"][0]
     page_id, views_before = [page_json[key] for key in ["id", "views"]]
-    check_status_code(client.get(f"/pages/{page_id}/"), get_json=False)
+    check_code(client.get(f"/pages/{page_id}/"), get_json=False)
 
     for page_json in list_tester("/pages/", {}, PAGES_PER_REQUEST):
         if page_json["id"] == page_id:
@@ -49,10 +49,10 @@ def test_page_view_counter(client: FlaskClient, list_tester: Callable[[str, dict
 @mark.order(420)
 def test_module_list(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/modules/", {}, MODULES_PER_REQUEST))) > 0
-    assert check_status_code(client.post("/modules/", json={"counter": 0, "filters": "lol"}), 400)
-    assert check_status_code(client.post("/modules/", json={"counter": 0, "filters": {"global": "lol"}}), 400)
-    assert check_status_code(client.post("/modules/", json={"counter": 0, "filters": {"global": ["lol"]}}), 400)
-    assert check_status_code(client.post("/modules/", json={"counter": 0, "sort": "lol"}), 400)
+    assert check_code(client.post("/modules/", json={"counter": 0, "filters": "lol"}), 400)
+    assert check_code(client.post("/modules/", json={"counter": 0, "filters": {"global": "lol"}}), 400)
+    assert check_code(client.post("/modules/", json={"counter": 0, "filters": {"global": ["lol"]}}), 400)
+    assert check_code(client.post("/modules/", json={"counter": 0, "sort": "lol"}), 400)
 
 
 def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
@@ -78,9 +78,9 @@ def assert_with_global_filter(client: FlaskClient, list_tester: Callable[[str, d
     else:
         iterator: Iterator[dict] = lister_with_filters(list_tester, {"global": filter_name})
 
-    assert check_status_code(client.post(url + "preference/", json={"a": operation_name})) == {"a": True}
+    assert check_code(client.post(url + "preference/", json={"a": operation_name})) == {"a": True}
 
-    result: dict = check_status_code(client.get(url))
+    result: dict = check_code(client.get(url))
     assert result[filter_name] != reverse
 
     success: bool = False
@@ -138,7 +138,7 @@ def temp_list_tester(client: FlaskClient, module_id: int, include: bool):
     amount = page_size
     while amount == page_size:
         request_json["counter"] = counter
-        response_json: dict = check_status_code(client.post(link, json=request_json), status_code)
+        response_json: dict = check_code(client.post(link, json=request_json), status_code)
 
         assert "results" in response_json
         assert isinstance(response_json["results"], list)
@@ -163,8 +163,8 @@ def test_module_filtering_multiuser(multi_client: Callable[[str], FlaskClient],
     user2: FlaskClient = multi_client("2@user.user")
     module_id: int = get_some_module_id(list_tester)
 
-    assert check_status_code(user1.post(f"/modules/{module_id}/preference/", json={"a": "star"})) == {"a": True}
-    assert check_status_code(user2.post(f"/modules/{module_id}/preference/", json={"a": "unstar"})) == {"a": True}
+    assert check_code(user1.post(f"/modules/{module_id}/preference/", json={"a": "star"})) == {"a": True}
+    assert check_code(user2.post(f"/modules/{module_id}/preference/", json={"a": "unstar"})) == {"a": True}
 
     temp_list_tester(user1, module_id, True)
     temp_list_tester(user2, module_id, False)
@@ -226,8 +226,8 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
 
 
 def set_module_hidden(client: FlaskClient, module_id: int, hidden: bool):
-    assert check_status_code(client.post(f"/modules/{module_id}/preference/",
-                                         json={"a": "hide" if hidden else "show"})) == {"a": True}
+    assert check_code(client.post(f"/modules/{module_id}/preference/",
+                                  json={"a": "hide" if hidden else "show"})) == {"a": True}
 
 
 @mark.order(430)

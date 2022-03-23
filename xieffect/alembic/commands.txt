@@ -3,3 +3,5 @@ alembic stamp head
 alembic upgrade head
 
 alembic revision --autogenerate -m "<name>"
+
+venv/Scripts/activate

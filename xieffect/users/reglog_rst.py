@@ -5,8 +5,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
-from common import password_parser, Namespace, with_session, success_response, TokenBlockList, User
-from main import app
+from common import password_parser, Namespace, success_response, TokenBlockList, User
 from .invites_db import Invite
 # from .emailer import send_generated_email, parse_code
 
@@ -25,7 +24,7 @@ class UserRegistration(Resource):
     parser.add_argument("username", required=True, help="Username to be assigned to new user's account")
     parser.add_argument("code", required=True, help="Serialized invite code")
 
-    @with_session
+    @reglog_namespace.with_begin
     @add_sets_cookie_response
     @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, username: str, password: str, code: str):
@@ -54,7 +53,7 @@ class UserLogin(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="User's email")
 
-    @with_session
+    @reglog_namespace.with_begin
     @add_sets_cookie_response
     @reglog_namespace.argument_parser(parser)
     def post(self, session, email: str, password: str):
@@ -71,7 +70,7 @@ class UserLogin(Resource):
 
 @reglog_namespace.route("/logout/")
 class UserLogout(Resource):
-    @with_session
+    @reglog_namespace.with_begin
     @add_unsets_cookie_response
     @jwt_required()
     def post(self, session):
@@ -84,10 +83,12 @@ class UserLogout(Resource):
 
 @reglog_namespace.route("/go/")
 class Test(Resource):
+    from api import app
+
     @add_sets_cookie_response
     def get(self):
         """ Localhost-only endpoint for logging in from the docs """
-        if not app.debug:
+        if not self.app.debug:
             return {"a": False}
 
         response: Response = jsonify({"a": True})
@@ -100,7 +101,7 @@ class PasswordResetSender(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("email", required=True, help="User's email")
 
-    @with_session
+    @reglog_namespace.with_begin
     @reglog_namespace.argument_parser(parser)
     @reglog_namespace.a_response()
     def post(self, session, email: str) -> bool:
@@ -113,7 +114,7 @@ class PasswordReseter(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True, help="Code sent in the email")
 
-    @with_session
+    @reglog_namespace.with_begin
     @reglog_namespace.argument_parser(parser)
     @reglog_namespace.a_response()
     def post(self, session, code: str, password: str) -> str:
