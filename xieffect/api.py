@@ -1,4 +1,5 @@
 from datetime import timedelta
+from logging import Logger
 from sys import stderr
 
 from common import app, sessionmaker, db_meta  # noqa
@@ -9,6 +10,8 @@ from education import (authors_namespace, wip_json_file_namespace, wip_images_na
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
+
+logger = Logger("flask-fullstack", "WARN")
 
 
 def log_stuff(level: str, message: str):
@@ -27,7 +30,7 @@ def log_stuff(level: str, message: str):
                 send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
 
 
-jwt = app.configure_jwt_with_loaders(["cookies"], timedelta(hours=72), log_stuff)
+jwt = app.configure_jwt_with_loaders(["cookies"], timedelta(hours=72), lambda *x: logger.warning(x[1]))
 api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
