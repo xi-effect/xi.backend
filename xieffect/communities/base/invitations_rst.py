@@ -42,7 +42,8 @@ class InvitationLister(Resource):
     @invitation_namespace.argument_parser(counter_parser)
     @invitation_namespace.lister(20, invitation_base)
     def post(self, session, community_id: int, start: int, finish: int):
-        return Invitation.find_by_community_id(session, Community.find_by_id(session, community_id).id, start, finish - start)
+        return Invitation.find_by_community_id(session, Community.find_by_id(session, community_id).id, start,
+                                               finish - start)
 
 
 @invitation_namespace.route("/<int:invitation_id>/")
@@ -66,6 +67,8 @@ class InvitationJoin(Resource):
     @invitation_join_namespace.a_response()
     def post(self, session, user: User, code: str) -> str:
         invitation = Invitation.find_by_code(session, code)
+        if invitation is None:
+            return "This invitation is invalid"
         if Participant.find_by_ids(session, invitation.community_id, user.id) is not None:
             return "This user have joined already"
         else:
