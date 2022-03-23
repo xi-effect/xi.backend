@@ -4,8 +4,8 @@ from flask.testing import FlaskClient
 from pytest import mark
 from werkzeug.test import TestResponse
 
+from __lib__.flask_fullstack import check_code, dict_equal
 from xieffect.test.conftest import TEST_EMAIL, BASIC_PASS
-from xieffect.test.components import check_status_code, dict_equal
 from xieffect.wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
@@ -13,11 +13,11 @@ TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
 
 @mark.order(1)
 def test_login(base_client: FlaskClient):
-    response: TestResponse = check_status_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
+    response: TestResponse = check_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
     assert "Set-Cookie" in response.headers.keys()
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
-    check_status_code(base_client.post("/logout/"))
+    check_code(base_client.post("/logout/"))
 
 
 @mark.order(10)
@@ -25,21 +25,21 @@ def test_signup(base_client: FlaskClient):
     credentials = {"email": "hey@hey.hey", "password": "12345", "username": "hey"}
 
     def assert_with_code(code: str, status: int, message: str):
-        assert check_status_code(base_client.post("/reg/", json=dict(credentials, code=code)), status)["a"] == message
+        assert check_code(base_client.post("/reg/", json=dict(credentials, code=code)), status)["a"] == message
 
     assert_with_code("hey", 400, "Malformed code (BadSignature)")
     assert_with_code(Invite.serializer.dumps((-1, 0)), 404, "Invite not found")
 
     data = dict(credentials, code=Invite.serializer.dumps((TEST_INVITE_ID, 0)))
-    response = check_status_code(base_client.post("/reg/", json=data), get_json=False)
+    response = check_code(base_client.post("/reg/", json=data), get_json=False)
     assert "Set-Cookie" in response.headers.keys()
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
-    check_status_code(base_client.post("/logout/"))
+    check_code(base_client.post("/logout/"))
 
 
 def assert_feedback(client: FlaskClient, data: dict, a: str):
-    assert check_status_code(client.post("/feedback/", json=data))["a"] == a
+    assert check_code(client.post("/feedback/", json=data))["a"] == a
 
 
 @mark.order(30)
@@ -63,8 +63,8 @@ def test_feedback(base_client: FlaskClient, client: FlaskClient):  # assumes use
 @mark.order(50)
 def test_invite_curds(client: FlaskClient, admin_client: FlaskClient, list_tester):
     def request_assert_admin(method, url: str, json=None):
-        assert check_status_code(method(client, url, json=json), 403)["a"] == "Permission denied"
-        return check_status_code(method(admin_client, url, json=json))
+        assert check_code(method(client, url, json=json), 403)["a"] == "Permission denied"
+        return check_code(method(admin_client, url, json=json))
 
     invite_data = {"name": "test", "limit": -1, "accepted": 0}
     invite_data2 = {"name": "toast", "limit": 5, "accepted": 0}
@@ -85,7 +85,7 @@ def test_invite_curds(client: FlaskClient, admin_client: FlaskClient, list_teste
     assert any(invite == result for invite in results), results
 
     assert request_assert_admin(FlaskClient.delete, f"/invites/{invite_id}/")["a"]
-    assert check_status_code(admin_client.get(f"/invites/{invite_id}/"), 404)["a"] == "Invite not found"
+    assert check_code(admin_client.get(f"/invites/{invite_id}/"), 404)["a"] == "Invite not found"
 
     results = request_assert_admin(FlaskClient.post, "/invites/index/", {"offset": 0})["results"]
     assert not any(invite == result for invite in results), results

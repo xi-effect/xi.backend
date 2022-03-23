@@ -91,7 +91,7 @@ class WebhookPassthrough(Resource):
     parser.add_argument("webhook", required=True, choices=WebhookURLs.get_all_field_names())
     parser.add_argument("message", required=True)
 
-    from main import app
+    from api import app
 
     @webhook_namespace.argument_parser(parser)
     def post(self, api_key: str, webhook: str, message: str):

@@ -4,7 +4,7 @@ from typing import Callable, Iterator, Union, Optional
 from flask.testing import FlaskClient
 from pytest import mark
 
-from xieffect.test.components import check_status_code
+from __lib__.flask_fullstack import check_code
 
 PER_REQUEST = 50
 
@@ -34,12 +34,12 @@ class WIPRecycler:
         return None
 
     def is_same_on_server(self, url, sample) -> bool:
-        result: dict = check_status_code(self.client.get(url))
+        result: dict = check_code(self.client.get(url))
         result = {key: result[key] for key in sample.keys()}
         return result == sample
 
     def assert_same_on_server(self, url, sample, revert: bool = False):
-        result: dict = check_status_code(self.client.get(url))
+        result: dict = check_code(self.client.get(url))
         result = {key: result[key] for key in sample.keys()}
         if revert:
             assert result != sample
@@ -47,7 +47,7 @@ class WIPRecycler:
             assert result == sample
 
     def creating(self):
-        result: dict = check_status_code(self.client.post(self.wip_url, json=self.file_content1))
+        result: dict = check_code(self.client.post(self.wip_url, json=self.file_content1))
 
         self.file_id = result.pop("id", None)
         assert self.file_id is not None
@@ -61,7 +61,7 @@ class WIPRecycler:
         assert self.file_content1 != self.file_content2
         self.assert_same_on_server(self.wip_id_url, self.file_content1)
 
-        result: dict = check_status_code(self.client.put(self.wip_id_url, json=self.file_content2))
+        result: dict = check_code(self.client.put(self.wip_id_url, json=self.file_content2))
         assert result == {"a": True}
 
         self.assert_same_on_server(self.wip_id_url, self.file_content2)
@@ -77,7 +77,7 @@ class WIPRecycler:
             content = self.file_content2
         assert content is not None
 
-        check_status_code(self.client.post(self.wip_id_url + "publication/"))
+        check_code(self.client.post(self.wip_id_url + "publication/"))
         if self.file_type == "modules":
             assert self.is_in_list(f"/{self.file_type}/", per_request=12) is not None
             content.pop("points")
@@ -88,14 +88,14 @@ class WIPRecycler:
         # Doesn't work because of the modules' test-bundle!
 
     def deleting(self, published: bool):
-        assert check_status_code(self.client.delete(self.wip_id_url)) == {"a": True}
+        assert check_code(self.client.delete(self.wip_id_url)) == {"a": True}
 
         assert self.is_in_list(self.wip_url + "index/") is None
-        check_status_code(self.client.get(self.wip_id_url), 404)
+        check_code(self.client.get(self.wip_id_url), 404)
 
         if published:
             assert self.is_in_list(f"/{self.file_type}/") is None
-            check_status_code(self.client.get(f"/{self.file_type}/{self.file_id}/"), 404)
+            check_code(self.client.get(f"/{self.file_type}/{self.file_id}/"), 404)
 
     def wip_full_cycle(self):
         self.creating()

@@ -4,9 +4,8 @@ from os.path import exists
 from pathlib import Path
 from sys import modules
 
-from api import app as application, log_stuff, db_meta
-from common import User, with_session
-from main import versions, db_url
+from api import app as application, log_stuff
+from common import User, sessionmaker, versions, db_url, db_meta
 from other import WebhookURLs, send_discord_message
 from users.invites_db import Invite  # noqa  # passthrough for tests
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
@@ -48,7 +47,7 @@ def init_folder_structure():
     Path("../files/tfs/wip-modules").mkdir(parents=True, exist_ok=True)
 
 
-@with_session
+@sessionmaker.with_begin
 def init_users(session):
     from users.invites_db import Invite
 
@@ -76,7 +75,7 @@ def init_users(session):
             user.change_settings(user_settings)
 
 
-@with_session
+@sessionmaker.with_begin
 def init_knowledge(session):
     from education.authorship import Author
     from education.knowledge import Module, Page
@@ -97,7 +96,7 @@ def init_knowledge(session):
             Module.create(session, module_data, test_author, force=True)
 
 
-@with_session
+@sessionmaker.with_begin
 def init_chats(session):
     from communication.chatting_db import Chat, ChatRole, Message
 

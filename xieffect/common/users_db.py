@@ -7,8 +7,8 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 
-from common import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
-from main import Base, Session
+from __lib__.flask_fullstack import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
+from ._core import Base, sessionmaker
 
 DEFAULT_AVATAR: dict = {"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}
 
@@ -20,11 +20,11 @@ class TokenBlockList(Base):
     jti = Column(String(36), nullable=False)
 
     @classmethod
-    def find_by_jti(cls, session: Session, jti) -> TokenBlockList:
+    def find_by_jti(cls, session: sessionmaker, jti) -> TokenBlockList:
         return session.execute(select(cls).where(cls.jti == jti)).scalars().first()
 
     @classmethod
-    def add_by_jti(cls, session: Session, jti) -> None:
+    def add_by_jti(cls, session: sessionmaker, jti) -> None:
         session.add(cls(jti=jti))
 
 
@@ -86,16 +86,16 @@ class User(Base, UserRole, Marshalable):
     invite = relationship("Invite", back_populates="invited")  # TODO remove non-common reference
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[User, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[User, None]:
         return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
 
     @classmethod
-    def find_by_email_address(cls, session: Session, email) -> Union[User, None]:
+    def find_by_email_address(cls, session: sessionmaker, email) -> Union[User, None]:
         # send_generated_email(email, "pass", "password-reset-email.html")
         return session.execute(select(cls).where(cls.email == email)).scalars().first()
 
     @classmethod  # TODO this class shouldn't know about invites
-    def create(cls, session: Session, email: str, username: str, password: str, invite=None) -> Union[User, None]:
+    def create(cls, session: sessionmaker, email: str, username: str, password: str, invite=None) -> Union[User, None]:
         if cls.find_by_email_address(session, email):
             return None
         new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
@@ -107,14 +107,14 @@ class User(Base, UserRole, Marshalable):
         return new_user
 
     @classmethod
-    def search_by_username(cls, session: Session, exclude_id: int, search: Union[str, None],
+    def search_by_username(cls, session: sessionmaker, exclude_id: int, search: Union[str, None],
                            offset: int, limit: int) -> list[User]:
         stmt = select(cls).filter(cls.id != exclude_id)
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
         return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
-    def change_email(self, session: Session, new_email: str) -> bool:
+    def change_email(self, session: sessionmaker, new_email: str) -> bool:
         if User.find_by_email_address(session, new_email):
             return False
         self.email = new_email

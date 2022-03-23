@@ -10,8 +10,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef, register_as_searchable
-from main import Base, Session
+from common import Identifiable, TypeEnum, create_marshal_model, Marshalable
+from common import LambdaFieldDef, index_service, Base, sessionmaker
 from ._base_session import BaseModuleSession
 from ..authorship.user_roles_db import Author
 
@@ -42,7 +42,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         LambdaFieldDef("mfs", datetime, lambda mfs: mfs.last_visited if mfs.started else datetime.min)
 
     @classmethod
-    def create(cls, session: Session, user_id: int, module_id: int) -> Union[ModuleFilterSession, None]:
+    def create(cls, session: sessionmaker, user_id: int, module_id: int) -> Union[ModuleFilterSession, None]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
         # parameter check freaks out for no reason \/ \/ \/
@@ -58,7 +58,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         self.last_visited = datetime.utcnow()
         self.note_change()
 
-    def change_preference(self, session: Session, operation: PreferenceOperation) -> None:
+    def change_preference(self, session: sessionmaker, operation: PreferenceOperation) -> None:
         if operation == PreferenceOperation.HIDE:
             self.hidden = True
         elif operation == PreferenceOperation.SHOW:
@@ -136,7 +136,7 @@ class SortType(str, TypeEnum):
     CREATION_DATE = "creation-date"
 
 
-@register_as_searchable("name", "description")
+@index_service.register_as_searchable("name", "description")
 @create_marshal_model("module-meta", "map", "timer", inherit="module-index")
 @create_marshal_model("module-index", "theme", "difficulty", "category", "type",
                       "description", "views", "created", inherit="module-short")
@@ -178,7 +178,7 @@ class Module(Base, Identifiable, Marshalable):
     points = relationship("Point", back_populates="module", cascade="all, delete", order_by=Point.point_id)
 
     @classmethod
-    def create(cls, session: Session, json_data: dict[str, ...], author: Author,
+    def create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author,
                force: bool = False) -> Union[Module, None]:
         if cls.find_by_id(session, json_data["id"]):
             return
@@ -211,17 +211,17 @@ class Module(Base, Identifiable, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, module_id: int) -> Union[Module, None]:
+    def find_by_id(cls, session: sessionmaker, module_id: int) -> Union[Module, None]:
         return session.execute(select(cls).where(cls.id == module_id)).scalars().first()
 
     @classmethod
-    def find_or_create(cls, session: Session, json_data: dict[str, ...], author: Author) -> Union[Module, None]:
+    def find_or_create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Union[Module, None]:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls.create(session, json_data, author)
 
     @classmethod
-    def find_with_relation(cls, session: Session, module_id: int, user_id: int) -> Union[Row, None]:
+    def find_with_relation(cls, session: sessionmaker, module_id: int, user_id: int) -> Union[Row, None]:
         stmt: Select = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
         stmt = stmt.outerjoin(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
                                                         ModuleFilterSession.user_id == user_id))
@@ -229,7 +229,7 @@ class Module(Base, Identifiable, Marshalable):
         return result[0] if len(result) else None
 
     @classmethod
-    def get_module_list(cls, session: Session, filters: Union[dict[str, str], None], search: str,
+    def get_module_list(cls, session: sessionmaker, filters: Union[dict[str, str], None], search: str,
                         sort: SortType, user_id: int, offset: int, limit: int) -> list[Row]:
 
         # print(filters, search, sort)
@@ -280,7 +280,7 @@ class Module(Base, Identifiable, Marshalable):
         return session.execute(stmt.offset(offset).limit(limit)).all()
 
     @classmethod
-    def get_hidden_module_list(cls, session: Session, user_id: int, offset: int, limit: int) -> list[Row]:
+    def get_hidden_module_list(cls, session: sessionmaker, user_id: int, offset: int, limit: int) -> list[Row]:
         stmt: Select = select(*cls.__table__.columns, Author.pseudonym)
         stmt = stmt.join(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
                                                    ModuleFilterSession.user_id == user_id,
@@ -309,6 +309,6 @@ class Module(Base, Identifiable, Marshalable):
 
         return point.pages[page_position].page_id
 
-    def delete(self, session: Session) -> None:
+    def delete(self, session: sessionmaker) -> None:
         session.delete(self)
         session.flush()
