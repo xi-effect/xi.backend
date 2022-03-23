@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Union
+
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
@@ -8,7 +10,6 @@ from sqlalchemy.sql.sqltypes import Integer, DateTime, String, Enum
 from common import Marshalable, create_marshal_model, Identifiable
 from main import Base, Session, app
 from .meta_db import Community, ParticipantRole
-from datetime import datetime
 
 
 @create_marshal_model("invitation-base", "community_id", "time_limit", "code", "role", "count_limit")
@@ -27,7 +28,8 @@ class Invitation(Base, Identifiable, Marshalable):
     count_limit = Column(Integer, nullable=False, default=-1)
 
     @classmethod
-    def create(cls, session: Session, community_id: int, role: ParticipantRole, count_limit: int = -1, time_limit: Union[DateTime, None] = None) -> Invitation:
+    def create(cls, session: Session, community_id: int, role: ParticipantRole, count_limit: int = -1,
+               time_limit: Union[DateTime, None] = None) -> Invitation:
         entry: cls = cls(role=role, count_limit=count_limit, community=Community.find_by_id(session, community_id),
                          time_limit=time_limit)
         session.add(entry)
@@ -42,7 +44,8 @@ class Invitation(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_by_community_id(cls, session: Session, community_id: int, offset: int, limit: int) -> list[Invitation]:
-        query = session.execute(select(cls).filter(cls.community_id == community_id).offset(offset).limit(limit)).scalars().all()
+        query = session.execute(
+            select(cls).filter(cls.community_id == community_id).offset(offset).limit(limit)).scalars().all()
         return query
 
     @classmethod
