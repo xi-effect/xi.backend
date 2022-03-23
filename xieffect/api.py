@@ -10,6 +10,7 @@ from werkzeug.exceptions import NotFound, HTTPException
 
 from common import TokenBlockList, with_session
 from common._marshals import flask_restx_has_bad_design  # noqa
+from communities import (communities_namespace, invitation_namespace, invitation_join_namespace)
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
@@ -19,8 +20,6 @@ from main import app, db_meta, versions  # noqa
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
-
-from communities import (communities_namespace, invitation_namespace, invitation_join_namespace)
 
 authorizations = {
     "jwt": {
@@ -62,6 +61,7 @@ api.add_namespace(webhook_namespace)
 api.add_namespace(flask_restx_has_bad_design)  # TODO workaround
 
 jwt: JWTManager = JWTManager(app)
+
 
 # class MessagesNamespace(Namespace):
 #     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
