@@ -60,7 +60,7 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[Page, None]:
-        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
+        return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
     def find_or_create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Union[Page, None]:
@@ -75,20 +75,15 @@ class Page(Base, Identifiable, Marshalable):
         if (entry := cls.find_by_id(session, json_data["id"])) is None:
             return cls._create(session, json_data, author)
         else:  # redo... maybe...
-            session.delete(entry)
-            session.commit()
+            entry.delete(session)
             cls._create(session, json_data, author)
 
     @classmethod
     def search(cls, session: sessionmaker, search: Union[str, None], start: int, limit: int) -> list[Page]:
-        stmt: Select = select(cls).filter_by(public=True).offset(start).limit(limit)
-        if search is not None and len(search) > 2:  # redo all search with pagination!!!
+        stmt: Select = select(cls).filter_by(public=True)
+        if search is not None and len(search) > 2:  # TODO redo all search with pagination!!!
             stmt = cls.search_stmt(search, stmt=stmt)
-        return session.execute(stmt).scalars().all()
+        return session.get_paginated(stmt, start, limit)
 
     def view(self) -> None:  # auto-commit
         self.views += 1
-
-    def delete(self, session: sessionmaker) -> None:
-        session.delete(self)
-        session.flush()

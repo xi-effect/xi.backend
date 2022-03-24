@@ -41,7 +41,7 @@ class InviteCreator(Resource):
     @admin_only(use_session=True)
     @invites_namespace.argument_parser(parser)
     def post(self, session, name: str, limit: int):
-        return {"id": Invite.create(session, name, limit).id}
+        return {"id": Invite.create(session, name=name, limit=limit or -1).id}
 
 
 @invites_namespace.route("/index/")

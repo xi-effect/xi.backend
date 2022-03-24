@@ -66,7 +66,7 @@ class FeedbackSaver(Resource):
         elif user is None:
             return self.Responses.NO_AUTH_PROVIDED
 
-        Feedback.create(session, user, feedback_type, data)
+        Feedback.create(session, user_id=user.id, type=feedback_type, data=data)
         return self.Responses.SUCCESS
 
 

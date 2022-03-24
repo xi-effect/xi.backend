@@ -4,6 +4,7 @@ from typing import Optional
 
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
 from common import User, UserRole, create_marshal_model, Marshalable, Base, sessionmaker
@@ -31,10 +32,10 @@ class Author(Base, UserRole, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int, include_banned: bool = False) -> Optional[Author]:
-        return session.execute(
-            select(cls).where(cls.id == entry_id) if include_banned
-            else select(cls).where(cls.id == entry_id, cls.banned == False)
-        ).scalars().first()
+        stmt: Select = select(cls).filter_by(id=entry_id)
+        if not include_banned:
+            stmt = stmt.filter_by(banned=False)
+        return session.get_first(stmt)
 
     @classmethod
     def find_or_create(cls, session: sessionmaker, user):  # User class
@@ -60,7 +61,7 @@ class Moderator(Base, UserRole):
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Moderator:
-        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
+        return session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
     def create(cls, session: sessionmaker, user: User) -> bool:

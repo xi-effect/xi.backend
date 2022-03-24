@@ -21,11 +21,7 @@ class TokenBlockList(Base):
 
     @classmethod
     def find_by_jti(cls, session: sessionmaker, jti) -> TokenBlockList:
-        return session.execute(select(cls).where(cls.jti == jti)).scalars().first()
-
-    @classmethod
-    def add_by_jti(cls, session: sessionmaker, jti) -> None:
-        session.add(cls(jti=jti))
+        return session.get_first(select(cls).filter_by(jti=jti))
 
 
 @create_marshal_model("user-index", "username", "id", "bio", "avatar")
@@ -87,20 +83,18 @@ class User(Base, UserRole, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[User, None]:
-        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
+        return session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
     def find_by_email_address(cls, session: sessionmaker, email) -> Union[User, None]:
         # send_generated_email(email, "pass", "password-reset-email.html")
-        return session.execute(select(cls).where(cls.email == email)).scalars().first()
+        return session.get_first(select(cls).filter_by(email=email))
 
     @classmethod  # TODO this class shouldn't know about invites
-    def create(cls, session: sessionmaker, email: str, username: str, password: str, invite=None) -> Union[User, None]:
+    def create(cls, session: sessionmaker, *, email: str, password: str, invite=None, **kwargs) -> Union[User, None]:
         if cls.find_by_email_address(session, email):
             return None
-        new_user = cls(email=email, password=cls.generate_hash(password), username=username, invite=invite)
-        session.add(new_user)
-        session.flush()
+        new_user = super().create(session, email=email, password=cls.generate_hash(password), invite=invite, **kwargs)
         if invite is not None:
             new_user.code = new_user.invite.generate_code(new_user.id)
             session.flush()
@@ -112,7 +106,7 @@ class User(Base, UserRole, Marshalable):
         stmt = select(cls).filter(cls.id != exclude_id)
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
-        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
+        return session.get_paginated(stmt, offset, limit)
 
     def change_email(self, session: sessionmaker, new_email: str) -> bool:
         if User.find_by_email_address(session, new_email):

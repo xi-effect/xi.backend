@@ -45,11 +45,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
     def create(cls, session: sessionmaker, user_id: int, module_id: int) -> Union[ModuleFilterSession, None]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
-        # parameter check freaks out for no reason \/ \/ \/
-        new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())  # noqa
-        session.add(new_entry)
-        session.flush()
-        return new_entry
+        return super().create(session, user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())
 
     def note_change(self) -> None:  # auto-commit
         self.last_changed = datetime.utcnow()
@@ -72,8 +68,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         elif operation == PreferenceOperation.UNPIN:
             self.pinned = False
         if not any((self.hidden, self.pinned, self.starred, self.started)):
-            session.delete(self)
-            session.flush()
+            self.delete(session)
         else:
             self.note_change()
 
@@ -212,7 +207,7 @@ class Module(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, module_id: int) -> Union[Module, None]:
-        return session.execute(select(cls).where(cls.id == module_id)).scalars().first()
+        return cls.find_first_by_kwargs(session, id=module_id)
 
     @classmethod
     def find_or_create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Union[Module, None]:
@@ -225,8 +220,7 @@ class Module(Base, Identifiable, Marshalable):
         stmt: Select = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
         stmt = stmt.outerjoin(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
                                                         ModuleFilterSession.user_id == user_id))
-        result = session.execute(stmt.filter(cls.id == module_id).limit(1)).all()
-        return result[0] if len(result) else None
+        return session.get_first_row(stmt.filter(cls.id == module_id).limit(1))
 
     @classmethod
     def get_module_list(cls, session: sessionmaker, filters: Union[dict[str, str], None], search: str,
@@ -277,7 +271,7 @@ class Module(Base, Identifiable, Marshalable):
         # print(stmt)
         # print(session.execute(stmt.offset(offset).limit(limit)).first())
 
-        return session.execute(stmt.offset(offset).limit(limit)).all()
+        return session.get_paginated_rows(stmt, offset, limit)
 
     @classmethod
     def get_hidden_module_list(cls, session: sessionmaker, user_id: int, offset: int, limit: int) -> list[Row]:
@@ -289,7 +283,7 @@ class Module(Base, Identifiable, Marshalable):
         # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
         #         for mfs in session.execute(select(ModuleFilterSession)).scalars().all() if mfs.hidden], sep="\n")
         # print(stmt)
-        return session.execute(stmt.offset(offset).limit(limit)).all()
+        return session.get_paginated_rows(stmt, offset, limit)
 
     def execute_point(self, point_id: int = None, theory_level: float = None) -> int:
         if point_id is None:
@@ -308,7 +302,3 @@ class Module(Base, Identifiable, Marshalable):
             page_position = point.length - 1
 
         return point.pages[page_position].page_id
-
-    def delete(self, session: sessionmaker) -> None:
-        session.delete(self)
-        session.flush()

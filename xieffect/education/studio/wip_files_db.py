@@ -4,7 +4,7 @@ from json import dump
 from os import remove
 from typing import Union
 
-from sqlalchemy import Column, select
+from sqlalchemy import Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
@@ -50,11 +50,11 @@ class CATFile(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[CATFile, None]:
-        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
+        return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
     def find_by_owner(cls, session: sessionmaker, owner: Author, start: int, limit: int) -> list[CATFile]:
-        return session.execute(select(cls).where(cls.owner == owner.id).offset(start).limit(limit)).scalars().all()
+        return cls.find_paginated_by_kwargs(session, start, limit, owner=owner.id)
 
     def get_link(self) -> str:
         return f"{self.directory}/{self.id}" + f".{self.mimetype}" if self.mimetype != "" else ""
@@ -65,8 +65,7 @@ class CATFile(Base, Identifiable):
 
     def delete(self, session: sessionmaker) -> None:
         remove(self.get_link())
-        session.delete(self)
-        session.flush()
+        super().delete(session)
 
 
 class JSONFile(CATFile):

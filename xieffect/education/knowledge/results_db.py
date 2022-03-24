@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Union
 
 from flask_restx import fields
-from sqlalchemy import Column, ForeignKey, select
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer
 
 from common import JSONWithModel, create_marshal_model, Marshalable, Base, sessionmaker
@@ -51,27 +51,17 @@ class TestResult(Base, Marshalable):
             "right-answers": sum(r["right-answers"] for r in result),
             "total-answers": sum(r["total-answers"] for r in result),
         }
-
-        new_entry = cls(user_id=user_id, module_id=module.id, short_result=short_result, result=result)  # noqa
-        session.add(new_entry)
-        session.flush()
-        return new_entry
+        return super().create(session, user_id=user_id, module_id=module.id, short_result=short_result, result=result)
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[TestModuleSession, None]:
-        return session.execute(select(cls).filter_by(id=entry_id)).scalars().first()
+        return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
     def find_by_user(cls, session: sessionmaker, user_id: int, offset: int, limit: int) -> list[TestModuleSession]:
-        stmt = select(cls).filter_by(user_id=user_id).order_by(cls.id.desc())
-        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
+        return cls.find_paginated_by_kwargs(session, offset, limit, cls.id.desc(), user_id=user_id)
 
     @classmethod
     def find_by_module(cls, session: sessionmaker, user_id: int, module_id: int,
                        offset: int, limit: int) -> list[TestModuleSession]:
-        stmt = select(cls).filter_by(user_id=user_id, module_id=module_id).order_by(cls.id.desc())
-        return session.execute(stmt.offset(offset).limit(limit)).scalars().all()
-
-    def delete(self, session: sessionmaker):
-        session.delete(self)
-        session.flush()
+        return cls.find_paginated_by_kwargs(session, offset, limit, cls.id.desc(), user_id=user_id, module_id=module_id)
