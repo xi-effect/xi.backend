@@ -23,28 +23,12 @@ class Feedback(Base, Marshalable):
     data = Column(JSON, nullable=False)
 
     @classmethod
-    def create(cls, session: sessionmaker, user: User, feedback_type: FeedbackType, data) -> Feedback:
-        new_user = cls(user_id=user.id, type=feedback_type, data=data)  # noqa
-        session.add(new_user)
-        return new_user
-
-    @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> list[Feedback]:
-        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
-
-    @classmethod
     def dump_all(cls, session: sessionmaker) -> list[Row]:
         stmt = select(*cls.__table__.columns, *User.__table__.columns).outerjoin(User, User.id == cls.user_id)
-        return session.execute(stmt).all()
+        return session.get_all_rows(stmt)
 
 
 class FeedbackImage(Base):
     __tablename__ = "feedback-images"
 
     id = Column(Integer, primary_key=True)
-
-    @classmethod
-    def create(cls, session: sessionmaker) -> FeedbackImage:
-        session.add(new_user := cls())
-        session.flush()
-        return new_user

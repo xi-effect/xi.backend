@@ -40,7 +40,7 @@ class UserRegistration(Resource):
             return {"a": "Invite code limit exceeded"}
         invite.accepted += 1
 
-        if (user := User.create(session, email, username, password, invite)) is None:
+        if (user := User.create(session, email=email, username=username, password=password, invite=invite)) is None:
             return {"a": "Email already in use"}
         # send_generated_email(email, "confirm", "registration-email.html")
         response = jsonify({"a": "Success"})
@@ -76,7 +76,7 @@ class UserLogout(Resource):
     def post(self, session):
         """ Logs the user out, blocks the token """
         response = jsonify({"a": True})
-        TokenBlockList.add_by_jti(session, get_jwt()["jti"])
+        TokenBlockList.create(session, jti=get_jwt()["jti"])
         unset_jwt_cookies(response)
         return response
 

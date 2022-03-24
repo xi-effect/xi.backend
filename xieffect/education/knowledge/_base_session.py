@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Union
 
-from sqlalchemy import Column, select
+from sqlalchemy import Column
 from sqlalchemy.sql.sqltypes import Integer
 
 from common import Base, sessionmaker
@@ -16,16 +16,12 @@ class BaseModuleSession(Base):
     module_id = Column(Integer, primary_key=True)  # TODO replace with relationship
 
     @classmethod
-    def create(cls, session: sessionmaker, user_id: int, module_id: int) -> BaseModuleSession:
-        raise NotImplementedError
-
-    @classmethod
     def find_by_ids(cls, session: sessionmaker, user_id: int, module_id: int) -> Union[BaseModuleSession, None]:
-        return session.execute(select(cls).filter(cls.user_id == user_id, cls.module_id == module_id)).scalars().first()
+        return cls.find_first_by_kwargs(session, user_id=user_id, module_id=module_id)
 
     @classmethod
     def find_or_create(cls, session: sessionmaker, user_id: int, module_id: int) -> BaseModuleSession:
         entry = cls.find_by_ids(session, user_id, module_id)
         if entry is None:
-            return cls.create(session, user_id, module_id)
+            return cls.create(session, user_id=user_id, module_id=module_id)
         return entry

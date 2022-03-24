@@ -25,17 +25,15 @@ class Invite(Base, Marshalable):
     invited = relationship("User", back_populates="invite")
 
     @classmethod
-    def create(cls, session: sessionmaker, name: str, limit: int = -1) -> Invite:
-        entry: cls = cls(name=name, limit=limit)  # noqa
-        session.add(entry)
-        session.flush()
+    def create(cls, session: sessionmaker, **kwargs) -> Invite:
+        entry = super().create(session, **kwargs)
         entry.code = entry.generate_code(0)
         session.flush()
         return entry
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[Invite, None]:
-        return session.execute(select(cls).filter(cls.id == entry_id)).scalars().first()
+        return session.get_first(select(cls).filter(cls.id == entry_id))
 
     @classmethod
     def find_by_code(cls, session: sessionmaker, code: str) -> Union[Invite, None]:
@@ -43,11 +41,7 @@ class Invite(Base, Marshalable):
 
     @classmethod
     def find_global(cls, session: sessionmaker, offset: int, limit: int) -> list[Invite]:
-        return session.execute(select(cls).offset(offset).limit(limit)).scalars().all()
+        return session.get_paginated(select(cls), offset, limit)
 
     def generate_code(self, user_id: int):
         return self.serializer.dumps((self.id, user_id))
-
-    def delete(self, session: sessionmaker):
-        session.delete(self)
-        session.flush()
