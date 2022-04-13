@@ -7,7 +7,8 @@ from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, User, Base, sessionmaker
 
 
-@create_marshal_model("community-base", "id", "name", "description")
+@create_marshal_model("community-base", "name", "description", inherit="community-id")
+@create_marshal_model("community-id", "id")
 class Community(Base, Identifiable, Marshalable):
     __tablename__ = "community"
     not_found_text = "Community not found"
