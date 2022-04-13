@@ -1,8 +1,23 @@
 from typing import Iterator, Callable
 
+from pytest import mark
 from flask.testing import FlaskClient
 
-from __lib__.flask_fullstack import check_code
+from __lib__.flask_fullstack import check_code, dict_equal
+
+
+@mark.order(1000)
+def test_meta_creation(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    community_data = {"name": "test", "description": "12345"}
+
+    community_data["id"] = check_code(client.post("/communities/", json=community_data)).get("id", None)
+    assert community_data["id"] is not None
+
+    for data in list_tester("/communities/index/", {}, 20):
+        if dict_equal(data, community_data, "id", "name", "description"):
+            break
+    else:
+        assert False, "Community not found"
 
 
 def test_invitation_crud(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
@@ -10,7 +25,7 @@ def test_invitation_crud(client: FlaskClient, list_tester: Callable[[str, dict, 
     assert community_creature is not False
 
     invitation_creature = check_code(client.post("/communities/1/invitations/", json={"role": "base", "limit": 2,
-                                                                                             "time": 10}))
+                                                                                      "time": 10}))
     assert isinstance(invitation_creature.get("a", False), str)
 
     assert list_tester("/communities/1/invitations/index/", {}, 20)
@@ -30,7 +45,7 @@ def test_invitation_join(multi_client: Callable[[str], FlaskClient], client: Fla
     clients = [multi_client(f"{i}@user.user") for i in range(1, 7)]
 
     invitation_creature = check_code(client.post("/communities/1/invitations/", json={"role": "base", "limit": 2,
-                                                                                             "time": 10}))
+                                                                                      "time": 10}))
     assert isinstance(invitation_creature.get("a", False), str)
 
     code = ""
