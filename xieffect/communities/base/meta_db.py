@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from typing import Union
-
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, User
-from main import Base, Session
+from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, User, Base, sessionmaker
 
 
 @create_marshal_model("community-base", "id", "name", "description")
@@ -23,10 +20,8 @@ class Community(Base, Identifiable, Marshalable):
     participants = relationship("Participant", cascade="all, delete")
 
     @classmethod
-    def create(cls, session: Session, name: str, description: str, creator: User) -> Community:
-        entry: cls = cls(name=name, description=description)
-        session.add(entry)
-        session.flush()
+    def create(cls, session: sessionmaker, name: str, description: str, creator: User) -> Community:
+        entry: cls = super().create(session, name=name, description=description)
 
         participant = Participant(user=creator, role=ParticipantRole.OWNER)
         entry.participants.append(participant)
@@ -36,13 +31,13 @@ class Community(Base, Identifiable, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: Session, entry_id: int) -> Union[Community, None]:
-        return session.execute(select(cls).filter_by(id=entry_id)).scalars().first()
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Community | None:
+        return session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_user(cls, session: Session, user: User, offset: int, limit: int) -> list[Community]:
-        ids = session.execute(select(Participant.community_id).filter_by(user_id=user.id).offset(offset).limit(limit))
-        return session.execute(select(cls).filter(cls.id.in_(ids.scalars().all()))).scalars().all()
+    def find_by_user(cls, session: sessionmaker, user: User, offset: int, limit: int) -> list[Community]:
+        ids = session.get_paginated(select(Participant.community_id).filter_by(user_id=user.id), offset, limit)
+        return session.get_all(select(cls).filter(cls.id.in_(ids)))
 
 
 class ParticipantRole(TypeEnum):
@@ -60,13 +55,9 @@ class Participant(Base):
     role = Column(Enum(ParticipantRole), nullable=False)
 
     @classmethod
-    def create(cls, session: Session, community_id: int, user_id: int, role: ParticipantRole):
-        entry: cls = cls(community_id=community_id, user_id=user_id, role=role)
-        session.add(entry)
-        session.flush()
-
-        return entry
+    def create(cls, session: sessionmaker, community_id: int, user_id: int, role: ParticipantRole):
+        return super().create(session, community_id=community_id, user_id=user_id, role=role)
 
     @classmethod
-    def find_by_ids(cls, session: Session, community_id: int, user_id: int) -> Union[Participant, None]:
-        return session.execute(select(cls).filter_by(community_id=community_id, user_id=user_id)).scalars().first()
+    def find_by_ids(cls, session: sessionmaker, community_id: int, user_id: int) -> Participant | None:
+        return session.get_first(select(cls).filter_by(community_id=community_id, user_id=user_id))
