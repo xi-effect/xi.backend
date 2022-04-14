@@ -72,7 +72,7 @@ def check_invitation(join: bool = False):
         @invitation_join_namespace.marshal_with(community_base)
         def check_invitation_inner(*_, user, code, session):
             invitation: Invitation = Invitation.find_by_code(session, code)
-            if invitation is None:
+            if invitation is None:  # TODO still get the community id and check if joined
                 invitation_join_namespace.abort(400, "Invalid invitation")
             if Participant.find_by_ids(session, invitation.community_id, user.id):
                 invitation_join_namespace.abort(400, "User has already joined")  # TODO return the community id
@@ -83,7 +83,10 @@ def check_invitation(join: bool = False):
 
             if join:
                 Participant.create(session, invitation.community_id, user.id, invitation.role)
-                invitation.count_limit -= 1
+                if invitation.limit == 1:
+                    invitation.delete(session)
+                elif invitation.limit is not None:
+                    invitation.limit -= 1
 
             return invitation.community
 
