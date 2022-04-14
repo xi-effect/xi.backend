@@ -28,7 +28,6 @@ class Namespace(RestXNamespace):  # xieffect specific
 
         def a_response_wrapper(function):
             return_type: Type = getattr(function, "__annotations__").get("return", None)
-            print(return_type, type(return_type), return_type is None)
             is_bool = return_type is None or issubclass(return_type, bool)
 
             @self.response(*(success_response if is_bool else message_response).get_args())
