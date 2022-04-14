@@ -30,8 +30,8 @@ class Invitation(Base, Identifiable, Marshalable):
     @classmethod
     def create(cls, session: sessionmaker, community_id: int, role: ParticipantRole, limit: int | None,
                days_to_live: int | None) -> Invitation:
-        entry: cls = super().create(session, role=role, community_id=community_id, limit=limit,
-                                    deadline=datetime.utcnow() + timedelta(days=days_to_live))
+        deadline = None if days_to_live is None else datetime.utcnow() + timedelta(days=days_to_live)
+        entry: cls = super().create(session, role=role, community_id=community_id, limit=limit, deadline=deadline)
         entry.code = entry.generate_code()
         session.flush()
         return entry
@@ -49,7 +49,7 @@ class Invitation(Base, Identifiable, Marshalable):
         return session.get_first(select(cls).filter_by(code=code))
 
     def generate_code(self):
-        return self.serializer.dumps((self.community_id, self.invitation_id))
+        return self.serializer.dumps((self.community_id, self.id))
 
     def is_available(self, date: DateTime):
         return self.count_limit != 0 and self.time_limit > date
