@@ -10,6 +10,7 @@ from education import (authors_namespace, wip_json_file_namespace, wip_images_na
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
+from communities import (communities_namespace, invitation_namespace, invitation_join_namespace)
 
 logger = Logger("flask-fullstack", "WARN")
 
@@ -57,6 +58,10 @@ api.add_namespace(authors_namespace)
 api.add_namespace(wip_images_namespace)
 api.add_namespace(wip_json_file_namespace)
 api.add_namespace(wip_index_namespace)
+
+api.add_namespace(communities_namespace)
+api.add_namespace(invitation_namespace)
+api.add_namespace(invitation_join_namespace)
 
 api.add_namespace(webhook_namespace)
 
