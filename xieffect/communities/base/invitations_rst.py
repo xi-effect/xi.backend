@@ -1,7 +1,6 @@
-from __future__ import annotations
-
 from datetime import datetime
 from functools import wraps
+from typing import Union
 
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
@@ -31,7 +30,8 @@ class InvitationCreator(Resource):
     @invitation_namespace.argument_parser(parser)
     @invitation_namespace.database_searcher(Community, use_session=True)
     @invitation_namespace.marshal_with(invitation_base)
-    def post(self, session, community: Community, user: User, limit: int | None, days: int | None, role_: str):
+    def post(self, session, community: Community, user: User, role_: str,
+             limit: Union[int, None], days: Union[int, None]):
         role: ParticipantRole = ParticipantRole.from_string(role_)
         if role is None:
             invitation_namespace.abort(400, f"Invalid role: {role_}")
