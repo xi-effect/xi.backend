@@ -10,9 +10,6 @@ from .invitations_db import Invitation
 from .meta_db import Community, Participant, ParticipantRole
 
 invitation_namespace = Namespace("communities-invitation", path="/communities/<int:community_id>/invitations/")
-community_base = invitation_namespace.model("CommunityBase", Community.marshal_models["community-base"])
-invitation_base = invitation_namespace.model("InvitationBase", Invitation.marshal_models["invitation-base"])
-invitation_index = invitation_namespace.model("InvitationBase", Invitation.marshal_models["invitation-index"])
 
 invitation_join_namespace = Namespace("communities-invitation", path="/communities/join/")
 
@@ -29,7 +26,7 @@ class InvitationCreator(Resource):
     @invitation_namespace.jwt_authorizer(User)
     @invitation_namespace.argument_parser(parser)
     @invitation_namespace.database_searcher(Community, use_session=True)
-    @invitation_namespace.marshal_with(invitation_base)
+    @invitation_namespace.marshal_with(Invitation.BaseModel)
     def post(self, session, community: Community, user: User, role_: str,
              limit: Union[int, None], days: Union[int, None]):
         role: ParticipantRole = ParticipantRole.from_string(role_)
@@ -51,7 +48,7 @@ class InvitationLister(Resource):
     @invitation_namespace.jwt_authorizer(User, check_only=True)
     @invitation_namespace.argument_parser(counter_parser)
     @invitation_namespace.database_searcher(Community, check_only=True, use_session=True)
-    @invitation_namespace.lister(20, invitation_index)
+    @invitation_namespace.lister(20, Invitation.IndexModel)
     def post(self, session, community_id: int, start: int, finish: int):
         return Invitation.find_by_community(session, community_id, start, finish - start)
 
@@ -69,7 +66,7 @@ def check_invitation(join: bool = False):
     def check_invitation_wrapper(function):
         @wraps(function)
         @invitation_join_namespace.jwt_authorizer(User)
-        @invitation_join_namespace.marshal_with(community_base)
+        @invitation_join_namespace.marshal_with(Community.IndexModel)
         def check_invitation_inner(*_, user, code, session):
             invitation: Invitation = Invitation.find_by_code(session, code)
             if invitation is None:  # TODO still get the community id and check if joined
