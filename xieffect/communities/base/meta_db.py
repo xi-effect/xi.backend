@@ -4,12 +4,10 @@ from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, User, Base, sessionmaker
+from common import Identifiable, TypeEnum, PydanticModel, User, Base, sessionmaker
 
 
-@create_marshal_model("community-base", "name", "description", inherit="community-id")
-@create_marshal_model("community-id", "id")
-class Community(Base, Identifiable, Marshalable):
+class Community(Base, Identifiable):
     __tablename__ = "community"
     not_found_text = "Community not found"
 
@@ -19,6 +17,9 @@ class Community(Base, Identifiable, Marshalable):
     invite_count = Column(Integer, nullable=False, default=0)
 
     participants = relationship("Participant", cascade="all, delete")
+
+    BaseModel = PydanticModel.column_model(id)
+    IndexModel = BaseModel.column_model(name, description)
 
     @classmethod
     def create(cls, session: sessionmaker, name: str, description: str, creator: User) -> Community:
