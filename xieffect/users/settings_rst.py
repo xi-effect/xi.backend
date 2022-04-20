@@ -11,10 +11,6 @@ settings_namespace: Namespace = Namespace("settings")
 other_settings_namespace: Namespace = Namespace("settings", path="/")  # TODO unite with settings_namespace
 protected_settings_namespace: Namespace = Namespace("settings", path="/")
 
-full_settings = settings_namespace.model("FullSettings", User.marshal_models["full-settings"])
-main_settings = settings_namespace.model("MainSettings", User.marshal_models["main-settings"])
-role_settings = settings_namespace.model("RoleSettings", User.marshal_models["role-settings"])
-
 
 @other_settings_namespace.route("/avatar/")
 class Avatar(Resource):
@@ -62,7 +58,7 @@ class Settings(Resource):
     parser.add_argument("changed", type=changed, required=True, help="A dict of changed settings")
 
     @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(full_settings, skip_none=True)
+    @settings_namespace.marshal_with(User.FullData)
     def get(self, user: User):
         """ Loads user's own full settings """
         return user
@@ -78,7 +74,7 @@ class Settings(Resource):
 @settings_namespace.route("/main/")
 class MainSettings(Resource):
     @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(main_settings, skip_none=True)
+    @settings_namespace.marshal_with(User.MainData)
     def get(self, user: User):
         """ Loads user's own main settings (username, dark-theme and language) """
         return user
@@ -87,7 +83,7 @@ class MainSettings(Resource):
 @settings_namespace.route("/roles/")
 class RoleSettings(Resource):
     @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(role_settings, skip_none=True)
+    @settings_namespace.marshal_with(User.RoleSettings)
     def get(self, user: User):
         """ Loads user's own role settings (author, moderator) """
         return user

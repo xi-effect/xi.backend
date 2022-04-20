@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 from flask import send_from_directory
 from flask_restx import Resource
@@ -7,10 +7,8 @@ from flask_restx.reqparse import RequestParser
 from common import Namespace, counter_parser, User
 
 users_namespace: Namespace = Namespace("profiles", path="/users/")
-user_index_view = users_namespace.model("UserIndex", User.marshal_models["user-index"])
 
 profiles_namespace: Namespace = Namespace("profiles", path="/users/<int:user_id>/")
-profile_view = profiles_namespace.model("Profile", User.marshal_models["profile"])
 
 
 @users_namespace.route("/")
@@ -18,10 +16,10 @@ class UserFinder(Resource):
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("search", type=str, required=False)
 
-    @users_namespace.jwt_authorizer(User, use_session=True)
+    @users_namespace.jwt_authorizer(User)
     @users_namespace.argument_parser(parser)
-    @users_namespace.lister(10, user_index_view)
-    def post(self, session, user: User, search: Optional[str], start: int, finish: int):
+    @users_namespace.lister(10, User.IndexProfile)
+    def post(self, session, user: User, search: str | None, start: int, finish: int):
         return User.search_by_username(session, user.id, search, start, finish - start)
 
 
@@ -38,7 +36,7 @@ class AvatarViewer(Resource):
 class ProfileViewer(Resource):
     @profiles_namespace.jwt_authorizer(User, check_only=True, use_session=False)
     @profiles_namespace.database_searcher(User, result_field_name="profile_viewer")
-    @profiles_namespace.marshal_with(profile_view)
+    @profiles_namespace.marshal_with(User.FullProfile)
     def get(self, profile_viewer: User):
         """Get profile """
         return profile_viewer
