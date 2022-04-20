@@ -2,7 +2,7 @@ from functools import wraps
 from typing import Union
 
 from flask import redirect
-from flask_restx import Resource, Model, marshal
+from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
@@ -12,7 +12,6 @@ from .modules_db import Module, ModuleType
 from .results_db import TestResult
 
 interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
-test_model = interaction_namespace.model("test_model", TestPointSession.marshal_models["TestPointSession"])
 
 
 def module_typed(op_name, *possible_module_types: ModuleType):
@@ -173,16 +172,17 @@ class TestReplyManager(Resource):
         return False
 
 
-full_result_model = interaction_namespace.model("FullResult", TestResult.marshal_models["full-result"])  # TODO move
-
-
 @interaction_namespace.route("/results/")
 class TestSaver(Resource):
     @interaction_namespace.jwt_authorizer(User)
     @interaction_namespace.database_searcher(Module, use_session=True)
-    @interaction_namespace.marshal_with(full_result_model)
+    @interaction_namespace.marshal_with(TestResult.FullModel)
     def get(self, session, user: User, module: Module):
         test_session = TestModuleSession.find_by_ids(session, user.id, module.id)
         if test_session is None:
             interaction_namespace.abort(400, "Test not started")
-        return TestResult.create(session, user.id, module, marshal(test_session.collect_all(session), test_model))
+        t = test_session.collect_all(session)
+        print(t[0].right_answers)
+        result = interaction_namespace.marshal(t, TestPointSession.IndexModel)
+        print(result)
+        return TestResult.create(session, user.id, module, result)

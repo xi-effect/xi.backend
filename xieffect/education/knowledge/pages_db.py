@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Union
 
@@ -8,8 +9,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, Boolean, JSON, DateTime, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef
-from common import index_service, Base, sessionmaker
+from common import Identifiable, TypeEnum, Marshalable
+from common import index_service, Base, sessionmaker, PydanticModel
 from ..authorship import Author
 
 
@@ -19,9 +20,6 @@ class PageKind(TypeEnum):
 
 
 @index_service.register_as_searchable("name", "theme", "description")
-@create_marshal_model("page-main", "components", inherit="page-base")
-@create_marshal_model("page-short", "author_id", "views", "updated", inherit="page-base")
-@create_marshal_model("page-base", "id", "name", "kind", "theme", "description")
 class Page(Base, Identifiable, Marshalable):
     __tablename__ = "pages"
     not_found_text = "Page not found"
@@ -44,7 +42,16 @@ class Page(Base, Identifiable, Marshalable):
     views = Column(Integer, nullable=False, default=0)
     updated = Column(DateTime, nullable=False)
 
-    author_name: LambdaFieldDef = LambdaFieldDef("page-short", str, lambda page: page.author.pseudonym)
+    BaseModel = PydanticModel.column_model(id, name, kind, theme, description)
+    MainModel = BaseModel.column_model(components)
+
+    @PydanticModel.include_columns(author_id, views, updated)
+    class ShortModel(BaseModel):
+        author_name: str
+
+        @classmethod
+        def callback_convert(cls, callback: Callable, orm_object: Page, **context) -> None:
+            callback(author_name=orm_object.author.pseudonym)
 
     @classmethod
     def _create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Page:

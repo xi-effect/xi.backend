@@ -6,7 +6,7 @@ from sqlalchemy import Column, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Float, JSON
 
-from common import create_marshal_model, Marshalable, User, Base, sessionmaker
+from common import User, Base, sessionmaker, PydanticModel
 from ._base_session import BaseModuleSession
 
 
@@ -41,8 +41,7 @@ class TestModuleSession(BaseModuleSession):
         return self.points
 
 
-@create_marshal_model("TestPointSession", "point_id", "page_id", "right_answers", "total_answers", "answers")
-class TestPointSession(Base, Marshalable):
+class TestPointSession(Base):
     __tablename__ = "test-point-sessions"
     __table_args__ = (
         ForeignKeyConstraint(("module_id", "user_id"),
@@ -55,6 +54,9 @@ class TestPointSession(Base, Marshalable):
     total_answers = Column(Integer, nullable=True)
     answers = Column(JSON, nullable=True)
 
+    IndexModel = PydanticModel.column_model(point_id, page_id, right_answers, total_answers, answers)
+
     @classmethod
-    def find_by_ids(cls, session: sessionmaker, user_id: int, module_id: int, point_id: int) -> TestModuleSession | None:
+    def find_by_ids(cls, session: sessionmaker, user_id: int, module_id: int,
+                    point_id: int) -> TestModuleSession | None:
         return cls.find_first_by_kwargs(session, user_id=user_id, module_id=module_id, point_id=point_id)

@@ -6,7 +6,7 @@ from flask_restx import fields
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import JSONWithModel, create_marshal_model, Marshalable, Base, sessionmaker
+from common import JSONWithModel, Base, sessionmaker, PydanticModel
 from .interaction_db import TestModuleSession
 from .modules_db import Module
 
@@ -27,10 +27,7 @@ short_result_model = {
 }
 
 
-@create_marshal_model("full-result", "result", inherit="base-result")
-@create_marshal_model("short-result", "short_result", flatten_jsons=True, inherit="base-result")
-@create_marshal_model("base-result", "id", "module_id")
-class TestResult(Base, Marshalable):
+class TestResult(Base):
     __tablename__ = "TestResult"
     not_found_text = "not found result"
     id = Column(Integer, primary_key=True)
@@ -41,6 +38,10 @@ class TestResult(Base, Marshalable):
     # TODO finish_date = Column(DateTime, nullable=False)
     short_result = Column(JSONWithModel("ShortResultInner", short_result_model), nullable=False)
     result = Column(JSONWithModel("FullResultInner", result_model, as_list=True), nullable=False)
+
+    BaseModel = PydanticModel.column_model(id, module_id)
+    ShortModel = BaseModel.column_model(short_result, _flatten_jsons=True)
+    FullModel = BaseModel.column_model(result)
 
     @classmethod
     def create(cls, session: sessionmaker, user_id: int, module: Module, result) -> TestResult:

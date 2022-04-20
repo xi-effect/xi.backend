@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from json import dump
 from os import remove
 from typing import Union
@@ -8,7 +9,7 @@ from sqlalchemy import Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, LambdaFieldDef, Marshalable, sessionmaker
+from common import Identifiable, TypeEnum, PydanticModel, sessionmaker
 from education.authorship.user_roles_db import Author, Base
 from ..knowledge import PageKind, ModuleType
 
@@ -28,6 +29,8 @@ class CATFile(Base, Identifiable):
                    default=0)  # TODO add relation to author
 
     status = Column(Enum(WIPStatus), nullable=False)
+
+    BaseModel = PydanticModel.column_model(status=status, id=id)
 
     @classmethod
     def _create(cls, owner: Author) -> CATFile:
@@ -92,8 +95,7 @@ class JSONFile(CATFile):
         raise NotImplementedError
 
 
-@create_marshal_model("wip-page", "id", "kind", "name", "theme", "description", "status")
-class WIPPage(JSONFile, Marshalable):
+class WIPPage(JSONFile):
     __tablename__ = "wip-pages"
     not_found_text = "Page not found"
     directory: str = "../files/tfs/wip-pages/"
@@ -106,7 +108,13 @@ class WIPPage(JSONFile, Marshalable):
 
     page = relationship("Page", backref="wip", uselist=False, cascade="all, delete")
 
-    views: LambdaFieldDef = LambdaFieldDef("wip-page", int, lambda wip_page: wip_page.get_views())
+    @PydanticModel.include_columns(kind, name, theme, description)
+    class FullModel(CATFile.BaseModel):
+        views: int = None
+
+        @classmethod
+        def callback_convert(cls, callback: Callable, orm_object: WIPPage, **context) -> None:
+            callback(views=orm_object.get_views())
 
     def update_metadata(self, json_data: dict) -> None:
         self.kind = PageKind.from_string(json_data["kind"])
@@ -118,8 +126,7 @@ class WIPPage(JSONFile, Marshalable):
         return None if self.page is None else self.page.views
 
 
-@create_marshal_model("wip-module", "id", "name", "type", "theme", "category", "difficulty", "description", "status")
-class WIPModule(JSONFile, Marshalable):
+class WIPModule(JSONFile):
     __tablename__ = "wip-modules"
     not_found_text = "Module not found"
     directory: str = "../files/tfs/wip-modules/"
@@ -136,8 +143,13 @@ class WIPModule(JSONFile, Marshalable):
 
     module = relationship("Module", backref="wip", uselist=False, cascade="all, delete")
 
-    views: LambdaFieldDef = LambdaFieldDef("wip-module", int,
-                                           lambda wip_module: wip_module.get_views())
+    @PydanticModel.include_columns(name, type, theme, category, difficulty, description)
+    class FullModel(CATFile.BaseModel):
+        views: int = None
+
+        @classmethod
+        def callback_convert(cls, callback: Callable, orm_object: WIPModule, **context) -> None:
+            callback(views=orm_object.get_views())
 
     def update_metadata(self, json_data: dict) -> None:
         self.type = ModuleType.from_string(json_data["type"])

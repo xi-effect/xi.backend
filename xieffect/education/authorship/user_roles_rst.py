@@ -5,8 +5,6 @@ from common import Namespace, User
 from .user_roles_db import Author, Moderator
 
 authors_namespace: Namespace = Namespace("authors", path="/authors")
-author_settings_model = Author.marshal_models["author-settings"]
-author_settings_view = authors_namespace.model("AuthorSettings", author_settings_model)
 
 
 @authors_namespace.route("/permit/")
@@ -40,7 +38,7 @@ class UnbanAuthor(Resource):
 @authors_namespace.route("/settings/")
 class ChangeAuthorSetting(Resource):
     @authors_namespace.jwt_authorizer(Author, use_session=False)
-    @authors_namespace.marshal_with(author_settings_view)
+    @authors_namespace.marshal_with(Author.SettingsModel)
     def get(self, author: Author):
         return author
 

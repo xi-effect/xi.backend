@@ -65,15 +65,13 @@ class ImageViewer(Resource):
 
 wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_type>/")
 wip_index_namespace: Namespace = Namespace("wip-files", path="/wip/")
-wip_short_page_json = wip_index_namespace.model("WIPPageShort", WIPPage.marshal_models["wip-page"])
-wip_short_module_json = wip_index_namespace.model("WIPModuleShort", WIPModule.marshal_models["wip-module"])
 
 
 @wip_index_namespace.route("/modules/index/")
 class WIPModuleLister(Resource):
     @wip_index_namespace.jwt_authorizer(Author)
     @wip_index_namespace.argument_parser(counter_parser)
-    @wip_index_namespace.lister(50, wip_short_module_json, skip_none=False)
+    @wip_index_namespace.lister(50, WIPModule.FullModel, skip_none=False)
     def post(self, session, author: Author, start: int, finish: int):
         """ Lists all Author's wip-modules' metadata for author studio """
         return WIPModule.find_by_owner(session, author, start, finish - start)
@@ -83,7 +81,7 @@ class WIPModuleLister(Resource):
 class WIPPageLister(Resource):
     @wip_index_namespace.jwt_authorizer(Author)
     @wip_index_namespace.argument_parser(counter_parser)
-    @wip_index_namespace.lister(50, wip_short_page_json, skip_none=False)
+    @wip_index_namespace.lister(50, WIPPage.FullModel, skip_none=False)
     def post(self, session, author: Author, start: int, finish: int):
         """ Lists all Author's wip-pages' metadata for author studio """
         return WIPPage.find_by_owner(session, author, start, finish - start)
@@ -171,7 +169,7 @@ class FileProcessor(Resource):
 
 @wip_json_file_namespace.route("/<int:file_id>/publication/")
 class FilePublisher(Resource):
-    @file_getter(type_only=False, use_session=True, use_author=True)
+    @file_getter(type_only=False, use_author=True)
     @wip_json_file_namespace.a_response()
     def post(self, session, file: JSONFile, author: Author) -> str:
         """ Validates and then publishes author's wip-file """
