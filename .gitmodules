@@ -1,3 +1,4 @@
 [submodule "xieffect/__lib__"]
 	path = xieffect/__lib__
 	url = https://github.com/qwert45hi/flask-fullstack.git
+	branch = new-marshals
