@@ -8,11 +8,10 @@ from sqlalchemy import Column, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String
 
-from common import create_marshal_model, Marshalable, Base, sessionmaker
+from common import Base, sessionmaker, PydanticModel
 
 
-@create_marshal_model("invite", "name", "code", "limit", "accepted")
-class Invite(Base, Marshalable):
+class Invite(Base):
     __tablename__ = "invites"
     not_found_text = "Invite not found"
     serializer: URLSafeSerializer = URLSafeSerializer(getenv("SECRET_KEY", "local"))  # TODO redo
@@ -23,6 +22,8 @@ class Invite(Base, Marshalable):
     limit = Column(Integer, nullable=False, default=-1)
     accepted = Column(Integer, nullable=False, default=0)
     invited = relationship("User", back_populates="invite")
+
+    IndexModel = PydanticModel.column_model(name, code, limit, accepted)
 
     @classmethod
     def create(cls, session: sessionmaker, **kwargs) -> Invite:

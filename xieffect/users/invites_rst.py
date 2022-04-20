@@ -9,7 +9,6 @@ from common import Namespace, counter_parser, ResponseDoc, get_or_pop, User
 from .invites_db import Invite
 
 invites_namespace: Namespace = Namespace("invites", path="/invites/")
-invites_model = invites_namespace.model("Invite", Invite.marshal_models["invite"])
 
 
 def admin_only(use_session: bool = False):
@@ -48,7 +47,7 @@ class InviteCreator(Resource):
 class GlobalInviteManager(Resource):
     @admin_only(use_session=True)
     @invites_namespace.argument_parser(counter_parser)
-    @invites_namespace.lister(50, invites_model)
+    @invites_namespace.lister(50, Invite.IndexModel)
     def post(self, session, start: int, finish: int):
         return Invite.find_global(session, start, finish)
 
@@ -61,7 +60,7 @@ class InviteManager(Resource):
 
     @admin_only()
     @invites_namespace.database_searcher(Invite)
-    @invites_namespace.marshal_with(invites_model)
+    @invites_namespace.marshal_with(Invite.IndexModel)
     def get(self, invite: Invite):
         return invite
 

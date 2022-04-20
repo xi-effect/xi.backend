@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, Callable
 
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 
-from __lib__.flask_fullstack import UserRole, create_marshal_model, Marshalable, LambdaFieldDef
-from ._core import Base, sessionmaker
+from __lib__.flask_fullstack import UserRole, PydanticModel
+from . import Base, sessionmaker
 
 DEFAULT_AVATAR: dict = {"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}
 
@@ -24,14 +24,7 @@ class TokenBlockList(Base):
         return session.get_first(select(cls).filter_by(jti=jti))
 
 
-@create_marshal_model("user-index", "username", "id", "bio", "avatar")
-@create_marshal_model("profile", "name", "surname", "patronymic", "username",
-                      "bio", "group", "avatar")
-@create_marshal_model("full-settings", "email", "email_confirmed", "avatar", "code",
-                      "name", "surname", "patronymic", "bio", "group", inherit="main-settings")
-@create_marshal_model("main-settings", "id", "username", "dark_theme", "language")
-@create_marshal_model("role-settings")
-class User(Base, UserRole, Marshalable):
+class User(Base, UserRole):
     __tablename__ = "users"
     not_found_text = "User does not exist"
 
@@ -70,9 +63,6 @@ class User(Base, UserRole, Marshalable):
     author = relationship("Author", backref="user", uselist=False)  # TODO remove non-common reference
     moderator = relationship("Moderator", backref="user", uselist=False)  # TODO remove non-common reference
 
-    author_status: LambdaFieldDef = LambdaFieldDef("role-settings", str, lambda user: user.get_author_status())
-    moderator_status: LambdaFieldDef = LambdaFieldDef("role-settings", bool, lambda user: user.moderator is not None)
-
     # Chat-related
     # chats = relationship("UserToChat", back_populates="user")  # TODO remove non-common reference
 
@@ -80,6 +70,20 @@ class User(Base, UserRole, Marshalable):
     code = Column(String(100), nullable=True)
     invite_id = Column(Integer, ForeignKey("invites.id"), nullable=True)  # TODO remove non-common reference
     invite = relationship("Invite", back_populates="invited")  # TODO remove non-common reference
+
+    IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
+    FullProfile = IndexProfile.column_model(name, surname, patronymic, group)
+
+    MainData = PydanticModel.column_model(id, username, dark_theme, language)
+    FullData = MainData.column_model(email, email_confirmed, avatar, code, name, surname, patronymic, bio, group)
+
+    class RoleSettings(PydanticModel):
+        author_status: str
+        moderator_status: bool
+
+        @classmethod
+        def callback_convert(cls, callback: Callable, orm_object: User, **context) -> None:
+            callback(author_status=orm_object.get_author_status(), moderator_status=orm_object.moderator is not None)
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[User, None]:
