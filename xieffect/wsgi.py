@@ -7,8 +7,8 @@ from sys import modules
 from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, versions, db_url, db_meta
 from other import WebhookURLs, send_discord_message
-from users.invites_db import Invite  # noqa  # passthrough for tests
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
+from users.invites_db import Invite  # noqa  # passthrough for tests
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"

@@ -1,8 +1,8 @@
 from typing import Iterator, Callable
 
+from flask.testing import FlaskClient
 from flask_socketio import SocketIOTestClient
 from pytest import mark
-from flask.testing import FlaskClient
 
 from __lib__.flask_fullstack import check_code, dict_equal
 
@@ -12,7 +12,6 @@ INVITATIONS_PER_REQUEST = 20
 @mark.order(1000)
 def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
                        list_tester: Callable[[str, dict, int], Iterator[dict]]):
-
     community_ids = [d["id"] for d in list_tester("/communities/index/", {}, 20)]
 
     # RST variant
