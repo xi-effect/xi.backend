@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
@@ -28,13 +26,7 @@ class Feedback(Base, Marshalable):
     type = Column(Enum(FeedbackType), nullable=False)
     data = Column(JSON, nullable=False)
 
-    @PydanticModel.include_columns(id, user_id, type, data)
-    class FullModel(PydanticModel):
-        user: User.FullData
-
-        @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: Feedback, **context) -> None:
-            callback(user=User.FullData.convert(orm_object.user, **context))
+    FullModel = PydanticModel.column_model(id, user_id, type, data).nest_model(User.FullData, "user")
 
     @classmethod
     def dump_all(cls, session: sessionmaker) -> list[Row]:
