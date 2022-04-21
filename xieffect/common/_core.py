@@ -59,3 +59,4 @@ def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexSe
 
 
 db_url, db_meta, Base, sessionmaker, index_service, versions, app = init_xieffect()
+app.config["RESTX_INCLUDE_ALL_MODELS"] = True
