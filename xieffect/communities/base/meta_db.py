@@ -13,16 +13,17 @@ class Community(Base, Identifiable):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
-    description = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
     invite_count = Column(Integer, nullable=False, default=0)
 
     participants = relationship("Participant", cascade="all, delete")
 
     BaseModel = PydanticModel.column_model(id)
-    IndexModel = BaseModel.column_model(name, description)
+    CreateModel = PydanticModel.column_model(name, description)
+    IndexModel = BaseModel.combine_with(CreateModel)
 
     @classmethod
-    def create(cls, session: sessionmaker, name: str, description: str, creator: User) -> Community:
+    def create(cls, session: sessionmaker, name: str, description: str | None, creator: User) -> Community:
         entry: cls = super().create(session, name=name, description=description)
 
         participant = Participant(user=creator, role=ParticipantRole.OWNER)

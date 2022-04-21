@@ -1,1 +1,1 @@
-from .base import communities_namespace, invitation_namespace, invitation_join_namespace
+from .base import communities_namespace, invitation_namespace, invitation_join_namespace, communities_meta_events

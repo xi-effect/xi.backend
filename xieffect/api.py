@@ -11,7 +11,8 @@ from education import (authors_namespace, wip_json_file_namespace, wip_images_na
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
-from communities import (communities_namespace, invitation_namespace, invitation_join_namespace)
+from communities import (communities_namespace, invitation_namespace, invitation_join_namespace,
+                         communities_meta_events)
 
 logger = Logger("flask-fullstack", "WARN")
 
@@ -67,6 +68,11 @@ api.add_namespace(invitation_join_namespace)
 api.add_namespace(webhook_namespace)
 
 socketio = SocketIO(app, doc_path="/sio-doc/", cors_allowed_origins="*", version=versions["SIO"])
+
+communities_namespace = SIONamespace("/")
+communities_namespace.attach_event_group(communities_meta_events)
+
+socketio.on_namespace(communities_namespace)
 
 # class MessagesNamespace(Namespace):
 #     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
