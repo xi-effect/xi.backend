@@ -2,8 +2,10 @@ from datetime import timedelta
 from logging import Logger
 from sys import stderr
 
-from common import sessionmaker, db_meta  # noqa
 from common import app, SocketIO, versions, SIONamespace
+from common import sessionmaker, db_meta  # noqa
+from communities import (communities_namespace, invitation_namespace, invitation_join_namespace,
+                         communities_meta_events)
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
@@ -11,8 +13,6 @@ from education import (authors_namespace, wip_json_file_namespace, wip_images_na
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
-from communities import (communities_namespace, invitation_namespace, invitation_join_namespace,
-                         communities_meta_events)
 
 logger = Logger("flask-fullstack", "WARN")
 
