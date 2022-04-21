@@ -1,5 +1,6 @@
 from typing import Iterator, Callable
 
+from flask_socketio import SocketIOTestClient
 from pytest import mark
 from flask.testing import FlaskClient
 
@@ -9,17 +10,45 @@ INVITATIONS_PER_REQUEST = 20
 
 
 @mark.order(1000)
-def test_meta_creation(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    community_data = {"name": "test", "description": "12345"}
+def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
+                       list_tester: Callable[[str, dict, int], Iterator[dict]]):
 
-    community_data["id"] = check_code(client.post("/communities/", json=community_data)).get("id", None)
-    assert community_data["id"] is not None
+    community_ids = [d["id"] for d in list_tester("/communities/index/", {}, 20)]
+
+    # RST variant
+    community_data1 = {"name": "test", "description": "12345"}
+
+    community_id1 = check_code(client.post("/communities/", json=community_data1)).get("id", None)
+    assert isinstance(community_id1, int)
+    community_ids.append(community_id1)
+
+    # SIO variant
+    community_data2 = {"name": "12345", "description": "test"}
+
+    socketio_client.emit("create-community", community_data2)
+    events = socketio_client.get_received()
+    assert len(events) == 1
+    assert events[0]["name"] == "create-community"
+    assert len(events[0]["args"]) == 1
+
+    community_id2 = events[0]["args"][0].get("id", None)
+    assert isinstance(community_id2, int)
+    community_ids.append(community_id2)
+
+    # Checking
+    def check_find(data, community_id, community_data, found) -> bool:
+        if data["id"] == community_id:
+            assert not found
+            assert dict_equal(data, community_data, "name", "description")
+            return True
+        return False
+
+    found1, found2 = False, False
 
     for data in list_tester("/communities/index/", {}, 20):
-        if dict_equal(data, community_data, "id", "name", "description"):
-            break
-    else:
-        assert False, "Community not found"
+        assert data["id"] in community_ids
+        found1 = check_find(data, community_id1, community_data1, found1)
+        found2 = check_find(data, community_id2, community_data2, found2)
 
 
 @mark.order(1020)
