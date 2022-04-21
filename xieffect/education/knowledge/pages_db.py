@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Union
 
@@ -8,8 +9,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, Boolean, JSON, DateTime, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, LambdaFieldDef
-from common import index_service, Base, sessionmaker
+from common import Identifiable, TypeEnum, Marshalable
+from common import index_service, Base, sessionmaker, PydanticModel
 from ..authorship import Author
 
 
@@ -19,9 +20,6 @@ class PageKind(TypeEnum):
 
 
 @index_service.register_as_searchable("name", "theme", "description")
-@create_marshal_model("page-main", "components", inherit="page-base")
-@create_marshal_model("page-short", "author_id", "views", "updated", inherit="page-base")
-@create_marshal_model("page-base", "id", "name", "kind", "theme", "description")
 class Page(Base, Identifiable, Marshalable):
     __tablename__ = "pages"
     not_found_text = "Page not found"
@@ -44,7 +42,16 @@ class Page(Base, Identifiable, Marshalable):
     views = Column(Integer, nullable=False, default=0)
     updated = Column(DateTime, nullable=False)
 
-    author_name: LambdaFieldDef = LambdaFieldDef("page-short", str, lambda page: page.author.pseudonym)
+    BaseModel = PydanticModel.column_model(id, name, kind, theme, description)
+    MainModel = BaseModel.column_model(components)
+
+    @PydanticModel.include_columns(author_id, views, updated)
+    class ShortModel(BaseModel):
+        author_name: str
+
+        @classmethod
+        def callback_convert(cls, callback: Callable, orm_object: Page, **context) -> None:
+            callback(author_name=orm_object.author.pseudonym)
 
     @classmethod
     def _create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Page:
@@ -60,7 +67,7 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[Page, None]:
-        return session.execute(select(cls).where(cls.id == entry_id)).scalars().first()
+        return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
     def find_or_create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Union[Page, None]:
@@ -75,20 +82,15 @@ class Page(Base, Identifiable, Marshalable):
         if (entry := cls.find_by_id(session, json_data["id"])) is None:
             return cls._create(session, json_data, author)
         else:  # redo... maybe...
-            session.delete(entry)
-            session.commit()
+            entry.delete(session)
             cls._create(session, json_data, author)
 
     @classmethod
     def search(cls, session: sessionmaker, search: Union[str, None], start: int, limit: int) -> list[Page]:
-        stmt: Select = select(cls).filter_by(public=True).offset(start).limit(limit)
-        if search is not None and len(search) > 2:  # redo all search with pagination!!!
+        stmt: Select = select(cls).filter_by(public=True)
+        if search is not None and len(search) > 2:  # TODO redo all search with pagination!!!
             stmt = cls.search_stmt(search, stmt=stmt)
-        return session.execute(stmt).scalars().all()
+        return session.get_paginated(stmt, start, limit)
 
     def view(self) -> None:  # auto-commit
         self.views += 1
-
-    def delete(self, session: sessionmaker) -> None:
-        session.delete(self)
-        session.flush()

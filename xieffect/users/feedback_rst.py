@@ -4,21 +4,19 @@ from os import getenv
 from typing import Union, Type
 
 from flask import request
-from flask_restx import Resource, marshal, Model
+from flask_restx import Resource, Model
 from flask_restx.fields import Integer, String as StringField
 from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import User, Namespace, unite_models, ResponseDoc
+from common import User, Namespace, ResponseDoc
 from .feedback_db import Feedback, FeedbackType, FeedbackImage
 
 feedback_namespace: Namespace = Namespace("feedback", path="/feedback/")
 feedback_serializer: URLSafeSerializer = URLSafeSerializer(getenv("JWT_SECRET_KEY", "local only"))  # TODO redo
-feedback_json = feedback_namespace.model("Feedback", unite_models(
-    User.marshal_models["full-settings"], Feedback.marshal_models["feedback-full"]))
 
 
-def enum_response(enum: Type[Enum]):
+def enum_response(enum: Type[Enum]):  # TODO move to ffs
     model = {"a": StringField(enum=[member.value for member in enum.__members__.values()])}
     model = feedback_namespace.model(enum.__name__, model=model)
 
@@ -66,7 +64,7 @@ class FeedbackSaver(Resource):
         elif user is None:
             return self.Responses.NO_AUTH_PROVIDED
 
-        Feedback.create(session, user, feedback_type, data)
+        Feedback.create(session, user_id=user.id, type=feedback_type, data=data)
         return self.Responses.SUCCESS
 
 
@@ -84,7 +82,7 @@ class ImageAttacher(Resource):
 @feedback_namespace.route("/dump/")
 class FeedbackDumper(Resource):
     @feedback_namespace.jwt_authorizer(User)
-    @feedback_namespace.marshal_list_with(feedback_json)
+    @feedback_namespace.marshal_list_with(Feedback.FullModel)
     def get(self, session, user: User):
         if user.email != "admin@admin.admin":
             feedback_namespace.abort(403, "Permission denied")
@@ -97,4 +95,4 @@ def generate_code(user_id: int):
 
 @feedback_namespace.with_begin
 def dumps_feedback(session) -> list[dict]:
-    return marshal(Feedback.dump_all(session), feedback_json)
+    return feedback_namespace.marshal(Feedback.dump_all(session), Feedback.FullModel)

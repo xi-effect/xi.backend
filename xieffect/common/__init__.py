@@ -1,5 +1,5 @@
 from __lib__.flask_fullstack import get_or_pop, TypeEnum  # noqa
-from __lib__.flask_fullstack import UserRole, Identifiable, Marshalable  # noqa
+from __lib__.flask_fullstack import UserRole, Identifiable, Marshalable, PydanticModel  # noqa
 from __lib__.flask_fullstack import JSONWithModel, unite_models, LambdaFieldDef, create_marshal_model  # noqa
 from __lib__.flask_fullstack import counter_parser, password_parser  # noqa
 from __lib__.flask_siox import ClientEvent, ServerEvent, DuplexEvent, SocketIO  # noqa

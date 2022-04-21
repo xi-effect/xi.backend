@@ -10,7 +10,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, Marshalable
+from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, PydanticModel
 from common import LambdaFieldDef, index_service, Base, sessionmaker
 from ._base_session import BaseModuleSession
 from ..authorship.user_roles_db import Author
@@ -25,7 +25,7 @@ class PreferenceOperation(TypeEnum):
     UNPIN = 5
 
 
-@create_marshal_model("mfs-full", "started", "starred", "pinned", use_defaults=True)
+@create_marshal_model("mfs-full", "started", "starred", "pinned", use_defaults=True)  # TODO replace with new-marshals
 class ModuleFilterSession(BaseModuleSession, Marshalable):
     __tablename__ = "module-filter-sessions"
     not_found_text = "Session not found"
@@ -38,18 +38,15 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
     last_visited = Column(DateTime, nullable=True)  # None for not visited
     last_changed = Column(DateTime, nullable=True)
 
-    visited: LambdaFieldDef = \
-        LambdaFieldDef("mfs", datetime, lambda mfs: mfs.last_visited if mfs.started else datetime.min)
+    @PydanticModel.include_columns(started, starred, pinned)
+    class IndexModel(BaseModuleSession.BaseModel):
+        pass
 
     @classmethod
     def create(cls, session: sessionmaker, user_id: int, module_id: int) -> Union[ModuleFilterSession, None]:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
-        # parameter check freaks out for no reason \/ \/ \/
-        new_entry = cls(user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())  # noqa
-        session.add(new_entry)
-        session.flush()
-        return new_entry
+        return super().create(session, user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())
 
     def note_change(self) -> None:  # auto-commit
         self.last_changed = datetime.utcnow()
@@ -72,8 +69,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         elif operation == PreferenceOperation.UNPIN:
             self.pinned = False
         if not any((self.hidden, self.pinned, self.starred, self.started)):
-            session.delete(self)
-            session.flush()
+            self.delete(session)
         else:
             self.note_change()
 
@@ -137,11 +133,10 @@ class SortType(str, TypeEnum):
 
 
 @index_service.register_as_searchable("name", "description")
-@create_marshal_model("module-meta", "map", "timer", inherit="module-index")
-@create_marshal_model("module-index", "theme", "difficulty", "category", "type",
-                      "description", "views", "created", inherit="module-short")
-@create_marshal_model("module-short", "id", "name", "author_id", "image_id")
-class Module(Base, Identifiable, Marshalable):
+@create_marshal_model("module-meta", "map", "timer", inherit="module-index")  # TODO replace with new-marshals
+@create_marshal_model("module-index", "theme", "difficulty", "category", "type",  # TODO replace with new-marshals
+                      "description", "views", "created", "id", "name", "author_id", "image_id")
+class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
     __tablename__ = "modules"
     not_found_text = "Module not found"
 
@@ -177,6 +172,8 @@ class Module(Base, Identifiable, Marshalable):
     image_id = Column(Integer, nullable=True)
     points = relationship("Point", back_populates="module", cascade="all, delete", order_by=Point.point_id)
 
+    ShortModel = PydanticModel.column_model(id, name, author_id, image_id)
+
     @classmethod
     def create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author,
                force: bool = False) -> Union[Module, None]:
@@ -200,6 +197,7 @@ class Module(Base, Identifiable, Marshalable):
             entry.created = datetime.utcnow()
 
         entry.author = author
+        # noinspection PyTypeChecker
         entry.points.extend([
             Point.create(session, entry.id, point_id, point_data)
             for point_id, point_data in enumerate(json_data["points"])
@@ -212,7 +210,7 @@ class Module(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, module_id: int) -> Union[Module, None]:
-        return session.execute(select(cls).where(cls.id == module_id)).scalars().first()
+        return cls.find_first_by_kwargs(session, id=module_id)
 
     @classmethod
     def find_or_create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Union[Module, None]:
@@ -225,8 +223,7 @@ class Module(Base, Identifiable, Marshalable):
         stmt: Select = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
         stmt = stmt.outerjoin(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
                                                         ModuleFilterSession.user_id == user_id))
-        result = session.execute(stmt.filter(cls.id == module_id).limit(1)).all()
-        return result[0] if len(result) else None
+        return session.get_first_row(stmt.filter(cls.id == module_id).limit(1))
 
     @classmethod
     def get_module_list(cls, session: sessionmaker, filters: Union[dict[str, str], None], search: str,
@@ -236,7 +233,7 @@ class Module(Base, Identifiable, Marshalable):
         # print([(mfs.module_id, mfs.user_id, mfs.to_json())
         # for mfs in session.execute(select(ModuleFilterSession)).scalars().all()])
 
-        stmt: Select = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
+        stmt = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
 
         # print(len(session.execute(stmt).all()), stmt)
 
@@ -277,11 +274,11 @@ class Module(Base, Identifiable, Marshalable):
         # print(stmt)
         # print(session.execute(stmt.offset(offset).limit(limit)).first())
 
-        return session.execute(stmt.offset(offset).limit(limit)).all()
+        return session.get_paginated_rows(stmt, offset, limit)
 
     @classmethod
     def get_hidden_module_list(cls, session: sessionmaker, user_id: int, offset: int, limit: int) -> list[Row]:
-        stmt: Select = select(*cls.__table__.columns, Author.pseudonym)
+        stmt = select(*cls.__table__.columns, Author.pseudonym)
         stmt = stmt.join(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
                                                    ModuleFilterSession.user_id == user_id,
                                                    ModuleFilterSession.hidden == True))
@@ -289,7 +286,7 @@ class Module(Base, Identifiable, Marshalable):
         # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
         #         for mfs in session.execute(select(ModuleFilterSession)).scalars().all() if mfs.hidden], sep="\n")
         # print(stmt)
-        return session.execute(stmt.offset(offset).limit(limit)).all()
+        return session.get_paginated_rows(stmt, offset, limit)
 
     def execute_point(self, point_id: int = None, theory_level: float = None) -> int:
         if point_id is None:
@@ -308,7 +305,3 @@ class Module(Base, Identifiable, Marshalable):
             page_position = point.length - 1
 
         return point.pages[page_position].page_id
-
-    def delete(self, session: sessionmaker) -> None:
-        session.delete(self)
-        session.flush()

@@ -7,13 +7,11 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, DateTime, String, Enum
 
-from common import Marshalable, create_marshal_model, Identifiable, Base, sessionmaker, app
+from common import PydanticModel, Identifiable, Base, sessionmaker, app
 from .meta_db import Community, ParticipantRole
 
 
-@create_marshal_model("invitation-index", "role", "deadline", "limit", inherit="invitation-base")
-@create_marshal_model("invitation-base", "id", "code")
-class Invitation(Base, Identifiable, Marshalable):
+class Invitation(Base, Identifiable):
     __tablename__ = "community_invites"
     serializer: URLSafeSerializer = URLSafeSerializer(app.config["SECURITY_PASSWORD_SALT"])
 
@@ -26,6 +24,9 @@ class Invitation(Base, Identifiable, Marshalable):
     role = Column(Enum(ParticipantRole), nullable=False)
     deadline = Column(DateTime, nullable=True)
     limit = Column(Integer, nullable=True)
+
+    BaseModel = PydanticModel.column_model(id, code)
+    IndexModel = BaseModel.column_model(role, deadline, limit)
 
     @classmethod
     def create(cls, session: sessionmaker, community_id: int, role: ParticipantRole, limit: int | None,
