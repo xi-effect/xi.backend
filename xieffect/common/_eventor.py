@@ -38,6 +38,8 @@ class EventGroup(_EventGroup):
 
         return triggers_wrapper
 
+    # TODO use .triggers() for bind_pub with use_event (when ffs will support `x-triggers` correctly)
+
     def doc_abort(self, error_code: Union[int, str], description: str, *, critical: bool = False):
         return self.triggers(error_event, description, {"code": error_code})
 
