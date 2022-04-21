@@ -24,7 +24,7 @@ class Flask(_Flask):
 
 def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexService, dict, Flask]:
     # xieffect specific:
-    
+
     from dotenv import load_dotenv
     from json import load
 

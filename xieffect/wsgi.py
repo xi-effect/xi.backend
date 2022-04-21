@@ -4,7 +4,7 @@ from os.path import exists
 from pathlib import Path
 from sys import modules
 
-from api import app as application, log_stuff
+from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, versions, db_url, db_meta
 from other import WebhookURLs, send_discord_message
 from users.invites_db import Invite  # noqa  # passthrough for tests
@@ -140,7 +140,7 @@ init_knowledge()
 version_check()
 
 if __name__ == "__main__":  # test only
-    application.run()
+    socketio.run(application)
 
 # if __name__ == "__main__":
 #     socketio.run(app, port=5050, debug=True)
