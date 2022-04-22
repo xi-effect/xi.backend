@@ -84,7 +84,7 @@ class SocketIO(_SocketIO):
     def init_app(self, app: Flask, **kwargs):
         @app.route("/sio-doc/")
         def get_docs():
-            return send_file("../files/sio-doc/index.html")
+            return send_file("../../files/sio-doc/index.html")
 
         super(SocketIO, self).init_app(app, **kwargs)
 
