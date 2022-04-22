@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Union
 
+from flask import Flask, send_file
 from flask_socketio import disconnect
 from pydantic import BaseModel, Field
 
@@ -73,12 +74,19 @@ class Namespace(_Namespace):
 
 
 class SocketIO(_SocketIO):
-    def __init__(self, app=None, title: str = "SIO", version: str = "1.0.0", doc_path: str = "/doc/", **kwargs):
-        super().__init__(app, title, version, doc_path, **kwargs)
+    def __init__(self, app: Flask = None, title: str = "SIO", version: str = "1.0.0", **kwargs):
+        super().__init__(app, title, version, "/asyncapi.json", **kwargs)
 
         # @self.on("connect")  # check everytime or save in session?
         # def connect_user():  # https://python-socketio.readthedocs.io/en/latest/server.html#user-sessions
         #     pass             # sio = main.socketio.server
+
+    def init_app(self, app: Flask, **kwargs):
+        @app.route("/sio-doc/")
+        def get_docs():
+            return send_file("../../files/sio-doc/index.html")
+
+        super(SocketIO, self).init_app(app, **kwargs)
 
     def get_user(self):
         pass
