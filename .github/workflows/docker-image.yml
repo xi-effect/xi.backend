@@ -51,3 +51,26 @@ jobs:
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-{{ github.event.pull_request.head.ref }}
           cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back
           cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back,mode=max
+
+  deploy:
+      needs: build
+
+      # The type of runner that the job will run on
+      runs-on: ubuntu-latest
+
+      # Steps represent a sequence of tasks that will be executed as part of the job
+      steps:
+      -
+        if: github.event_name != 'pull_request'
+        name: Run SSH command
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          command: |
+            cd ~/xieffect-core
+            docker-compose pull flask nextjs
+            docker-compose up -d
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+        env:
+          CI: true

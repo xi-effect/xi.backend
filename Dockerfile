@@ -11,6 +11,7 @@ RUN pip3 install -r /app/requirements.txt
 COPY ./static /static
 COPY ./xieffect /app
 COPY ./gunicorn.sh /app/gunicorn.sh
+RUN chmod +x /app/gunicorn.sh
 WORKDIR /app
 
 EXPOSE 5000
