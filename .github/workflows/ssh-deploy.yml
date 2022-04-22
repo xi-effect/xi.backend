@@ -23,7 +23,10 @@ jobs:
     - name: Run SSH command
       uses: garygrossgarten/github-action-ssh@release
       with:
-        command: ls -a
+        command: |
+          cd ~/xieffect-core
+          docker-compose pull flask nextjs
+          docker-compose up -d
         host: ${{ secrets.SERVER_IP }}
         username: root
         privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
