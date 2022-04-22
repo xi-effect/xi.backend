@@ -5,7 +5,7 @@ from typing import Union
 from flask_socketio import disconnect
 from pydantic import BaseModel, Field
 
-from __lib__.flask_fullstack import EventGroup as _EventGroup
+from __lib__.flask_fullstack import EventGroup as _EventGroup, PydanticModel
 from __lib__.flask_siox import Namespace as _Namespace, SocketIO as _SocketIO, ServerEvent, DuplexEvent
 
 
@@ -34,11 +34,18 @@ class EventGroup(_EventGroup):
                 "condition": condition,
                 "data": data
             })
+            return function
 
         return triggers_wrapper
 
+    # TODO use .triggers() for bind_pub with use_event (when ffs will support `x-triggers` correctly)
+
     def doc_abort(self, error_code: Union[int, str], description: str, *, critical: bool = False):
         return self.triggers(error_event, description, {"code": error_code})
+
+
+class EmptyBody(PydanticModel):
+    pass
 
 
 class Error(BaseModel):
@@ -49,7 +56,7 @@ class Error(BaseModel):
 
 
 error_group = EventGroup(use_kebab_case=True)
-error_event = error_group.bind_sub("error", "Emitted if something goes wrong", Error)
+error_event = error_group.bind_sub(Error, name="error", description="Emitted if something goes wrong")
 
 
 class Namespace(_Namespace):

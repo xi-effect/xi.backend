@@ -1,6 +1,11 @@
 from os import getenv
+from typing import Type
 
-from __lib__.flask_fullstack import Flask as _Flask, configure_logging, configure_whooshee, configure_sqlalchemy
+from sqlalchemy import MetaData
+
+from __lib__.flask_fullstack import Flask as _Flask, configure_whooshee, configure_sqlalchemy, \
+    Sessionmaker, IndexService
+from __lib__.flask_fullstack.sqlalchemy import ModBase
 
 
 class Flask(_Flask):
@@ -17,7 +22,9 @@ class Flask(_Flask):
             return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
 
 
-def init_xieffect():  # xieffect specific:
+def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexService, dict, Flask]:
+    # xieffect specific:
+
     from dotenv import load_dotenv
     from json import load
 
@@ -52,3 +59,4 @@ def init_xieffect():  # xieffect specific:
 
 
 db_url, db_meta, Base, sessionmaker, index_service, versions, app = init_xieffect()
+app.config["RESTX_INCLUDE_ALL_MODELS"] = True

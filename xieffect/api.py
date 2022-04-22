@@ -2,7 +2,10 @@ from datetime import timedelta
 from logging import Logger
 from sys import stderr
 
-from common import app, sessionmaker, db_meta  # noqa
+from common import app, SocketIO, versions, SIONamespace
+from common import sessionmaker, db_meta  # noqa
+from communities import (communities_namespace, invitation_namespace, invitation_join_namespace,
+                         communities_meta_events)
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
@@ -58,8 +61,18 @@ api.add_namespace(wip_images_namespace)
 api.add_namespace(wip_json_file_namespace)
 api.add_namespace(wip_index_namespace)
 
+api.add_namespace(communities_namespace)
+api.add_namespace(invitation_namespace)
+api.add_namespace(invitation_join_namespace)
+
 api.add_namespace(webhook_namespace)
 
+socketio = SocketIO(app, doc_path="/sio-doc/", cors_allowed_origins="*", version=versions["SIO"])
+
+communities_namespace = SIONamespace("/")
+communities_namespace.attach_event_group(communities_meta_events)
+
+socketio.on_namespace(communities_namespace)
 
 # class MessagesNamespace(Namespace):
 #     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")

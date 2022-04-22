@@ -4,11 +4,11 @@ from os.path import exists
 from pathlib import Path
 from sys import modules
 
-from api import app as application, log_stuff
+from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, versions, db_url, db_meta
 from other import WebhookURLs, send_discord_message
-from users.invites_db import Invite  # noqa  # passthrough for tests
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
+from users.invites_db import Invite  # noqa  # passthrough for tests
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
@@ -60,18 +60,18 @@ def init_users(session):
     from education.authorship import Author, Moderator  # noqa
 
     if (User.find_by_email_address(session, TEST_EMAIL)) is None:
-        test_user: User = User.create(session, TEST_EMAIL, "test", BASIC_PASS, invite)
+        test_user: User = User.create(session, email=TEST_EMAIL, username="test", password=BASIC_PASS, invite=invite)
         test_user.author = Author.create(session, test_user)
 
     if (User.find_by_email_address(session, ADMIN_EMAIL)) is None:
-        admin_user: User = User.create(session, ADMIN_EMAIL, "admin", ADMIN_PASS)
+        admin_user: User = User.create(session, email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
         # admin_user.moderator = Moderator.create(session, admin_user)
 
     with open("../static/test/user-bundle.json", encoding="utf-8") as f:
         for i, user_settings in enumerate(load(f)):
             email: str = f"{i}@user.user"
             if (user := User.find_by_email_address(session, email)) is None:
-                user = User.create(session, email, f"user-{i}", BASIC_PASS)
+                user = User.create(session, email=email, username=f"user-{i}", password=BASIC_PASS)
             user.change_settings(user_settings)
 
 
@@ -140,7 +140,7 @@ init_knowledge()
 version_check()
 
 if __name__ == "__main__":  # test only
-    application.run()
+    socketio.run(application)
 
 # if __name__ == "__main__":
 #     socketio.run(app, port=5050, debug=True)

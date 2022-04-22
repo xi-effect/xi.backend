@@ -48,7 +48,7 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-{{ github.event.pull_request.head.ref }}
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-${{ github.event.pull_request.head.ref }}
           cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back
           cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back,mode=max
 

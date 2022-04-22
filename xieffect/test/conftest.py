@@ -1,10 +1,12 @@
-from typing import Tuple, Iterator, Callable  # , Union
+from typing import Tuple, Iterator, Callable
 
 from flask.testing import FlaskClient
+from flask_socketio import SocketIOTestClient
 from pytest import fixture
 from werkzeug.test import TestResponse
 
 from __lib__.flask_fullstack import check_code
+from api import socketio
 from wsgi import application as app, TEST_EMAIL, BASIC_PASS, ADMIN_EMAIL, ADMIN_PASS
 
 
@@ -42,6 +44,15 @@ def login(email: str, password: str) -> FlaskClient:
 @fixture
 def client() -> FlaskClient:
     return login(TEST_EMAIL, BASIC_PASS)
+
+
+def socketio_client_factory(client: FlaskClient) -> SocketIOTestClient:
+    return socketio.test_client(app, flask_test_client=client)
+
+
+@fixture
+def socketio_client(client: FlaskClient) -> SocketIOTestClient:
+    return socketio_client_factory(client)
 
 
 @fixture

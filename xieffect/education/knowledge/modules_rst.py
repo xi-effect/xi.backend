@@ -9,7 +9,6 @@ from .modules_db import Module, SortType, ModuleFilterSession, PreferenceOperati
 education_namespace: Namespace = Namespace("modules", path="/")
 modules_view_namespace: Namespace = Namespace("modules")
 
-short_module_json = modules_view_namespace.model("ShortModule", Module.marshal_models["module-short"])
 module_index_json = modules_view_namespace.model("IndexModule", unite_models(
     ModuleFilterSession.marshal_models["mfs-full"], Module.marshal_models["module-index"]))
 module_view_json = modules_view_namespace.model("Module", unite_models(
@@ -75,7 +74,7 @@ class ModuleLister(Resource):  # [POST] /modules/
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @modules_view_namespace.jwt_authorizer(User)
     @modules_view_namespace.argument_parser(counter_parser)
-    @modules_view_namespace.lister(12, short_module_json)
+    @modules_view_namespace.lister(12, Module.ShortModel)
     def post(self, session, user: User, start: int, finish: int) -> list:
         """ Lists short metadata for hidden modules """
         return Module.get_hidden_module_list(session, user.id, start, finish - start)
