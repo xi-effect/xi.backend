@@ -75,7 +75,7 @@ class Namespace(_Namespace):
 
 class SocketIO(_SocketIO):
     def __init__(self, app: Flask = None, title: str = "SIO", version: str = "1.0.0", **kwargs):
-        super().__init__(app, title, version, "/asyncapi.json", **kwargs)
+        super().__init__(app, title, version, "/asyncapi.json", **kwargs)  # TODO a file instead
 
         # @self.on("connect")  # check everytime or save in session?
         # def connect_user():  # https://python-socketio.readthedocs.io/en/latest/server.html#user-sessions
