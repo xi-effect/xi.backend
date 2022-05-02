@@ -67,7 +67,8 @@ jobs:
         with:
           command: |
             cd ~/xieffect-core
-            docker-compose pull flask nextjs
+            docker system prune -a -f
+            docker-compose pull flask
             docker-compose up -d
           host: ${{ secrets.SERVER_IP }}
           username: root
