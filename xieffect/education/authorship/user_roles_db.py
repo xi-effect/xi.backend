@@ -43,6 +43,10 @@ class Author(Base, UserRole):
         return session.get_first(stmt)
 
     @classmethod
+    def find_by_identity(cls, session, identity: int) -> Author | None:
+        return cls.find_by_id(session, identity)
+
+    @classmethod
     def find_or_create(cls, session: sessionmaker, user):  # User class
         if (author := cls.find_by_id(session, user.id, True)) is None:
             author = cls.create(session, user)
@@ -52,6 +56,9 @@ class Author(Base, UserRole):
     def initialize(cls, session: sessionmaker, user: User) -> bool:
         author = cls.find_or_create(session, user)
         return not author.banned
+
+    def get_identity(self):
+        return self.id
 
     def get_next_image_id(self) -> int:  # auto-commit
         self.last_image_id += 1
@@ -65,8 +72,8 @@ class Moderator(Base, UserRole):
     id = Column(Integer, ForeignKey(User.id), primary_key=True)
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Moderator:
-        return session.get_first(select(cls).filter_by(id=entry_id))
+    def find_by_identity(cls, session, identity: int) -> Moderator | None:
+        return session.get_first(select(cls).filter_by(id=identity))
 
     @classmethod
     def create(cls, session: sessionmaker, user: User) -> bool:
@@ -77,3 +84,6 @@ class Moderator(Base, UserRole):
         session.add(new_entry)
         session.flush()
         return True
+
+    def get_identity(self):
+        return self.id

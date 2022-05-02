@@ -1,6 +1,5 @@
-from flask import Response, jsonify
-from flask_jwt_extended import create_access_token, set_access_cookies
-from flask_jwt_extended import get_jwt, jwt_required, unset_jwt_cookies
+from flask import jsonify
+from flask_jwt_extended import get_jwt, unset_jwt_cookies
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
@@ -24,9 +23,10 @@ class UserRegistration(Resource):
     parser.add_argument("username", required=True, help="Username to be assigned to new user's account")
     parser.add_argument("code", required=True, help="Serialized invite code")
 
-    @reglog_namespace.with_begin
     @add_sets_cookie_response
+    @reglog_namespace.with_begin
     @reglog_namespace.argument_parser(parser)
+    @reglog_namespace.adds_authorization()
     def post(self, session, email: str, username: str, password: str, code: str):
         """ Creates a new user if email is not used already, logs in automatically """
         try:
@@ -43,9 +43,7 @@ class UserRegistration(Resource):
         if (user := User.create(session, email=email, username=username, password=password, invite=invite)) is None:
             return {"a": "Email already in use"}
         # send_generated_email(email, "confirm", "registration-email.html")
-        response = jsonify({"a": "Success"})
-        set_access_cookies(response, create_access_token(identity=user.id))
-        return response
+        return {"a": "Success"}, user
 
 
 @reglog_namespace.route("/auth/")
@@ -53,26 +51,25 @@ class UserLogin(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="User's email")
 
-    @reglog_namespace.with_begin
     @add_sets_cookie_response
+    @reglog_namespace.with_begin
     @reglog_namespace.argument_parser(parser)
+    @reglog_namespace.adds_authorization()
     def post(self, session, email: str, password: str):
         """ Tries to log in with credentials given """
         if (user := User.find_by_email_address(session, email)) is None:
             return {"a": "User doesn't exist"}
 
         if User.verify_hash(password, user.password):
-            response: Response = jsonify({"a": "Success"})
-            set_access_cookies(response, create_access_token(identity=user.id))
-            return response
+            return {"a": "Success"}, user
         return {"a": "Wrong password"}
 
 
 @reglog_namespace.route("/logout/")
 class UserLogout(Resource):
-    @reglog_namespace.with_begin
     @add_unsets_cookie_response
-    @jwt_required()
+    @reglog_namespace.with_begin
+    @reglog_namespace.removes_authorization()
     def post(self, session):
         """ Logs the user out, blocks the token """
         response = jsonify({"a": True})
@@ -86,14 +83,14 @@ class Test(Resource):
     from api import app
 
     @add_sets_cookie_response
-    def get(self):
+    @reglog_namespace.with_begin
+    @reglog_namespace.adds_authorization()
+    def get(self, session):
         """ Localhost-only endpoint for logging in from the docs """
         if not self.app.debug:
             return {"a": False}
 
-        response: Response = jsonify({"a": True})
-        set_access_cookies(response, create_access_token(identity=1))
-        return response
+        return {"a": True}, User.find_by_id(session, 1)
 
 
 @reglog_namespace.route("/password-reset/")
