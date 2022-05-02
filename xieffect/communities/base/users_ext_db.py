@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import relationship
@@ -20,16 +18,14 @@ class CommunitiesUser(Base):
     communities = relationship("CommunityListItem", order_by="CommunityListItem.position",
                                collection_class=ordering_list("position"))
 
-    FullModel = PydanticModel.nest_model(User.MainData, "user").nest_model(Community.IndexModel, "communities")
+    @PydanticModel.include_nest_model(User.MainData, "user")
+    class FullModel(PydanticModel):
+        communities: list[Community.IndexModel]
 
-    # @PydanticModel.include_nest_model(User.MainData, "user")
-    # class FullModel(PydanticModel):
-    #     communities: list[Community.IndexModel]
-#
-    #     @classmethod
-    #     def callback_convert(cls, callback: Callable, orm_object: CommunitiesUser, **context) -> None:
-    #         callback(communities=[Community.IndexModel.convert(ci.community, **context)
-    #                               for ci in orm_object.communities])
+        @classmethod
+        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context) -> None:
+            callback(communities=[Community.IndexModel.convert(ci.community, **context)
+                                  for ci in orm_object.communities])
 
     @classmethod
     def _create_empty(cls, session, user_id: int) -> CommunitiesUser:
