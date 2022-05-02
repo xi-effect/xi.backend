@@ -7,6 +7,7 @@ from flask_socketio import SocketIOTestClient
 from pytest import mark
 
 from __lib__.flask_fullstack import check_code, dict_equal
+from .conftest import socketio_client_factory
 
 INVITATIONS_PER_REQUEST = 20
 
@@ -40,6 +41,61 @@ def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
             assert dict_equal(data, community_data, "name", "description")
             found = True
     assert found
+
+
+@mark.order(1005)
+def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient,
+                        list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    socketio_client2 = socketio_client_factory(client)
+    community_ids = [d["id"] for d in list_tester("/communities/index/", {}, 20)]
+    # TODO check order
+
+    # Creating
+    def assert_double_create(community_data: dict):
+        community_id = assert_create_community(socketio_client, community_data)
+
+        events = socketio_client2.get_received()
+        assert len(events) == 1
+        assert events[0]["name"] == "new-community"
+        assert len(events[0]["args"]) == 1
+
+        assert len(events[0]["args"][0]) == len(community_data) + 1
+        assert events[0]["args"][0].get("id", None) == community_id
+        assert dict_equal(events[0]["args"][0], community_data, *community_data.keys())
+
+        return community_id
+
+    community_datas: list[dict[str, str | int]] = [
+        {"name": "12345"}, {"name": "54321", "description": "hi"}, {"name": "test", "description": "i"}]
+
+    for community_data in community_datas:
+        community_data["id"] = assert_double_create(community_data)
+
+    # Reordering
+    reorder_data = {"source-id": community_datas[-1]["id"], "target-index": 0}
+    socketio_client2.emit("reorder-community", reorder_data)
+    assert len(socketio_client2.get_received()) == 0
+
+    events = socketio_client.get_received()
+    assert len(events) == 1
+    assert events[0]["name"] == "reorder-community"
+    assert len(events[0]["args"]) == 1
+
+    assert len(events[0]["args"][0]) == 2
+    assert dict_equal(events[0]["args"][0], reorder_data, *reorder_data.keys())
+
+    # Leaving
+    leave_data = {"community-id": community_datas[0]["id"]}
+    socketio_client.emit("leave-community", leave_data)
+    assert len(socketio_client.get_received()) == 0
+
+    events = socketio_client2.get_received()
+    assert len(events) == 1
+    assert events[0]["name"] == "leave-community"
+    assert len(events[0]["args"]) == 1
+
+    assert len(events[0]["args"][0]) == 1
+    assert dict_equal(events[0]["args"][0], leave_data, *leave_data.keys())
 
 
 @mark.order(1020)  # TODO redo with sio
