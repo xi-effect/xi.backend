@@ -24,17 +24,23 @@ def assert_create_community(socketio_client: SocketIOTestClient, community_data:
     return community_id
 
 
+def get_communities_list(client: FlaskClient):
+    result = check_code(client.get("/home/")).get("communities", None)
+    assert isinstance(result, list)
+    return result
+
+
 @mark.order(1000)
 def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
                        list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    community_ids = [d["id"] for d in list_tester("/communities/index/", {}, 20)]
+    community_ids = [d["id"] for d in get_communities_list(client)]
 
     community_data = {"name": "12345", "description": "test"}
     community_id = assert_create_community(socketio_client, community_data)
     community_ids.append(community_id)
 
     found = False
-    for data in list_tester("/communities/index/", {}, 20):
+    for data in get_communities_list(client):
         assert data["id"] in community_ids
         if data["id"] == community_id:
             assert not found
@@ -46,9 +52,14 @@ def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
 @mark.order(1005)
 def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient,
                         list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    def assert_order():
+        for i, data in enumerate(get_communities_list(client)):
+            assert data["id"] == community_ids[i]
+
     socketio_client2 = socketio_client_factory(client)
-    community_ids = [d["id"] for d in list_tester("/communities/index/", {}, 20)]
-    # TODO check order
+    community_ids = [d["id"] for d in get_communities_list(client)]
+    assert_order()
+    # TODO check order with new community listing
 
     # Creating
     def assert_double_create(community_data: dict):
@@ -70,9 +81,11 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     for community_data in community_datas:
         community_data["id"] = assert_double_create(community_data)
+        community_ids.insert(0, community_data["id"])
+    # assert_order()
 
     # Reordering
-    reorder_data = {"source-id": community_datas[-1]["id"], "target-index": 0}
+    reorder_data = {"source-id": community_datas[0]["id"], "target-index": 0}
     socketio_client2.emit("reorder-community", reorder_data)
     assert len(socketio_client2.get_received()) == 0
 
@@ -84,8 +97,12 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     assert len(events[0]["args"][0]) == 2
     assert dict_equal(events[0]["args"][0], reorder_data, *reorder_data.keys())
 
+    community_ids.remove(reorder_data["source-id"])
+    community_ids.insert(reorder_data["target-index"], reorder_data["source-id"])
+    # assert_order()
+
     # Leaving
-    leave_data = {"community-id": community_datas[0]["id"]}
+    leave_data = {"community-id": community_datas[-1]["id"]}
     socketio_client.emit("leave-community", leave_data)
     assert len(socketio_client.get_received()) == 0
 
@@ -96,6 +113,9 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     assert len(events[0]["args"][0]) == 1
     assert dict_equal(events[0]["args"][0], leave_data, *leave_data.keys())
+
+    community_ids.remove(leave_data["community-id"])
+    # assert_order()
 
 
 @mark.order(1020)  # TODO redo with sio
