@@ -50,7 +50,7 @@ def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
         found2 = check_find(data, community_id2, community_data2, found2)
 
 
-@mark.order(1020)
+@mark.order(1020)  # TODO redo with sio
 def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     community_data = {"name": "test", "description": "12345"}
     invitation_data = {"role": "base", "limit": 2, "days": 10}
@@ -77,7 +77,7 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
     assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
 
 
-@mark.order(1025)
+@mark.order(1025)  # TODO redo with sio
 def test_invitation_joins(multi_client: Callable[[str], FlaskClient],
                           list_tester: Callable[[str, dict, int], Iterator[dict]]):
     community_data = {"name": "test", "description": "12345"}
