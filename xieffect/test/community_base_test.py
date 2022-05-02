@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Iterator, Callable
 
 from flask.testing import FlaskClient
@@ -5,52 +7,118 @@ from flask_socketio import SocketIOTestClient
 from pytest import mark
 
 from __lib__.flask_fullstack import check_code, dict_equal
+from .conftest import socketio_client_factory
 
 INVITATIONS_PER_REQUEST = 20
 
 
-@mark.order(1000)
-def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
-                       list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    community_ids = [d["id"] for d in list_tester("/communities/index/", {}, 20)]
-
-    # RST variant
-    community_data1 = {"name": "test", "description": "12345"}
-
-    community_id1 = check_code(client.post("/communities/", json=community_data1)).get("id", None)
-    assert isinstance(community_id1, int)
-    community_ids.append(community_id1)
-
-    # SIO variant
-    community_data2 = {"name": "12345", "description": "test"}
-
-    socketio_client.emit("create-community", community_data2)
+def assert_create_community(socketio_client: SocketIOTestClient, community_data: dict):
+    socketio_client.emit("create-community", community_data)
     events = socketio_client.get_received()
     assert len(events) == 1
     assert events[0]["name"] == "create-community"
     assert len(events[0]["args"]) == 1
 
-    community_id2 = events[0]["args"][0].get("id", None)
-    assert isinstance(community_id2, int)
-    community_ids.append(community_id2)
+    community_id = events[0]["args"][0].get("id", None)
+    assert isinstance(community_id, int)
+    return community_id
 
-    # Checking
-    def check_find(data, community_id, community_data, found) -> bool:
+
+def get_communities_list(client: FlaskClient):
+    result = check_code(client.get("/home/")).get("communities", None)
+    assert isinstance(result, list)
+    return result
+
+
+@mark.order(1000)
+def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
+                       list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    community_ids = [d["id"] for d in get_communities_list(client)]
+
+    community_data = {"name": "12345", "description": "test"}
+    community_id = assert_create_community(socketio_client, community_data)
+    community_ids.append(community_id)
+
+    found = False
+    for data in get_communities_list(client):
+        assert data["id"] in community_ids
         if data["id"] == community_id:
             assert not found
             assert dict_equal(data, community_data, "name", "description")
-            return True
-        return False
-
-    found1, found2 = False, False
-
-    for data in list_tester("/communities/index/", {}, 20):
-        assert data["id"] in community_ids
-        found1 = check_find(data, community_id1, community_data1, found1)
-        found2 = check_find(data, community_id2, community_data2, found2)
+            found = True
+    assert found
 
 
-@mark.order(1020)
+@mark.order(1005)
+def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient,
+                        list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    def assert_order():
+        for i, data in enumerate(get_communities_list(client)):
+            assert data["id"] == community_ids[i]
+
+    socketio_client2 = socketio_client_factory(client)
+    community_ids = [d["id"] for d in get_communities_list(client)]
+    assert_order()
+    # TODO check order with new community listing
+
+    # Creating
+    def assert_double_create(community_data: dict):
+        community_id = assert_create_community(socketio_client, community_data)
+
+        events = socketio_client2.get_received()
+        assert len(events) == 1
+        assert events[0]["name"] == "new-community"
+        assert len(events[0]["args"]) == 1
+
+        assert len(events[0]["args"][0]) == len(community_data) + 1
+        assert events[0]["args"][0].get("id", None) == community_id
+        assert dict_equal(events[0]["args"][0], community_data, *community_data.keys())
+
+        return community_id
+
+    community_datas: list[dict[str, str | int]] = [
+        {"name": "12345"}, {"name": "54321", "description": "hi"}, {"name": "test", "description": "i"}]
+
+    for community_data in community_datas:
+        community_data["id"] = assert_double_create(community_data)
+        community_ids.insert(0, community_data["id"])
+    # assert_order()
+
+    # Reordering
+    reorder_data = {"source-id": community_datas[0]["id"], "target-index": 0}
+    socketio_client2.emit("reorder-community", reorder_data)
+    assert len(socketio_client2.get_received()) == 0
+
+    events = socketio_client.get_received()
+    assert len(events) == 1
+    assert events[0]["name"] == "reorder-community"
+    assert len(events[0]["args"]) == 1
+
+    assert len(events[0]["args"][0]) == 2
+    assert dict_equal(events[0]["args"][0], reorder_data, *reorder_data.keys())
+
+    community_ids.remove(reorder_data["source-id"])
+    community_ids.insert(reorder_data["target-index"], reorder_data["source-id"])
+    # assert_order()
+
+    # Leaving
+    leave_data = {"community-id": community_datas[-1]["id"]}
+    socketio_client.emit("leave-community", leave_data)
+    assert len(socketio_client.get_received()) == 0
+
+    events = socketio_client2.get_received()
+    assert len(events) == 1
+    assert events[0]["name"] == "leave-community"
+    assert len(events[0]["args"]) == 1
+
+    assert len(events[0]["args"][0]) == 1
+    assert dict_equal(events[0]["args"][0], leave_data, *leave_data.keys())
+
+    community_ids.remove(leave_data["community-id"])
+    # assert_order()
+
+
+@mark.order(1020)  # TODO redo with sio
 def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     community_data = {"name": "test", "description": "12345"}
     invitation_data = {"role": "base", "limit": 2, "days": 10}
@@ -77,7 +145,7 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
     assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
 
 
-@mark.order(1025)
+@mark.order(1025)  # TODO redo with sio
 def test_invitation_joins(multi_client: Callable[[str], FlaskClient],
                           list_tester: Callable[[str, dict, int], Iterator[dict]]):
     community_data = {"name": "test", "description": "12345"}

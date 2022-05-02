@@ -1,6 +1,7 @@
 from os import getenv
 from typing import Type
 
+from flask import Response
 from sqlalchemy import MetaData
 
 from __lib__.flask_fullstack import Flask as _Flask, configure_whooshee, configure_sqlalchemy, \
@@ -10,7 +11,7 @@ from __lib__.flask_fullstack.sqlalchemy import ModBase
 
 class Flask(_Flask):
     def return_error(self, code: int, message: str):
-        return {"a": message}, code
+        return Response({"a": message}, code)
 
     def configure_jwt_with_loaders(self, *args, **kwargs) -> None:
         from .users_db import TokenBlockList

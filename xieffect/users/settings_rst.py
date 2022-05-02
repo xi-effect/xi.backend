@@ -73,6 +73,7 @@ class Settings(Resource):
 
 @settings_namespace.route("/main/")
 class MainSettings(Resource):
+    @settings_namespace.deprecated
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(User.MainData)
     def get(self, user: User):
@@ -82,6 +83,7 @@ class MainSettings(Resource):
 
 @settings_namespace.route("/roles/")
 class RoleSettings(Resource):
+    @settings_namespace.deprecated
     @settings_namespace.jwt_authorizer(User, use_session=False)
     @settings_namespace.marshal_with(User.RoleSettings)
     def get(self, user: User):
