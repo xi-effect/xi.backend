@@ -5,7 +5,7 @@ from pytest import mark
 from werkzeug.test import TestResponse
 
 from __lib__.flask_fullstack import check_code, dict_equal
-from xieffect.test.conftest import TEST_EMAIL, BASIC_PASS
+from xieffect.test.conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
 from xieffect.wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
@@ -36,6 +36,18 @@ def test_signup(base_client: FlaskClient):
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
     check_code(base_client.post("/logout/"))
+
+
+@mark.order(15)
+def test_sio_connection(client: FlaskClient):
+    sio_client = socketio_client_factory(client)
+    assert sio_client.connected.get("/", None) is True
+
+
+@mark.order(16)
+def test_sio_unauthorized(base_client: FlaskClient):
+    sio_client = socketio_client_factory(base_client)
+    assert sio_client.connected.get("/", None) is False
 
 
 def assert_feedback(client: FlaskClient, data: dict, a: str):

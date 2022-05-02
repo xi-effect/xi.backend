@@ -21,6 +21,7 @@ class InvitationCreator(Resource):
     parser.add_argument("limit", required=False, type=int)
     parser.add_argument("days", required=False, type=int)
 
+    @invitation_namespace.deprecated
     @invitation_namespace.doc_abort(400, "Invalid role")
     @invitation_namespace.doc_abort(403, "Permission Denied")
     @invitation_namespace.jwt_authorizer(User)
@@ -55,6 +56,7 @@ class InvitationLister(Resource):
 
 @invitation_namespace.route("/<int:invitation_id>/")
 class InvitationManager(Resource):
+    @invitation_namespace.deprecated
     @invitation_namespace.jwt_authorizer(User, check_only=True)
     @invitation_namespace.database_searcher(Invitation, use_session=True)
     @invitation_namespace.a_response()
