@@ -86,8 +86,12 @@ class User(Base, UserRole):
             callback(author_status=orm_object.get_author_status(), moderator_status=orm_object.moderator is not None)
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[User, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> User | None:
         return session.get_first(select(cls).filter_by(id=entry_id))
+
+    @classmethod
+    def find_by_identity(cls, session, identity: int) -> User | None:
+        return cls.find_by_id(session, identity)
 
     @classmethod
     def find_by_email_address(cls, session: sessionmaker, email) -> Union[User, None]:
@@ -111,6 +115,9 @@ class User(Base, UserRole):
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
         return session.get_paginated(stmt, offset, limit)
+
+    def get_identity(self):
+        return self.id
 
     def change_email(self, session: sessionmaker, new_email: str) -> bool:
         if User.find_by_email_address(session, new_email):

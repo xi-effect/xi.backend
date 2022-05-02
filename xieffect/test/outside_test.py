@@ -17,12 +17,20 @@ def test_login(base_client: FlaskClient):
     assert "Set-Cookie" in response.headers.keys()
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
+
+    result: dict[str, ...] = response.json
+    for key in ["communities", "user"]:
+        assert key in result
+    for key in ["id", "username", "dark-theme", "language"]:
+        assert key in result["user"]
+
     check_code(base_client.post("/logout/"))
 
 
 @mark.order(10)
 def test_signup(base_client: FlaskClient):
     credentials = {"email": "hey@hey.hey", "password": "12345", "username": "hey"}
+    default_data = {"username": credentials["username"], "dark-theme": True, "language": "russian"}
 
     def assert_with_code(code: str, status: int, message: str):
         assert check_code(base_client.post("/reg/", json=dict(credentials, code=code)), status)["a"] == message
@@ -30,11 +38,30 @@ def test_signup(base_client: FlaskClient):
     assert_with_code("hey", 400, "Malformed code (BadSignature)")
     assert_with_code(Invite.serializer.dumps((-1, 0)), 404, "Invite not found")
 
+    # Checking successful auth
     data = dict(credentials, code=Invite.serializer.dumps((TEST_INVITE_ID, 0)))
     response = check_code(base_client.post("/reg/", json=data), get_json=False)
+
+    # Checking for cookies
     assert "Set-Cookie" in response.headers.keys()
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
+
+    # Checking the returned data
+    result: dict[str, ...] = response.json
+    communities = result.get("communities", None)
+    assert isinstance(communities, list)
+    assert len(communities) == 0
+
+    user = result.get("user", None)
+    assert isinstance(user, dict)
+    assert dict_equal(user, default_data, *default_data.keys())
+    assert "id" in user
+
+    # Check the /home/ as well
+    response = check_code(base_client.get("/home/"))
+    assert response == result
+
     check_code(base_client.post("/logout/"))
 
 

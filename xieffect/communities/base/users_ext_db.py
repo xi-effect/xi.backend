@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from sqlalchemy import Column, ForeignKey, select
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 from sqlalchemy.ext.orderinglist import ordering_list
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import Integer
 
-from common import Identifiable, PydanticModel, TypeEnum, Base, sessionmaker
+from common import PydanticModel, Base, sessionmaker, User
 from communities.base.meta_db import Community
 
 
@@ -15,15 +13,17 @@ class CommunitiesUser(Base):
     __tablename__ = "communities_users"
 
     id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    user = relationship("User")
 
     communities = relationship("CommunityListItem", order_by="CommunityListItem.position",
                                collection_class=ordering_list("position"))
 
+    @PydanticModel.include_nest_model(User.MainData, "user")
     class FullModel(PydanticModel):
         communities: list[Community.IndexModel]
 
         @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: CommunitiesUser, **context) -> None:
+        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context) -> None:
             callback(communities=[Community.IndexModel.convert(ci.community, **context)
                                   for ci in orm_object.communities])
 
