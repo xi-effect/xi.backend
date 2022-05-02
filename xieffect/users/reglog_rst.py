@@ -72,10 +72,8 @@ class UserLogout(Resource):
     @reglog_namespace.removes_authorization()
     def post(self, session):
         """ Logs the user out, blocks the token """
-        response = jsonify({"a": True})
         TokenBlockList.create(session, jti=get_jwt()["jti"])
-        unset_jwt_cookies(response)
-        return response
+        return {"a": True}
 
 
 @reglog_namespace.route("/go/")
