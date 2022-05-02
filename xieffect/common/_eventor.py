@@ -6,8 +6,8 @@ from flask import Flask, send_file
 from flask_socketio import disconnect
 from pydantic import BaseModel, Field
 
-from __lib__.flask_fullstack import EventGroup as _EventGroup, PydanticModel
-from __lib__.flask_siox import Namespace as _Namespace, SocketIO as _SocketIO, ServerEvent, DuplexEvent
+from __lib__.flask_fullstack import Namespace as _Namespace, EventGroup as _EventGroup, PydanticModel
+from __lib__.flask_siox import SocketIO as _SocketIO, ServerEvent, DuplexEvent
 
 
 @dataclass
@@ -61,8 +61,8 @@ error_event = error_group.bind_sub(Error, name="error", description="Emitted if 
 
 
 class Namespace(_Namespace):
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.attach_event_group(error_group)
 
     def trigger_event(self, event, *args):
