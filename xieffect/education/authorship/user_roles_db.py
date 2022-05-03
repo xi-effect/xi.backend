@@ -12,7 +12,7 @@ from common import User, UserRole, Base, sessionmaker, PydanticModel
 
 class Author(Base, UserRole):
     __tablename__ = "authors"
-    not_found_text = "Author does not exist"
+    unauthorized_error = (403, "Author does not exist")
 
     id = Column(Integer, ForeignKey(User.id), primary_key=True)
     pseudonym = Column(String(100), nullable=False)
@@ -67,7 +67,6 @@ class Author(Base, UserRole):
 
 class Moderator(Base, UserRole):
     __tablename__ = "moderators"
-    not_found_text = "Permission denied"
 
     id = Column(Integer, ForeignKey(User.id), primary_key=True)
 

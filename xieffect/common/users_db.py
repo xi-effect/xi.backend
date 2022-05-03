@@ -7,7 +7,7 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 
-from __lib__.flask_fullstack import UserRole, PydanticModel
+from __lib__.flask_fullstack import UserRole, PydanticModel, Identifiable
 from . import Base, sessionmaker
 
 DEFAULT_AVATAR: dict = {"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}
@@ -24,9 +24,10 @@ class TokenBlockList(Base):
         return session.get_first(select(cls).filter_by(jti=jti))
 
 
-class User(Base, UserRole):
+class User(Base, UserRole, Identifiable):
     __tablename__ = "users"
     not_found_text = "User does not exist"
+    unauthorized_error = (401, not_found_text)
 
     @staticmethod
     def generate_hash(password) -> str:
