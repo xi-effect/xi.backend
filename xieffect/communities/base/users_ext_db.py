@@ -27,6 +27,9 @@ class CommunitiesUser(Base):
             callback(communities=[Community.IndexModel.convert(ci.community, **context)
                                   for ci in orm_object.communities])
 
+    class TempModel(FullModel):
+        a: str = "Success"
+
     @classmethod
     def _create_empty(cls, session, user_id: int) -> CommunitiesUser:
         return cls.create(session, id=user_id)

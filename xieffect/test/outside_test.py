@@ -19,6 +19,8 @@ def test_login(base_client: FlaskClient):
     assert cookie[0] == "access_token_cookie"
 
     result: dict[str, ...] = response.json
+    print(result)
+    assert result.pop("a", None) == "Success"
     for key in ["communities", "user"]:
         assert key in result
     for key in ["id", "username", "dark-theme", "language"]:
@@ -49,6 +51,8 @@ def test_signup(base_client: FlaskClient):
 
     # Checking the returned data
     result: dict[str, ...] = response.json
+    assert result.pop("a", None) == "Success"
+
     communities = result.get("communities", None)
     assert isinstance(communities, list)
     assert len(communities) == 0

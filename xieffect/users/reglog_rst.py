@@ -33,7 +33,7 @@ class UserRegistration(Resource):
 
     @reglog_namespace.with_begin
     @reglog_namespace.argument_parser(parser)
-    @reglog_namespace.marshal_with_authorization(CommunitiesUser.FullModel)
+    @reglog_namespace.marshal_with_authorization(CommunitiesUser.TempModel)
     def post(self, session, email: str, username: str, password: str, code: str):
         """ Creates a new user if email is not used already, logs in automatically """
         try:
@@ -61,7 +61,7 @@ class UserLogin(Resource):
 
     @reglog_namespace.with_begin
     @reglog_namespace.argument_parser(parser)
-    @reglog_namespace.marshal_with_authorization(CommunitiesUser.FullModel)
+    @reglog_namespace.marshal_with_authorization(CommunitiesUser.TempModel)
     def post(self, session, email: str, password: str):
         """ Tries to log in with credentials given """
         if (user := User.find_by_email_address(session, email)) is None:
@@ -78,7 +78,7 @@ class Test(Resource):
     from api import app
 
     @reglog_namespace.with_begin
-    @reglog_namespace.marshal_with_authorization(CommunitiesUser.FullModel)
+    @reglog_namespace.marshal_with_authorization(CommunitiesUser.TempModel)
     def get(self, session):
         """ Localhost-only endpoint for logging in from the docs """
         if not self.app.debug:
