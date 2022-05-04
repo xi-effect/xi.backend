@@ -19,7 +19,6 @@ def test_login(base_client: FlaskClient):
     assert cookie[0] == "access_token_cookie"
 
     result: dict[str, ...] = response.json
-    print(result)
     assert result.pop("a", None) == "Success"
     for key in ["communities", "user"]:
         assert key in result

@@ -19,8 +19,10 @@ def assert_create_community(socketio_client: SocketIOTestClient, community_data:
     assert events[0]["name"] == "create-community"
     assert len(events[0]["args"]) == 1
 
+    result_data = events[0]["args"][0]
     community_id = events[0]["args"][0].get("id", None)
     assert isinstance(community_id, int)
+    assert dict_equal(result_data, community_data, *community_data.keys())
     return community_id
 
 

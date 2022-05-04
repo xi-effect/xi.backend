@@ -10,7 +10,7 @@ communities_meta_events = EventGroup(use_kebab_case=True)
 class CommunitiesEventSpace(EventSpace):
     new_community = communities_meta_events.bind_sub(Community.IndexModel)
 
-    @communities_meta_events.bind_dup(Community.CreateModel, Community.BaseModel, use_event=True)
+    @communities_meta_events.bind_dup(Community.CreateModel, Community.IndexModel, use_event=True)
     @communities_meta_events.jwt_authorizer(User)
     def create_community(self, event: DuplexEvent, session, user: User, name: str, description: str = None):
         community = Community.create(session, name, description, user)
