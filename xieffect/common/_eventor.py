@@ -67,7 +67,7 @@ class Namespace(_Namespace):
 
     def trigger_event(self, event, *args):
         try:
-            super().trigger_event(event.replace("-", "_"), *args)
+            return super().trigger_event(event.replace("-", "_"), *args)
         except EventException as e:
             error_event.emit(code=e.code, message=e.message, event=event)
             disconnect()

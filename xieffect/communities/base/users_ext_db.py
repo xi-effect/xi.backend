@@ -74,4 +74,4 @@ class CommunityListItem(Base):
 
     @classmethod
     def find_by_community(cls, session, community_id: int) -> CommunityListItem | None:
-        return session.get_first(select(cls).filter_by(id=community_id))
+        return session.get_first(select(cls).filter_by(community_id=community_id))
