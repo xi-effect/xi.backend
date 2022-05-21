@@ -67,7 +67,7 @@ api.add_namespace(invitation_join_namespace)
 
 api.add_namespace(webhook_namespace)
 
-socketio = SocketIO(app, cors_allowed_origins="*", version=versions["SIO"])
+socketio = SocketIO(app, cors_allowed_origins="*", version=versions["SIO"], logger=True, engineio_logger=True)
 
 communities_namespace = SIONamespace("/", protected=True)
 communities_namespace.attach_event_group(communities_meta_events)
