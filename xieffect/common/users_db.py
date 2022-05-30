@@ -86,7 +86,7 @@ class User(Base, UserRole, Identifiable):
     IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
     FullProfile = IndexProfile.column_model(name, surname, patronymic, group)
 
-    MainData = PydanticModel.column_model(id, username, dark_theme, language)
+    MainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
     FullData = MainData.column_model(email, email_confirmed, avatar, code, name, surname, patronymic, bio, group)
 
     class RoleSettings(PydanticModel):
