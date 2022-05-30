@@ -10,7 +10,18 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 from __lib__.flask_fullstack import UserRole, PydanticModel, Identifiable
 from . import Base, sessionmaker
 
-DEFAULT_AVATAR: dict = {"accessory": 0, "body": 0, "face": 0, "hair": 0, "facialHair": 0, "bgcolor": 0}
+DEFAULT_AVATAR: dict = {
+    "topType": 0,
+    "accessoriesType": 0,
+    "hairColor": 0,
+    "facialHairType": 0,
+    "clotheType": 0,
+    "eyeType": 0,
+    "eyebrowType": 0,
+    "mouthType": 0,
+    "skinColor": 0,
+    "bgcolor": 0,
+}
 
 
 class TokenBlockList(Base):
