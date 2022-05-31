@@ -16,6 +16,7 @@ class Flask(_Flask):
     def configure_jwt_with_loaders(self, *args, **kwargs) -> None:
         from .users_db import TokenBlockList
         jwt = super().configure_jwt_with_loaders(*args, **kwargs)
+        self.config["JWT_COOKIE_SAMESITE"] = "Strict"
 
         @jwt.token_in_blocklist_loader
         @sessionmaker.with_begin
@@ -52,7 +53,7 @@ def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexSe
 
     versions = load(open("../static/versions.json", encoding="utf-8"))
 
-    app: Flask = Flask(__name__, static_folder="../static/public/", static_url_path="/static/", versions=versions)
+    app: Flask = Flask(__name__, static_folder="../../static/public/", static_url_path="/static/", versions=versions)
     app.secrets_from_env("hope it's local")  # TODO DI to use secrets in `URLSafeSerializer`s
     app.configure_cors()
 

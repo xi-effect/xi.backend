@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script>
+    const host = "http://localhost:5000"
+
+    function auth() {
+      fetch(host + "/auth/", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          "email": "test@test.test",
+          "password": "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"
+        }),
+      }).then((response) => {
+        if (response.ok) response.json().then(console.log)
+        else console.log(response.status)
+      })
+    }
+
+    function prot() {
+      fetch(host + "/home/", {
+        method: "GET",
+        credentials: "include",
+      }).then((response) => {
+        if (response.ok) response.json().then(console.log)
+        else console.log(response.status)
+      })
+    }
+  </script>
+</head>
+
+<body>
+  <button onclick="console.log(1); console.log(1); auth();">1</button>
+  <button onclick="console.log(2); prot();">2</button>
+</body>
+
+</html>
