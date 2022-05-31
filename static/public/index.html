@@ -5,17 +5,21 @@
   <meta charset="UTF-8">
   <title>Title</title>
   <script>
-    const host = "http://localhost:5000"
+    var host = "http://localhost:5000"
+    var options = {
+      credentials: "include",
+    }
+    var headers = {}
 
     function auth() {
       fetch(host + "/auth/", {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({
           "email": "test@test.test",
           "password": "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"
         }),
+        ...options
       }).then((response) => {
         if (response.ok) response.json().then(console.log)
         else console.log(response.status)
@@ -25,7 +29,8 @@
     function prot() {
       fetch(host + "/home/", {
         method: "GET",
-        credentials: "include",
+        headers,
+        ...options
       }).then((response) => {
         if (response.ok) response.json().then(console.log)
         else console.log(response.status)
