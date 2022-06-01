@@ -1,3 +1,4 @@
+from json import dumps
 from os import getenv
 from typing import Type
 
@@ -16,7 +17,7 @@ class Flask(_Flask):
     def configure_jwt_with_loaders(self, *args, **kwargs) -> None:
         from .users_db import TokenBlockList
         jwt = super().configure_jwt_with_loaders(*args, **kwargs)
-        # self.config["JWT_COOKIE_SAMESITE"] = "Strict"
+        app.config["JWT_COOKIE_CSRF_PROTECT"] = True
 
         @jwt.token_in_blocklist_loader
         @sessionmaker.with_begin
