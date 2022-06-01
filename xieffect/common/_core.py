@@ -11,7 +11,7 @@ from __lib__.flask_fullstack.sqlalchemy import ModBase
 
 class Flask(_Flask):
     def return_error(self, code: int, message: str):
-        return Response({"a": message}, code)
+        return Response(dumps({"a": message}), code)
 
     def configure_jwt_with_loaders(self, *args, **kwargs) -> None:
         from .users_db import TokenBlockList
