@@ -18,6 +18,16 @@
       if (parts.length === 2) return parts.pop().split(';').shift();
     }
 
+    function getToken() {
+      return getCookie("csrf_access_token")
+    }
+
+    var token
+
+    function getToken2() {
+      return token
+    }
+
     function auth() {
       fetch(host + "/auth/", {
         method: "POST",
@@ -32,7 +42,8 @@
         ...options
       }).then((response) => {
         if (response.ok) {
-          console.log(response)
+          console.log(response.headers)
+          token = response.headers["X-CSRF-TOKEN-I"]
           response.json().then(console.log)
         }
         else console.log(response.status, response.body)
@@ -55,7 +66,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRF-TOKEN": getCookie("csrf_access_token"),
+          "X-CSRF-TOKEN": getToken(),
           ...headers
         },
         body: JSON.stringify({ "offset": 0 }),
