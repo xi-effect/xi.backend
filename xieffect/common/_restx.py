@@ -20,15 +20,6 @@ class Namespace(RestXNamespace):  # xieffect specific
     def abort(self, code: int, message: str = None, **kwargs):
         default_abort(code, a=message, **kwargs)
 
-    def add_authorization(self, response, auth_agent: UserRole, auth_name: str = None) -> None:
-        jwt = self._get_identity()
-        if jwt is None:
-            jwt = {}
-        jwt[auth_name or ""] = auth_agent.get_identity()
-        token = create_access_token(identity=jwt)
-        set_access_cookies(response, token)
-        response.headers.add("X-CSRF-TOKEN-I", get_csrf_token(token))
-
     def a_response(self):
         """
         - Wraps Resource's method return with ``{"a": <something>}`` response and updates documentation.
