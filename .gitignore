@@ -5,3 +5,4 @@ venv/
 *.db
 xieffect/test/.pytest_cache
 files/
+__pycache__
