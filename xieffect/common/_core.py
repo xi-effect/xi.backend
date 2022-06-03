@@ -56,8 +56,7 @@ def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexSe
 
     app: Flask = Flask(__name__, static_folder="../../static/public/", static_url_path="/static/", versions=versions)
     app.secrets_from_env("hope it's local")  # TODO DI to use secrets in `URLSafeSerializer`s
-    CORS(app, supports_credentials=True)
-    # app.configure_cors()
+    app.configure_cors()
 
     return db_url, db_meta, Base, sessionmaker, index_service, versions, app
 

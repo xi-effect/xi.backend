@@ -3,9 +3,10 @@ from __future__ import annotations
 from functools import wraps
 from typing import Type
 
+from flask_jwt_extended import create_access_token, set_access_cookies, get_csrf_token
 from flask_restx import abort as default_abort
 
-from __lib__.flask_fullstack import RestXNamespace
+from __lib__.flask_fullstack import RestXNamespace, UserRole
 from ._marshals import success_response, message_response
 
 
@@ -18,6 +19,15 @@ class Namespace(RestXNamespace):  # xieffect specific
 
     def abort(self, code: int, message: str = None, **kwargs):
         default_abort(code, a=message, **kwargs)
+
+    def add_authorization(self, response, auth_agent: UserRole, auth_name: str = None) -> None:
+        jwt = self._get_identity()
+        if jwt is None:
+            jwt = {}
+        jwt[auth_name or ""] = auth_agent.get_identity()
+        token = create_access_token(identity=jwt)
+        set_access_cookies(response, token)
+        response.headers.add("X-CSRF-TOKEN-I", get_csrf_token(token))
 
     def a_response(self):
         """
