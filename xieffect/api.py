@@ -33,7 +33,8 @@ def log_stuff(level: str, message: str):
                 send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
 
 
-jwt = app.configure_jwt_with_loaders(["cookies"], timedelta(hours=72), lambda *x: logger.warning(x[1]))
+jwt = app.configure_jwt_with_loaders(["cookies"], timedelta(hours=72), lambda *x: logger.warning(x[1]),
+                                     samesite_cookie="None", csrf_protect=False)
 api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
