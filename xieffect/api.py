@@ -36,7 +36,7 @@ def log_stuff(level: str, message: str):
 
 
 jwt = app.configure_jwt_with_loaders(["cookies"], timedelta(hours=72), lambda *x: logger.warning(x[1]))
-CORS(app, resources={"*": {"supports_credentials": True}}, supports_credentials=True)
+# CORS(app, resources={"*": {"supports_credentials": True}}, supports_credentials=True)
 api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
