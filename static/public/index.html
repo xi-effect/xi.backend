@@ -6,35 +6,64 @@
   <title>Title</title>
   <script>
     var host = "https://xieffect.ru:5000"
-    var host2 = "http://localhost:5000"
+    var host = "http://localhost:5000"
     var options = {
       credentials: "include",
+      mode: "cors",
     }
     var headers = {}
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
 
     function auth() {
       fetch(host + "/auth/", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
+        headers: {
+          Accept: 'application/json',
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           "email": "test@test.test",
           "password": "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"
         }),
         ...options
       }).then((response) => {
-        if (response.ok) response.json().then(console.log)
-        else console.log(response.status)
+        if (response.ok) {
+          console.log(response)
+          response.json().then(console.log)
+        }
+        else console.log(response.status, response.body)
       })
     }
 
-    function prot() {
+    function getProt() {
       fetch(host + "/home/", {
         method: "GET",
         headers,
         ...options
       }).then((response) => {
         if (response.ok) response.json().then(console.log)
-        else console.log(response.status)
+        else console.log(response.status, response.body)
+      })
+    }
+
+    function postProt() {
+      fetch(host + "/pages/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": getCookie("csrf_access_token"),
+          ...headers
+        },
+        body: JSON.stringify({ "offset": 0 }),
+        ...options
+      }).then((response) => {
+        if (response.ok) response.json().then(console.log)
+        else console.log(response.status, response.text().then(console.log))
       })
     }
   </script>
@@ -42,7 +71,9 @@
 
 <body>
   <button onclick="console.log(1); console.log(1); auth();">1</button>
-  <button onclick="console.log(2); prot();">2</button>
+  <button onclick="console.log(2); getProt();">2</button>
+  <button onclick="console.log(3); postProt();">3</button>
+  <button onclick="console.log(4); console.log(document.cookie);">4</button>
 </body>
 
 </html>

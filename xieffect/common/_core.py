@@ -3,6 +3,7 @@ from os import getenv
 from typing import Type
 
 from flask import Response
+from flask_cors import CORS
 from sqlalchemy import MetaData
 
 from __lib__.flask_fullstack import Flask as _Flask, configure_whooshee, configure_sqlalchemy, \
@@ -56,7 +57,8 @@ def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexSe
 
     app: Flask = Flask(__name__, static_folder="../../static/public/", static_url_path="/static/", versions=versions)
     app.secrets_from_env("hope it's local")  # TODO DI to use secrets in `URLSafeSerializer`s
-    app.configure_cors()
+    # app.configure_cors()
+    CORS(app, resources={r"*": {"origins": "*"}}, supports_credentials=True)
 
     return db_url, db_meta, Base, sessionmaker, index_service, versions, app
 
