@@ -5,7 +5,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from common import Namespace, password_parser, ResponseDoc, User
-# from users.emailer import send_generated_email
+from other import EmailType, send_code_email
 
 settings_namespace: Namespace = Namespace("settings")
 other_settings_namespace: Namespace = Namespace("settings", path="/")  # TODO unite with settings_namespace
@@ -108,7 +108,7 @@ class EmailChanger(Resource):
         if User.find_by_email_address(session, new_email):
             return "Email in use"
 
-        # send_generated_email(new_email, "confirm", "registration-email.html")
+        send_code_email(new_email, EmailType.CHANGE)
         user.change_email(session, new_email)  # close all other JWT sessions
         return "Success"
 

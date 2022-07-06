@@ -5,7 +5,7 @@ from pathlib import Path
 from sys import modules
 
 from api import app as application, log_stuff, socketio
-from common import User, sessionmaker, versions, db_url, db_meta, mail_initialized, mail
+from common import User, sessionmaker, versions, db_url, db_meta, mail_initialized
 from other import WebhookURLs, send_discord_message
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 from users.invites_db import Invite  # noqa  # passthrough for tests
@@ -56,9 +56,7 @@ def init_users(session):
 
     if (invite := Invite.find_by_id(session, TEST_INVITE_ID)) is None:
         log_stuff("status", "Database has been reset")
-        invite: Invite = Invite(id=TEST_INVITE_ID, name="TEST_INVITE")
-        session.add(invite)
-        session.flush()
+        invite: Invite = Invite.create(session, id=TEST_INVITE_ID, name="TEST_INVITE")
 
     from education.authorship import Author, Moderator  # noqa
 
