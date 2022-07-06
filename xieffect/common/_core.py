@@ -3,7 +3,7 @@ from os import getenv
 from typing import Type
 
 from flask import Response
-from flask_cors import CORS
+from flask_mail import Mail
 from sqlalchemy import MetaData
 
 from __lib__.flask_fullstack import Flask as _Flask, configure_whooshee, configure_sqlalchemy, \
@@ -25,7 +25,7 @@ class Flask(_Flask):
             return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
 
 
-def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexService, dict, Flask]:
+def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexService, dict, Flask, bool, Mail]:
     # xieffect specific:
 
     from dotenv import load_dotenv
@@ -58,8 +58,20 @@ def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexSe
     app.secrets_from_env("hope it's local")  # TODO DI to use secrets in `URLSafeSerializer`s
     app.configure_cors()
 
-    return db_url, db_meta, Base, sessionmaker, index_service, versions, app
+    mail_username = getenv("MAIL_USERNAME", None)
+    mail_password = getenv("MAIL_PASSWORD", None)
+    mail_initialized = mail_username is not None and mail_password is not None
+    if mail_initialized:
+        app.config["MAIL_SERVER"] = "smtp.yandex.ru"
+        app.config["MAIL_PORT"] = 587
+        app.config["MAIL_USERNAME"] = mail_username
+        app.config["MAIL_DEFAULT_SENDER"] = mail_username
+        app.config["MAIL_PASSWORD"] = mail_password
+        app.config["MAIL_USE_TLS"] = True
+        app.config["MAIL_USE_SSL"] = False
+
+    return db_url, db_meta, Base, sessionmaker, index_service, versions, app, mail_initialized, Mail(app)
 
 
-db_url, db_meta, Base, sessionmaker, index_service, versions, app = init_xieffect()
+db_url, db_meta, Base, sessionmaker, index_service, versions, app, mail_initialized, mail = init_xieffect()
 app.config["RESTX_INCLUDE_ALL_MODELS"] = True

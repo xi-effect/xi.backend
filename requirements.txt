@@ -1,1 +1,3 @@
 -r xieffect/requirements.txt
+
+flask-mail
