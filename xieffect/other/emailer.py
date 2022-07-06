@@ -10,6 +10,7 @@ from flask_mail import Message
 from itsdangerous import URLSafeSerializer, BadSignature
 
 from common import mail, app
+from .discorder import send_message as send_discord_message, WebhookURLs
 
 EMAIL_FOLDER: str = "../static/emails/"
 SALT: str = app.config["SECURITY_PASSWORD_SALT"]
@@ -53,6 +54,7 @@ def send_email(receiver: str, code: str, filename: str, theme: str):
         mail.send(generate_email(receiver, code, filename, theme))
     except SMTPDataError as e:
         print(e)
+        send_discord_message(WebhookURLs.MAILBT, f"Email for {receiver} not sent:\n```{e}```")
 
 
 def send_code_email(receiver: str, email_type: EmailType):
