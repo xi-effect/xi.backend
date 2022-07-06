@@ -6,7 +6,7 @@ from itsdangerous import BadSignature
 from common import password_parser, Namespace, success_response, TokenBlockList, User
 from communities import CommunitiesUser
 from .invites_db import Invite
-# from .emailer import send_generated_email, parse_code
+from other import EmailType, send_code_email
 
 reglog_namespace: Namespace = Namespace("reglog", path="/")
 success_response.register_model(reglog_namespace)
@@ -49,7 +49,7 @@ class UserRegistration(Resource):
 
         if (user := User.create(session, email=email, username=username, password=password, invite=invite)) is None:
             return {"a": "Email already in use"}
-        # send_generated_email(email, "confirm", "registration-email.html")
+        send_code_email(email, EmailType.CONFIRM)
         cu = CommunitiesUser.find_or_create(session, user.id)
         return cu, user
 
@@ -107,7 +107,11 @@ class PasswordResetSender(Resource):
     @reglog_namespace.a_response()
     def post(self, session, email: str) -> bool:
         """ First step of resetting password, tries sending a password-reset email by the address given """
-        return User.find_by_email_address(session, email) is not None and email != "admin@admin.admin"
+        user = User.find_by_email_address(session, email)
+        if user is not None and email != "admin@admin.admin":
+            send_code_email(email, EmailType.PASSWORD)
+            return True
+        return False
 
 
 @reglog_namespace.route("/password-reset/confirm/")
@@ -121,9 +125,9 @@ class PasswordReseter(Resource):
     def post(self, session, code: str, password: str) -> str:
         """ Second step of resetting password, sets the new password if code is correct """
 
-        # email = parse_code(code, "pass")
-        # if email is None:
-        #     return "Code error"
+        email = EmailType.PASSWORD.parse_code(code)
+        if email is None:
+            return "Code error"
 
         if (user := User.find_by_email_address(session, email)) is None:
             return "User doesn't exist"
