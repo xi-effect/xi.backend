@@ -5,7 +5,7 @@ from pathlib import Path
 from sys import modules
 
 from api import app as application, log_stuff, socketio
-from common import User, sessionmaker, versions, db_url, db_meta
+from common import User, sessionmaker, versions, db_url, db_meta, mail_initialized, mail
 from other import WebhookURLs, send_discord_message
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 from users.invites_db import Invite  # noqa  # passthrough for tests
@@ -33,6 +33,9 @@ else:  # works on server restart
             setup_fail = True
     if db_url == "sqlite:///app.db":
         send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for db url!")
+        setup_fail = True
+    if not mail_initialized:
+        send_discord_message(WebhookURLs.NOTIFY, f"ERROR! Some environmental variable(s) for main are missing!")
         setup_fail = True
     if setup_fail:
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
