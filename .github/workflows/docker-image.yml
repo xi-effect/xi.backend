@@ -17,6 +17,14 @@ jobs:
         with:
           submodules: recursive
       -
+        name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      -
+        name: Install asyncapi generator
+        run: npm install -g @asyncapi/generator
+      -
         name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -43,14 +51,6 @@ jobs:
           image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-image
           path: /files/async-api.json
           destination: /var/async-api.json
-      -
-        name: Install node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 14
-      -
-        name: Install asyncapi generator
-        run: npm install -g @asyncapi/generator
       -
         name: Generate docs
         run: ag /var/async-api.json @asyncapi/html-template -o /var/sio-doc/
