@@ -44,7 +44,7 @@ jobs:
         name: Extract docs
         uses: shrink/actions-docker-extract@v1
         with:
-          image: xieffect:flask-image
+          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-image
           path: /files/async-api.json
           destination: /var/async-api.json
       -
