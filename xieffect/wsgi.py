@@ -2,7 +2,7 @@ from datetime import datetime
 from json import load, dump
 from os.path import exists
 from pathlib import Path
-from sys import modules
+from sys import modules, argv
 
 from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, versions, db_url, db_meta, mail_initialized
@@ -18,7 +18,7 @@ ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f4
 
 TEST_INVITE_ID: int = 0
 
-if __name__ == "__main__" or "pytest" in modules.keys() or db_url == "sqlite:///test.db":  # test only
+if __name__ == "__main__" or "pytest" in modules.keys() or db_url == "sqlite:///test.db" or "form-sio-docs" in argv:
     application.debug = True
     if db_url == "sqlite:///app.db":
         db_meta.drop_all()
