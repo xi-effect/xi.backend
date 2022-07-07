@@ -12,7 +12,9 @@ COPY ./static /static
 COPY ./xieffect /app
 COPY ./gunicorn.sh /app/gunicorn.sh
 RUN chmod +x /app/gunicorn.sh
+
 WORKDIR /app
+RUN flask form-sio-docs
 
 EXPOSE 5000
 
