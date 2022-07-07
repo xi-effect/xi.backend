@@ -40,6 +40,39 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back
           cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back,mode=max
       -
+        if: github.event_name != 'pull_request'
+        name: Extract docs
+        uses: shrink/actions-docker-extract@v1
+        with:
+          image: xieffect:flask-image
+          path: /files/async-api.json
+          destination: /var/async-api.json
+      -
+        if: github.event_name != 'pull_request'
+        name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      -
+        if: github.event_name != 'pull_request'
+        name: Install asyncapi generator
+        run: npm install -g @asyncapi/generator
+      -
+        if: github.event_name != 'pull_request'
+        name: Generate docs
+        run: ag /var/async-api.json @asyncapi/html-template -o /var/sio-doc/
+      -
+        if: github.event_name != 'pull_request'
+        name: Upload docs via SCP
+        uses: appleboy/scp-action@master
+        env:
+          HOST: ${{ secrets.SERVER_IP }}
+          USERNAME: root
+          KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        with:
+          source: "/var/sio-doc/index.html"
+          target: "/root/xieffect-core/sio-docs-new/"
+      -
         if: github.event_name == 'pull_request'
         name: Build and push (PR)
         uses: docker/build-push-action@v2
