@@ -1,4 +1,5 @@
 from datetime import timedelta
+from json import dump
 from logging import Logger
 from sys import stderr
 
@@ -74,6 +75,12 @@ communities_namespace = SIONamespace("/", protected=True)
 communities_namespace.attach_event_group(communities_meta_events)
 
 socketio.on_namespace(communities_namespace)
+
+
+@app.cli.command("form-sio-docs")
+def form_sio_docs():
+    with open("../files/async-api.json", "w") as f:
+        dump(socketio.docs(), f, ensure_ascii=False)
 
 # class MessagesNamespace(Namespace):
 #     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
