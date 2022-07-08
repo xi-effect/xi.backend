@@ -62,7 +62,7 @@ jobs:
           USERNAME: root
           KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         with:
-          source: "/var/sio-doc/index.html"
+          source: "~/sio-doc/index.html"
           target: "/root/xieffect-core/sio-docs-new/"
 
   deploy:
