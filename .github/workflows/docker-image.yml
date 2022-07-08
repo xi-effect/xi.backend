@@ -51,10 +51,12 @@ jobs:
         with:
           image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-image
           path: /files/async-api.json
-          destination: /var/async-api.json
+      -
+        name: Rename docs files
+        run: mv ${{ steps.extract.outputs.destination }} ~/async-api.json
       -
         name: Generate docs
-        run: ag ./${{ steps.extract.outputs.destination }} @asyncapi/html-template -o ~/sio-doc/
+        run: ag ~/async-api.json @asyncapi/html-template -o ~/sio-doc/
       -
         name: Upload docs via SCP
         uses: appleboy/scp-action@master
