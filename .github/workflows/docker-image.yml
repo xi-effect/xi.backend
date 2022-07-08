@@ -62,7 +62,7 @@ jobs:
           USERNAME: root
           KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         with:
-          source: "./sio-doc/"
+          source: "./sio-doc/*"
           target: "~/xieffect-core/sio-docs-new/"
           strip_components: 1
 
