@@ -54,7 +54,7 @@ jobs:
           destination: /var/async-api.json
       -
         name: Generate docs
-        run: ag ${{ steps.extract.outputs.destination }} @asyncapi/html-template -o ~/sio-doc/
+        run: ag ./${{ steps.extract.outputs.destination }} @asyncapi/html-template -o ~/sio-doc/
       -
         name: Upload docs via SCP
         uses: appleboy/scp-action@master
