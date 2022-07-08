@@ -53,10 +53,10 @@ jobs:
           path: /files/async-api.json
       -
         name: Generate docs
-        run: ag ${{ steps.extract.outputs.destination }}/async-api.json @asyncapi/html-template --force-write -p singleFile=true -o ~/sio-doc/
+        run: ag ${{ steps.extract.outputs.destination }}/async-api.json @asyncapi/html-template --force-write -p singleFile=true -o ./sio-doc/
       -
         name: test
-        run: ls ~/sio-doc/
+        run: ls ./sio-doc/
       -
         name: Upload docs via SCP
         uses: appleboy/scp-action@master
@@ -65,8 +65,8 @@ jobs:
           USERNAME: root
           KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         with:
-          source: "~/sio-doc/index.html"
-          target: "/root/xieffect-core/sio-docs-new/"
+          source: "./sio-doc/"
+          target: "~/xieffect-core/sio-docs-new/"
 
   deploy:
     needs: build
