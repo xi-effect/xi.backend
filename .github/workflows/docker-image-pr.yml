@@ -33,9 +33,9 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-${{ github.event.pull_request.head.ref }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-${{ github.event.pull_request.head.ref }}
-          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-${{ github.event.pull_request.head.ref }},mode=max
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-${{ github.run_id }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-${{ github.run_id }}
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-${{ github.run_id }},mode=max
 
   test:
 
@@ -55,5 +55,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-${{ github.event.pull_request.head.ref }}
+          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-${{ github.run_id }}
           run: sh /app/testing.sh
