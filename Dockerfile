@@ -10,8 +10,8 @@ RUN pip3 install -r /app/requirements.txt
 
 COPY ./static /static
 COPY ./xieffect /app
-COPY ./gunicorn.sh /app/gunicorn.sh
-RUN chmod +x /app/gunicorn.sh
+COPY ./*.sh /app
+RUN chmod +x /app/*.sh
 
 WORKDIR /app
 RUN flask form-sio-docs
