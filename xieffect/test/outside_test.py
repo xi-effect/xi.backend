@@ -5,8 +5,8 @@ from pytest import mark
 from werkzeug.test import TestResponse
 
 from __lib__.flask_fullstack import check_code, dict_equal
-from xieffect.test.conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
-from xieffect.wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
+from .conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
+from wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
 
@@ -28,6 +28,7 @@ def test_login(base_client: FlaskClient):
     check_code(base_client.post("/logout/"))
 
 
+@mark.skip
 @mark.order(10)
 def test_signup(base_client: FlaskClient):
     credentials = {"email": "hey@hey.hey", "password": "12345", "username": "hey"}
