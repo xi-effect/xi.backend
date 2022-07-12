@@ -200,6 +200,7 @@ def test_module_sorting(client: FlaskClient, list_tester: Callable[[str, dict, i
             prev_module = module
 
 
+@mark.skip
 @mark.order(427)
 def test_module_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     assert len(list(list_tester("/modules/", {"search": "ЕГЭ"}, MODULES_PER_REQUEST))) > 0
