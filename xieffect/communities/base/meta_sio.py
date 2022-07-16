@@ -11,11 +11,9 @@ controller = EventController()
 class CommunitiesEventSpace(EventSpace):
     @controller.argument_parser(Community.CreateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
-    @controller.marshal_ack(Community.IndexModel, force_wrap=True)
     @controller.jwt_authorizer(User)
+    @controller.marshal_ack(Community.IndexModel, force_wrap=True)
     def new_community(self, event: DuplexEvent, session, user: User, name: str, description: str = None):
-        print(event, session, user, name, description)
-
         community = Community.create(session, name, description, user)
         cu = CommunitiesUser.find_or_create(session, user.id)
         cu.join_community(community.id)
@@ -23,31 +21,31 @@ class CommunitiesEventSpace(EventSpace):
         event.emit_convert(community, user_id=user.id)
         return community
 
-    class CommunityIdModel(BaseModel):
-        community_id: int
+    # class CommunityIdModel(BaseModel):
+    #     community_id: int
 
-    @controller.argument_parser(CommunityIdModel)
-    @controller.mark_duplex(use_event=True)
-    # TODO support: @controller.marshal_ack(None, force_wrap=True)
-    @controller.jwt_authorizer(User)
-    @controller.database_searcher(Community, use_session=True)
-    def leave_community(self, event: DuplexEvent, session, user: User, community: Community):
-        cu = CommunitiesUser.find_or_create(session, user.id)
-        cu.leave_community(session, community.id)
-        event.emit(community_id=community.id, _room=f"user-{user.id}", _include_self=False)
+    # @controller.argument_parser(CommunityIdModel)
+    # @controller.mark_duplex(use_event=True)
+    # # TODO support: @controller.marshal_ack(None, force_wrap=True)
+    # @controller.jwt_authorizer(User)
+    # @controller.database_searcher(Community, use_session=True)
+    # def leave_community(self, event: DuplexEvent, session, user: User, community: Community):
+    #     cu = CommunitiesUser.find_or_create(session, user.id)
+    #     cu.leave_community(session, community.id)
+    #     event.emit(community_id=community.id, _room=f"user-{user.id}", _include_self=False)
 
-    class ReorderModel(BaseModel):
-        community_id: int = Field(alias="source-id")
-        target_index: int
+    # class ReorderModel(BaseModel):
+    #     community_id: int = Field(alias="source-id")
+    #     target_index: int
 
-    @controller.argument_parser(ReorderModel)
-    @controller.mark_duplex(use_event=True)
-    @controller.jwt_authorizer(User)
-    @controller.database_searcher(Community, use_session=True)
-    def reorder_community(self, event: DuplexEvent, session, user: User, community: Community, target_index: int):
-        cu = CommunitiesUser.find_or_create(session, user.id)
-        if cu.reorder_community_list(session, community.id, target_index):
-            event.emit(community_id=community.id, target_index=target_index,
-                       _room=f"user-{user.id}", _include_self=False)
-        else:
-            controller.abort(404, "Community not in the list")
+    # @controller.argument_parser(ReorderModel)
+    # @controller.mark_duplex(use_event=True)
+    # @controller.jwt_authorizer(User)
+    # @controller.database_searcher(Community, use_session=True)
+    # def reorder_community(self, event: DuplexEvent, session, user: User, community: Community, target_index: int):
+    #     cu = CommunitiesUser.find_or_create(session, user.id)
+    #     if cu.reorder_community_list(session, community.id, target_index):
+    #         event.emit(community_id=community.id, target_index=target_index,
+    #                    _room=f"user-{user.id}", _include_self=False)
+    #     else:
+    #         controller.abort(404, "Community not in the list")
