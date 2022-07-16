@@ -21,18 +21,18 @@ class CommunitiesEventSpace(EventSpace):
         event.emit_convert(community, user_id=user.id)
         return community
 
-    # class CommunityIdModel(BaseModel):
-    #     community_id: int
+    class CommunityIdModel(BaseModel):
+        community_id: int
 
-    # @controller.argument_parser(CommunityIdModel)
-    # @controller.mark_duplex(use_event=True)
-    # # TODO support: @controller.marshal_ack(None, force_wrap=True)
-    # @controller.jwt_authorizer(User)
-    # @controller.database_searcher(Community, use_session=True)
-    # def leave_community(self, event: DuplexEvent, session, user: User, community: Community):
-    #     cu = CommunitiesUser.find_or_create(session, user.id)
-    #     cu.leave_community(session, community.id)
-    #     event.emit(community_id=community.id, _room=f"user-{user.id}", _include_self=False)
+    @controller.argument_parser(CommunityIdModel)
+    @controller.mark_duplex(use_event=True)
+    @controller.jwt_authorizer(User)
+    @controller.database_searcher(Community, use_session=True)
+    @controller.force_ack()
+    def leave_community(self, event: DuplexEvent, session, user: User, community: Community):
+        cu = CommunitiesUser.find_or_create(session, user.id)
+        cu.leave_community(session, community.id)
+        event.emit(community_id=community.id, _room=f"user-{user.id}", _include_self=False)
 
     # class ReorderModel(BaseModel):
     #     community_id: int = Field(alias="source-id")

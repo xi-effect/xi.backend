@@ -103,21 +103,22 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     # community_ids.remove(reorder_data["source-id"])
     # community_ids.insert(reorder_data["target-index"], reorder_data["source-id"])
     # # assert_order()
-#
-    # # Leaving
-    # leave_data = {"community-id": community_datas[-1]["id"]}
-    # socketio_client.emit("leave-community", leave_data)
-    # assert len(socketio_client.get_received()) == 0
-#
-    # events = socketio_client2.get_received()
-    # assert len(events) == 1
-    # assert events[0]["name"] == "leave-community"
-    # assert len(events[0]["args"]) == 1
-#
-    # assert len(events[0]["args"][0]) == 1
-    # assert dict_equal(events[0]["args"][0], leave_data, *leave_data.keys())
-#
-    # community_ids.remove(leave_data["community-id"])
+
+    # Leaving
+    leave_data = {"community-id": community_datas[-1]["id"]}
+    ack = socketio_client.emit("leave-community", leave_data, callback=True)
+    assert dict_equal(ack, {"code": 200, "message": "Success"}, ("code", "message"))
+    assert len(socketio_client.get_received()) == 0
+
+    events = socketio_client2.get_received()
+    assert len(events) == 1
+    assert events[0]["name"] == "leave-community"
+    assert len(events[0]["args"]) == 1
+
+    assert len(events[0]["args"][0]) == 1
+    assert dict_equal(events[0]["args"][0], leave_data, *leave_data.keys())
+
+    community_ids.remove(leave_data["community-id"])
     # assert_order()
 
 
