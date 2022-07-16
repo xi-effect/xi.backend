@@ -88,21 +88,22 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     # assert_order()
 
     # Reordering
-    # reorder_data = {"source-id": community_datas[0]["id"], "target-index": 0}
-    # socketio_client2.emit("reorder-community", reorder_data)
-    # assert len(socketio_client2.get_received()) == 0
-#
-    # events = socketio_client.get_received()
-    # assert len(events) == 1
-    # assert events[0]["name"] == "reorder-community"
-    # assert len(events[0]["args"]) == 1
-#
-    # assert len(events[0]["args"][0]) == 2
-    # assert dict_equal(events[0]["args"][0], reorder_data, *reorder_data.keys())
-#
-    # community_ids.remove(reorder_data["source-id"])
-    # community_ids.insert(reorder_data["target-index"], reorder_data["source-id"])
-    # # assert_order()
+    reorder_data = {"source-id": community_datas[0]["id"], "target-index": 0}
+    ack = socketio_client2.emit("reorder-community", reorder_data, callback=True)
+    assert dict_equal(ack, {"code": 200, "message": "Success"}, ("code", "message"))
+    assert len(socketio_client2.get_received()) == 0
+
+    events = socketio_client.get_received()
+    assert len(events) == 1
+    assert events[0]["name"] == "reorder-community"
+    assert len(events[0]["args"]) == 1
+
+    assert len(events[0]["args"][0]) == 2
+    assert dict_equal(events[0]["args"][0], reorder_data, *reorder_data.keys())
+
+    community_ids.remove(reorder_data["source-id"])
+    community_ids.insert(reorder_data["target-index"], reorder_data["source-id"])
+    # assert_order()
 
     # Leaving
     leave_data = {"community-id": community_datas[-1]["id"]}
