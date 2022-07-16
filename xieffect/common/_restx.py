@@ -5,11 +5,11 @@ from typing import Type
 
 from flask_restx import abort as default_abort
 
-from __lib__.flask_fullstack import ResourceController
+from __lib__.flask_fullstack import ResourceController as _ResourceController
 from ._marshals import success_response, message_response
 
 
-class Namespace(ResourceController):  # xieffect specific
+class ResourceController(_ResourceController):  # xieffect specific
     from ._core import sessionmaker
 
     def __init__(self, *args, **kwargs):

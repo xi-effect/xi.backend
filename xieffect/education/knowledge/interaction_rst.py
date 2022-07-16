@@ -6,19 +6,19 @@ from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace, ResponseDoc, User
+from common import ResourceController, ResponseDoc, User
 from .interaction_db import ModuleProgressSession, TestModuleSession, TestPointSession
 from .modules_db import Module, ModuleType
 from .results_db import TestResult
 
-interaction_namespace: Namespace = Namespace("interaction", path="/modules/<int:module_id>/")
+controller = ResourceController("interaction", path="/modules/<int:module_id>/")
 
 
 def module_typed(op_name, *possible_module_types: ModuleType):
     def module_typed_wrapper(function):
-        @interaction_namespace.doc_responses(ResponseDoc.error_response(400, "Unacceptable module type"))
-        @interaction_namespace.jwt_authorizer(User)
-        @interaction_namespace.database_searcher(Module, use_session=True)
+        @controller.doc_responses(ResponseDoc.error_response(400, "Unacceptable module type"))
+        @controller.jwt_authorizer(User)
+        @controller.database_searcher(Module, use_session=True)
         @wraps(function)
         def module_typed_inner(*args, **kwargs):
             module_type: ModuleType = kwargs["module"].type
@@ -37,7 +37,7 @@ def module_typed(op_name, *possible_module_types: ModuleType):
 
 def redirected_to_pages(op_name, *possible_module_types: ModuleType):
     def redirected_to_pages_wrapper(function):
-        @interaction_namespace.doc_responses(ResponseDoc(302, r"Redirect to GET /pages/\<id\>/ with generated ID"))
+        @controller.doc_responses(ResponseDoc(302, r"Redirect to GET /pages/\<id\>/ with generated ID"))
         @module_typed(op_name, *possible_module_types)
         @wraps(function)
         def redirected_to_pages_inner(*args, **kwargs):
@@ -50,7 +50,7 @@ def redirected_to_pages(op_name, *possible_module_types: ModuleType):
 
 
 def with_point_id(function):
-    @interaction_namespace.doc_responses(ResponseDoc.error_response(404, "Point is not in this module"))
+    @controller.doc_responses(ResponseDoc.error_response(404, "Point is not in this module"))
     @wraps(function)
     def with_point_id_inner(*args, **kwargs):
         if 0 <= kwargs["point_id"] < kwargs["module"].length:
@@ -61,9 +61,9 @@ def with_point_id(function):
     return with_point_id_inner
 
 
-@interaction_namespace.route("/open/")
+@controller.route("/open/")
 class ModuleOpener(Resource):
-    @interaction_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
+    @controller.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @redirected_to_pages("progress saving", ModuleType.STANDARD, ModuleType.THEORY_BLOCK)
     def get(self, session, user: User, module: Module, module_type: ModuleType):
         """ Endpoint for starting a Standard Module or Theory Block from the last visited point """
@@ -79,9 +79,9 @@ class ModuleOpener(Resource):
             return {"id": None if module_session is None else module_session.progress}
 
 
-@interaction_namespace.route("/next/")
+@controller.route("/next/")
 class ModuleProgresser(Resource):
-    @interaction_namespace.doc_responses(ResponseDoc.error_response(200, "You have reached the end"))
+    @controller.doc_responses(ResponseDoc.error_response(200, "You have reached the end"))
     @redirected_to_pages("linear progression", ModuleType.STANDARD, ModuleType.PRACTICE_BLOCK)
     def post(self, session, user: User, module: Module, module_type: ModuleType):
         """ Endpoint for progressing a Standard Module or Practice Block """
@@ -105,7 +105,7 @@ class ModuleProgresser(Resource):
             return module.execute_point()
 
 
-@interaction_namespace.route("/points/<int:point_id>/")
+@controller.route("/points/<int:point_id>/")
 class ModuleNavigator(Resource):
     @redirected_to_pages("direct navigation", ModuleType.TEST, ModuleType.THEORY_BLOCK)
     @with_point_id
@@ -126,7 +126,7 @@ class ModuleNavigator(Resource):
 
 
 def with_test_session(function):
-    @interaction_namespace.doc_responses(ResponseDoc.error_response(404, TestModuleSession.not_found_text))
+    @controller.doc_responses(ResponseDoc.error_response(404, TestModuleSession.not_found_text))
     @module_typed("reply & results functionality", ModuleType.TEST)
     @wraps(function)
     def with_test_session_inner(session, user: User, module: Module, *args, **kwargs):
@@ -140,14 +140,14 @@ def with_test_session(function):
     return with_test_session_inner
 
 
-@interaction_namespace.route("/points/<int:point_id>/reply/")
+@controller.route("/points/<int:point_id>/reply/")
 class TestReplyManager(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("right-answers", type=int, dest="right_answers", required=True)
     parser.add_argument("total-answers", type=int, dest="total_answers", required=True)
     parser.add_argument("answers", type=dict, required=True)
 
-    @interaction_namespace.doc_responses(ResponseDoc(200, "Answers object"))
+    @controller.doc_responses(ResponseDoc(200, "Answers object"))
     @module_typed("reply functionality", ModuleType.TEST)
     @with_point_id
     def get(self, session, point_id, user: User, module: Module):
@@ -158,8 +158,8 @@ class TestReplyManager(Resource):
 
     @module_typed("reply functionality", ModuleType.TEST)
     @with_point_id
-    @interaction_namespace.argument_parser(parser)
-    @interaction_namespace.a_response()
+    @controller.argument_parser(parser)
+    @controller.a_response()
     def post(self, session, point_id, user: User, module: Module,
              right_answers: int, total_answers: int, answers) -> bool:
         """ Saves user's reply to an open test """
@@ -172,17 +172,17 @@ class TestReplyManager(Resource):
         return False
 
 
-@interaction_namespace.route("/results/")
+@controller.route("/results/")
 class TestSaver(Resource):
-    @interaction_namespace.jwt_authorizer(User)
-    @interaction_namespace.database_searcher(Module, use_session=True)
-    @interaction_namespace.marshal_with(TestResult.FullModel)
+    @controller.jwt_authorizer(User)
+    @controller.database_searcher(Module, use_session=True)
+    @controller.marshal_with(TestResult.FullModel)
     def get(self, session, user: User, module: Module):
         test_session = TestModuleSession.find_by_ids(session, user.id, module.id)
         if test_session is None:
-            interaction_namespace.abort(400, "Test not started")
+            controller.abort(400, "Test not started")
         t = test_session.collect_all(session)
         print(t[0].right_answers)
-        result = interaction_namespace.marshal(t, TestPointSession.IndexModel)
+        result = controller.marshal(t, TestPointSession.IndexModel)
         print(result)
         return TestResult.create(session, user.id, module, result)

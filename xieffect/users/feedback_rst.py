@@ -9,19 +9,19 @@ from flask_restx.fields import Integer, String as StringField
 from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import User, Namespace, ResponseDoc
+from common import User, ResourceController, ResponseDoc
 from .feedback_db import Feedback, FeedbackType, FeedbackImage
 
-feedback_namespace: Namespace = Namespace("feedback", path="/feedback/")
+controller = ResourceController("feedback", path="/feedback/")
 feedback_serializer: URLSafeSerializer = URLSafeSerializer(getenv("JWT_SECRET_KEY", "local only"))  # TODO redo
 
 
 def enum_response(enum: Type[Enum]):  # TODO move to ffs
     model = {"a": StringField(enum=[member.value for member in enum.__members__.values()])}
-    model = feedback_namespace.model(enum.__name__, model=model)
+    model = controller.model(enum.__name__, model=model)
 
     def enum_response_wrapper(function):
-        @feedback_namespace.response(*ResponseDoc(model=model).get_args())
+        @controller.response(*ResponseDoc(model=model).get_args())
         @wraps(function)
         def enum_response_inner(*args, **kwargs):
             return {"a": function(*args, **kwargs).value}
@@ -31,7 +31,7 @@ def enum_response(enum: Type[Enum]):  # TODO move to ffs
     return enum_response_wrapper
 
 
-@feedback_namespace.route("/")
+@controller.route("/")
 class FeedbackSaver(Resource):
     parser = RequestParser()
     parser.add_argument("type", required=True, choices=FeedbackType.get_all_field_names(), dest="feedback_type")
@@ -44,13 +44,13 @@ class FeedbackSaver(Resource):
         USER_NOT_FOUND = "Code refers to non-existing user"
         NO_AUTH_PROVIDED = "Neither the user is authorized, nor the code is provided"
 
-    @feedback_namespace.jwt_authorizer(User, optional=True)
-    @feedback_namespace.argument_parser(parser)
+    @controller.jwt_authorizer(User, optional=True)
+    @controller.argument_parser(parser)
     @enum_response(Responses)
     def post(self, session, user: Union[User, None], feedback_type: str, data: dict, code: Union[str, None]):
         feedback_type = FeedbackType.from_string(feedback_type)
         if feedback_type is None:
-            feedback_namespace.abort(400, "Unsupported feedback type")
+            controller.abort(400, "Unsupported feedback type")
 
         if code is not None:
             try:
@@ -68,10 +68,10 @@ class FeedbackSaver(Resource):
         return self.Responses.SUCCESS
 
 
-@feedback_namespace.route("/images/")
+@controller.route("/images/")
 class ImageAttacher(Resource):
-    @feedback_namespace.doc_file_param("image")
-    @feedback_namespace.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
+    @controller.doc_file_param("image")
+    @controller.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     def post(self, session):
         image_id = FeedbackImage.create(session).id
         with open(f"../files/images/feedback-{image_id}.png", "wb") as f:
@@ -79,13 +79,13 @@ class ImageAttacher(Resource):
         return {"id": image_id}
 
 
-@feedback_namespace.route("/dump/")
+@controller.route("/dump/")
 class FeedbackDumper(Resource):
-    @feedback_namespace.jwt_authorizer(User)
-    @feedback_namespace.marshal_list_with(Feedback.FullModel)
+    @controller.jwt_authorizer(User)
+    @controller.marshal_list_with(Feedback.FullModel)
     def get(self, session, user: User):
         if user.email != "admin@admin.admin":
-            feedback_namespace.abort(403, "Permission denied")
+            controller.abort(403, "Permission denied")
         return Feedback.dump_all(session)
 
 
@@ -93,6 +93,6 @@ def generate_code(user_id: int):
     return feedback_serializer.dumps(user_id)
 
 
-@feedback_namespace.with_begin
+@controller.with_begin
 def dumps_feedback(session) -> list[dict]:
-    return feedback_namespace.marshal(Feedback.dump_all(session), Feedback.FullModel)
+    return controller.marshal(Feedback.dump_all(session), Feedback.FullModel)

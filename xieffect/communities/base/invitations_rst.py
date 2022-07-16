@@ -5,13 +5,13 @@ from typing import Union
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace, counter_parser, User
+from common import ResourceController, counter_parser, User
 from .invitations_db import Invitation
 from .meta_db import Community, Participant, ParticipantRole
 
-invitation_namespace = Namespace("communities-invitation", path="/communities/<int:community_id>/invitations/")
+invitation_namespace = ResourceController("communities-invitation", path="/communities/<int:community_id>/invitations/")
 
-invitation_join_namespace = Namespace("communities-invitation", path="/communities/join/")
+invitation_join_namespace = ResourceController("communities-invitation", path="/communities/join/")
 
 
 @invitation_namespace.route("/")

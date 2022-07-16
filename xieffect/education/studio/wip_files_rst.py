@@ -7,13 +7,13 @@ from flask import request, send_from_directory, redirect
 from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 
-from common import Namespace, ResponseDoc, User, counter_parser
+from common import ResourceController, ResponseDoc, User, counter_parser
 from .wip_files_db import JSONFile, WIPPage, WIPModule
 from ..authorship import Author
 from ..knowledge import Page, Module
 
-wip_images_namespace: Namespace = Namespace("wip-images", path="/wip/images/")
-images_view_namespace: Namespace = Namespace("images", path="/images/")
+wip_images_namespace = ResourceController("wip-images", path="/wip/images/")
+images_view_namespace = ResourceController("images", path="/images/")
 image_ids_response: ResponseDoc = ResponseDoc(model=Model("Image IDs", {"author-id": Integer, "image-id": Integer}))
 
 
@@ -63,8 +63,8 @@ class ImageViewer(Resource):
         return send_from_directory("../files/images/", f"{author_id}-{image_id}.png")
 
 
-wip_json_file_namespace: Namespace = Namespace("wip-files", path="/wip/<file_type>/")
-wip_index_namespace: Namespace = Namespace("wip-files", path="/wip/")
+wip_json_file_namespace = ResourceController("wip-files", path="/wip/<file_type>/")
+wip_index_namespace = ResourceController("wip-files", path="/wip/")
 
 
 @wip_index_namespace.route("/modules/index/")
