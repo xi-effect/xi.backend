@@ -1,32 +1,36 @@
 from pydantic import BaseModel, Field
 
-from common import EventGroup, EventSpace, DuplexEvent, User
+from common import EventController, EventSpace, DuplexEvent, User
 from .meta_db import Community
 from .users_ext_db import CommunitiesUser
 
-communities_meta_events = EventGroup(use_kebab_case=True)
+controller = EventController()
 
 
+@controller.route()
 class CommunitiesEventSpace(EventSpace):
-    new_community = communities_meta_events.bind_sub(Community.IndexModel)
+    @controller.argument_parser(Community.CreateModel)
+    @controller.mark_duplex(Community.IndexModel, use_event=True)
+    @controller.marshal_ack(Community.IndexModel, force_wrap=True)
+    @controller.jwt_authorizer(User)
+    def new_community(self, event: DuplexEvent, session, user: User, name: str, description: str = None):
+        print(event, session, user, name, description)
 
-    @communities_meta_events.bind_dup(Community.CreateModel, Community.IndexModel, use_event=True)
-    @communities_meta_events.jwt_authorizer(User)
-    def create_community(self, event: DuplexEvent, session, user: User, name: str, description: str = None):
         community = Community.create(session, name, description, user)
         cu = CommunitiesUser.find_or_create(session, user.id)
         cu.join_community(community.id)
 
-        CommunitiesEventSpace.new_community.emit(_data=community, _room=f"user-{user.id}", _include_self=False)
-        # TODO fix in ffs  # TODO binding should be done on the whole EventSpace via metaclass
-        event.emit(_data=community)
+        event.emit_convert(community, user_id=user.id)
+        return community
 
     class CommunityIdModel(BaseModel):
         community_id: int
 
-    @communities_meta_events.bind_dup(CommunityIdModel, use_event=True)
-    @communities_meta_events.jwt_authorizer(User)
-    @communities_meta_events.database_searcher(Community, use_session=True)
+    @controller.argument_parser(CommunityIdModel)
+    @controller.mark_duplex(use_event=True)
+    # TODO support: @controller.marshal_ack(None, force_wrap=True)
+    @controller.jwt_authorizer(User)
+    @controller.database_searcher(Community, use_session=True)
     def leave_community(self, event: DuplexEvent, session, user: User, community: Community):
         cu = CommunitiesUser.find_or_create(session, user.id)
         cu.leave_community(session, community.id)
@@ -36,13 +40,14 @@ class CommunitiesEventSpace(EventSpace):
         community_id: int = Field(alias="source-id")
         target_index: int
 
-    @communities_meta_events.bind_dup(ReorderModel, use_event=True)
-    @communities_meta_events.jwt_authorizer(User)
-    @communities_meta_events.database_searcher(Community, use_session=True)
+    @controller.argument_parser(ReorderModel)
+    @controller.mark_duplex(use_event=True)
+    @controller.jwt_authorizer(User)
+    @controller.database_searcher(Community, use_session=True)
     def reorder_community(self, event: DuplexEvent, session, user: User, community: Community, target_index: int):
         cu = CommunitiesUser.find_or_create(session, user.id)
         if cu.reorder_community_list(session, community.id, target_index):
             event.emit(community_id=community.id, target_index=target_index,
                        _room=f"user-{user.id}", _include_self=False)
         else:
-            communities_meta_events.abort(404, "Community not in the list")
+            controller.abort(404, "Community not in the list")

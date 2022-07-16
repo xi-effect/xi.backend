@@ -3,8 +3,8 @@ from json import dump
 from logging import Logger
 from sys import stderr
 
-from common import app, SocketIO, versions, SIONamespace
-from common import sessionmaker, db_meta  # noqa
+from common import app, versions, SocketIO
+from common import db_meta, db_url  # noqa
 from communities import (communities_namespace, invitation_namespace, invitation_join_namespace,
                          communities_meta_events)
 # from communication import (chats_namespace)
@@ -71,10 +71,7 @@ api.add_namespace(webhook_namespace)
 
 socketio = SocketIO(app, cors_allowed_origins="*", version=versions["SIO"], logger=True, engineio_logger=True)
 
-communities_namespace = SIONamespace("/", protected=True)
-communities_namespace.attach_event_group(communities_meta_events)
-
-socketio.on_namespace(communities_namespace)
+socketio.add_namespace("/", communities_meta_events, protected=True)
 
 
 @app.cli.command("form-sio-docs")
