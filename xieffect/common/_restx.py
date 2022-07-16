@@ -3,14 +3,13 @@ from __future__ import annotations
 from functools import wraps
 from typing import Type
 
-from flask_jwt_extended import create_access_token, set_access_cookies, get_csrf_token
 from flask_restx import abort as default_abort
 
-from __lib__.flask_fullstack import RestXNamespace, UserRole
+from __lib__.flask_fullstack import ResourceController
 from ._marshals import success_response, message_response
 
 
-class Namespace(RestXNamespace):  # xieffect specific
+class Namespace(ResourceController):  # xieffect specific
     from ._core import sessionmaker
 
     def __init__(self, *args, **kwargs):

@@ -1,76 +1,48 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Union
-
 from flask import Flask
-from flask_socketio import disconnect
-from pydantic import BaseModel, Field
 
-from __lib__.flask_fullstack import Namespace as _Namespace, EventGroup as _EventGroup, PydanticModel
-from __lib__.flask_siox import SocketIO as _SocketIO, ServerEvent, DuplexEvent
+from __lib__.flask_fullstack import EventController as _EventController, PydanticModel, SocketIO as _SocketIO
 
 
-@dataclass
-class EventException(Exception):
-    code: int
-    message: str
+# DEPRECATED due to support for acknowledgements
+# @dataclass
+# class EventException(Exception):
+#     code: int
+#     message: str
 
 
-class EventGroup(_EventGroup):
+class EventController(_EventController):
     from ._core import sessionmaker
 
     def __init__(self, *args, **kwargs):
         kwargs["sessionmaker"] = kwargs.get("sessionmaker", self.sessionmaker)
+        kwargs["use_kebab_case"] = kwargs.get("use_kebab_case", True)
         super().__init__(*args, **kwargs)
 
-    def triggers(self, event: ServerEvent, condition: str = None, data: ... = None):
-        def triggers_wrapper(function):
-            if not hasattr(function, "__sio_doc__"):
-                setattr(function, "__sio_doc__", {"x-triggers": []})
-            if (x_triggers := function.__sio_doc__.get("x-triggers", None)) is None:
-                function.__sio_doc__["x-triggers"] = []
-                x_triggers = function.__sio_doc__["x-triggers"]
-            x_triggers.append({
-                "event": event.name,
-                "condition": condition,
-                "data": data
-            })
-            return function
+    # DEPRECATED due to support for acknowledgements
+    # def triggers(self, event: ServerEvent, condition: str = None, data: ... = None):
+    #     def triggers_wrapper(function):
+    #         if not hasattr(function, "__sio_doc__"):
+    #             setattr(function, "__sio_doc__", {"x-triggers": []})
+    #         if (x_triggers := function.__sio_doc__.get("x-triggers", None)) is None:
+    #             function.__sio_doc__["x-triggers"] = []
+    #             x_triggers = function.__sio_doc__["x-triggers"]
+    #         x_triggers.append({
+    #             "event": event.name,
+    #             "condition": condition,
+    #             "data": data
+    #         })
+    #         return function
 
-        return triggers_wrapper
+    #    return triggers_wrapper
 
-    # TODO use .triggers() for bind_pub with use_event (when ffs will support `x-triggers` correctly)
+    # T/O/D/O use .triggers() for bind_pub with use_event (when ffs will support `x-triggers` correctly)
 
-    def doc_abort(self, error_code: Union[int, str], description: str, *, critical: bool = False):
-        return self.triggers(error_event, description, {"code": error_code})
+    # def doc_abort(self, error_code: Union[int, str], description: str, *, critical: bool = False):
+    #    return self.triggers(error_event, description, {"code": error_code})
 
 
 class EmptyBody(PydanticModel):
     pass
-
-
-class Error(BaseModel):
-    code: int
-    message: str
-    event: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.utcnow().isoformat())
-
-
-error_group = EventGroup(use_kebab_case=True)
-error_event = error_group.bind_sub(Error, name="error", description="Emitted if something goes wrong")
-
-
-class Namespace(_Namespace):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.attach_event_group(error_group)
-
-    def trigger_event(self, event, *args):
-        try:
-            return super().trigger_event(event.replace("-", "_"), *args)
-        except EventException as e:
-            error_event.emit(code=e.code, message=e.message, event=event)
-            disconnect()
 
 
 class SocketIO(_SocketIO):
@@ -80,11 +52,3 @@ class SocketIO(_SocketIO):
         # @self.on("connect")  # check everytime or save in session?
         # def connect_user():  # https://python-socketio.readthedocs.io/en/latest/server.html#user-sessions
         #     pass             # sio = main.socketio.server
-
-    def get_user(self):
-        pass
-
-
-def users_broadcast(_event: Union[ServerEvent, DuplexEvent], _user_ids: list[int], **data):
-    for user_id in _user_ids:
-        _event.emit(f"user-{user_id}", **data)
