@@ -171,7 +171,19 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
     assert dict_equal(data[0], invitation_data, "role", "limit")
 
     # delete invitation & check again
-    assert check_code(client.delete(f"/communities/{community_id}/invitations/{invitation['id']}/"))["a"]
+    delete_data = {"community-id": community_id, "invitation-id": invitation["id"]}
+    ack = socketio_client2.emit("delete-invite", delete_data, callback=True)
+    assert isinstance(ack, dict)
+    assert ack.get("code", None) == 200
+    assert ack.get("message", None) == "Success"
+
+    assert len(socketio_client2.get_received()) == 0
+    assert len(socketio_client3.get_received()) == 0
+    assert len(socketio_client4.get_received()) == 0
+
+    events = socketio_client1.get_received()
+    assert len(events) == 1
+
     assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
 
 
