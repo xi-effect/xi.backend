@@ -71,11 +71,11 @@ jobs:
 
       - name: Generate docs
         run: >
-        ag ${{ steps.extract.outputs.destination }}/async-api.json
-        @asyncapi/html-template
-        --force-write
-        -p singleFile=true
-        -o ./sio-doc/
+          ag ${{ steps.extract.outputs.destination }}/async-api.json
+          @asyncapi/html-template
+          --force-write
+          -p singleFile=true
+          -o ./sio-doc/
 
       - name: Upload docs via SCP
         uses: appleboy/scp-action@master
