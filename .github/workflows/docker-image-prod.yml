@@ -55,8 +55,6 @@ jobs:
           body: |
             - [ ] migrations
             - [ ] version update
-          assignee: niqzart
-          reviewer: niqzart
           draft: true
 
   docs:
