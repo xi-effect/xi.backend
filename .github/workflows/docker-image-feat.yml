@@ -67,7 +67,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: async-api.json
-          path: ./async-api.json
+          path: ./
 
       - name: Generate docs
         run: >
@@ -76,6 +76,13 @@ jobs:
           --force-write
           -p singleFile=true
           -o ./sio-doc/
+
+      - name: Upload docs to artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sio-doc
+          path: ./sio-doc/index.html
+          retention-days: 1
 
   test:
     needs: build
