@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: async-api.json
-          path: ${{ steps.extract.outputs.destination }}
+          path: ${{ steps.extract.outputs.destination }}/async-api.json
           retention-days: 1
 
   docs:
