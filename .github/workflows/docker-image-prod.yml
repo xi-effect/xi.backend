@@ -4,6 +4,8 @@ on:
   push:
     branches: [ prod ]
 
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -47,6 +49,30 @@ jobs:
         --force-write
         -p singleFile=true
         -o ./sio-doc/
+
+  pull-request:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Run the Action
+        uses: devops-infra/action-pull-request@v0.4.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source_branch: prod
+          target_branch: master
+          title: New Version
+          body: |
+            - [ ] migrations
+            - [ ] version update
+          assignee: niqzart
+          reviewer: niqzart
+          draft: true
 
   test:
     needs: build
