@@ -9,57 +9,55 @@ from common import ResourceController, counter_parser, User
 from .invitations_db import Invitation
 from .meta_db import Community, Participant, ParticipantRole
 
-invitation_namespace = ResourceController("communities-invitation", path="/communities/<int:community_id>/invitations/")
-
-invitation_join_namespace = ResourceController("communities-invitation", path="/communities/join/")
+controller = ResourceController("communities-invitation", path="/communities/")
 
 
-@invitation_namespace.route("/")
+@controller.route("/<int:community_id>/invitations/")
 class InvitationCreator(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("role", required=True, dest="role_", choices=ParticipantRole.get_all_field_names(), type=str)
     parser.add_argument("limit", required=False, type=int)
     parser.add_argument("days", required=False, type=int)
 
-    @invitation_namespace.deprecated
-    @invitation_namespace.doc_abort(400, "Invalid role")
-    @invitation_namespace.doc_abort(403, "Permission Denied")
-    @invitation_namespace.jwt_authorizer(User)
-    @invitation_namespace.argument_parser(parser)
-    @invitation_namespace.database_searcher(Community, use_session=True)
-    @invitation_namespace.marshal_with(Invitation.BaseModel)
+    @controller.deprecated
+    @controller.doc_abort(400, "Invalid role")
+    @controller.doc_abort(403, "Permission Denied")
+    @controller.jwt_authorizer(User)
+    @controller.argument_parser(parser)
+    @controller.database_searcher(Community, use_session=True)
+    @controller.marshal_with(Invitation.BaseModel)
     def post(self, session, community: Community, user: User, role_: str,
              limit: Union[int, None], days: Union[int, None]):
         role: ParticipantRole = ParticipantRole.from_string(role_)
         if role is None:
-            invitation_namespace.abort(400, f"Invalid role: {role_}")
+            controller.abort(400, f"Invalid role: {role_}")
 
         participant = Participant.find_by_ids(session, community.id, user.id)
         if participant is None:
-            invitation_namespace.abort(403, "Permission Denied: Participant not found")
+            controller.abort(403, "Permission Denied: Participant not found")
 
         if participant.role.value < ParticipantRole.OWNER.value:
-            invitation_namespace.abort(403, "Permission Denied: Low role")
+            controller.abort(403, "Permission Denied: Low role")
 
         return Invitation.create(session, community.id, role, limit, days)
 
 
-@invitation_namespace.route("/index/")
+@controller.route("/<int:community_id>/invitations/index/")
 class InvitationLister(Resource):
-    @invitation_namespace.jwt_authorizer(User, check_only=True)
-    @invitation_namespace.argument_parser(counter_parser)
-    @invitation_namespace.database_searcher(Community, check_only=True, use_session=True)
-    @invitation_namespace.lister(20, Invitation.IndexModel)
+    @controller.jwt_authorizer(User, check_only=True)
+    @controller.argument_parser(counter_parser)
+    @controller.database_searcher(Community, check_only=True, use_session=True)
+    @controller.lister(20, Invitation.IndexModel)
     def post(self, session, community_id: int, start: int, finish: int):
         return Invitation.find_by_community(session, community_id, start, finish - start)
 
 
-@invitation_namespace.route("/<int:invitation_id>/")
+@controller.route("/<int:community_id>/invitations/<int:invitation_id>/")
 class InvitationManager(Resource):
-    @invitation_namespace.deprecated
-    @invitation_namespace.jwt_authorizer(User, check_only=True)
-    @invitation_namespace.database_searcher(Invitation, use_session=True)
-    @invitation_namespace.a_response()
+    @controller.deprecated
+    @controller.jwt_authorizer(User, check_only=True)
+    @controller.database_searcher(Invitation, use_session=True)
+    @controller.a_response()
     def delete(self, session, invitation: Invitation, **_) -> None:
         invitation.delete(session)
 
