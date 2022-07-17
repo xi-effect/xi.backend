@@ -1,11 +1,10 @@
 from datetime import datetime
-from json import load, dump
-from os.path import exists
+from json import load
 from pathlib import Path
 from sys import modules, argv
 
 from api import app as application, log_stuff, socketio
-from common import User, sessionmaker, versions, db_url, db_meta, mail_initialized
+from common import User, sessionmaker, db_url, db_meta, mail_initialized
 from other import WebhookURLs, send_discord_message
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 from users.invites_db import Invite  # noqa  # passthrough for tests
@@ -119,26 +118,10 @@ def init_chats(session):
                     message.updated = datetime.fromisoformat(message_data["updated"])
 
 
-def version_check():
-    if exists("../files/versions-lock.json"):
-        versions_lock: dict[str, str] = load(open("../files/versions-lock.json", encoding="utf-8"))
-    else:
-        versions_lock: dict[str, str] = {}
-
-    if versions_lock != versions:
-        log_stuff("status", "\n".join([
-            f"{key:3} was updated to {versions[key]}"
-            for key in versions.keys()
-            if versions_lock.get(key, None) != versions[key]
-        ]).expandtabs())
-        dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
-
-
 init_folder_structure()
 init_users()
 init_knowledge()
 # init_chats()
-version_check()
 
 if __name__ == "__main__":  # test only
     socketio.run(application, reloader_options={"extra_files": ["../../static/public/index.html"]})
