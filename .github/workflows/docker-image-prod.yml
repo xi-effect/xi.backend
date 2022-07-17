@@ -35,23 +35,7 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-prod
           cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-prod,mode=max
 
-      - id: extract
-        name: Extract docs
-        uses: shrink/actions-docker-extract@v1
-        with:
-          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-image
-          path: /files/async-api.json
-
-      - name: Generate docs
-        run: >
-        ag ${{ steps.extract.outputs.destination }}/async-api.json
-        @asyncapi/html-template
-        --force-write
-        -p singleFile=true
-        -o ./sio-doc/
-
   pull-request:
-    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -73,6 +57,28 @@ jobs:
           assignee: niqzart
           reviewer: niqzart
           draft: true
+
+  docs:
+    needs:
+      - build
+      - pull-request
+    runs-on: ubuntu-latest
+
+    steps:
+      - id: extract
+        name: Extract docs
+        uses: shrink/actions-docker-extract@v1
+        with:
+          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-prod
+          path: /files/async-api.json
+
+      - name: Generate docs
+        run: >
+        ag ${{ steps.extract.outputs.destination }}/async-api.json
+        @asyncapi/html-template
+        --force-write
+        -p singleFile=true
+        -o ./sio-doc/
 
   test:
     needs: build
