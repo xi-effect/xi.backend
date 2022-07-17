@@ -126,16 +126,19 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 @mark.order(1020)  # TODO redo with sio
 def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     community_data = {"name": "test", "description": "12345"}
-    invitation_data = {"role": "base", "limit": 2, "days": 10}
 
-    community_id = check_code(client.post("/communities/", json=community_data)).get("id", None)
+    community_id = check_code(client.post("/communities/", json=community_data)).get("id", None)  # TODO redo with sio
     assert community_id is not None
+    invitation_data = {"role": "base", "limit": 2, "days": 10, "community-id": community_id}
 
     # check that the invitation list is empty
     assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
 
+    sio = socketio_client_factory(client)
+
     # create a new invitation
-    invitation = check_code(client.post(f"/communities/{community_id}/invitations/", json=invitation_data))
+    invitation = sio.emit("new-invite", invitation_data, callback=True)["data"]
+    assert isinstance(invitation, dict)
     assert "id" in invitation.keys()
     assert "code" in invitation.keys()
 

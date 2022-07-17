@@ -26,7 +26,8 @@ class Invitation(Base, Identifiable):
     limit = Column(Integer, nullable=True)
 
     BaseModel = PydanticModel.column_model(id, code)
-    IndexModel = BaseModel.column_model(role, deadline, limit)
+    CreationBaseModel = PydanticModel.column_model(role, limit)
+    IndexModel = BaseModel.column_model(deadline).combine_with(CreationBaseModel)
 
     @classmethod
     def create(cls, session: sessionmaker, community_id: int, role: ParticipantRole, limit: int | None,
