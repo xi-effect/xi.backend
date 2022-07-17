@@ -14,14 +14,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 14
-
-      - name: Install asyncapi generator
-        run: npm install -g @asyncapi/generator
-
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -73,6 +65,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
+      - name: Install asyncapi generator
+        run: npm install -g @asyncapi/generator
 
       - id: extract
         name: Extract docs
