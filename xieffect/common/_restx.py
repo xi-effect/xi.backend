@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Type
 
 from flask_restx import abort as default_abort
 
@@ -27,14 +26,15 @@ class ResourceController(_ResourceController):  # xieffect specific
         """
 
         def a_response_wrapper(function):
-            return_type: Type = getattr(function, "__annotations__").get("return", None)
-            is_bool = return_type is None or issubclass(return_type, bool)
+            return_type = getattr(function, "__annotations__").get("return", None)
+            is_none = return_type is None or return_type == "None"
+            is_bool = is_none or issubclass(return_type, bool)
 
             @self.response(*(success_response if is_bool else message_response).get_args())
             @wraps(function)
             def a_response_inner(*args, **kwargs):
                 result = function(*args, **kwargs)
-                return {"a": True if return_type is None else result}
+                return {"a": True if is_none else result}
 
             return a_response_inner
 
