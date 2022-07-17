@@ -1,11 +1,12 @@
-from datetime import datetime
+from __future__ import annotations
+
 from functools import wraps
 from typing import Union
 
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, User
+from common import ResourceController, PydanticModel, counter_parser, User, get_or_pop
 from .invitations_db import Invitation
 from .meta_db import Community, Participant, ParticipantRole
 
@@ -62,42 +63,61 @@ class InvitationManager(Resource):
         invitation.delete(session)
 
 
-def check_invitation(join: bool = False):
+def check_invitation(use_session: bool = False):
     def check_invitation_wrapper(function):
         @wraps(function)
-        @invitation_join_namespace.jwt_authorizer(User)
-        @invitation_join_namespace.marshal_with(Community.IndexModel)
-        def check_invitation_inner(*_, user, code, session):
+        @controller.doc_abort("400 ", "Invalid invitation")
+        def check_invitation_inner(*args, **kwargs):
+            code: str = kwargs.pop("code")
+            session = get_or_pop(kwargs, "session", use_session)
+            user: User = kwargs.get("user", None)
+
             invitation: Invitation = Invitation.find_by_code(session, code)
-            if invitation is None:  # TODO still get the community id and check if joined
-                invitation_join_namespace.abort(400, "Invalid invitation")
-            if Participant.find_by_ids(session, invitation.community_id, user.id):
-                invitation_join_namespace.abort(400, "User has already joined")  # TODO return the community id
-
-            if invitation.deadline is not None and invitation.deadline < datetime.utcnow() or invitation.limit == 0:
+            if invitation is None:
+                controller.abort(400, "Invalid invitation")
+            elif user is not None and Participant.find_by_ids(session, invitation.community_id, user.id) is not None:
+                return function(*args, invitation=None, community=invitation.community, **kwargs)
+            elif invitation.is_invalid():
                 invitation.delete(session)
-                invitation_join_namespace.abort(400, "Invalid invitation")
+                controller.abort(400, "Invalid invitation")
 
-            if join:
-                Participant.create(session, invitation.community_id, user.id, invitation.role)
-                if invitation.limit == 1:
-                    invitation.delete(session)
-                elif invitation.limit is not None:
-                    invitation.limit -= 1
-
-            return invitation.community
+            return function(*args, invitation=invitation, community=invitation.community, **kwargs)
 
         return check_invitation_inner
 
     return check_invitation_wrapper
 
 
-@invitation_join_namespace.route("/<code>/")
-class InvitationJoin(Resource):
-    @check_invitation()
-    def get(self):
-        pass
+class InvitePreview(PydanticModel):
+    joined: bool
+    authorized: bool
+    community: Community.IndexModel = None
 
-    @check_invitation(join=True)
-    def post(self):
-        pass
+
+@controller.route("/join/<code>/")
+class InvitationJoin(Resource):
+    @controller.jwt_authorizer(User, optional=True)
+    @check_invitation()
+    @controller.marshal_with(InvitePreview)
+    def get(self, user: User, invitation: Invitation | None, community: Community):
+        return InvitePreview(
+            joined=invitation is None,
+            authorized=user is not None,
+            community=Community.IndexModel.convert(community)
+        )
+
+    @controller.doc_abort(400, "User has already joined")
+    @controller.jwt_authorizer(User)
+    @check_invitation(use_session=True)
+    @controller.marshal_with(Community.IndexModel)
+    def post(self, session, user: User, invitation: Invitation | None, community: Community):
+        if invitation is None:
+            controller.abort(400, "User has already joined")
+
+        Participant.create(session, community.id, user.id, invitation.role)
+        if invitation.limit == 1:
+            invitation.delete(session)
+        elif invitation.limit is not None:
+            invitation.limit -= 1
+
+        return community
