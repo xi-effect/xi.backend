@@ -5,7 +5,7 @@ from pathlib import Path
 from sys import modules, argv
 
 from api import app as application, log_stuff, socketio
-from common import User, sessionmaker, versions, db_url, db_meta, mail_initialized
+from common import User, sessionmaker, db_url, db_meta, mail_initialized, versions
 from other import WebhookURLs, send_discord_message
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 from users.invites_db import Invite  # noqa  # passthrough for tests
@@ -134,11 +134,17 @@ def version_check():
         dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
 
 
+@application.cli.command("form-sio-docs")
+def form_sio_docs():
+    with open("../files/async-api.json", "w") as f:
+        dump(socketio.docs(), f, ensure_ascii=False)
+
+
 init_folder_structure()
 init_users()
 init_knowledge()
-# init_chats()
 version_check()
+# init_chats()
 
 if __name__ == "__main__":  # test only
     socketio.run(application, reloader_options={"extra_files": ["../../static/public/index.html"]})

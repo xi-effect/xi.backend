@@ -1,8 +1,10 @@
-name: Production Pipeline
+name: Feature Branch PR Pipeline
 
 on:
-  push:
-    branches: [ master ]
+  pull_request:
+    branches-ignore:
+      - master
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,16 +25,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Build and push (push)
+      - name: Build and push (PR)
         uses: docker/build-push-action@v2
         with:
           context: ./
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-image
-          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back
-          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back,mode=max
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-${{ github.event.issue.number }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-${{ github.event.issue.number }}
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-${{ github.event.issue.number }},mode=max
 
       - id: extract
         name: Extract docs for later step
@@ -48,29 +50,8 @@ jobs:
           path: ${{ steps.extract.outputs.destination }}/async-api.json
           retention-days: 1
 
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Run pytest
-        uses: addnab/docker-run-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-image
-          run: sh /app/testing.sh
-
   docs:
-    needs:
-      - build
-      - test
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -103,41 +84,21 @@ jobs:
           path: ./sio-doc/index.html
           retention-days: 1
 
-  deploy:
-    needs:
-      - build
-      - test
-      - docs
+  test:
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download sio-doc from artifacts
-        uses: actions/download-artifact@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
         with:
-          name: sio-doc
-          path: ./sio-doc/
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Upload docs via SCP
-        uses: appleboy/scp-action@master
-        env:
-          HOST: ${{ secrets.SERVER_IP }}
-          USERNAME: root
-          KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Run pytest
+        uses: addnab/docker-run-action@v3
         with:
-          source: "./sio-doc/*"
-          target: "~/xieffect-core/sio-docs-new/"
-          strip_components: 1
-
-      - name: Run SSH command
-        uses: garygrossgarten/github-action-ssh@release
-        with:
-          command: |
-            cd ~/xieffect-core
-            docker system prune -a -f
-            docker-compose pull flask
-            docker-compose up -d
-          host: ${{ secrets.SERVER_IP }}
-          username: root
-          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
-        env:
-          CI: true
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-${{ github.event.issue.number }}
+          run: sh /app/testing.sh

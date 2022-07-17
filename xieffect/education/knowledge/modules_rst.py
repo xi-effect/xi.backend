@@ -3,15 +3,15 @@ from typing import Union
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace, counter_parser, unite_models, User
+from common import ResourceController, counter_parser, unite_models, User
 from .modules_db import Module, SortType, ModuleFilterSession, PreferenceOperation
 
-education_namespace: Namespace = Namespace("modules", path="/")
-modules_view_namespace: Namespace = Namespace("modules")
+education_namespace = ResourceController("modules", path="/")
+controller = ResourceController("modules")
 
-module_index_json = modules_view_namespace.model("IndexModule", unite_models(
+module_index_json = controller.model("IndexModule", unite_models(
     ModuleFilterSession.marshal_models["mfs-full"], Module.marshal_models["module-index"]))
-module_view_json = modules_view_namespace.model("Module", unite_models(
+module_view_json = controller.model("Module", unite_models(
     ModuleFilterSession.marshal_models["mfs-full"], Module.marshal_models["module-meta"]))
 
 report_parser: RequestParser = RequestParser()
@@ -40,66 +40,66 @@ filters.__schema__ = {
 }
 
 
-@modules_view_namespace.route("/")
+@controller.route("/")
 class ModuleLister(Resource):  # [POST] /modules/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("filters", type=filters, required=False, help="A dict of filters to be used")
     parser.add_argument("search", required=False, help="Search query (done with whoosh search)")
     parser.add_argument("sort", required=False, choices=SortType.get_all_field_names(), help="Defines item order")
 
-    @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.argument_parser(parser)
-    @modules_view_namespace.lister(12, module_index_json)
+    @controller.jwt_authorizer(User)
+    @controller.argument_parser(parser)
+    @controller.lister(12, module_index_json)
     def post(self, session, user: User, start: int, finish: int, filters: dict[str, str], search: str, sort: str):
         """ Lists index of modules with metadata & user's relation """
         try:
             sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
         except ValueError:
-            modules_view_namespace.abort(400, f"Sorting '{sort}' is not supported")
+            controller.abort(400, f"Sorting '{sort}' is not supported")
 
         if filters is None:
             filters = {}
         elif any(not isinstance(value, str) for value in filters.values()):
-            modules_view_namespace.abort(400, "Malformed filters parameter: use strings as values only")
+            controller.abort(400, "Malformed filters parameter: use strings as values only")
 
         global_filter = filters.get("global", None)
         if global_filter not in ("pinned", "starred", "started", "", None):
-            modules_view_namespace.abort(400, f"Global filter '{global_filter}' is not supported")
+            controller.abort(400, f"Global filter '{global_filter}' is not supported")
         user.filter_bind = global_filter
 
         return Module.get_module_list(session, filters, search, sort, user.id, start, finish - start)
 
 
-@modules_view_namespace.route("/hidden/")
+@controller.route("/hidden/")
 class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
-    @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.argument_parser(counter_parser)
-    @modules_view_namespace.lister(12, Module.ShortModel)
+    @controller.jwt_authorizer(User)
+    @controller.argument_parser(counter_parser)
+    @controller.lister(12, Module.ShortModel)
     def post(self, session, user: User, start: int, finish: int) -> list:
         """ Lists short metadata for hidden modules """
         return Module.get_hidden_module_list(session, user.id, start, finish - start)
 
 
-@modules_view_namespace.route("/<int:module_id>/")
+@controller.route("/<int:module_id>/")
 class ModuleGetter(Resource):  # GET /modules/<int:module_id>/
-    @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.database_searcher(Module, use_session=True, check_only=True)
-    @modules_view_namespace.marshal_with(module_view_json, skip_none=True)
+    @controller.jwt_authorizer(User)
+    @controller.database_searcher(Module, use_session=True, check_only=True)
+    @controller.marshal_with(module_view_json)
     def get(self, session, user: User, module_id: int):
         """ Returns module's full metadata & some user relation """
         ModuleFilterSession.find_or_create(session, user.id, module_id).visit_now()
         return Module.find_with_relation(session, module_id, user.id)
 
 
-@modules_view_namespace.route("/<int:module_id>/preference/")
+@controller.route("/<int:module_id>/preference/")
 class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference/
     parser: RequestParser = RequestParser()
     parser.add_argument("a", required=True, dest="operation", choices=PreferenceOperation.get_all_field_names())
 
-    @modules_view_namespace.jwt_authorizer(User)
-    @modules_view_namespace.database_searcher(Module, check_only=True, use_session=True)
-    @modules_view_namespace.argument_parser(parser)
-    @modules_view_namespace.a_response()
+    @controller.jwt_authorizer(User)
+    @controller.database_searcher(Module, check_only=True, use_session=True)
+    @controller.argument_parser(parser)
+    @controller.a_response()
     def post(self, session, module_id: int, user: User, operation: str) -> None:
         """ Changes user relation to some module """
         module: Union[ModuleFilterSession, None] = ModuleFilterSession.find_by_ids(session, user.id, module_id)
@@ -110,11 +110,11 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
         module.change_preference(session, PreferenceOperation.from_string(operation))
 
 
-@modules_view_namespace.route("/<int:module_id>/report/")
+@controller.route("/<int:module_id>/report/")
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
-    @modules_view_namespace.jwt_authorizer(User, check_only=True, use_session=False)
-    @modules_view_namespace.database_searcher(Module)
-    @modules_view_namespace.argument_parser(report_parser)
-    @modules_view_namespace.a_response()
+    @controller.jwt_authorizer(User, check_only=True, use_session=False)
+    @controller.database_searcher(Module)
+    @controller.argument_parser(report_parser)
+    @controller.a_response()
     def post(self, module: Module, reason: str, message: str) -> None:
         pass

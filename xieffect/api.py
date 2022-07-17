@@ -1,19 +1,17 @@
 from datetime import timedelta
-from json import dump
 from logging import Logger
 from sys import stderr
 
-from common import app, SocketIO, versions, SIONamespace
-from common import sessionmaker, db_meta  # noqa
-from communities import (communities_namespace, invitation_namespace, invitation_join_namespace,
-                         communities_meta_events)
+from common import app, versions, SocketIO
+from common import db_meta, db_url  # noqa
+from communities import (communities_namespace, invitation_namespace, communities_meta_events)
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace, result_namespace)
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
-                   settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
+                   settings_namespace, other_settings_namespace, protected_settings_namespace)
 
 logger = Logger("flask-fullstack", "WARN")
 
@@ -40,7 +38,6 @@ api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
 api.add_namespace(users_namespace)
-api.add_namespace(profiles_namespace)
 
 api.add_namespace(settings_namespace)
 api.add_namespace(other_settings_namespace)
@@ -65,22 +62,12 @@ api.add_namespace(wip_index_namespace)
 
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
-api.add_namespace(invitation_join_namespace)
 
 api.add_namespace(webhook_namespace)
 
 socketio = SocketIO(app, cors_allowed_origins="*", version=versions["SIO"], logger=True, engineio_logger=True)
 
-communities_namespace = SIONamespace("/", protected=True)
-communities_namespace.attach_event_group(communities_meta_events)
-
-socketio.on_namespace(communities_namespace)
-
-
-@app.cli.command("form-sio-docs")
-def form_sio_docs():
-    with open("../files/async-api.json", "w") as f:
-        dump(socketio.docs(), f, ensure_ascii=False)
+socketio.add_namespace("/", communities_meta_events, protected=True)
 
 # class MessagesNamespace(Namespace):
 #     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")

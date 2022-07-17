@@ -1,5 +1,4 @@
 from json import load
-from random import choice
 from typing import Iterator, Callable
 
 from flask.testing import FlaskClient
@@ -21,8 +20,12 @@ def test_user_search(client: FlaskClient, list_tester: Callable[[str, dict, int]
             assert user["username"] in usernames
     assert admin_user_found
 
-    some_name = choice(usernames)
-    assert any(user["username"] == some_name for user in list_tester("/users/", {"search": some_name[1:-1]}, 10))
+    for username in usernames[:-1]:
+        for user in list_tester("/users/", {"search": username[1:-1]}, 10):
+            if user["username"] == username:
+                break
+        else:
+            assert False, f"{username} not found"
 
 
 def test_user_profile(client: FlaskClient):

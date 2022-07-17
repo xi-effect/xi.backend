@@ -4,12 +4,12 @@ from flask import request, send_from_directory
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace, password_parser, ResponseDoc, User
+from common import ResourceController, password_parser, ResponseDoc, User
 from other import EmailType, send_code_email
 
-settings_namespace: Namespace = Namespace("settings")
-other_settings_namespace: Namespace = Namespace("settings", path="/")  # TODO unite with settings_namespace
-protected_settings_namespace: Namespace = Namespace("settings", path="/")
+settings_namespace = ResourceController("settings")
+other_settings_namespace = ResourceController("settings", path="/")  # TODO unite with settings_namespace
+protected_settings_namespace = ResourceController("settings", path="/")
 
 
 @other_settings_namespace.route("/avatar/")

@@ -1,105 +1,123 @@
-from datetime import datetime
+from __future__ import annotations
+
 from functools import wraps
 from typing import Union
 
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace, counter_parser, User
+from common import ResourceController, PydanticModel, counter_parser, User, get_or_pop
 from .invitations_db import Invitation
 from .meta_db import Community, Participant, ParticipantRole
 
-invitation_namespace = Namespace("communities-invitation", path="/communities/<int:community_id>/invitations/")
-
-invitation_join_namespace = Namespace("communities-invitation", path="/communities/join/")
+controller = ResourceController("communities-invitation", path="/communities/")
 
 
-@invitation_namespace.route("/")
+@controller.route("/<int:community_id>/invitations/")
 class InvitationCreator(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("role", required=True, dest="role_", choices=ParticipantRole.get_all_field_names(), type=str)
     parser.add_argument("limit", required=False, type=int)
     parser.add_argument("days", required=False, type=int)
 
-    @invitation_namespace.deprecated
-    @invitation_namespace.doc_abort(400, "Invalid role")
-    @invitation_namespace.doc_abort(403, "Permission Denied")
-    @invitation_namespace.jwt_authorizer(User)
-    @invitation_namespace.argument_parser(parser)
-    @invitation_namespace.database_searcher(Community, use_session=True)
-    @invitation_namespace.marshal_with(Invitation.BaseModel)
+    @controller.deprecated
+    @controller.doc_abort(400, "Invalid role")
+    @controller.doc_abort(403, "Permission Denied")
+    @controller.jwt_authorizer(User)
+    @controller.argument_parser(parser)
+    @controller.database_searcher(Community, use_session=True)
+    @controller.marshal_with(Invitation.BaseModel)
     def post(self, session, community: Community, user: User, role_: str,
              limit: Union[int, None], days: Union[int, None]):
         role: ParticipantRole = ParticipantRole.from_string(role_)
         if role is None:
-            invitation_namespace.abort(400, f"Invalid role: {role_}")
+            controller.abort(400, f"Invalid role: {role_}")
 
         participant = Participant.find_by_ids(session, community.id, user.id)
         if participant is None:
-            invitation_namespace.abort(403, "Permission Denied: Participant not found")
+            controller.abort(403, "Permission Denied: Participant not found")
 
         if participant.role.value < ParticipantRole.OWNER.value:
-            invitation_namespace.abort(403, "Permission Denied: Low role")
+            controller.abort(403, "Permission Denied: Low role")
 
         return Invitation.create(session, community.id, role, limit, days)
 
 
-@invitation_namespace.route("/index/")
+@controller.route("/<int:community_id>/invitations/index/")
 class InvitationLister(Resource):
-    @invitation_namespace.jwt_authorizer(User, check_only=True)
-    @invitation_namespace.argument_parser(counter_parser)
-    @invitation_namespace.database_searcher(Community, check_only=True, use_session=True)
-    @invitation_namespace.lister(20, Invitation.IndexModel)
+    @controller.jwt_authorizer(User, check_only=True)
+    @controller.argument_parser(counter_parser)
+    @controller.database_searcher(Community, check_only=True, use_session=True)
+    @controller.lister(20, Invitation.IndexModel)
     def post(self, session, community_id: int, start: int, finish: int):
         return Invitation.find_by_community(session, community_id, start, finish - start)
 
 
-@invitation_namespace.route("/<int:invitation_id>/")
+@controller.route("/<int:community_id>/invitations/<int:invitation_id>/")
 class InvitationManager(Resource):
-    @invitation_namespace.deprecated
-    @invitation_namespace.jwt_authorizer(User, check_only=True)
-    @invitation_namespace.database_searcher(Invitation, use_session=True)
-    @invitation_namespace.a_response()
+    @controller.deprecated
+    @controller.jwt_authorizer(User, check_only=True)
+    @controller.database_searcher(Invitation, use_session=True)
+    @controller.a_response()
     def delete(self, session, invitation: Invitation, **_) -> None:
         invitation.delete(session)
 
 
-def check_invitation(join: bool = False):
+def check_invitation(use_session: bool = False):
     def check_invitation_wrapper(function):
         @wraps(function)
-        @invitation_join_namespace.jwt_authorizer(User)
-        @invitation_join_namespace.marshal_with(Community.IndexModel)
-        def check_invitation_inner(*_, user, code, session):
+        @controller.doc_abort("400 ", "Invalid invitation")
+        def check_invitation_inner(*args, **kwargs):
+            code: str = kwargs.pop("code")
+            session = get_or_pop(kwargs, "session", use_session)
+            user: User = kwargs.get("user", None)
+
             invitation: Invitation = Invitation.find_by_code(session, code)
-            if invitation is None:  # TODO still get the community id and check if joined
-                invitation_join_namespace.abort(400, "Invalid invitation")
-            if Participant.find_by_ids(session, invitation.community_id, user.id):
-                invitation_join_namespace.abort(400, "User has already joined")  # TODO return the community id
-
-            if invitation.deadline is not None and invitation.deadline < datetime.utcnow() or invitation.limit == 0:
+            if invitation is None:
+                controller.abort(400, "Invalid invitation")
+            elif user is not None and Participant.find_by_ids(session, invitation.community_id, user.id) is not None:
+                return function(*args, invitation=None, community=invitation.community, **kwargs)
+            elif invitation.is_invalid():
                 invitation.delete(session)
-                invitation_join_namespace.abort(400, "Invalid invitation")
+                controller.abort(400, "Invalid invitation")
 
-            if join:
-                Participant.create(session, invitation.community_id, user.id, invitation.role)
-                if invitation.limit == 1:
-                    invitation.delete(session)
-                elif invitation.limit is not None:
-                    invitation.limit -= 1
-
-            return invitation.community
+            return function(*args, invitation=invitation, community=invitation.community, **kwargs)
 
         return check_invitation_inner
 
     return check_invitation_wrapper
 
 
-@invitation_join_namespace.route("/<code>/")
-class InvitationJoin(Resource):
-    @check_invitation()
-    def get(self):
-        pass
+class InvitePreview(PydanticModel):
+    joined: bool
+    authorized: bool
+    community: Community.IndexModel = None
 
-    @check_invitation(join=True)
-    def post(self):
-        pass
+
+@controller.route("/join/<code>/")
+class InvitationJoin(Resource):
+    @controller.jwt_authorizer(User, optional=True)
+    @check_invitation()
+    @controller.marshal_with(InvitePreview)
+    def get(self, user: User, invitation: Invitation | None, community: Community):
+        return InvitePreview(
+            joined=invitation is None,
+            authorized=user is not None,
+            community=Community.IndexModel.convert(community)
+        )
+
+    @controller.doc_abort(400, "User has already joined")
+    @controller.jwt_authorizer(User)
+    @check_invitation(use_session=True)
+    @controller.marshal_with(Community.IndexModel)
+    def post(self, session, user: User, invitation: Invitation | None, community: Community):
+        if invitation is None:
+            controller.abort(400, "User has already joined")
+
+        Participant.create(session, community.id, user.id, invitation.role)
+        if invitation.limit == 1:
+            invitation.delete(session)
+        elif invitation.limit is not None:
+            invitation.limit -= 1
+
+        return community
