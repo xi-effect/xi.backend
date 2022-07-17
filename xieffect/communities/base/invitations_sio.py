@@ -3,9 +3,9 @@ from __future__ import annotations
 from functools import wraps
 
 from flask_socketio import join_room, leave_room
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from common import EventController, EventSpace, ServerEvent, DuplexEvent, User, get_or_pop
+from common import EventController, EventSpace, DuplexEvent, User, get_or_pop
 from .invitations_db import Invitation
 from .meta_db import Community, Participant, ParticipantRole
 
