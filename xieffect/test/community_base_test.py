@@ -130,17 +130,39 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
     community_id = check_code(client.post("/communities/", json=community_data)).get("id", None)  # TODO redo with sio
     assert community_id is not None
     invitation_data = {"role": "base", "limit": 2, "days": 10, "community-id": community_id}
+    room_data = {"community-id": community_id}
 
     # check that the invitation list is empty
     assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
 
-    sio = socketio_client_factory(client)
+    # init sio & join rooms
+    def manage_room(sio: SocketIOTestClient, join: bool = True):
+        ack = sio.emit("open-invites" if join else "close-invites", room_data, callback=True)
+        assert isinstance(ack, dict)
+        assert ack.get("code", None) == 200
+        assert ack.get("message", None) == "Success"
+
+    socketio_client1 = socketio_client_factory(client)
+    socketio_client2 = socketio_client_factory(client)
+    socketio_client3 = socketio_client_factory(client)
+    socketio_client4 = socketio_client_factory(client)
+    manage_room(socketio_client1)
+    manage_room(socketio_client2)
+    manage_room(socketio_client3)
+    manage_room(socketio_client3, False)
 
     # create a new invitation
-    invitation = sio.emit("new-invite", invitation_data, callback=True)["data"]
+    invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
     assert isinstance(invitation, dict)
     assert "id" in invitation.keys()
     assert "code" in invitation.keys()
+
+    assert len(socketio_client1.get_received()) == 0
+    assert len(socketio_client3.get_received()) == 0
+    assert len(socketio_client4.get_received()) == 0
+
+    events = socketio_client2.get_received()
+    assert len(events) == 1
 
     # check if invitation list was updated
     data = list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))
