@@ -14,7 +14,7 @@ from education import (authors_namespace, wip_json_file_namespace, wip_images_na
                        pages_view_namespace, education_namespace, interaction_namespace, result_namespace)
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
-                   settings_namespace, other_settings_namespace, protected_settings_namespace, profiles_namespace)
+                   settings_namespace, other_settings_namespace, protected_settings_namespace)
 
 logger = Logger("flask-fullstack", "WARN")
 
@@ -41,7 +41,6 @@ api = app.configure_restx()
 
 api.add_namespace(reglog_namespace)
 api.add_namespace(users_namespace)
-api.add_namespace(profiles_namespace)
 
 api.add_namespace(settings_namespace)
 api.add_namespace(other_settings_namespace)
