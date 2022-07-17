@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Feature Branch PR Pipeline
 
 on:
   pull_request:
