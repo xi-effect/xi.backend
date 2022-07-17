@@ -1,46 +1,14 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Union
 
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, PydanticModel, counter_parser, User, get_or_pop
 from .invitations_db import Invitation
-from .meta_db import Community, Participant, ParticipantRole
+from .meta_db import Community, Participant
 
 controller = ResourceController("communities-invitation", path="/communities/")
-
-
-@controller.route("/<int:community_id>/invitations/")
-class InvitationCreator(Resource):
-    parser: RequestParser = RequestParser()
-    parser.add_argument("role", required=True, dest="role_", choices=ParticipantRole.get_all_field_names(), type=str)
-    parser.add_argument("limit", required=False, type=int)
-    parser.add_argument("days", required=False, type=int)
-
-    @controller.deprecated
-    @controller.doc_abort(400, "Invalid role")
-    @controller.doc_abort(403, "Permission Denied")
-    @controller.jwt_authorizer(User)
-    @controller.argument_parser(parser)
-    @controller.database_searcher(Community, use_session=True)
-    @controller.marshal_with(Invitation.BaseModel)
-    def post(self, session, community: Community, user: User, role_: str,
-             limit: Union[int, None], days: Union[int, None]):
-        role: ParticipantRole = ParticipantRole.from_string(role_)
-        if role is None:
-            controller.abort(400, f"Invalid role: {role_}")
-
-        participant = Participant.find_by_ids(session, community.id, user.id)
-        if participant is None:
-            controller.abort(403, "Permission Denied: Participant not found")
-
-        if participant.role.value < ParticipantRole.OWNER.value:
-            controller.abort(403, "Permission Denied: Low role")
-
-        return Invitation.create(session, community.id, role, limit, days)
 
 
 @controller.route("/<int:community_id>/invitations/index/")
@@ -51,16 +19,6 @@ class InvitationLister(Resource):
     @controller.lister(20, Invitation.IndexModel)
     def post(self, session, community_id: int, start: int, finish: int):
         return Invitation.find_by_community(session, community_id, start, finish - start)
-
-
-@controller.route("/<int:community_id>/invitations/<int:invitation_id>/")
-class InvitationManager(Resource):
-    @controller.deprecated
-    @controller.jwt_authorizer(User, check_only=True)
-    @controller.database_searcher(Invitation, use_session=True)
-    @controller.a_response()
-    def delete(self, session, invitation: Invitation, **_) -> None:
-        invitation.delete(session)
 
 
 def check_invitation(use_session: bool = False):
