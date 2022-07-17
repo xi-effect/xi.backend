@@ -72,7 +72,7 @@ jobs:
           node-version: 14
 
       - name: Install asyncapi generator
-        run: npm install -g @asyncapi/generator
+        run: npm install -g @asyncapi/generator @asyncapi/html-template
 
       - id: extract
         name: Extract docs
