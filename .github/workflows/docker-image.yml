@@ -68,9 +68,7 @@ jobs:
           run: sh /app/testing.sh
 
   docs:
-    needs:
-      - build
-      - test
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
