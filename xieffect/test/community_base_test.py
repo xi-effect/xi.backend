@@ -151,24 +151,38 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
 
 
 @mark.order(1025)  # TODO redo with sio
-def test_invitation_joins(multi_client: Callable[[str], FlaskClient],
+def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient],
                           list_tester: Callable[[str, dict, int], Iterator[dict]]):
     community_data = {"name": "test", "description": "12345"}
 
     # functions
-    def create_invitation(invitation_data, skip_id: bool = False):
+    def create_invitation(invitation_data, skip_id: bool = False, check_auth: bool = True):
         invitation = check_code(anatol.post(f"/communities/{community_id}/invitations/", json=invitation_data))
-        assert "id" in invitation.keys()
-        assert "code" in invitation.keys()
+        assert "id" in invitation
+        assert "code" in invitation
 
+        if check_auth:
+            assert_unauthorized(invitation["code"])
         if skip_id:
             return invitation["code"]
         return invitation["id"], invitation["code"]
+
+    def assert_unauthorized(code: str):
+        data = check_code(base_client.get(f"/communities/join/{code}/"))
+        assert data.get("joined", None) is False
+        assert data.get("authorized", None) is False
+
+        community = data.get("community", None)
+        assert community is not None
+        assert dict_equal(community, community_data, *community_data.keys())
+
+        check_code(base_client.post(f"/communities/join/{code}/"), 401)
 
     def assert_successful_get(client: FlaskClient, code, joined: bool):
         data = check_code(client.get(f"/communities/join/{code}/"))
         assert data.get("joined", None) is joined
         assert data.get("authorized", None) is True
+
         community = data.get("community", None)
         assert community is not None
         assert dict_equal(community, community_data, *community_data.keys())
@@ -224,7 +238,7 @@ def test_invitation_joins(multi_client: Callable[[str], FlaskClient],
     assert_invalid_invitation(vasil3, code2)
 
     # testing time limit
-    _, code3 = create_invitation({"role": "base", "days": 0})
+    code3 = create_invitation({"role": "base", "days": 0}, skip_id=True, check_auth=False)
     assert_already_joined(vasil1, code3)
     assert_already_joined(vasil2, code3)
     assert_invalid_invitation(vasil3, code3)
