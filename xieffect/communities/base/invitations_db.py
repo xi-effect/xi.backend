@@ -52,5 +52,5 @@ class Invitation(Base, Identifiable):
     def generate_code(self):
         return self.serializer.dumps((self.community_id, self.id))
 
-    def is_available(self, date: DateTime):
-        return self.count_limit != 0 and self.time_limit > date
+    def is_invalid(self) -> bool:
+        return (self.deadline is not None and self.deadline < datetime.utcnow()) or self.limit == 0
