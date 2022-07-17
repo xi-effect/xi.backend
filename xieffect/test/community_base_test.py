@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import Iterator, Callable
 
 from flask.testing import FlaskClient
@@ -163,6 +164,16 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
 
     events = socketio_client2.get_received()
     assert len(events) == 1
+    assert events[0].get("name", None) == "new-invite"
+
+    args = events[0].get("args", None)
+    assert isinstance(args, list) and len(args) == 1
+    assert isinstance(args[0], dict)
+
+    assert dict_equal(args[0], invitation_data, "role", "limit")
+    assert "deadline" in args[0]
+    dt: datetime = datetime.fromisoformat(args[0]["deadline"])
+    assert dt.day == (datetime.utcnow() + timedelta(days=invitation_data["days"])).day
 
     # check if invitation list was updated
     data = list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))
@@ -183,6 +194,12 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
 
     events = socketio_client1.get_received()
     assert len(events) == 1
+    assert events[0].get("name", None) == "delete-invite"
+
+    args = events[0].get("args", None)
+    assert isinstance(args, list) and len(args) == 1
+    assert isinstance(args[0], dict)
+    assert dict_equal(args[0], delete_data, *delete_data.keys())
 
     assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
 
