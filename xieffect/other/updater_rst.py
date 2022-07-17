@@ -1,19 +1,19 @@
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace
+from common import ResourceController
 from .discorder import send_message as send_discord_message, WebhookURLs
 
 github_token: str = ""
-webhook_namespace: Namespace = Namespace("webhooks")
+controller = ResourceController("webhooks")
 
 
-@webhook_namespace.route("/update/")
+@controller.route("/update/")
 class GithubWebhook(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, dest="event_type", location="headers")
 
-    @webhook_namespace.argument_parser(parser)
+    @controller.argument_parser(parser)
     def post(self, event_type: str):
         if event_type == "push":
             send_discord_message(WebhookURLs.GITHUB, f"Got a push notification.\n"
@@ -28,30 +28,30 @@ class GithubWebhook(Resource):
                                                      f"No action was applied.")
 
 
-@webhook_namespace.route("/update-docs/")
+@controller.route("/update-docs/")
 class GithubDocumentsWebhook(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, dest="event_type", location="headers")
 
-    @webhook_namespace.argument_parser(parser)
+    @controller.argument_parser(parser)
     def post(self, event_type: str):
         if event_type == "push":
             send_discord_message(WebhookURLs.GITHUB, "Documentation has been updated")
 
 
-@webhook_namespace.route("/heroku-build/")
+@controller.route("/heroku-build/")
 class HerokuBuildWebhook(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("action", str, required=True)
     parser.add_argument("resource", str, required=True)
 
-    @webhook_namespace.argument_parser(parser)
-    @webhook_namespace.a_response()
+    @controller.argument_parser(parser)
+    @controller.a_response()
     def post(self, resource: str, action: str) -> None:
         send_discord_message(WebhookURLs.HEROKU, f"Heroku may be online [{resource}:{action}]")
 
 
-@webhook_namespace.route("/netlify-build/")
+@controller.route("/netlify-build/")
 class NetlifyBuildWebhook(Resource):
     arguments = {
         "state": None,
@@ -66,8 +66,8 @@ class NetlifyBuildWebhook(Resource):
     for arg_name in arguments.keys():
         parser.add_argument(arg_name, str)
 
-    @webhook_namespace.argument_parser(parser)
-    @webhook_namespace.a_response()
+    @controller.argument_parser(parser)
+    @controller.a_response()
     def post(self, state: str, commit_url: str, **kwargs) -> None:
         result: str = (f"__**Netlify build failed!**__\n" if state == "error" else
                        f"__**Netlify build is {state}!**__\n")
@@ -84,7 +84,7 @@ class NetlifyBuildWebhook(Resource):
         send_discord_message(WebhookURLs.NETLIF, result)
 
 
-@webhook_namespace.route("/pass-through/")
+@controller.route("/pass-through/")
 class WebhookPassthrough(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("Authorization", required=True, location="headers", dest="api_key")
@@ -93,7 +93,7 @@ class WebhookPassthrough(Resource):
 
     from api import app
 
-    @webhook_namespace.argument_parser(parser)
+    @controller.argument_parser(parser)
     def post(self, api_key: str, webhook: str, message: str):
         if api_key != self.app.config["API_KEY"]:
             return {"a": "Wrong API_KEY"}, 403
