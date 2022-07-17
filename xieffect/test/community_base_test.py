@@ -165,9 +165,21 @@ def test_invitation_joins(multi_client: Callable[[str], FlaskClient],
             return invitation["code"]
         return invitation["id"], invitation["code"]
 
-    def assert_fail_join(client: FlaskClient, code: str, reason: str = "Invalid invitation"):
-        assert check_code(client.get(f"/communities/join/{code}/"), 400)["a"] == reason
-        assert check_code(client.post(f"/communities/join/{code}/"), 400)["a"] == reason
+    def assert_successful_get(client: FlaskClient, code, joined: bool):
+        data = check_code(client.get(f"/communities/join/{code}/"))
+        assert data.get("joined", None) is joined
+        assert data.get("authorized", None) is True
+        community = data.get("community", None)
+        assert community is not None
+        assert dict_equal(community, community_data, *community_data.keys())
+
+    def assert_invalid_invitation(client: FlaskClient, code: str):
+        assert check_code(client.get(f"/communities/join/{code}/"), 400)["a"] == "Invalid invitation"
+        assert check_code(client.post(f"/communities/join/{code}/"), 400)["a"] == "Invalid invitation"
+
+    def assert_already_joined(client: FlaskClient, code: str):
+        assert_successful_get(client, code, True)
+        assert check_code(client.post(f"/communities/join/{code}/"), 400)["a"] == "User has already joined"
 
     def assert_successful_join(client: FlaskClient, invitation_id: int, code: str):
         for data in list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST):
@@ -177,7 +189,7 @@ def test_invitation_joins(multi_client: Callable[[str], FlaskClient],
         else:
             assert False, "Invitation not found inside assert_successful_join"
 
-        assert dict_equal(check_code(client.get(f"/communities/join/{code}/")), community_data, *community_data.keys())
+        assert_successful_get(client, code, False)
         assert dict_equal(check_code(client.post(f"/communities/join/{code}/")), community_data, *community_data.keys())
 
         if limit_before is None:
@@ -199,23 +211,23 @@ def test_invitation_joins(multi_client: Callable[[str], FlaskClient],
 
     # testing joining & errors
     invitation_id1, code1 = create_invitation({"role": "base"})
-    assert_fail_join(vasil1, "hey")
-    assert_fail_join(anatol, code1, "User has already joined")
+    assert_invalid_invitation(vasil1, "hey")
+    assert_already_joined(anatol, code1)
     assert_successful_join(vasil1, invitation_id1, code1)
-    assert_fail_join(vasil1, code1, "User has already joined")
+    assert_already_joined(vasil1, code1)
 
     # testing counter limit
     invitation_id2, code2 = create_invitation({"role": "base", "limit": 1})
-    assert_fail_join(vasil1, code2, "User has already joined")
+    assert_already_joined(vasil1, code2)
     assert_successful_join(vasil2, invitation_id2, code2)
-    assert_fail_join(vasil2, code2)  # , "User has already joined")
-    assert_fail_join(vasil3, code2)
+    assert_invalid_invitation(vasil2, code2)  # , "User has already joined")
+    assert_invalid_invitation(vasil3, code2)
 
     # testing time limit
     _, code3 = create_invitation({"role": "base", "days": 0})
-    assert_fail_join(vasil1, code3, "User has already joined")
-    assert_fail_join(vasil2, code3, "User has already joined")
-    assert_fail_join(vasil3, code3)
+    assert_already_joined(vasil1, code3)
+    assert_already_joined(vasil2, code3)
+    assert_invalid_invitation(vasil3, code3)
 
     # testing creating permissions errors
     message = check_code(vasil1.post(f"/communities/{community_id}/invitations/", json={"role": "base"}), 403)["a"]
@@ -225,6 +237,6 @@ def test_invitation_joins(multi_client: Callable[[str], FlaskClient],
 
     # testing deleted invite
     assert check_code(anatol.delete(f"/communities/{community_id}/invitations/{invitation_id1}/"))["a"]
-    assert_fail_join(vasil1, code1)  # , "User has already joined")
-    assert_fail_join(vasil2, code1)  # , "User has already joined")
-    assert_fail_join(vasil3, code1)
+    assert_invalid_invitation(vasil1, code1)  # , "User has already joined")
+    assert_invalid_invitation(vasil2, code1)  # , "User has already joined")
+    assert_invalid_invitation(vasil3, code1)
