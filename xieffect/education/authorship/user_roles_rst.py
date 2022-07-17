@@ -1,52 +1,52 @@
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace, User
+from common import ResourceController, User
 from .user_roles_db import Author, Moderator
 
-authors_namespace: Namespace = Namespace("authors", path="/authors")
+controller = ResourceController("authors", path="/authors")
 
 
-@authors_namespace.route("/permit/")
+@controller.route("/permit/")
 class AuthorInitializer(Resource):  # [GET] /authors/permit/
-    @authors_namespace.jwt_authorizer(User)
-    @authors_namespace.a_response()
+    @controller.jwt_authorizer(User)
+    @controller.a_response()
     def get(self, session, user: User) -> bool:
         """ Adds Author role to the User (requester).
         Does nothing, if it has been added before. Will fail if Author was banned. """
         return Author.initialize(session, user)
 
 
-@authors_namespace.route("/<int:author_id>/ban/")
+@controller.route("/<int:author_id>/ban/")
 class BanAuthor(Resource):
-    @authors_namespace.jwt_authorizer(Moderator, check_only=True)
-    @authors_namespace.a_response()
+    @controller.jwt_authorizer(Moderator, check_only=True)
+    @controller.a_response()
     def post(self, session, author_id: int) -> None:
         author: Author = Author.find_by_id(session, author_id)
         author.banned = True
 
 
-@authors_namespace.route("/<int:author_id>/unban/")
+@controller.route("/<int:author_id>/unban/")
 class UnbanAuthor(Resource):
-    @authors_namespace.jwt_authorizer(Moderator, check_only=True)
-    @authors_namespace.a_response()
+    @controller.jwt_authorizer(Moderator, check_only=True)
+    @controller.a_response()
     def post(self, session, author_id: int) -> None:
         author: Author = Author.find_by_id(session, author_id)
         author.banned = False
 
 
-@authors_namespace.route("/settings/")
+@controller.route("/settings/")
 class ChangeAuthorSetting(Resource):
-    @authors_namespace.jwt_authorizer(Author, use_session=False)
-    @authors_namespace.marshal_with(Author.SettingsModel)
+    @controller.jwt_authorizer(Author, use_session=False)
+    @controller.marshal_with(Author.SettingsModel)
     def get(self, author: Author):
         return author
 
     parser: RequestParser = RequestParser()
     parser.add_argument("pseudonym", required=False)
 
-    @authors_namespace.jwt_authorizer(Author, use_session=False)
-    @authors_namespace.argument_parser(parser)
-    @authors_namespace.a_response()
+    @controller.jwt_authorizer(Author, use_session=False)
+    @controller.argument_parser(parser)
+    @controller.a_response()
     def post(self, author: Author, pseudonym: str) -> None:
         author.pseudonym = pseudonym

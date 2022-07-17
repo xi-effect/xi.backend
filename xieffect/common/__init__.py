@@ -7,5 +7,5 @@ from __lib__.flask_siox import EventSpace  # noqa
 from ._core import db_url, db_meta, Base, sessionmaker, index_service, versions, app, mail, mail_initialized
 from ._eventor import EventController, SocketIO, EmptyBody
 from ._marshals import message_response, success_response, ResponseDoc
-from ._restx import Namespace
+from ._restx import ResourceController
 from .users_db import User, TokenBlockList
