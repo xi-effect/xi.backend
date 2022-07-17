@@ -1,7 +1,5 @@
 from datetime import timedelta
-from json import dump, load
 from logging import Logger
-from os.path import exists
 from sys import stderr
 
 from common import app, versions, SocketIO
@@ -72,30 +70,6 @@ api.add_namespace(webhook_namespace)
 socketio = SocketIO(app, cors_allowed_origins="*", version=versions["SIO"], logger=True, engineio_logger=True)
 
 socketio.add_namespace("/", communities_meta_events, protected=True)
-
-
-def version_check():
-    if exists("../files/versions-lock.json"):
-        versions_lock: dict[str, str] = load(open("../files/versions-lock.json", encoding="utf-8"))
-    else:
-        versions_lock: dict[str, str] = {}
-
-    if versions_lock != versions:
-        log_stuff("status", "\n".join([
-            f"{key:3} was updated to {versions[key]}"
-            for key in versions.keys()
-            if versions_lock.get(key, None) != versions[key]
-        ]).expandtabs())
-        dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
-
-
-version_check()
-
-
-@app.cli.command("form-sio-docs")
-def form_sio_docs():
-    with open("../files/async-api.json", "w") as f:
-        dump(socketio.docs(), f, ensure_ascii=False)
 
 # class MessagesNamespace(Namespace):
 #     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
