@@ -69,7 +69,6 @@ jobs:
           body: |
             - [ ] migrations
             - [ ] version update
-          draft: true
 
   docs:
     needs: build
