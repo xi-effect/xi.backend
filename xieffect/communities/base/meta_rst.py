@@ -39,7 +39,7 @@ class CommunityReader(Resource):
     @controller.jwt_authorizer(User)
     @controller.database_searcher(Community, use_session=True)
     @controller.marshal_with(Community.IndexModel)
-    def post(self, session, user, community: Community):
+    def get(self, session, user, community: Community):
         if Participant.find_by_ids(session, community.id, user.id) is None:
             controller.abort(403, "Not a member")
         return community
