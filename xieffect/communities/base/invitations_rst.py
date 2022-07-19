@@ -7,6 +7,7 @@ from flask_restx import Resource
 from common import ResourceController, PydanticModel, counter_parser, User, get_or_pop
 from .invitations_db import Invitation
 from .meta_db import Community, Participant
+from .meta_sio import CommunitiesEventSpace
 
 controller = ResourceController("communities-invitation", path="/communities/")
 
@@ -77,5 +78,7 @@ class InvitationJoin(Resource):
             invitation.delete(session)
         elif invitation.limit is not None:
             invitation.limit -= 1
+
+        CommunitiesEventSpace.new_community.emit_convert(community, include_self=True, user_id=user.id)
 
         return community
