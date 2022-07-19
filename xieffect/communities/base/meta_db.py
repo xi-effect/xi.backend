@@ -16,7 +16,7 @@ class Community(Base, Identifiable):
     description = Column(Text, nullable=True)
     invite_count = Column(Integer, nullable=False, default=0)
 
-    participants = relationship("Participant", cascade="all, delete")
+    participants = relationship("Participant", cascade="all, delete, delete-orphan")
 
     BaseModel = PydanticModel.column_model(id)
     CreateModel = PydanticModel.column_model(name, description)

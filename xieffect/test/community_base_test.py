@@ -222,7 +222,7 @@ def create_assert_successful_get(community_data):
 def create_assert_successful_join(list_tester, community_id, community_data):
     assert_successful_get = create_assert_successful_get(community_data)
 
-    def assert_successful_join(client: FlaskClient, invitation_id: int, code: str):
+    def assert_successful_join(client: FlaskClient, invitation_id: int, code: str, *sio_clients: SocketIOTestClient):
         for data in list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST):
             if data["id"] == invitation_id:
                 limit_before = data.get("limit", None)
@@ -241,6 +241,17 @@ def create_assert_successful_join(list_tester, community_id, community_data):
                 break
         else:
             assert limit_before == 1
+
+        for sio in sio_clients:
+            events = sio.get_received()
+            assert len(events) == 1
+            assert events[0].get("name", None) == "new-community"
+
+            args = events[0].get("args", None)
+            assert isinstance(args, list) and len(args) == 1
+            assert isinstance(args[0], dict)
+
+            # TODO mb check community data
 
     return assert_successful_join
 
@@ -323,6 +334,10 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
     socketio_client2 = socketio_client_factory(anatol)
     socketio_client3 = socketio_client_factory(anatol)
     socketio_client4 = socketio_client_factory(anatol)
+
+    socketio_client5 = socketio_client_factory(vasil1)
+    socketio_client6 = socketio_client_factory(vasil1)
+
     manage_room(socketio_client1)
     manage_room(socketio_client2)
     manage_room(socketio_client3)
@@ -334,7 +349,7 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
     invitation_id1, code1 = create_invitation({"role": "base"})
     assert_invalid_invitation(vasil1, "hey")
     assert_already_joined(anatol, code1)
-    assert_successful_join(vasil1, invitation_id1, code1)
+    assert_successful_join(vasil1, invitation_id1, code1, socketio_client5, socketio_client6)
     assert_already_joined(vasil1, code1)
 
     # testing counter limit
@@ -447,5 +462,5 @@ def test_invitation_errors(multi_client, list_tester):
     assert_fail_event(socketio_client4, 403, "Permission Denied: Participant not found")
 
     # member joins community & fails connecting to room
-    assert_successful_join(member, invitation["id"], invitation["code"])
+    assert_successful_join(member, invitation["id"], invitation["code"], socketio_client3)
     assert_fail_event(socketio_client3, 403, "Permission Denied: Low role")

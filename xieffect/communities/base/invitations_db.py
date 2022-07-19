@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, select, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.sqltypes import Integer, DateTime, String, Enum
 
 from common import PydanticModel, Identifiable, Base, sessionmaker, app
@@ -19,7 +19,7 @@ class Invitation(Base, Identifiable):
     code = Column(String(100), default="")
 
     community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
-    community = relationship("Community")
+    community = relationship("Community", backref=backref("invitations", cascade="all, delete, delete-orphan"))
 
     role = Column(Enum(ParticipantRole), nullable=False)
     deadline = Column(DateTime, nullable=True)
