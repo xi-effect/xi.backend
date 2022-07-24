@@ -1,12 +1,15 @@
 from typing import Tuple
 
 from flask.testing import FlaskClient
-from pytest import mark
+from flask_mail import Message
+from pytest import mark, skip
 from werkzeug.test import TestResponse
 
 from __lib__.flask_fullstack import check_code, dict_equal
-from .conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
+from common import mail, mail_initialized
+from other import EmailType
 from wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
+from .conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
 
@@ -28,7 +31,6 @@ def test_login(base_client: FlaskClient):
     check_code(base_client.post("/logout/"))
 
 
-@mark.skip
 @mark.order(10)
 def test_signup(base_client: FlaskClient):
     credentials = {"email": "hey@hey.hey", "password": "12345", "username": "hey"}
@@ -37,10 +39,14 @@ def test_signup(base_client: FlaskClient):
     def assert_with_code(code: str, status: int, message: str):
         assert check_code(base_client.post("/reg/", json=dict(credentials, code=code)), status)["a"] == message
 
-    assert_with_code("hey", 400, "Malformed code (BadSignature)")
-    assert_with_code(Invite.serializer.dumps((-1, 0)), 404, "Invite not found")
+    with mail.record_messages() as outbox:
+        # Checking fails
+        assert_with_code("hey", 400, "Malformed code (BadSignature)")
+        assert_with_code(Invite.serializer.dumps((-1, 0)), 404, "Invite not found")
 
-    # Checking successful auth
+        assert not mail_initialized or len(outbox) == 0
+
+    # Checking successful reg
     data = dict(credentials, code=Invite.serializer.dumps((TEST_INVITE_ID, 0)))
     response = check_code(base_client.post("/reg/", json=data), get_json=False)
 
@@ -65,6 +71,38 @@ def test_signup(base_client: FlaskClient):
     # Check the /home/ as well
     response = check_code(base_client.get("/home/"))
     assert response == result
+
+    check_code(base_client.post("/logout/"))
+
+
+@mark.order(12)
+def test_email_confirm(base_client: FlaskClient):
+    if not mail_initialized:
+        skip("Email module is not setup")
+
+    # TODO use hey@hey.hey but delete account form test_signup (& here)
+    credentials = {"email": "hey2@hey.hey", "password": "12345", "username": "hey",
+                   "code": Invite.serializer.dumps((TEST_INVITE_ID, 0))}
+    link_start = "https://xieffect.ru/email/"
+
+    with mail.record_messages() as outbox:
+        assert check_code(base_client.post("/reg/", json=credentials))["a"] == "Success"
+
+        assert len(outbox) == 1
+        message: Message = outbox[0]
+        assert message.subject == EmailType.CONFIRM.theme
+        assert link_start in message.html
+
+        code = message.html.partition(link_start)[2].partition('/"')[0]
+        assert code != ""
+
+        recipients = message.recipients
+        assert len(recipients) == 1
+        assert recipients[0] == credentials["email"]
+
+    assert check_code(base_client.get("/settings/")).get("email-confirmed", None) is False
+    assert check_code(base_client.post(f"/email-confirm/{code}/"))["a"] == "Success"
+    assert check_code(base_client.get("/settings/")).get("email-confirmed", None) is True
 
     check_code(base_client.post("/logout/"))
 
