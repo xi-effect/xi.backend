@@ -7,9 +7,10 @@ from random import randint
 from smtplib import SMTPDataError
 
 from flask_mail import Message
+from flask_restx import Resource
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import mail, app
+from common import mail, app, User, mail_initialized
 from .discorder import send_message as send_discord_message, WebhookURLs
 
 EMAIL_FOLDER: str = "../static/emails/"
@@ -38,7 +39,7 @@ class EmailTypeData:
 
 class EmailType(EmailTypeData, Enum):
     CONFIRM = ("Подтверждение адреса электронной почты на xieffect.ru", "registration-email.html")
-    CHANGE = ("Смена адреса электронной почты на xieffect.ru", "registration-email.html")
+    CHANGE = ("Смена адреса электронной почты на xieffect.ru", "email-change-email.html")
     PASSWORD = ("Смена пароля на xieffect.ru", "password-reset-email.html")
 
 
@@ -50,6 +51,8 @@ def generate_email(receiver: str, code: str, filename: str, theme: str) -> Messa
 
 
 def send_email(receiver: str, code: str, filename: str, theme: str):
+    if not mail_initialized:
+        return
     try:
         mail.send(generate_email(receiver, code, filename, theme))
     except SMTPDataError as e:
@@ -59,3 +62,20 @@ def send_email(receiver: str, code: str, filename: str, theme: str):
 
 def send_code_email(receiver: str, email_type: EmailType):
     return send_email(receiver, email_type.generate_code(receiver), email_type.filename, email_type.theme)
+
+
+def create_email_confirmer(controller, route: str, email_type: EmailType):
+    @controller.route(route + "<code>/")
+    class EmailConfirmer(Resource):
+        @controller.doc_abort(400, "Invalid code")
+        @controller.with_begin
+        @controller.a_response()
+        def post(self, session, code: str) -> str:
+            email = email_type.parse_code(code)
+            user = None if email is None else User.find_by_email_address(session, email)
+            if user is None:
+                controller.abort(400, "Invalid code")
+            user.email_confirmed = True
+            return "Success"
+
+    return EmailConfirmer
