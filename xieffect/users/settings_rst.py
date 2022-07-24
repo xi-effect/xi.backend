@@ -5,7 +5,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, password_parser, ResponseDoc, User
-from other import EmailType, send_code_email
+from other import EmailType, send_code_email, create_email_confirmer
 
 settings_namespace = ResourceController("settings")
 other_settings_namespace = ResourceController("settings", path="/")  # TODO unite with settings_namespace
@@ -111,6 +111,9 @@ class EmailChanger(Resource):
         send_code_email(new_email, EmailType.CHANGE)
         user.change_email(session, new_email)  # close all other JWT sessions
         return "Success"
+
+
+EmailChangeConfirmer = create_email_confirmer(protected_settings_namespace, "/email-change-confirm/", EmailType.CHANGE)
 
 
 @protected_settings_namespace.route("/password-change/")

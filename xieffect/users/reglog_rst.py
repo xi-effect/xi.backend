@@ -6,7 +6,7 @@ from itsdangerous import BadSignature
 from common import password_parser, ResourceController, success_response, TokenBlockList, User
 from communities import CommunitiesUser
 from .invites_db import Invite
-from other import EmailType, send_code_email
+from other import EmailType, send_code_email, create_email_confirmer
 
 controller = ResourceController("reglog", path="/")
 success_response.register_model(controller)
@@ -52,6 +52,9 @@ class UserRegistration(Resource):
         send_code_email(email, EmailType.CONFIRM)
         cu = CommunitiesUser.find_or_create(session, user.id)
         return cu, user
+
+
+EmailConfirmer = create_email_confirmer(controller, "/email-confirm/", EmailType.CONFIRM)
 
 
 @controller.route("/auth/")
