@@ -1,5 +1,6 @@
 from json import dumps
 from os import getenv
+from sys import modules
 from typing import Type
 
 from flask import Response
@@ -55,6 +56,7 @@ def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexSe
     versions = load(open("../static/versions.json", encoding="utf-8"))
 
     app: Flask = Flask(__name__, static_folder="../../static/public/", static_url_path="/static/", versions=versions)
+    app.config["TESTING"] = "pytest" in modules.keys()
     app.secrets_from_env("hope it's local")  # TODO DI to use secrets in `URLSafeSerializer`s
     app.configure_cors()
 

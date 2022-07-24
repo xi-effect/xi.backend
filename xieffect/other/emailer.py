@@ -10,7 +10,7 @@ from flask_mail import Message
 from flask_restx import Resource
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import mail, app, User
+from common import mail, app, User, mail_initialized
 from .discorder import send_message as send_discord_message, WebhookURLs
 
 EMAIL_FOLDER: str = "../static/emails/"
@@ -51,6 +51,8 @@ def generate_email(receiver: str, code: str, filename: str, theme: str) -> Messa
 
 
 def send_email(receiver: str, code: str, filename: str, theme: str):
+    if not mail_initialized:
+        return
     try:
         mail.send(generate_email(receiver, code, filename, theme))
     except SMTPDataError as e:
