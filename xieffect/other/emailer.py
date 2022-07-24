@@ -39,7 +39,7 @@ class EmailTypeData:
 
 class EmailType(EmailTypeData, Enum):
     CONFIRM = ("Подтверждение адреса электронной почты на xieffect.ru", "registration-email.html")
-    CHANGE = ("Смена адреса электронной почты на xieffect.ru", "registration-email.html")
+    CHANGE = ("Смена адреса электронной почты на xieffect.ru", "email-change-email.html")
     PASSWORD = ("Смена пароля на xieffect.ru", "password-reset-email.html")
 
 
