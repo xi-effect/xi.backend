@@ -1,0 +1,40 @@
+name: Production Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+    secrets:
+      DOCKER_HUB_USERNAME:
+        required: true
+      DOCKER_HUB_ACCESS_TOKEN:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Build and push
+        uses: niqzart/ffs-devop/docker-build@main
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          repository: ${{ secrets.DOCKER_HUB_USERNAME }}
+          tag: ${{ secrets.tag }}
+
+      - name: Extract and upload doc to artifacts
+        uses: niqzart/ffs-devop/docker-extract-artifact@main
+        with:
+          image: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_USERNAME }}:flask
+          folder-path: /files
+          filename: async-api.json
+          artifact-name: async-api.json
+          retention-days: 1
