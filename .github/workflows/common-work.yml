@@ -75,7 +75,7 @@ jobs:
       - name: Generate docs
         uses: niqzart/ffs-devops/generate-asyncapi@main
         with:
-          template: @asyncapi/html-template
+          template: "@asyncapi/html-template"
           input: ./async-api.json
           output: -o ./sio-doc/
           parameters: -p singleFile=true
