@@ -6,61 +6,8 @@ on:
       - master
 
 jobs:
-  build:
+  build-test-docs:
     uses: ./.github/workflows/build.yml
     with:
       tag: flask-${{ github.event.issue.number }}
     secrets: inherit
-
-  docs:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 14
-
-      - name: Install asyncapi generator
-        run: npm install -g @asyncapi/generator @asyncapi/html-template
-
-      - name: Download async-api.json from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: async-api.json
-          path: ./
-
-      - name: Generate docs
-        run: >
-          ag ./async-api.json
-          @asyncapi/html-template
-          --force-write
-          -p singleFile=true
-          -o ./sio-doc/
-
-      - name: Upload docs to artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: sio-doc
-          path: ./sio-doc/index.html
-          retention-days: 1
-
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Run pytest
-        uses: addnab/docker-run-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-${{ github.event.issue.number }}
-          run: sh /app/testing.sh
