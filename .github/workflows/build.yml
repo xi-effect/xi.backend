@@ -28,7 +28,7 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
           repository: ${{ secrets.DOCKER_HUB_USERNAME }}
-          tag: ${{ secrets.tag }}
+          tag: ${{ inputs.tag }}
 
       - name: Extract and upload doc to artifacts
         uses: niqzart/ffs-devops/docker-extract-artifact@main
