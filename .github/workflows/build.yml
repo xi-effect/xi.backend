@@ -33,7 +33,7 @@ jobs:
       - name: Extract and upload doc to artifacts
         uses: niqzart/ffs-devops/docker-extract-artifact@main
         with:
-          image: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_USERNAME }}:flask
+          image: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_USERNAME }}:${{ inputs.tag }}
           folder-path: /files
           filename: async-api.json
           artifact-name: async-api.json
