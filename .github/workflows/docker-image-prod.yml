@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-test-docs:
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/common-work.yml
     with:
       tag: flask-prod
     secrets: inherit
