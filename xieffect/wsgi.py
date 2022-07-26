@@ -6,6 +6,7 @@ from sys import modules, argv
 
 from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, db_url, db_meta, mail_initialized, versions
+from moderation import permission_index
 from other import WebhookURLs, send_discord_message
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 from users.invites_db import Invite  # noqa  # passthrough for tests
@@ -17,6 +18,8 @@ BASIC_PASS: str = "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b
 ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe"
 
 TEST_INVITE_ID: int = 0
+
+permission_index.initialize()
 
 if __name__ == "__main__" or "pytest" in modules.keys() or db_url == "sqlite:///test.db" or "form-sio-docs" in argv:
     application.debug = True
