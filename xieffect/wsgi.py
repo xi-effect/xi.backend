@@ -6,13 +6,14 @@ from sys import modules, argv
 
 from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, db_url, db_meta, mail_initialized, versions
-from moderation import permission_index
+from moderation import permission_index, Moderator
 from other import WebhookURLs, send_discord_message
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 from users.invites_db import Invite  # noqa  # passthrough for tests
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
+TEST_MOD_NAME: str = "test"
 
 BASIC_PASS: str = "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"
 ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe"
@@ -21,11 +22,20 @@ TEST_INVITE_ID: int = 0
 
 permission_index.initialize()
 
+
+@sessionmaker.with_begin()
+def init_test_mod(session):
+    if Moderator.find_by_name(session, TEST_MOD_NAME) is None:
+        moderator = Moderator.register(session, TEST_MOD_NAME, BASIC_PASS)
+        moderator.superuser = True
+
+
 if __name__ == "__main__" or "pytest" in modules.keys() or db_url == "sqlite:///test.db" or "form-sio-docs" in argv:
     application.debug = True
     if db_url == "sqlite:///app.db":
         db_meta.drop_all()
     db_meta.create_all()
+    init_test_mod()
 else:  # works on server restart
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
