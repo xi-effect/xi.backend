@@ -1,3 +1,4 @@
+from .emailer_mub import controller as emailer_qa_namespace
 from .profiles_rst import controller as users_namespace
 from .reglog_rst import controller as reglog_namespace
 from .settings_rst import other_settings_namespace, settings_namespace, protected_settings_namespace

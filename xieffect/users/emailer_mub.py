@@ -22,7 +22,8 @@ class EmailQAResource(Resource):
     @controller.doc_abort(404, "User not found")
     @controller.require_permission(emailing, use_moderator=False)
     @controller.argument_parser(parser)
-    def post(self, session, user_email: str | None, tester_email: str, email_type: str):
+    @controller.a_response()
+    def post(self, session, user_email: str | None, tester_email: str, email_type: str) -> str:
         email_type = EmailType.from_string(email_type)
         if email_type is None:
             controller.abort(400, f"Unsupported type")
@@ -35,4 +36,4 @@ class EmailQAResource(Resource):
 
         if email_type != EmailType.PASSWORD:
             user.email_confirmed = False
-        send_code_email(tester_email, email_type)
+        return send_code_email(tester_email, email_type)

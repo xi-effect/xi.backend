@@ -59,8 +59,10 @@ def send_email(receiver: str, code: str, filename: str, theme: str):
         send_discord_message(WebhookURLs.MAILBT, f"Email for {receiver} not sent:\n```{e}```")
 
 
-def send_code_email(receiver: str, email_type: EmailType):
-    return send_email(receiver, email_type.generate_code(receiver), email_type.filename, email_type.theme)
+def send_code_email(receiver: str, email_type: EmailType) -> str:
+    code = email_type.generate_code(receiver)
+    send_email(receiver, code, email_type.filename, email_type.theme)
+    return code
 
 
 def create_email_confirmer(controller, route: str, email_type: EmailType):
