@@ -7,48 +7,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Build and push (PR)
-        uses: docker/build-push-action@v2
-        with:
-          context: ./
-          file: ./Dockerfile
-          builder: ${{ steps.buildx.outputs.name }}
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-prod
-          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-prod
-          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:buildcache-back-prod,mode=max
-
-      - id: extract
-        name: Extract docs for later step
-        uses: shrink/actions-docker-extract@v1
-        with:
-          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-image
-          path: /files/async-api.json
-
-      - name: Upload doc artifact for later step
-        uses: actions/upload-artifact@v3
-        with:
-          name: async-api.json
-          path: ${{ steps.extract.outputs.destination }}/async-api.json
-          retention-days: 1
+  build-test-docs:
+    uses: ./.github/workflows/common-work.yml
+    with:
+      tag: flask-prod
+    secrets: inherit
 
   pull-request:
     runs-on: ubuntu-latest
@@ -69,56 +32,3 @@ jobs:
           body: |
             - [ ] migrations
             - [ ] version update
-
-  docs:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 14
-
-      - name: Install asyncapi generator
-        run: npm install -g @asyncapi/generator @asyncapi/html-template
-
-      - name: Download async-api.json from artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: async-api.json
-          path: ./
-
-      - name: Generate docs
-        run: >
-          ag ./async-api.json
-          @asyncapi/html-template
-          --force-write
-          -p singleFile=true
-          -o ./sio-doc/
-
-      - name: Upload docs to artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: sio-doc
-          path: ./sio-doc/index.html
-          retention-days: 1
-
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Run pytest
-        uses: addnab/docker-run-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          image: ${{ secrets.DOCKER_HUB_USERNAME }}/xieffect:flask-prod
-          run: sh /app/testing.sh

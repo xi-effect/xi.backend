@@ -6,23 +6,35 @@ from sys import modules, argv
 
 from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, db_url, db_meta, mail_initialized, versions
+from moderation import permission_index, Moderator
 from other import WebhookURLs, send_discord_message
 from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 from users.invites_db import Invite  # noqa  # passthrough for tests
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
+TEST_MOD_NAME: str = "test"
 
+TEST_PASS: str = "q"
 BASIC_PASS: str = "0a989ebc4a77b56a6e2bb7b19d995d185ce44090c13e2984b7ecc6d446d4b61ea9991b76a4c2f04b1b4d244841449454"
 ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f47c7b85b733b178843961eefe9cfbeb287fe"
 
 TEST_INVITE_ID: int = 0
+
+
+@sessionmaker.with_begin
+def init_test_mod(session):
+    if Moderator.find_by_name(session, TEST_MOD_NAME) is None:
+        moderator = Moderator.register(session, TEST_MOD_NAME, TEST_PASS)
+        moderator.superuser = True
+
 
 if __name__ == "__main__" or "pytest" in modules.keys() or db_url == "sqlite:///test.db" or "form-sio-docs" in argv:
     application.debug = True
     if db_url == "sqlite:///app.db":
         db_meta.drop_all()
     db_meta.create_all()
+    init_test_mod()
 else:  # works on server restart
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
@@ -39,6 +51,8 @@ else:  # works on server restart
         setup_fail = True
     if setup_fail:
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
+
+permission_index.initialize()
 
 
 def init_folder_structure():
@@ -58,15 +72,14 @@ def init_users(session):
         log_stuff("status", "Database has been reset")
         invite: Invite = Invite.create(session, id=TEST_INVITE_ID, name="TEST_INVITE")
 
-    from education.authorship import Author, Moderator  # noqa
+    from education.authorship import Author
 
     if (User.find_by_email_address(session, TEST_EMAIL)) is None:
         test_user: User = User.create(session, email=TEST_EMAIL, username="test", password=BASIC_PASS, invite=invite)
         test_user.author = Author.create(session, test_user)
 
-    if (User.find_by_email_address(session, ADMIN_EMAIL)) is None:
-        admin_user: User = User.create(session, email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
-        # admin_user.moderator = Moderator.create(session, admin_user)
+    if (User.find_by_email_address(session, ADMIN_EMAIL)) is None:  # TODO DEPRECATED, redo with MUB
+        User.create(session, email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
 
     with open("../static/test/user-bundle.json", encoding="utf-8") as f:
         for i, user_settings in enumerate(load(f)):
