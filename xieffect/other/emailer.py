@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
 from os import urandom
 from random import randint
 from smtplib import SMTPDataError
@@ -10,7 +9,7 @@ from flask_mail import Message
 from flask_restx import Resource
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import mail, app, User, mail_initialized
+from common import mail, app, User, mail_initialized, TypeEnum
 from .discorder import send_message as send_discord_message, WebhookURLs
 
 EMAIL_FOLDER: str = "../static/emails/"
@@ -37,7 +36,7 @@ class EmailTypeData:
             return None
 
 
-class EmailType(EmailTypeData, Enum):
+class EmailType(EmailTypeData, TypeEnum):
     CONFIRM = ("Подтверждение адреса электронной почты на xieffect.ru", "registration-email.html")
     CHANGE = ("Смена адреса электронной почты на xieffect.ru", "email-change-email.html")
     PASSWORD = ("Смена пароля на xieffect.ru", "password-reset-email.html")
