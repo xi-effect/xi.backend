@@ -2,7 +2,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, User
-from .user_roles_db import Author, Moderator
+from .user_roles_db import Author
 
 controller = ResourceController("authors", path="/authors")
 
@@ -17,22 +17,23 @@ class AuthorInitializer(Resource):  # [GET] /authors/permit/
         return Author.initialize(session, user)
 
 
-@controller.route("/<int:author_id>/ban/")
-class BanAuthor(Resource):
-    @controller.jwt_authorizer(Moderator, check_only=True)
-    @controller.a_response()
-    def post(self, session, author_id: int) -> None:
-        author: Author = Author.find_by_id(session, author_id)
-        author.banned = True
-
-
-@controller.route("/<int:author_id>/unban/")
-class UnbanAuthor(Resource):
-    @controller.jwt_authorizer(Moderator, check_only=True)
-    @controller.a_response()
-    def post(self, session, author_id: int) -> None:
-        author: Author = Author.find_by_id(session, author_id)
-        author.banned = False
+# TODO DEPRECATED, redo with MUB
+# @controller.route("/<int:author_id>/ban/")
+# class BanAuthor(Resource):
+#     @controller.jwt_authorizer(Moderator, check_only=True)
+#     @controller.a_response()
+#     def post(self, session, author_id: int) -> None:
+#         author: Author = Author.find_by_id(session, author_id)
+#         author.banned = True
+#
+#
+# @controller.route("/<int:author_id>/unban/")
+# class UnbanAuthor(Resource):
+#     @controller.jwt_authorizer(Moderator, check_only=True)
+#     @controller.a_response()
+#     def post(self, session, author_id: int) -> None:
+#         author: Author = Author.find_by_id(session, author_id)
+#         author.banned = False
 
 
 @controller.route("/settings/")

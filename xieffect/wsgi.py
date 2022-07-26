@@ -21,10 +21,8 @@ ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f4
 
 TEST_INVITE_ID: int = 0
 
-permission_index.initialize()
 
-
-@sessionmaker.with_begin()
+@sessionmaker.with_begin
 def init_test_mod(session):
     if Moderator.find_by_name(session, TEST_MOD_NAME) is None:
         moderator = Moderator.register(session, TEST_MOD_NAME, TEST_PASS)
@@ -54,6 +52,8 @@ else:  # works on server restart
     if setup_fail:
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
 
+permission_index.initialize()
+
 
 def init_folder_structure():
     Path("../files/avatars").mkdir(parents=True, exist_ok=True)
@@ -72,15 +72,14 @@ def init_users(session):
         log_stuff("status", "Database has been reset")
         invite: Invite = Invite.create(session, id=TEST_INVITE_ID, name="TEST_INVITE")
 
-    from education.authorship import Author, Moderator  # noqa
+    from education.authorship import Author
 
     if (User.find_by_email_address(session, TEST_EMAIL)) is None:
         test_user: User = User.create(session, email=TEST_EMAIL, username="test", password=BASIC_PASS, invite=invite)
         test_user.author = Author.create(session, test_user)
 
-    if (User.find_by_email_address(session, ADMIN_EMAIL)) is None:
-        admin_user: User = User.create(session, email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
-        # admin_user.moderator = Moderator.create(session, admin_user)
+    if (User.find_by_email_address(session, ADMIN_EMAIL)) is None:  # TODO DEPRECATED, redo with MUB
+        User.create(session, email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
 
     with open("../static/test/user-bundle.json", encoding="utf-8") as f:
         for i, user_settings in enumerate(load(f)):
