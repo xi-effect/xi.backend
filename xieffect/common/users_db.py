@@ -73,7 +73,7 @@ class User(Base, UserRole, Identifiable):
 
     # Role-related:
     author = relationship("Author", backref="user", uselist=False)  # TODO remove non-common reference
-    moderator = relationship("Moderator", backref="user", uselist=False)  # TODO remove non-common reference
+    # moderator = relationship("Moderator", backref="user", uselist=False)  # TODO DEPRECATED, redo with MUB
 
     # Chat-related
     # chats = relationship("UserToChat", back_populates="user")  # TODO remove non-common reference
