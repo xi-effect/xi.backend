@@ -10,7 +10,7 @@ from education import (authors_namespace, wip_json_file_namespace, wip_images_na
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace, result_namespace)
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
-from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
+from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace, users_mub_namespace,
                    settings_namespace, other_settings_namespace, protected_settings_namespace, emailer_qa_namespace)
 from moderation import mub_base_namespace, mub_cli_blueprint, superuser_namespace
 
@@ -71,6 +71,7 @@ api.add_namespace(mub_base_namespace)
 api.add_namespace(superuser_namespace)
 
 api.add_namespace(emailer_qa_namespace)
+api.add_namespace(users_mub_namespace)
 
 socketio = SocketIO(app, cors_allowed_origins="*", version=versions["SIO"], logger=True, engineio_logger=True)
 
