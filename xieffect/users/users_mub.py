@@ -4,7 +4,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
-from common import sessionmaker, User, ResponseDoc, counter_parser
+from common import sessionmaker, User, password_parser, counter_parser, Undefined
 from moderation import MUBController, permission_index
 from users.invites_db import Invite
 
@@ -51,3 +51,23 @@ class UserIndexResource(Resource):
 
         user = User.create(session, email=email, username=username, password=password, invite=invite)
         return {"a": "Email already in use"} if user is None else user
+
+
+@controller.route("/<int:user_id>/")
+class UserManagerResource(Resource):
+    parser = RequestParser()
+    parser.add_argument("email-confirmed", dest="email_confirmed", type=bool, store_missing=False)
+
+    @controller.require_permission(manage_users, use_moderator=False)
+    @controller.argument_parser(parser, use_undefined=True)
+    @controller.database_searcher(User)
+    @controller.marshal_with(User.FullData)
+    def put(self, user, email_confirmed: bool | Undefined):
+        if email_confirmed is not Undefined:
+            user.email_confirmed = email_confirmed
+
+    @controller.require_permission(manage_users, use_moderator=False)
+    @controller.database_searcher(User)
+    @controller.a_response()
+    def delete(self) -> None:
+        controller.abort(501, "Deleting is not implemented")

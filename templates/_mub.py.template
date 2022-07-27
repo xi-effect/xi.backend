@@ -4,7 +4,7 @@ from flask import request, send_from_directory, redirect
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import sessionmaker, User, ResponseDoc, counter_parser
+from common import sessionmaker, User, ResponseDoc, counter_parser, Undefined
 from moderation import MUBController, permission_index
 
 <...> = permission_index.add_permission(<...>)
