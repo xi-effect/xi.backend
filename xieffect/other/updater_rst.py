@@ -108,7 +108,7 @@ class WebhookPassthrough(Resource):
         try:
             with open("../files/lol-counter.txt") as f:
                 count = str(int(f.read()) + 1)
-            if "69" in count or count.count("0") == len(count) - 1:
+            if "69" in count or count[-1] == "0":
                 send_discord_message(WebhookURLs.LOLBOT, f"Got another one! Total: {count}")
         except (FileNotFoundError, ValueError):
             send_discord_message(WebhookURLs.LOLBOT, f"Reset happened... Got the first one!")
