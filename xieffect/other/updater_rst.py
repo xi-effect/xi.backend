@@ -100,3 +100,17 @@ class WebhookPassthrough(Resource):
         if (webhook_url := WebhookURLs.from_string(webhook)) is None:
             return {"a": f"Unsupported webhook URL: '{webhook}'"}, 400
         send_discord_message(webhook_url, message)
+
+
+@controller.route("/lol-bot/")
+class WebhookPassthrough(Resource):
+    def get(self):
+        try:
+            with open("../files/lol-counter.txt") as f:
+                count = int(f.read()) + 1
+            send_discord_message(WebhookURLs.LOLBOT, f"Got another one! Total: {count}")
+        except (FileNotFoundError, ValueError):
+            send_discord_message(WebhookURLs.LOLBOT, f"Reset happened... Got the first one!")
+            count = 1
+        with open("../files/lol-counter.txt", "w") as f:
+            f.write(str(count))

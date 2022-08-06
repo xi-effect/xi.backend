@@ -13,6 +13,7 @@ class WebhookURLs(TypeEnum):
     HEROKU = "899768347405729892/_-roOKd49JDjD0tPRbY6b0zon469e_KByPL7bakMTBlbEdPxTL0PtqLlIY0fna1B_w3Z"
     NETLIF = "903386251112120360/7WcUs86qDZkjp59PgWQUrbXpFK7ABrNTBc1P1Jopf05BNi05VhoW06oGDrjHAAtdSp3R"
     MAILBT = "994354341202890762/wyqKQiHUdAwbFwNW1MpKrcnH_enD4A7dv7zIRJP4M9cavv5ZBNnx2OSAR6FiORuzR3us"
+    LOLBOT = "1005549141730009108/saLOYG8mQXtUk8yLnD-9Vh4Sagr63sgy7SvYSHzmc1-0gjdyqPvqOdapNP0cYW3VvBgg"
 
 
 def send_message(webhook_url: WebhookURLs, message: str) -> Response:
