@@ -1,3 +1,4 @@
+from flask import current_app
 from flask_jwt_extended import get_jwt
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
@@ -78,13 +79,11 @@ class UserLogin(Resource):
 
 @controller.route("/go/")
 class Test(Resource):
-    from api import app
-
     @controller.with_begin
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
     def get(self, session):
         """ Localhost-only endpoint for logging in from the docs """
-        if not self.app.debug:
+        if not current_app.debug:
             return {"a": False}
 
         return CommunitiesUser.find_or_create(session, 1), User.find_by_id(session, 1)
