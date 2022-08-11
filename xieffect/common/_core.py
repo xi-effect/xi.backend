@@ -5,11 +5,11 @@ from typing import Type
 
 from flask import Response
 from flask_mail import Mail
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, create_engine
 
 from __lib__.flask_fullstack import Flask as _Flask, configure_whooshee, configure_sqlalchemy, \
     Sessionmaker, IndexService
-from __lib__.flask_fullstack.sqlalchemy import ModBase
+from __lib__.flask_fullstack.sqlalchemy import ModBase, create_base, Session
 
 
 class Flask(_Flask):
@@ -34,8 +34,20 @@ def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexSe
 
     load_dotenv("../.env")
 
+    convention = {
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s"
+    }
+
     db_url: str = getenv("DB_LINK", "sqlite:///app.db")
-    db_meta, Base, sessionmaker = configure_sqlalchemy(db_url)
+    engine = create_engine(db_url, pool_recycle=280)  # echo=True
+    db_meta = MetaData(bind=engine, naming_convention=convention)  # TODO allow naming conventions in FFS
+    Base = create_base(db_meta)
+    sessionmaker = Sessionmaker(bind=engine, class_=Session)
+
     index_service = configure_whooshee(sessionmaker, "../files/temp/whoosh")
     # configure_logging({
     #     "version": 1,
