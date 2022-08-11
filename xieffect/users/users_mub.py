@@ -8,7 +8,8 @@ from common import sessionmaker, User, password_parser, counter_parser, Undefine
 from moderation import MUBController, permission_index
 from users.invites_db import Invite
 
-manage_users = permission_index.add_permission("manage users")
+user_section = permission_index.add_section("users")
+manage_users = permission_index.add_permission(user_section, "manage")
 controller = MUBController("users", sessionmaker=sessionmaker)
 
 

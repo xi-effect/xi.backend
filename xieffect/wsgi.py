@@ -26,7 +26,7 @@ TEST_INVITE_ID: int = 0
 def init_test_mod(session):
     if Moderator.find_by_name(session, TEST_MOD_NAME) is None:
         moderator = Moderator.register(session, TEST_MOD_NAME, TEST_PASS)
-        moderator.superuser = True
+        moderator.super = True
 
 
 if __name__ == "__main__" or "pytest" in modules.keys() or db_url == "sqlite:///test.db" or "form-sio-docs" in argv:
