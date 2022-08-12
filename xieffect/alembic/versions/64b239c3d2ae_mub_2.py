@@ -24,8 +24,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('id', name=op.f('pk_mub-sections'))
     )
     with op.batch_alter_table('mub-moderators', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('super', sa.Boolean(), nullable=False))
-        batch_op.drop_column('superuser')
+        batch_op.alter_column('superuser', new_column_name='super')
 
     with op.batch_alter_table('mub-permissions', schema=None) as batch_op:
         batch_op.add_column(sa.Column('section_id', sa.Integer(), nullable=False))
@@ -43,8 +42,7 @@ def downgrade():
         batch_op.drop_column('section_id')
 
     with op.batch_alter_table('mub-moderators', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('superuser', sa.BOOLEAN(), nullable=False))
-        batch_op.drop_column('super')
+        batch_op.alter_column('super', new_column_name='superuser')
 
     op.drop_table('mub-sections')
     # ### end Alembic commands ###
