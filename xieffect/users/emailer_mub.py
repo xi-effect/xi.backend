@@ -7,7 +7,8 @@ from common import sessionmaker, User
 from moderation import MUBController, permission_index
 from other import EmailType, send_code_email
 
-emailing = permission_index.add_permission("emailing")
+qa_section = permission_index.add_section("quality assurance")
+emailing = permission_index.add_permission(qa_section, "emailing")
 controller = MUBController("emailer", path="/emailer/", sessionmaker=sessionmaker)
 
 
