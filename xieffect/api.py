@@ -10,8 +10,8 @@ from education import (authors_namespace, wip_json_file_namespace, wip_images_na
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
                        pages_view_namespace, education_namespace, interaction_namespace, result_namespace)
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
-from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace, users_mub_namespace,
-                   settings_namespace, other_settings_namespace, protected_settings_namespace, emailer_qa_namespace)
+from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
+                   settings_namespace, users_mub_namespace, emailer_qa_namespace)
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
 
 logger = Logger("flask-fullstack", "WARN")
@@ -41,8 +41,6 @@ api.add_namespace(reglog_namespace)
 api.add_namespace(users_namespace)
 
 api.add_namespace(settings_namespace)
-api.add_namespace(other_settings_namespace)
-api.add_namespace(protected_settings_namespace)
 api.add_namespace(feedback_namespace)
 api.add_namespace(invites_namespace)
 

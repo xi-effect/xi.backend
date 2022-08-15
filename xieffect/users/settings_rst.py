@@ -4,9 +4,7 @@ from flask_restx.reqparse import RequestParser
 from common import ResourceController, password_parser, User
 from other import EmailType, send_code_email, create_email_confirmer
 
-settings_namespace = ResourceController("settings")
-other_settings_namespace = ResourceController("settings", path="/")  # TODO unite with settings_namespace
-protected_settings_namespace = ResourceController("settings", path="/")
+controller = ResourceController("settings", path="/")
 
 
 def changed(value):
@@ -22,36 +20,36 @@ changed.__schema__ = {
 }
 
 
-@settings_namespace.route("/")
+@controller.route("/settings/")
 class Settings(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("changed", type=changed, required=True, help="A dict of changed settings")
 
-    @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(User.FullData)
+    @controller.jwt_authorizer(User, use_session=False)
+    @controller.marshal_with(User.FullData)
     def get(self, user: User):
         """ Loads user's own full settings """
         return user
 
-    @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.argument_parser(parser)  # TODO fix with json schema validation
-    @settings_namespace.a_response()
+    @controller.jwt_authorizer(User, use_session=False)
+    @controller.argument_parser(parser)  # TODO fix with json schema validation
+    @controller.a_response()
     def post(self, user: User, changed: dict) -> None:
         """ Overwrites values in user's settings with ones form payload """
         user.change_settings(changed)
 
 
-@protected_settings_namespace.route("/email-change/")
+@controller.route("/email-change/")
 class EmailChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", dest="new_email", required=True, help="Email to be connected to the user")
 
-    @protected_settings_namespace.doc_abort(200, "Success")
-    @protected_settings_namespace.doc_abort("200 ", "Wrong password")
-    @protected_settings_namespace.doc_abort(" 200", "Email in use")
-    @protected_settings_namespace.jwt_authorizer(User)
-    @protected_settings_namespace.argument_parser(parser)
-    @protected_settings_namespace.a_response()
+    @controller.doc_abort(200, "Success")
+    @controller.doc_abort("200 ", "Wrong password")
+    @controller.doc_abort(" 200", "Email in use")
+    @controller.jwt_authorizer(User)
+    @controller.argument_parser(parser)
+    @controller.a_response()
     def post(self, session, user: User, password: str, new_email: str) -> str:
         """ Verifies user's password and changes user's email to a new one """
 
@@ -66,19 +64,19 @@ class EmailChanger(Resource):
         return "Success"
 
 
-EmailChangeConfirmer = create_email_confirmer(protected_settings_namespace, "/email-change-confirm/", EmailType.CHANGE)
+EmailChangeConfirmer = create_email_confirmer(controller, "/email-change-confirm/", EmailType.CHANGE)
 
 
-@protected_settings_namespace.route("/password-change/")
+@controller.route("/password-change/")
 class PasswordChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", dest="new_password", required=True, help="Password that will be used in future")
 
-    @protected_settings_namespace.doc_abort(200, "Success")
-    @protected_settings_namespace.doc_abort("200 ", "Wrong password")
-    @protected_settings_namespace.jwt_authorizer(User, use_session=False)
-    @protected_settings_namespace.argument_parser(parser)
-    @protected_settings_namespace.a_response()
+    @controller.doc_abort(200, "Success")
+    @controller.doc_abort("200 ", "Wrong password")
+    @controller.jwt_authorizer(User, use_session=False)
+    @controller.argument_parser(parser)
+    @controller.a_response()
     def post(self, user: User, password: str, new_password: str) -> str:
         """ Verifies user's password and changes it to a new one """
 
