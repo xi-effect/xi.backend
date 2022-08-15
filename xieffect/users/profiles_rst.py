@@ -21,15 +21,6 @@ class UserFinder(Resource):
         return User.search_by_username(session, user.id, search, start, finish - start)
 
 
-@controller.route("/<int:user_id>/avatar/")
-class AvatarViewer(Resource):
-    @controller.deprecated
-    @controller.jwt_authorizer(User, check_only=True, use_session=False)
-    def get(self, user_id: int):
-        """ Loads user's avatar """
-        return send_from_directory(r"../files/avatars", f"{user_id}.png")
-
-
 @controller.route("/<int:user_id>/profile/")
 class ProfileViewer(Resource):
     @controller.jwt_authorizer(User, check_only=True, use_session=False)

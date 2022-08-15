@@ -1,42 +1,12 @@
-from os import remove
-
-from flask import request, send_from_directory
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, password_parser, ResponseDoc, User
+from common import ResourceController, password_parser, User
 from other import EmailType, send_code_email, create_email_confirmer
 
 settings_namespace = ResourceController("settings")
 other_settings_namespace = ResourceController("settings", path="/")  # TODO unite with settings_namespace
 protected_settings_namespace = ResourceController("settings", path="/")
-
-
-@other_settings_namespace.route("/avatar/")
-class Avatar(Resource):
-    @other_settings_namespace.deprecated
-    @other_settings_namespace.response(200, "PNG image as a byte string")
-    @other_settings_namespace.doc_responses(ResponseDoc(404, "Avatar not found"))
-    @other_settings_namespace.jwt_authorizer(User, use_session=False)
-    def get(self, user: User):
-        """ Loads user's own avatar """
-        return send_from_directory(r"../files/avatars", f"{user.id}.png")
-
-    @other_settings_namespace.deprecated
-    @other_settings_namespace.doc_file_param("image")
-    @other_settings_namespace.jwt_authorizer(User, use_session=False)
-    @other_settings_namespace.a_response()
-    def post(self, user: User) -> None:
-        """ Overwrites user's own avatar """
-        with open(f"../files/avatars/{user.id}.png", "wb") as f:
-            f.write(request.data)
-
-    @other_settings_namespace.deprecated
-    @other_settings_namespace.jwt_authorizer(User, use_session=False)
-    @other_settings_namespace.a_response()
-    def delete(self, user: User) -> None:
-        """Delete avatar"""
-        remove(f"../files/avatars/{user.id}.png")
 
 
 def changed(value):
@@ -69,26 +39,6 @@ class Settings(Resource):
     def post(self, user: User, changed: dict) -> None:
         """ Overwrites values in user's settings with ones form payload """
         user.change_settings(changed)
-
-
-@settings_namespace.route("/main/")
-class MainSettings(Resource):
-    @settings_namespace.deprecated
-    @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(User.MainData)
-    def get(self, user: User):
-        """ Loads user's own main settings (username, dark-theme and language) """
-        return user
-
-
-@settings_namespace.route("/roles/")
-class RoleSettings(Resource):
-    @settings_namespace.deprecated
-    @settings_namespace.jwt_authorizer(User, use_session=False)
-    @settings_namespace.marshal_with(User.RoleSettings)
-    def get(self, user: User):
-        """ Loads user's own role settings (author, moderator) """
-        return user
 
 
 @protected_settings_namespace.route("/email-change/")
