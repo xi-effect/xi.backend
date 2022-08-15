@@ -96,6 +96,9 @@ class EmailChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-email", dest="new_email", required=True, help="Email to be connected to the user")
 
+    @protected_settings_namespace.doc_abort(200, "Success")
+    @protected_settings_namespace.doc_abort("200 ", "Wrong password")
+    @protected_settings_namespace.doc_abort(" 200", "Email in use")
     @protected_settings_namespace.jwt_authorizer(User)
     @protected_settings_namespace.argument_parser(parser)
     @protected_settings_namespace.a_response()
@@ -121,6 +124,8 @@ class PasswordChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("new-password", dest="new_password", required=True, help="Password that will be used in future")
 
+    @protected_settings_namespace.doc_abort(200, "Success")
+    @protected_settings_namespace.doc_abort("200 ", "Wrong password")
     @protected_settings_namespace.jwt_authorizer(User, use_session=False)
     @protected_settings_namespace.argument_parser(parser)
     @protected_settings_namespace.a_response()

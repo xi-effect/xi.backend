@@ -32,6 +32,10 @@ class UserRegistration(Resource):
     parser.add_argument("username", required=True, help="Username to be assigned to new user's account")
     parser.add_argument("code", required=True, help="Serialized invite code")
 
+    @controller.doc_abort(" 200", "Email already in use")
+    @controller.doc_abort("200 ", "Invite code limit exceeded")
+    @controller.doc_abort(400, "Malformed code (BadSignature)")
+    @controller.doc_abort(404, "Invite not found")
     @controller.with_begin
     @controller.argument_parser(parser)
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
@@ -63,6 +67,8 @@ class UserLogin(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="User's email")
 
+    @controller.doc_abort("200 ", "User doesn't exist")
+    @controller.doc_abort(" 200", "Wrong password")
     @controller.with_begin
     @controller.argument_parser(parser)
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
@@ -121,6 +127,9 @@ class PasswordReseter(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True, help="Code sent in the email")
 
+    @controller.doc_abort(200, "Success")
+    @controller.doc_abort("200 ", "User doesn't exist")
+    @controller.doc_abort(" 200", "Code error")
     @controller.with_begin
     @controller.argument_parser(parser)
     @controller.a_response()
