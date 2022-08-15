@@ -33,8 +33,3 @@ class UserTask(Base):
     task_id = Column(Integer, ForeignKey(Task.id), primary_key=True, nullable=False)
     user = relationship(User)
     task = relationship(Task)
-
-    @classmethod
-    def find_by_id(cls, session: sessionmaker, user_id: int, task_id: int) -> Optional[UserTask]:
-        stmt: Select = select(cls).filter_by(user_id=user_id, task_id=task_id)
-        return session.get_first(stmt)
