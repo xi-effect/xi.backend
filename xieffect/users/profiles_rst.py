@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from flask import send_from_directory
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 

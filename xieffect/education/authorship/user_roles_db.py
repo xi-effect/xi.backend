@@ -63,27 +63,3 @@ class Author(Base, UserRole):
     def get_next_image_id(self) -> int:  # auto-commit
         self.last_image_id += 1
         return self.last_image_id  # noqa
-
-
-# TODO DEPRECATED, redo with MUB
-# class Moderator(Base, UserRole):
-#     __tablename__ = "moderators"
-#
-#     id = Column(Integer, ForeignKey(User.id), primary_key=True)
-#
-#     @classmethod
-#     def find_by_identity(cls, session, identity: int) -> Moderator | None:
-#         return session.get_first(select(cls).filter_by(id=identity))
-#
-#     @classmethod
-#     def create(cls, session: sessionmaker, user: User) -> bool:
-#         if cls.find_by_id(session, user.id):
-#             return False
-#         new_entry = cls()
-#         user.moderator = new_entry
-#         session.add(new_entry)
-#         session.flush()
-#         return True
-#
-#     def get_identity(self):
-#         return self.id

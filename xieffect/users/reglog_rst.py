@@ -4,17 +4,12 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
-from common import password_parser, ResourceController, success_response, TokenBlockList, User
+from common import password_parser, ResourceController, BlockedToken, User
 from communities import CommunitiesUser
-from .invites_db import Invite
 from other import EmailType, send_code_email, create_email_confirmer
+from .invites_db import Invite
 
 controller = ResourceController("reglog", path="/")
-success_response.register_model(controller)
-# add_sets_cookie_response = reglog_namespace.response(*success_response.get_args(),  # TODO use this is ffs
-#                                                      headers={"SetCookie": "sets access_token_cookie"})
-# add_unsets_cookie_response = reglog_namespace.response(*success_response.get_args(),
-#                                                        headers={"SetCookie": "unsets access_token_cookie"})
 
 
 @controller.route("/home/")
