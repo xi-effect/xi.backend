@@ -13,7 +13,7 @@ from moderation import (mub_base_namespace, mub_cli_blueprint, mub_super_namespa
 from other import (webhook_namespace, send_discord_message, send_file_discord_message, WebhookURLs)
 from users import (reglog_namespace, users_namespace, invites_namespace, feedback_namespace,
                    settings_namespace, users_mub_namespace, emailer_qa_namespace)
-from vault import files_namespace
+from vault import files_namespace, mub_files_namespace
 
 logger = Logger("flask-fullstack", "WARN")
 
@@ -39,6 +39,7 @@ jwt = app.configure_jwt_with_loaders(["cookies"], timedelta(hours=72), lambda *x
 api = app.configure_restx()
 
 api.add_namespace(files_namespace)
+api.add_namespace(mub_files_namespace)
 
 api.add_namespace(reglog_namespace)
 api.add_namespace(users_namespace)
