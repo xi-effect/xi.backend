@@ -9,6 +9,7 @@ from common import PydanticModel, Base, User
 
 class File(Base):
     __tablename__ = "files"
+    not_found_text = "File not found"
 
     id: int | Column = Column(Integer, primary_key=True)
     name: str | Column = Column(Text, nullable=False)
@@ -34,3 +35,7 @@ class File(Base):
     @property
     def filename(self) -> str:
         return self.id + "-" + self.name
+
+    @classmethod
+    def get_for_mub(cls, session, offset: int, limit: int) -> list[File]:
+        return session.get_paginated(select(File).order_by(cls.id.desc()), offset, limit)
