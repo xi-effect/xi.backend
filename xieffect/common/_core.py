@@ -7,8 +7,7 @@ from flask import Response
 from flask_mail import Mail
 from sqlalchemy import MetaData, create_engine
 
-from __lib__.flask_fullstack import Flask as _Flask, configure_whooshee, configure_sqlalchemy, \
-    Sessionmaker, IndexService
+from __lib__.flask_fullstack import Flask as _Flask, configure_whooshee, Sessionmaker, IndexService
 from __lib__.flask_fullstack.sqlalchemy import ModBase, create_base, Session
 
 
@@ -17,13 +16,13 @@ class Flask(_Flask):
         return Response(dumps({"a": message}), code)
 
     def configure_jwt_with_loaders(self, *args, **kwargs) -> None:
-        from .users_db import TokenBlockList
+        from .users_db import BlockedToken
         jwt = super().configure_jwt_with_loaders(*args, **kwargs)
 
         @jwt.token_in_blocklist_loader
         @sessionmaker.with_begin
         def check_if_token_revoked(_, jwt_payload, session):
-            return TokenBlockList.find_by_jti(session, jwt_payload["jti"]) is not None
+            return BlockedToken.find_by_jti(session, jwt_payload["jti"]) is not None
 
 
 def init_xieffect() -> tuple[str, MetaData, Type[ModBase], Sessionmaker, IndexService, dict, Flask, bool, Mail]:
