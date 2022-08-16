@@ -96,7 +96,7 @@ class UserLogout(Resource):
     @controller.removes_authorization()
     def post(self, session):
         """ Logs the user out, blocks the token """
-        TokenBlockList.create(session, jti=get_jwt()["jti"])
+        BlockedToken.create(session, jti=get_jwt()["jti"])
         return {"a": True}
 
 
