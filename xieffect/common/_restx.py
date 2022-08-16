@@ -8,7 +8,7 @@ from __lib__.flask_fullstack import ResourceController as _ResourceController
 from ._marshals import success_response, message_response
 
 
-class ResourceController(_ResourceController):  # xieffect specific
+class ResourceController(_ResourceController):
     from ._core import sessionmaker
 
     def __init__(self, *args, **kwargs):
@@ -40,28 +40,3 @@ class ResourceController(_ResourceController):  # xieffect specific
             return a_response_inner
 
         return a_response_wrapper
-
-
-"""
-def yad(decorators):
-    def decorator(f):
-        __apidoc__ = f.__apidoc__
-        for d in reversed(decorators):
-            f = d(f)
-        f.__apidoc__ = __apidoc__
-        return f
-
-    return decorator
-
-
-def cool_marshal_with(model: Dict[str, Type[Raw]], namespace: Namespace, *decorators, as_list: bool = False):
-    def cool_marshal_with_wrapper(function):
-        @yad(decorators)
-        @namespace.marshal_with(model, skip_none=True, as_list=as_list)
-        def cool_marshal_with_inner(*args, **kwargs):
-            return function(*args, **kwargs)
-
-        return cool_marshal_with_inner
-
-    return cool_marshal_with_wrapper
-"""

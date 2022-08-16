@@ -4,7 +4,6 @@ from common import ResourceController, User, counter_parser
 from .results_db import TestResult
 
 controller = ResourceController("result", path="/results/")
-# result_dict["percent"] = (result_dict["total-answers"] / 100) * result_dict["right-answers"]
 
 
 @controller.route("/modules/<int:module_id>/")
