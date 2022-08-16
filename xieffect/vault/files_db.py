@@ -4,7 +4,7 @@ from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text
 
-from common import Base, User
+from common import PydanticModel, Base, User
 
 
 class File(Base):
@@ -14,7 +14,14 @@ class File(Base):
     name: str | Column = Column(Text, nullable=False)
 
     uploader_id: int | Column = Column(Integer, ForeignKey(User.id), nullable=False)
-    uploader = relationship(User)
+    uploader: User | relationship = relationship(User)
+
+    class FullModel(PydanticModel.column_model(id)):
+        filename: str
+
+        @classmethod
+        def callback_convert(cls, callback, orm_object: File, **_):
+            callback(filename=orm_object.filename)  # TODO allow this in FFS simpler!
 
     @classmethod
     def create(cls, session, uploader: User, name: str) -> File:
@@ -25,5 +32,5 @@ class File(Base):
         return session.get_first(select(cls).filter_by(id=entry_id))
 
     @property
-    def filename(self):
+    def filename(self) -> str:
         return self.id + "-" + self.name
