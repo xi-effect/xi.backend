@@ -8,7 +8,7 @@ from common import sessionmaker, counter_parser
 from moderation import MUBController, permission_index
 from .files_db import File
 
-content_management = permission_index.add_section("content_management")
+content_management = permission_index.add_section("content management")
 manage_files = permission_index.add_permission(content_management, "manage files")
 controller = MUBController("files", sessionmaker=sessionmaker)
 
