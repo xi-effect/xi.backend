@@ -28,5 +28,5 @@ class MUBFileManager(Resource):
     @controller.jwt_authorizer(User)
     @controller.database_searcher(File, use_session=True)
     def delete(self, session, file: File) -> None:
-        remove(f"../files/{file.filename}")
+        remove(f"../files/vault/{file.filename}")
         file.delete(session)
