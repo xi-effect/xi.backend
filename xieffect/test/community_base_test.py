@@ -125,6 +125,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     # assert_order()
 
 
+@mark.skip
 @mark.order(1020)
 def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     community_data = {"name": "test", "description": "12345"}
@@ -256,6 +257,7 @@ def create_assert_successful_join(list_tester, community_id, community_data):
     return assert_successful_join
 
 
+@mark.skip
 @mark.order(1022)
 def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient],
                           list_tester: Callable[[str, dict, int], Iterator[dict]]):
@@ -391,6 +393,7 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
     assert_invalid_invitation(vasil3, code1)
 
 
+@mark.skip
 @mark.order(1024)
 def test_invitation_errors(multi_client, list_tester):
     community_data = {"name": "test", "description": "12345"}

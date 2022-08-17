@@ -8,11 +8,18 @@
   "points": [
     {
       "type": "theory",
-      "pages": [1, 2]
+      "pages": [
+        1,
+        2
+      ]
     },
     {
       "type": "practice",
-      "pages": [0, 2, 3]
+      "pages": [
+        0,
+        2,
+        3
+      ]
     }
   ]
 }

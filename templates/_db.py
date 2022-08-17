@@ -8,3 +8,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
 from common import Identifiable, PydanticModel, TypeEnum, Base, User, sessionmaker, JSONWithModel
+
+
+class TABLE(Base):
+    __tablename__ = "..."
+
+    pass

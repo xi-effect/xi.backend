@@ -10,11 +10,17 @@
 
 ### Для PyCharm
 1. Пометить папку `xieffect` как *Sources Root*
-2. Пометить папку `templates` как *Excluded*, чтобы форматер на него не ругался
-3. Открыть `xieffect/wsgi.py` и запустить его. Возможно, придётся поменять working directory на `path/to/project/xieffect`
-4. Проверить доступность http://localhost:5000/doc/ и остановить сервер
-5. Создать конфигурацию `pytest` для папки `xieffect`. Также поменять working directory на `path/to/project/xieffect`. Проверить, что всё работает (запустить тесты и дождаться успешного завершения)
+2. Пометить папку `xieffect/test` как *Test Sources Root*
+3. Стоит в меню "commit" нажать на шестерёнку над полем ввода и включить:
+    - Reformat Code
+    - Optimize Imports (кроме работы над template-ами)
+    - Analyze Code
 
+### Первичный запуск проекта
+1. Открыть `xieffect/wsgi.py` и запустить его. Возможно, придётся поменять working directory на `path/to/project/xieffect`
+2. Проверить доступность http://localhost:5000/doc/ и остановить сервер
+3. Создать конфигурацию `pytest` для папки `xieffect/test`. Также поменять working directory на `path/to/project/xieffect`
+4. Запустить тесты и дождаться успешного завершения
 
 ### GIT
 1. Никогда не работать в ветках `master` или `prod`

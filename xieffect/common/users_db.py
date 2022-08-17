@@ -24,14 +24,14 @@ DEFAULT_AVATAR: dict = {
 }
 
 
-class TokenBlockList(Base):
-    __tablename__ = "token_block_list"
+class BlockedToken(Base):
+    __tablename__ = "blocked_tokens"
 
     id = Column(Integer, primary_key=True, unique=True)
     jti = Column(String(36), nullable=False)
 
     @classmethod
-    def find_by_jti(cls, session: sessionmaker, jti) -> TokenBlockList:
+    def find_by_jti(cls, session: sessionmaker, jti: str) -> BlockedToken:
         return session.get_first(select(cls).filter_by(jti=jti))
 
 

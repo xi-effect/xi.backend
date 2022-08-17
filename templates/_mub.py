@@ -7,5 +7,6 @@ from flask_restx.reqparse import RequestParser
 from common import sessionmaker, User, ResponseDoc, counter_parser, Undefined
 from moderation import MUBController, permission_index
 
-<...> = permission_index.add_permission(<...>)
-controller = MUBController(<...>, sessionmaker=sessionmaker)
+section = permission_index.add_section("...")
+permission = permission_index.add_permission(section, "...")
+controller = MUBController("...", sessionmaker=sessionmaker)
