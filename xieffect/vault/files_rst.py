@@ -49,7 +49,8 @@ class FileManager(Resource):
     @controller.doc_abort(403, "Not your file")
     @controller.jwt_authorizer(User)
     @controller.database_searcher(File, use_session=True)
-    def delete(self, session, user: User, file: File):
+    @controller.a_response()
+    def delete(self, session, user: User, file: File) -> None:
         if file.uploader_id != user.id:
             controller.abort(403, "Not your file")
         remove(f"../files/vault/{file.filename}")

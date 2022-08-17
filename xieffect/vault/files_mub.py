@@ -4,7 +4,7 @@ from os import remove
 
 from flask_restx import Resource
 
-from common import sessionmaker, User, counter_parser
+from common import sessionmaker, counter_parser
 from moderation import MUBController, permission_index
 from .files_db import File
 
@@ -25,8 +25,8 @@ class MUBFileLister(Resource):
 @controller.route("/<int:file_id>/")
 class MUBFileManager(Resource):
     @controller.require_permission(manage_files, use_moderator=False)
-    @controller.jwt_authorizer(User)
     @controller.database_searcher(File, use_session=True)
+    @controller.a_response()
     def delete(self, session, file: File) -> None:
         remove(f"../files/vault/{file.filename}")
         file.delete(session)
