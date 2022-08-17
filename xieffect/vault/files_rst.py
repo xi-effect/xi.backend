@@ -26,7 +26,7 @@ class FileUploader(Resource):
     @controller.marshal_with(File.FullModel)
     def post(self, session, user: User, file_storage: FileStorage):
         file = File.create(session, user, file_storage.filename)
-        file_storage.save(f"../files/{file.filename}")
+        file_storage.save(f"../files/vault/{file.filename}")
         return file
 
 
@@ -35,7 +35,7 @@ class FileAccessor(Resource):
     @controller.with_begin
     def get(self, session, filename: str):
         try:
-            return send_from_directory("../files", filename)
+            return send_from_directory("../../files/vault/", filename)
         except NotFound:
             with suppress(ValueError):
                 file = File.find_by_id(session, int(filename.partition("-")[0]))
@@ -51,6 +51,6 @@ class FileManager(Resource):
     @controller.database_searcher(File, use_session=True)
     def delete(self, session, user: User, file: File):
         if file.uploader_id != user.id:
-            controller.doc_abort(403, "Not your file")
-        remove(f"../files/{file.filename}")
+            controller.abort(403, "Not your file")
+        remove(f"../files/vault/{file.filename}")
         file.delete(session)
