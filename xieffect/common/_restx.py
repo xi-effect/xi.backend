@@ -14,6 +14,8 @@ class ResourceController(_ResourceController):
     def __init__(self, *args, **kwargs):
         kwargs["sessionmaker"] = kwargs.get("sessionmaker", self.sessionmaker)
         super().__init__(*args, **kwargs)
+        success_response.register_model(self)
+        message_response.register_model(self)
 
     def abort(self, code: int, message: str = None, **kwargs):
         default_abort(code, a=message, **kwargs)

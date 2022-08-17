@@ -3,7 +3,7 @@ from typing import Union
 
 from flask_restx.reqparse import RequestParser
 
-from common import Namespace, get_or_pop, ResponseDoc, message_response, User
+from common import Namespace, get_or_pop, ResponseDoc, User
 from .chatting_db import ChatRole, UserToChat, Chat, Message
 
 
@@ -15,8 +15,6 @@ class ChatNamespace(Namespace):
     def search_user_to_chat(self, min_role: Union[ChatRole, None] = None, use_user_to_chat: bool = False,
                             use_chat: bool = False, use_user: bool = False, use_session: bool = False):
         def search_user_to_chat_wrapper(function):
-            message_response.register_model(self)
-
             @self.doc_responses(create_403_response(min_role is None))
             @self.jwt_authorizer(User)
             @self.database_searcher(Chat, use_session=True)
