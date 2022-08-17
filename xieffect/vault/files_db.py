@@ -34,7 +34,7 @@ class File(Base):
 
     @property
     def filename(self) -> str:
-        return self.id + "-" + self.name
+        return str(self.id) + "-" + self.name
 
     @classmethod
     def get_for_mub(cls, session, offset: int, limit: int) -> list[File]:

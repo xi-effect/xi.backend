@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from os import remove
 
 from flask import send_from_directory
@@ -36,9 +37,10 @@ class FileAccessor(Resource):
         try:
             return send_from_directory("../files", filename)
         except NotFound:
-            file = File.find_by_filename(session, filename)
-            if file is not None:
-                file.delete(session)
+            with suppress(ValueError):
+                file = File.find_by_id(session, int(filename.partition("-")[0]))
+                if file is not None:
+                    file.delete(session)
             raise
 
 
