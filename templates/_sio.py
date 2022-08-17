@@ -8,5 +8,5 @@ controller = EventController()
 
 
 @controller.route()
-class <...>(EventSpace):
+class SOMESpace(EventSpace):
     pass

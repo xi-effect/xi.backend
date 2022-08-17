@@ -6,4 +6,4 @@ from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, ResponseDoc, User, counter_parser, Undefined
 
-controller = ResourceController(<...>)
+controller = ResourceController("...")
