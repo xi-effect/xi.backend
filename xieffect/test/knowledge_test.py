@@ -89,8 +89,12 @@ def assert_with_global_filter(client: FlaskClient, list_tester: Callable[[str, d
         assert module[filter_name] != reverse
         if module["id"] == module_id:
             success = True
-    assert success, f"Module #{module_id}, marked as " + ("un" if reverse else "") + f"{filter_name}, was " \
-                    + ("" if reverse else "not ") + f"found in the list of {filter_name} modules"
+    assert success, (
+        f"Module #{module_id}, marked as "
+        + ("un" if reverse else "")
+        + f"{filter_name}, was "
+        + ("" if reverse else "not ") + f"found in the list of {filter_name} modules"
+    )
 
 
 @mark.order(421)

@@ -102,7 +102,7 @@ class Page(Base, Identifiable, Marshalable):
             return cls._create(session, json_data, author)
         else:  # redo... maybe...
             entry.delete(session)
-            cls._create(session, json_data, author)
+            return cls._create(session, json_data, author)
 
     @classmethod
     def search(

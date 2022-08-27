@@ -227,7 +227,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         force: bool = False,
     ) -> Union[Module, None]:
         if cls.find_by_id(session, json_data["id"]):
-            return
+            return None
 
         json_data["type"] = ModuleType.from_string(json_data["type"])
         json_data["length"] = len(json_data["points"])

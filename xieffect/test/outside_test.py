@@ -82,8 +82,12 @@ def test_email_confirm(base_client: FlaskClient):
         skip("Email module is not setup")
 
     # TODO use hey@hey.hey but delete account form test_signup (& here)
-    credentials = {"email": "hey2@hey.hey", "password": "12345", "username": "hey",
-                   "code": Invite.serializer.dumps((TEST_INVITE_ID, 0))}
+    credentials = {
+        "email": "hey2@hey.hey",
+        "password": "12345",
+        "username": "hey",
+        "code": Invite.serializer.dumps((TEST_INVITE_ID, 0))
+    }
     link_start = "https://xieffect.ru/email/"
 
     with mail.record_messages() as outbox:

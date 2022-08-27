@@ -80,7 +80,8 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
         return community_id
 
     community_datas: list[dict[str, str | int]] = [
-        {"name": "12345"}, {"name": "54321", "description": "hi"}, {"name": "test", "description": "i"}]
+        {"name": "12345"}, {"name": "54321", "description": "hi"}, {"name": "test", "description": "i"}
+    ]
 
     for community_data in community_datas:
         community_data["id"] = assert_double_create(community_data)
@@ -447,8 +448,10 @@ def test_invitation_errors(multi_client, list_tester):
 
     # fail check function
     def assert_fail_event(sio, code: int, message: str):
-        for event, data in (("open-invites", room_data), ("close-invites", room_data),
-                            ("new-invite", invitation_data), ("delete-invite", delete_data)):
+        for event, data in (
+            ("open-invites", room_data), ("close-invites", room_data),
+            ("new-invite", invitation_data), ("delete-invite", delete_data)
+        ):
             ack = sio.emit(event, data, callback=True)
             assert isinstance(ack, dict)
             assert ack.get("code", None) == code

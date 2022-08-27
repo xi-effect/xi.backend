@@ -82,7 +82,7 @@ class ModuleOpener(Resource):
                 return module.execute_point(
                     module_session.progress, module_session.theory_level
                 )
-        elif module_type == ModuleType.THEORY_BLOCK:
+        else:  # ModuleType.THEORY_BLOCK
             return {"id": None if module_session is None else module_session.progress}
 
 
@@ -114,7 +114,7 @@ class ModuleProgresser(Resource):
                 module_session.progress, module_session.get_theory_level(session)
             )
 
-        elif module_type == ModuleType.PRACTICE_BLOCK:
+        else:  # ModuleType.PRACTICE_BLOCK
             return module.execute_point()
 
 
@@ -143,7 +143,7 @@ class ModuleNavigator(Resource):
                 )
             return new_test_point.page_id
 
-        elif module_type == ModuleType.THEORY_BLOCK:
+        else:  # ModuleType.THEORY_BLOCK
             module_session: ModuleProgressSession = (
                 ModuleProgressSession.find_or_create(session, user.id, module.id)
             )

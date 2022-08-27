@@ -116,6 +116,7 @@ class WebhookPassthrough(Resource):
         if (webhook_url := WebhookURLs.from_string(webhook)) is None:
             return {"a": f"Unsupported webhook URL: '{webhook}'"}, 400
         send_discord_message(webhook_url, message)
+        return {"a": "Success"}
 
 
 @controller.route("/lol-bot/")

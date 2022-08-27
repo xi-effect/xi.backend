@@ -26,19 +26,19 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
 
         if module_type in ("standard", "practice-block"):
             check_code(client.post(f"/modules/{module_id}/next/"))
-            assert check_code(client.get(f"/modules/{module_id}/points/0/"), 400) == \
-                   {"a": f"Module of type {module_type} can't use direct navigation"}
+            assert (check_code(client.get(f"/modules/{module_id}/points/0/"), 400)
+                    == {"a": f"Module of type {module_type} can't use direct navigation"})
 
         if module_type in ("theory-block", "test"):
             assert "map" in module
             map_length = len(module["map"]) - 1
             check_code(client.get(f"/modules/{module_id}/points/{map_length}/"))
-            assert check_code(client.post(f"/modules/{module_id}/next/"), 400) == \
-                   {"a": f"Module of type {module_type} can't use linear progression"}
+            assert (check_code(client.post(f"/modules/{module_id}/next/"), 400)
+                    == {"a": f"Module of type {module_type} can't use linear progression"})
 
         if module_type in ("practice-block", "test"):
-            assert check_code(client.get(f"/modules/{module_id}/open/"), 400) == \
-                   {"a": f"Module of type {module_type} can't use progress saving"}
+            assert (check_code(client.get(f"/modules/{module_id}/open/"), 400)
+                    == {"a": f"Module of type {module_type} can't use progress saving"})
 
         if module_type == "test":
             assert "map" in module
@@ -75,8 +75,8 @@ def test_standard_module_session(client: FlaskClient):  # relies on module#5
     for _ in scroll_through():
         pass  # if any session was started before, reset the module
 
-    ids1: list[int] = [page_id for page_id in scroll_through()]
-    ids2: list[int] = [page_id for page_id in scroll_through()]
+    ids1: list[int] = list(scroll_through())
+    ids2: list[int] = list(scroll_through())
 
     assert ids1 == ids2
 

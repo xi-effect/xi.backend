@@ -51,7 +51,7 @@ class Author(Base, UserRole):
     @classmethod
     def find_or_create(cls, session: sessionmaker, user):  # User class
         if (author := cls.find_by_id(session, user.id, True)) is None:
-            author = cls.create(session, user)
+            return cls.create(session, user)
         return author
 
     @classmethod

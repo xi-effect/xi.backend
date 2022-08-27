@@ -18,7 +18,7 @@ repos:
         additional_dependencies:
           # Basics
           - flake8
-          - wemake-python-styleguide
+          - wemake-python-styleguide  # TODO this does not work fully!
           - flake8-bugbear
 
           # Bugs
@@ -37,3 +37,23 @@ repos:
           - dlint
           - flake8-pie
           - flake8-simplify
+
+          # Imports
+          - flake8-tidy-imports
+          - flake8-obey-import-goat
+          # - flake8-future-import  # too much screaming
+          # - flake8-import-order  # does not work properly
+
+          # Style
+          - mccabe
+          - pycodestyle
+          - flake8-broken-line
+          - flake8-comprehensions
+          - flake8-return
+          - flake8-sql
+          - flake8-multiline-containers
+          # - flake8-class-attributes-order
+          # - flake8-commas  # too much screaming
+          # - flake8-literal  # black does this, but with double quotes (mb look into docs)
+          # - flake8-scream  # too much screaming and that's the point
+          # - flake8-strict  # failed to install

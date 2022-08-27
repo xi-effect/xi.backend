@@ -158,8 +158,7 @@ class FileProcessor(Resource):
     def get(self, file: JSONFile):
         """Loads author's wip-file's full contents"""
         with open(file.get_link(), "rb") as f:
-            result = load(f)
-        return result
+            return load(f)
 
     # @file_getter()  # PermissionError(13)
     # def get(self, file_type: Type[CATFile], file_id: int):
