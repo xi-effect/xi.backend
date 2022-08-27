@@ -37,7 +37,7 @@ def test_getting_pages(client: FlaskClient):
 @mark.order(407)
 def test_page_view_counter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     page_json: dict = check_code(client.post("/pages/", json={"counter": 0}))["results"][0]
-    page_id, views_before = [page_json[key] for key in ["id", "views"]]
+    page_id, views_before = [page_json[key] for key in ("id", "views")]
     check_code(client.get(f"/pages/{page_id}/"), get_json=False)
 
     for page_json in list_tester("/pages/", {}, PAGES_PER_REQUEST):
@@ -57,8 +57,10 @@ def test_module_list(client: FlaskClient, list_tester: Callable[[str, dict, int]
     assert check_code(client.post("/modules/", json={"counter": 0, "sort": "lol"}), 400)
 
 
-def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
-                       check: Callable[[dict], bool] = None) -> int | None:
+def get_some_module_id(
+    list_tester: Callable[[str, dict, int], Iterator[dict]],
+    check: Callable[[dict], bool] = None
+) -> int | None:
     module_id: int | None = None
     for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
         assert "id" in module
@@ -72,8 +74,15 @@ def lister_with_filters(list_tester: Callable[[str, dict, int], Iterator[dict]],
     return list_tester("/modules/", {"filters": filters}, MODULES_PER_REQUEST)
 
 
-def assert_with_global_filter(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]],
-                              operation_name: str, filter_name: str, url: str, module_id: int, reverse: bool):
+def assert_with_global_filter(
+    client: FlaskClient,
+    list_tester: Callable[[str, dict, int], Iterator[dict]],
+    operation_name: str,
+    filter_name: str,
+    url: str,
+    module_id: int,
+    reverse: bool
+):
     if reverse:
         operation_name = "un" + operation_name
         iterator: Iterator[dict] = list_tester("/modules/", {}, MODULES_PER_REQUEST)
@@ -111,8 +120,8 @@ def test_global_module_filtering(client: FlaskClient, list_tester: Callable[[str
     url: str = f"/modules/{module_id}/"
 
     for filter_name, operation_name in filter_to_operation.items():
-        assert_with_global_filter(client, list_tester, operation_name, filter_name, url, module_id, False)
-        assert_with_global_filter(client, list_tester, operation_name, filter_name, url, module_id, True)
+        assert_with_global_filter(client, list_tester, operation_name, filter_name, url, module_id, reverse=False)
+        assert_with_global_filter(client, list_tester, operation_name, filter_name, url, module_id, reverse=True)
 
 
 @mark.order(422)
@@ -152,7 +161,8 @@ def temp_list_tester(client: FlaskClient, module_id: int, include: bool):
             # yield content
             # changed from !list_tester!
             assert "id" in content
-            assert (content["id"] == module_id) == include
+            result = module_id == content["id"]
+            assert result is include
 
         amount = len(response_json["results"])
         assert amount <= page_size
@@ -163,8 +173,10 @@ def temp_list_tester(client: FlaskClient, module_id: int, include: bool):
 
 
 @mark.order(423)
-def test_module_filtering_multiuser(multi_client: Callable[[str], FlaskClient],
-                                    list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_module_filtering_multiuser(
+    multi_client: Callable[[str], FlaskClient],
+    list_tester: Callable[[str, dict, int], Iterator[dict]]
+):
     user1: FlaskClient = multi_client("1@user.user")
     user2: FlaskClient = multi_client("2@user.user")
     module_id: int = get_some_module_id(list_tester)
@@ -172,12 +184,13 @@ def test_module_filtering_multiuser(multi_client: Callable[[str], FlaskClient],
     assert check_code(user1.post(f"/modules/{module_id}/preference/", json={"a": "star"})) == {"a": True}
     assert check_code(user2.post(f"/modules/{module_id}/preference/", json={"a": "unstar"})) == {"a": True}
 
-    temp_list_tester(user1, module_id, True)
-    temp_list_tester(user2, module_id, False)
+    temp_list_tester(user1, module_id, include=True)
+    temp_list_tester(user2, module_id, include=False)
 
 
-def assert_non_descending_order(dict_key: str, default: ... = None,
-                                /, revert: bool = False) -> Callable[[dict, dict], None]:
+def assert_non_descending_order(
+    dict_key: str, default: ... = None, /, revert: bool = False
+) -> Callable[[dict, dict], None]:
     def assert_non_descending_order_inner(module1: dict, module2: dict):
         if revert:
             module1, module2 = module2, module1
@@ -213,7 +226,9 @@ def test_module_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
 
 
 def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], module_id: int, reverse: bool):
-    message = f"Module #{module_id}, marked as " + ("shown" if reverse else "hidden") + ", was "
+    message = f"Module #{module_id}, marked as "
+    message += "shown" if reverse else "hidden"
+    message += ", was "
 
     found: bool = False
     for hidden_module in list_tester("/modules/hidden/", {}, MODULES_PER_REQUEST):
@@ -221,7 +236,7 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
         if hidden_module["id"] == module_id:
             found = True
             break
-    assert found != reverse, message + ("" if reverse else "not ") + "found in the list of hidden modules"
+    assert found != reverse, message + ("" if reverse else "not ") + "found in the list of hidden modules"  # noqa: WPS509
 
     found: bool = False
     for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
@@ -229,22 +244,22 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
         if module["id"] == module_id:
             found = True
             break
-    assert found == reverse, message + ("not " if reverse else "") + "found in normal modules"
+    assert found == reverse, message + ("not " if reverse else "") + "found in normal modules"  # noqa: WPS509
 
 
 def set_module_hidden(client: FlaskClient, module_id: int, hidden: bool):
-    assert check_code(client.post(f"/modules/{module_id}/preference/",
-                                  json={"a": "hide" if hidden else "show"})) == {"a": True}
+    data = {"a": "hide" if hidden else "show"}
+    assert check_code(client.post(f"/modules/{module_id}/preference/", json=data))["a"]
 
 
 @mark.order(430)
 def test_hiding_modules(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     module_id: int = get_some_module_id(list_tester)
-    set_module_hidden(client, module_id, True)
-    assert_hidden(list_tester, module_id, False)
+    set_module_hidden(client, module_id, hidden=True)
+    assert_hidden(list_tester, module_id, reverse=False)
 
-    set_module_hidden(client, module_id, False)
-    assert_hidden(list_tester, module_id, True)
+    set_module_hidden(client, module_id, hidden=False)
+    assert_hidden(list_tester, module_id, reverse=True)
 
 
 @mark.order(431)
@@ -254,8 +269,8 @@ def test_hidden_module_ordering(client: FlaskClient, list_tester: Callable[[str,
     assert module_id1 is not None and module_id2 is not None, "Couldn't find two modules"
     assert module_id1 != module_id2, "Function get_some_module_id() returned same module_id twice"
 
-    set_module_hidden(client, module_id1, True)
-    set_module_hidden(client, module_id2, True)
+    set_module_hidden(client, module_id1, hidden=True)
+    set_module_hidden(client, module_id2, hidden=True)
 
     met_module_id2: bool = False
     for module in list_tester("/modules/hidden/", {}, MODULES_PER_REQUEST):
@@ -269,5 +284,5 @@ def test_hidden_module_ordering(client: FlaskClient, list_tester: Callable[[str,
         assert met_module_id2, f"Met neither module_id1 ({module_id1}), nor module_id2 ({module_id2})"
         raise AssertionError(f"Didn't meet module_id1 ({module_id1})")
 
-    set_module_hidden(client, module_id1, False)
-    set_module_hidden(client, module_id2, False)
+    set_module_hidden(client, module_id1, hidden=False)
+    set_module_hidden(client, module_id2, hidden=False)

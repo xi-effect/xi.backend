@@ -43,12 +43,12 @@ else:  # works on server restart
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
     setup_fail: bool = False
-    for secret_name in [
+    for secret_name in (
         "SECRET_KEY",
         "SECURITY_PASSWORD_SALT",
         "JWT_SECRET_KEY",
         "API_KEY",
-    ]:
+    ):
         if application.config[secret_name] == "hope it's local":
             send_discord_message(
                 WebhookURLs.NOTIFY,
@@ -158,7 +158,7 @@ def init_chats(session):
                     session, message_data["sender-email"]
                 )
                 message: Message = Message.create(
-                    session, chat, message_data["content"], sender, False
+                    session, chat, message_data["content"], sender, update_unread=False
                 )
                 message.sent = datetime.fromisoformat(message_data["sent"])
                 if message_data["updated"] is not None:

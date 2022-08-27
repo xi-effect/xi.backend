@@ -99,18 +99,17 @@ class Page(Base, Identifiable, Marshalable):
         entry: cls
         if (entry := cls.find_by_id(session, json_data["id"])) is None:
             return cls._create(session, json_data, author)
-        else:  # redo... maybe...
-            entry.delete(session)
-            return cls._create(session, json_data, author)
+        # redo... maybe...
+        entry.delete(session)
+        return cls._create(session, json_data, author)
 
     @classmethod
     def search(
         cls, session: sessionmaker, search: str | None, start: int, limit: int
     ) -> list[Page]:
+        # TODO redo all search with pagination!!!
         stmt: Select = select(cls).filter_by(public=True)
-        if (
-            search is not None and len(search) > 2
-        ):  # TODO redo all search with pagination!!!
+        if search is not None and len(search) > 2:
             stmt = cls.search_stmt(search, stmt=stmt)
         return session.get_paginated(stmt, start, limit)
 

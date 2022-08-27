@@ -64,9 +64,7 @@ class CATFile(Base, Identifiable):
 
     def get_link(self) -> str:
         return (
-            f"{self.directory}/{self.id}.{self.mimetype}"
-            if self.mimetype != ""
-            else ""
+            "" if self.mimetype == "" else f"{self.directory}/{self.id}.{self.mimetype}"
         )
 
     def update(self, data: bytes) -> None:
@@ -126,7 +124,7 @@ class WIPPage(JSONFile):
 
         @classmethod
         def callback_convert(cls, callback: Callable, orm_object: WIPPage, **_) -> None:
-            callback(views=orm_object.get_views())
+            callback(views=orm_object.views())
 
     def update_metadata(self, json_data: dict) -> None:
         self.kind = PageKind.from_string(json_data["kind"])
@@ -134,7 +132,7 @@ class WIPPage(JSONFile):
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
-    def get_views(self) -> int | None:
+    def views(self) -> int | None:
         return None if self.page is None else self.page.views
 
 
@@ -163,7 +161,7 @@ class WIPModule(JSONFile):
         def callback_convert(
             cls, callback: Callable, orm_object: WIPModule, **_
         ) -> None:
-            callback(views=orm_object.get_views())
+            callback(views=orm_object.views())
 
     def update_metadata(self, json_data: dict) -> None:
         self.type = ModuleType.from_string(json_data["type"])
@@ -174,5 +172,5 @@ class WIPModule(JSONFile):
         self.category = json_data["category"]
         self.difficulty = json_data["difficulty"]
 
-    def get_views(self) -> int | None:
+    def views(self) -> int | None:
         return None if self.module is None else self.module.views

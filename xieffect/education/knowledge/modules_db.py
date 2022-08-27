@@ -83,10 +83,10 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
             self.pinned = True
         elif operation == PreferenceOperation.UNPIN:
             self.pinned = False
-        if not any((self.hidden, self.pinned, self.starred, self.started)):
-            self.delete(session)
-        else:
+        if any((self.hidden, self.pinned, self.starred, self.started)):
             self.note_change()
+        else:
+            self.delete(session)
 
 
 class PointToPage(Base):

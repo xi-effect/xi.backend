@@ -14,7 +14,7 @@ from wsgi import application as app, TEST_EMAIL, BASIC_PASS, ADMIN_EMAIL, ADMIN_
 class RedirectedFlaskClient(FlaskClient):
     def open(self, *args, **kwargs):  # noqa: A003
         kwargs["follow_redirects"] = True
-        return super(RedirectedFlaskClient, self).open(*args, **kwargs)
+        return super().open(*args, **kwargs)
 
 
 app.test_client_class = RedirectedFlaskClient
@@ -28,8 +28,10 @@ def base_client():
 
 
 def base_login(client: FlaskClient, account: str, password: str, mub: bool = False) -> None:
-    response: TestResponse = client.post("/mub/sign-in/" if mub else "/auth/",
-                                         data={"username" if mub else "email": account, "password": password})
+    response: TestResponse = client.post(
+        "/mub/sign-in/" if mub else "/auth/",
+        data={"username" if mub else "email": account, "password": password}
+    )
     assert response.status_code == 200
     assert "Set-Cookie" in response.headers
     cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
@@ -50,14 +52,14 @@ def client() -> FlaskClient:
 
 @fixture
 def mod_client() -> FlaskClient:
-    return login(TEST_MOD_NAME, TEST_PASS, True)
+    return login(TEST_MOD_NAME, TEST_PASS, mub=True)
 
 
 @fixture
 def full_client() -> FlaskClient:
-    client = login(TEST_EMAIL, BASIC_PASS)
-    base_login(client, TEST_MOD_NAME, TEST_PASS, True)
-    return client
+    test_client = login(TEST_EMAIL, BASIC_PASS)
+    base_login(test_client, TEST_MOD_NAME, TEST_PASS, mub=True)
+    return test_client
 
 
 def socketio_client_factory(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
@@ -83,7 +85,7 @@ def multi_client() -> Callable[[str], FlaskClient]:
 
 
 class ListTesterProtocol(Protocol):
-    def __call__(self, link: str, request_json: dict, page_size: int, status_code: int = 200, /) -> Iterator[dict]:
+    def __call__(self, link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
         pass
 
 

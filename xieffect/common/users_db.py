@@ -102,7 +102,7 @@ class User(Base, UserRole, Identifiable):
         @classmethod
         def callback_convert(cls, callback: Callable, orm_object: User, **_) -> None:
             callback(
-                author_status=orm_object.get_author_status(),
+                author_status=orm_object.author_status(),
                 moderator_status=orm_object.moderator is not None,
             )
 
@@ -194,14 +194,10 @@ class User(Base, UserRole, Identifiable):
         if "avatar" in new_values:
             self.avatar = new_values["avatar"]
 
-    def get_author_status(self) -> str:
-        return (
-            "not-yet"
-            if self.author is None
-            else "banned"
-            if self.author.banned
-            else "current"
-        )
+    def author_status(self) -> str:
+        if self.author is None:
+            return "not-yet"
+        return "banned" if self.author.banned else "current"
 
 
 UserRole.default_role = User

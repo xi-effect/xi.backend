@@ -15,8 +15,7 @@ v = TypeVar("v")
 
 
 def spread_dict(dct: dict[k, v], *keys: k, default=None) -> Iterable[v]:
-    for key in keys:
-        yield dct.get(key, default)
+    yield from (dct.get(key, default) for key in keys)
 
 
 def assert_spread(dct: dict[k, v], *keys: k) -> Iterable[v]:

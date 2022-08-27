@@ -50,7 +50,7 @@ class Author(Base, UserRole):
 
     @classmethod
     def find_or_create(cls, session: sessionmaker, user):  # User class
-        if (author := cls.find_by_id(session, user.id, True)) is None:
+        if (author := cls.find_by_id(session, user.id, include_banned=True)) is None:
             return cls.create(session, user)
         return author
 

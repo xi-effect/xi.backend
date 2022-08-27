@@ -22,9 +22,9 @@ def test_login(base_client: FlaskClient):
 
     result: dict[str, ...] = response.json
     assert result.pop("a", None) == "Success"
-    for key in ["communities", "user"]:
+    for key in ("communities", "user"):
         assert key in result
-    for key in ["id", "username", "dark-theme", "language"]:
+    for key in ("id", "username", "dark-theme", "language"):
         assert key in result["user"]
 
     check_code(base_client.post("/logout/"))

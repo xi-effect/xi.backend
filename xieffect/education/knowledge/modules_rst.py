@@ -38,16 +38,18 @@ class FilterGetter(Resource):  # [GET] /filters/
         return user.get_filter_bind()
 
 
-def filters(value):
+def filters_data(value):
     return dict(value)
 
 
-filters.__schema__ = {
+filters_data.__schema__ = {
     "type": "object",
     "format": "filters",
-    "example": '{"global": "pinned" | "starred" | "started", '
-    + ", ".join(f'"{key}": ""' for key in ["theme", "category", "difficulty"])
-    + "}",
+    "example": (
+        '{"global": "pinned" | "starred" | "started", '
+        + ", ".join(f'"{key}": ""' for key in ("theme", "category", "difficulty"))
+        + "}"
+    ),
 }
 
 
@@ -55,10 +57,15 @@ filters.__schema__ = {
 class ModuleLister(Resource):  # [POST] /modules/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument(
-        "filters", type=filters, required=False, help="A dict of filters to be used"
+        "filters",
+        type=filters_data,
+        required=False,
+        help="A dict of filters to be used",
     )
     parser.add_argument(
-        "search", required=False, help="Search query (done with whoosh search)"
+        "search",
+        required=False,
+        help="Search query (done with whoosh search)",
     )
     parser.add_argument(
         "sort",
@@ -94,7 +101,7 @@ class ModuleLister(Resource):  # [POST] /modules/
             )
 
         global_filter = filters.get("global", None)
-        if global_filter not in ("pinned", "starred", "started", "", None):
+        if global_filter not in {"pinned", "starred", "started", "", None}:
             controller.abort(400, f"Global filter '{global_filter}' is not supported")
         user.filter_bind = global_filter
 

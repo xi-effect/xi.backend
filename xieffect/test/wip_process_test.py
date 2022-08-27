@@ -12,8 +12,14 @@ PER_REQUEST = 50
 
 
 class WIPRecycler:
-    def __init__(self, client: FlaskClient, file_type: str, file_name1: str, file_name2: str,
-                 list_tester: Callable[[str, dict, int], Iterator[dict]]):
+    def __init__(
+        self,
+        client: FlaskClient,
+        file_type: str,
+        file_name1: str,
+        file_name2: str,
+        list_tester: Callable[[str, dict, int], Iterator[dict]]
+    ):
         self.client: FlaskClient = client
         self.list_tester: Callable[[str, dict, int], Iterator[dict]] = list_tester
 

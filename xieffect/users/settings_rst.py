@@ -7,36 +7,15 @@ from other import EmailType, send_code_email, create_email_confirmer
 controller = ResourceController("settings", path="/")
 
 
-def changed(value):
+def changes(value):
     return dict(value)
-
-
-changed.__schema__ = {
-    "type": "object",
-    "format": "changed",
-    "example": '{"dark-theme": true | false, '
-    + ", ".join(
-        f'"{key}": ""'
-        for key in [
-            "username",
-            "language",
-            "name",
-            "surname",
-            "patronymic",
-            "bio",
-            "group",
-            "avatar",
-        ]
-    )
-    + "}",
-}
 
 
 @controller.route("/settings/")
 class Settings(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument(
-        "changed", type=changed, required=True, help="A dict of changed settings"
+        "changed", type=changes, required=True, help="A dict of changed settings"
     )
 
     @controller.jwt_authorizer(User, use_session=False)
@@ -109,5 +88,4 @@ class PasswordChanger(Resource):
         if User.verify_hash(password, user.password):
             user.change_password(new_password)
             return "Success"
-        else:
-            return "Wrong password"
+        return "Wrong password"

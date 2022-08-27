@@ -6,7 +6,7 @@ from flask import request, send_from_directory, redirect
 from flask_restx import Resource, Model
 from flask_restx.fields import Integer
 
-from common import ResourceController, ResponseDoc, User, counter_parser
+from common import ResourceController, ResponseDoc, User, counter_parser, get_or_pop
 from .wip_files_db import JSONFile, WIPPage, WIPModule
 from ..authorship import Author
 from ..knowledge import Page, Module
@@ -113,18 +113,16 @@ def file_getter(
                     return {"a": "File not found"}, 404
                 if (
                     file.owner
-                    != (kwargs["author"] if use_author else kwargs.pop("author")).id
+                    != (get_or_pop(kwargs, "author", use_author)).id
                 ):
                     return {"a": "Access denied"}, 403
                 if not type_only:
                     if use_session:
                         return function(file=file, session=session, *args, **kwargs)
-                    else:
-                        return function(file=file, *args, **kwargs)
+                    return function(file=file, *args, **kwargs)
             if use_session:
                 return function(file_type=result, session=session, *args, **kwargs)
-            else:
-                return function(file_type=result, *args, **kwargs)
+            return function(file_type=result, *args, **kwargs)
 
         return get_file_or_type
 
@@ -145,7 +143,7 @@ class FileCreator(Resource):
                 session, author, request.get_json()
             )
         except KeyError as e:
-            return {"a": f"{file_type.__name__}'s json is missing {str(e)}"}, 400
+            return {"a": f"{file_type.__name__}'s json is missing {e}"}, 400
         # for CATFile  result: file_type = file_type.create_with_file(author, request.get_data())
         return {"id": result.id}
 
@@ -183,7 +181,6 @@ class FilePublisher(Resource):
         with open(file.get_link(), "rb") as f:
             content: dict = load(f)
             content["id"] = file.id  # just making sure
-            result: bool = (Page if isinstance(file, WIPPage) else Module).find_or_create(
-                session, content, author
-            ) is None
+            klass = Page if isinstance(file, WIPPage) else Module
+            result: bool = klass.find_or_create(session, content, author) is None
         return "File already exists" if result else "Success"  # redo!!!

@@ -151,7 +151,7 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
     manage_room(socketio_client1)
     manage_room(socketio_client2)
     manage_room(socketio_client3)
-    manage_room(socketio_client3, False)
+    manage_room(socketio_client3, join=False)
 
     # create a new invitation
     invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
@@ -230,7 +230,7 @@ def create_assert_successful_join(list_tester, community_id, community_data):
         else:
             raise AssertionError("Invitation not found inside assert_successful_join")
 
-        assert_successful_get(client, code, False)
+        assert_successful_get(client, code, joined=False)
         assert dict_equal(check_code(client.post(f"/communities/join/{code}/")), community_data, *community_data.keys())
 
         if limit_before is None:
@@ -258,8 +258,11 @@ def create_assert_successful_join(list_tester, community_id, community_data):
 
 @mark.skip
 @mark.order(1022)
-def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient],
-                          list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_invitation_joins(
+    base_client,
+    multi_client: Callable[[str], FlaskClient],
+    list_tester: Callable[[str, dict, int], Iterator[dict]]
+):
     community_data = {"name": "test", "description": "12345"}
 
     # functions
@@ -312,7 +315,7 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
         assert check_code(client.post(f"/communities/join/{code}/"), 400)["a"] == "Invalid invitation"
 
     def assert_already_joined(client: FlaskClient, code: str):
-        assert_successful_get(client, code, True)
+        assert_successful_get(client, code, joined=True)
         assert check_code(client.post(f"/communities/join/{code}/"), 400)["a"] == "User has already joined"
 
     anatol = multi_client("1@user.user")
@@ -342,7 +345,7 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
     manage_room(socketio_client1)
     manage_room(socketio_client2)
     manage_room(socketio_client3)
-    manage_room(socketio_client3, False)
+    manage_room(socketio_client3, join=False)
 
     assert_successful_join = create_assert_successful_join(list_tester, community_id, community_data)
 
@@ -438,19 +441,23 @@ def test_invitation_errors(multi_client, list_tester):
     assert isinstance(args, list) and len(args) == 1
     assert isinstance(args[0], dict)
 
-    assert dict_equal(args[0], invitation_data, *[key for key in ("role", "limit") if key in invitation_data])
+    keys = tuple(key for key in ("role", "limit") if key in invitation_data)
+    assert dict_equal(args[0], invitation_data, *keys)
     if "days" in invitation_data:
         assert "deadline" in args[0]
         dt: datetime = datetime.fromisoformat(args[0]["deadline"])
-        assert dt.day == (datetime.utcnow() + timedelta(days=invitation_data["days"])).day
+        deadline = datetime.utcnow() + timedelta(days=invitation_data["days"])
+        assert dt.day == deadline.day
 
     delete_data = {"community-id": community_id, "invitation-id": invitation["id"]}
 
     # fail check function
     def assert_fail_event(sio, code: int, message: str):
         for event, data in (
-            ("open-invites", room_data), ("close-invites", room_data),
-            ("new-invite", invitation_data), ("delete-invite", delete_data)
+            ("open-invites", room_data),
+            ("close-invites", room_data),
+            ("new-invite", invitation_data),
+            ("delete-invite", delete_data)
         ):
             ack = sio.emit(event, data, callback=True)
             assert isinstance(ack, dict)

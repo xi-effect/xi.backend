@@ -24,9 +24,11 @@ def test_result(client: FlaskClient, list_tester: Callable[[str, dict, int], Ite
 
     point_ids: list[int] = list(range(length))
     for point in point_ids:
-        assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == {}
+        data = check_code(client.get(f"/modules/7/points/{point}/reply/"))
+        assert isinstance(data, dict) and len(data) == 0
         check_code(client.get(f"/modules/7/points/{point}/"))
-        assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == {}
+        data = check_code(client.get(f"/modules/7/points/{point}/reply/"))
+        assert isinstance(data, dict) and len(data) == 0
 
         reply = replies[point]
         assert check_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)) == {"a": True}
@@ -41,8 +43,8 @@ def test_result(client: FlaskClient, list_tester: Callable[[str, dict, int], Ite
 
     result2 = check_code(client.get(f"/results/{result_id}/"))
     assert result2 == result1
-    for i in range(len(result2["result"])):
-        dict_equal(result2["result"][i], replies[i], "right-answers", "total-answers", "answers")
+    for i, data in enumerate(result2["result"]):
+        dict_equal(data, replies[i], "right-answers", "total-answers", "answers")
 
     check_code(client.delete(f"/results/{result_id}/"))
     check_code(client.get(f"/results/{result_id}/"), 404)

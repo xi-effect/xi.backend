@@ -58,8 +58,7 @@ def with_point_id(function):
     def with_point_id_inner(*args, **kwargs):
         if 0 <= kwargs["point_id"] < kwargs["module"].length:
             return function(*args, **kwargs)
-        else:
-            return {"a": "Point is not in this module"}, 404
+        return {"a": "Point is not in this module"}, 404
 
     return with_point_id_inner
 
@@ -79,12 +78,11 @@ class ModuleOpener(Resource):
         if module_type == ModuleType.STANDARD:
             if module_session is None or module_session.progress is None:
                 return module.execute_point(0, 0.4 + 0.2 * user.theory_level)
-            else:
-                return module.execute_point(
-                    module_session.progress, module_session.theory_level
-                )
-        else:  # ModuleType.THEORY_BLOCK
-            return {"id": None if module_session is None else module_session.progress}
+            return module.execute_point(
+                module_session.progress, module_session.theory_level
+            )
+        # ModuleType.THEORY_BLOCK
+        return {"id": None if module_session is None else module_session.progress}
 
 
 @controller.route("/next/")
@@ -115,8 +113,8 @@ class ModuleProgresser(Resource):
                 module_session.progress, module_session.get_theory_level(session)
             )
 
-        else:  # ModuleType.PRACTICE_BLOCK
-            return module.execute_point()
+        # ModuleType.PRACTICE_BLOCK
+        return module.execute_point()
 
 
 @controller.route("/points/<int:point_id>/")
@@ -144,12 +142,12 @@ class ModuleNavigator(Resource):
                 )
             return new_test_point.page_id
 
-        else:  # ModuleType.THEORY_BLOCK
-            module_session: ModuleProgressSession = (
-                ModuleProgressSession.find_or_create(session, user.id, module.id)
-            )
-            module_session.progress = point_id
-            return module.execute_point(point_id)
+        # ModuleType.THEORY_BLOCK
+        module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(
+            session, user.id, module.id
+        )
+        module_session.progress = point_id
+        return module.execute_point(point_id)
 
 
 def with_test_session(function):

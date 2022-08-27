@@ -26,28 +26,36 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             continue
         types_set.remove(module_type)
 
-        if module_type in ("standard", "practice-block"):
+        if module_type in {"standard", "practice-block"}:
             check_code(client.post(f"/modules/{module_id}/next/"))
-            assert (check_code(client.get(f"/modules/{module_id}/points/0/"), 400)
-                    == {"a": f"Module of type {module_type} can't use direct navigation"})
+            assert (
+                check_code(client.get(f"/modules/{module_id}/points/0/"), 400)
+                == {"a": f"Module of type {module_type} can't use direct navigation"}
+            )
 
-        if module_type in ("theory-block", "test"):
+        if module_type in {"theory-block", "test"}:
             assert "map" in module
             map_length = len(module["map"]) - 1
             check_code(client.get(f"/modules/{module_id}/points/{map_length}/"))
-            assert (check_code(client.post(f"/modules/{module_id}/next/"), 400)
-                    == {"a": f"Module of type {module_type} can't use linear progression"})
+            assert (
+                check_code(client.post(f"/modules/{module_id}/next/"), 400)
+                == {"a": f"Module of type {module_type} can't use linear progression"}
+            )
 
-        if module_type in ("practice-block", "test"):
-            assert (check_code(client.get(f"/modules/{module_id}/open/"), 400)
-                    == {"a": f"Module of type {module_type} can't use progress saving"})
+        if module_type in {"practice-block", "test"}:
+            assert (
+                check_code(client.get(f"/modules/{module_id}/open/"), 400)
+                == {"a": f"Module of type {module_type} can't use progress saving"}
+            )
 
         if module_type == "test":
             assert "map" in module
             map_length = len(module["map"]) - 1
             json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
-            assert check_code(client.post(f"/modules/{module_id}/points/{map_length}/reply/",
-                                          json=json_test)) == {"a": True}
+            assert check_code(client.post(
+                f"/modules/{module_id}/points/{map_length}/reply/",
+                json=json_test)
+            ).get("a", False)
 
             reply = check_code(client.get(f"/modules/{module_id}/points/{map_length}/reply"))
             assert reply == json_test["answers"]
@@ -128,12 +136,14 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
     shuffle(point_ids)
 
     for point in point_ids:
-        assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == {}
+        data = check_code(client.get(f"/modules/7/points/{point}/reply/"))
+        assert isinstance(data, dict) and len(data) == 0
         check_code(client.get(f"/modules/7/points/{point}/"))
-        assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == {}
+        data = check_code(client.get(f"/modules/7/points/{point}/reply/"))
+        assert isinstance(data, dict) and len(data) == 0
 
         reply = replies[point]
-        assert check_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)) == {"a": True}
+        assert check_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)).get("a", False)
         assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == reply["answers"]
 
     point_id: int | None = None
