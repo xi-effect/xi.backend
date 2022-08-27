@@ -8,41 +8,6 @@ github_token: str = ""
 controller = ResourceController("webhooks")
 
 
-@controller.route("/update/")
-class GithubWebhook(Resource):
-    parser: RequestParser = RequestParser()
-    parser.add_argument("X-GitHub-Event", str, dest="event_type", location="headers")
-
-    @controller.deprecated
-    @controller.argument_parser(parser)
-    def post(self, event_type: str):  # TODO remove
-        if event_type == "push":
-            send_discord_message(
-                WebhookURLs.GITHUB, "Got a push notification.\nStarting auto-update"
-            )
-        elif event_type == "release":
-            send_discord_message(
-                WebhookURLs.GITHUB,
-                "Got a release notification.\nReleases are not supported yet!",
-            )
-        else:
-            send_discord_message(
-                WebhookURLs.GITHUB,
-                f"Got a {event_type} notification.\nNo action was applied.",
-            )
-
-
-@controller.route("/update-docs/")
-class GithubDocumentsWebhook(Resource):
-    parser: RequestParser = RequestParser()
-    parser.add_argument("X-GitHub-Event", str, dest="event_type", location="headers")
-
-    @controller.argument_parser(parser)
-    def post(self, event_type: str):
-        if event_type == "push":
-            send_discord_message(WebhookURLs.GITHUB, "Documentation has been updated")
-
-
 @controller.route("/heroku-build/")
 class HerokuBuildWebhook(Resource):
     parser: RequestParser = RequestParser()
