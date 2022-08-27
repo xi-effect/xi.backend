@@ -24,12 +24,20 @@ class UserHome(Resource):
 class UserRegistration(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
-        "email", required=True, help="Email to be connected to new user's account"
+        "email",
+        required=True,
+        help="Email to be connected to new user's account",
     )
     parser.add_argument(
-        "username", required=True, help="Username to be assigned to new user's account"
+        "username",
+        required=True,
+        help="Username to be assigned to new user's account",
     )
-    parser.add_argument("code", required=True, help="Serialized invite code")
+    parser.add_argument(
+        "code",
+        required=True,
+        help="Serialized invite code",
+    )
 
     @controller.doc_abort(" 200", "Email already in use")
     @controller.doc_abort("200 ", "Invite code limit exceeded")

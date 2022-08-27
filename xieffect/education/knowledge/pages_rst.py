@@ -17,7 +17,9 @@ report_parser.add_argument("message", required=False)
 class PageLister(Resource):  # POST /pages/
     parser: RequestParser = counter_parser.copy()
     parser.add_argument(
-        "search", required=False, help="Search query (done with whoosh search)"
+        "search",
+        required=False,
+        help="Search query (done with whoosh search)",
     )
 
     @controller.jwt_authorizer(User, check_only=True)

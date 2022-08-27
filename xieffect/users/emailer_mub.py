@@ -15,8 +15,16 @@ controller = MUBController("emailer", path="/emailer/", sessionmaker=sessionmake
 @controller.route("/send/")
 class EmailQAResource(Resource):
     parser = RequestParser()
-    parser.add_argument("user-email", dest="user_email", required=False)
-    parser.add_argument("tester-email", dest="tester_email", required=True)
+    parser.add_argument(
+        "user-email",
+        dest="user_email",
+        required=False,
+    )
+    parser.add_argument(
+        "tester-email",
+        dest="tester_email",
+        required=True,
+    )
     parser.add_argument(
         "type",
         dest="email_type",
@@ -30,7 +38,11 @@ class EmailQAResource(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(
-        self, session, user_email: str | None, tester_email: str, email_type: str
+        self,
+        session,
+        user_email: str | None,
+        tester_email: str,
+        email_type: str,
     ) -> str:
         email_type = EmailType.from_string(email_type)
         if email_type is None:

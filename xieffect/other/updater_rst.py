@@ -53,7 +53,8 @@ class HerokuBuildWebhook(Resource):
     @controller.a_response()
     def post(self, resource: str, action: str) -> None:
         send_discord_message(
-            WebhookURLs.HEROKU, f"Heroku may be online [{resource}:{action}]"
+            WebhookURLs.HEROKU,
+            f"Heroku may be online [{resource}:{action}]",
         )
 
 
@@ -99,12 +100,20 @@ class NetlifyBuildWebhook(Resource):
 class WebhookPassthrough(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument(
-        "Authorization", required=True, location="headers", dest="api_key"
+        "Authorization",
+        required=True,
+        location="headers",
+        dest="api_key",
     )
     parser.add_argument(
-        "webhook", required=True, choices=WebhookURLs.get_all_field_names()
+        "webhook",
+        required=True,
+        choices=WebhookURLs.get_all_field_names(),
     )
-    parser.add_argument("message", required=True)
+    parser.add_argument(
+        "message",
+        required=True,
+    )
 
     from api import app
 
@@ -125,13 +134,11 @@ class LolBot(Resource):
             with open("../files/lol-counter.txt") as f:
                 count = str(int(f.read()) + 1)
             if "69" in count or count[-1] == "0":
-                send_discord_message(
-                    WebhookURLs.LOLBOT, f"Got another one! Total: {count}"
-                )
+                message = f"Got another one! Total: {count}"
         except (FileNotFoundError, ValueError):
-            send_discord_message(
-                WebhookURLs.LOLBOT, "Reset happened... Got the first one!"
-            )
+            message = "Reset happened... Got the first one!"
             count = 1
+
+        send_discord_message(WebhookURLs.LOLBOT, message)
         with open("../files/lol-counter.txt", "w") as f:
             f.write(str(count))

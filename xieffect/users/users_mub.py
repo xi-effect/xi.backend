@@ -27,12 +27,20 @@ class UserIndexResource(Resource):
 
     parser: RequestParser = password_parser.copy()  # noqa: PIE794
     parser.add_argument(
-        "email", required=True, help="Email to be connected to new user's account"
+        "email",
+        required=True,
+        help="Email to be connected to new user's account",
     )
     parser.add_argument(
-        "username", required=True, help="Username to be assigned to new user's account"
+        "username",
+        required=True,
+        help="Username to be assigned to new user's account",
     )
-    parser.add_argument("code", required=False, help="Serialized invite code")
+    parser.add_argument(
+        "code",
+        required=False,
+        help="Serialized invite code",
+    )
 
     @controller.require_permission(manage_users, use_moderator=False)
     @controller.argument_parser(parser)
@@ -56,7 +64,11 @@ class UserIndexResource(Resource):
         invite.accepted += 1
 
         user = User.create(
-            session, email=email, username=username, password=password, invite=invite
+            session,
+            email=email,
+            username=username,
+            password=password,
+            invite=invite,
         )
         return {"a": "Email already in use"} if user is None else user
 
@@ -65,7 +77,10 @@ class UserIndexResource(Resource):
 class UserManagerResource(Resource):
     parser = RequestParser()
     parser.add_argument(
-        "email-confirmed", dest="email_confirmed", type=bool, store_missing=False
+        "email-confirmed",
+        dest="email_confirmed",
+        type=bool,
+        store_missing=False,
     )
 
     @controller.require_permission(manage_users, use_moderator=False)

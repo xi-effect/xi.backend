@@ -45,8 +45,15 @@ class FeedbackSaver(Resource):
         choices=FeedbackType.get_all_field_names(),
         dest="feedback_type",
     )
-    parser.add_argument("data", required=True, type=dict)
-    parser.add_argument("code", required=False)
+    parser.add_argument(
+        "data",
+        required=True,
+        type=dict,
+    )
+    parser.add_argument(
+        "code",
+        required=False,
+    )
 
     class Responses(Enum):
         SUCCESS = "Success"

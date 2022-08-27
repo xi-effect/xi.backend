@@ -100,9 +100,8 @@ def init_users(session):
         )
         test_user.author = Author.create(session, test_user)
 
-    if (
-        User.find_by_email_address(session, ADMIN_EMAIL)
-    ) is None:  # TODO DEPRECATED, redo with MUB
+    if (User.find_by_email_address(session, ADMIN_EMAIL)) is None:
+        # TODO DEPRECATED, redo with MUB
         User.create(session, email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
 
     with open("../static/test/user-bundle.json", encoding="utf-8") as f:
@@ -110,7 +109,10 @@ def init_users(session):
             email: str = f"{i}@user.user"
             if (user := User.find_by_email_address(session, email)) is None:
                 user = User.create(
-                    session, email=email, username=f"user-{i}", password=BASIC_PASS
+                    session,
+                    email=email,
+                    username=f"user-{i}",
+                    password=BASIC_PASS,
                 )
             user.change_settings(user_settings)
 
@@ -155,10 +157,15 @@ def init_chats(session):
                     )
             for message_data in chat_data["messages"]:
                 sender = User.find_by_email_address(
-                    session, message_data["sender-email"]
+                    session,
+                    message_data["sender-email"],
                 )
                 message: Message = Message.create(
-                    session, chat, message_data["content"], sender, update_unread=False
+                    session,
+                    chat,
+                    message_data["content"],
+                    sender,
+                    update_unread=False,
                 )
                 message.sent = datetime.fromisoformat(message_data["sent"])
                 if message_data["updated"] is not None:

@@ -20,7 +20,11 @@ controller = ResourceController("files")
 class FileUploader(Resource):
     parser = RequestParser()
     parser.add_argument(
-        "file", location="files", dest="file_storage", type=FileStorage, required=True
+        "file",
+        location="files",
+        dest="file_storage",
+        type=FileStorage,
+        required=True,
     )
 
     @controller.jwt_authorizer(User)

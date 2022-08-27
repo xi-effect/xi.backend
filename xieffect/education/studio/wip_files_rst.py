@@ -89,7 +89,9 @@ class WIPPageLister(Resource):
 
 
 def file_getter(
-    type_only: bool = True, use_session: bool = True, use_author: bool = False
+    type_only: bool = True,
+    use_session: bool = True,
+    use_author: bool = False,
 ):
     def file_getter_wrapper(function):
         @wraps(function)
@@ -111,10 +113,7 @@ def file_getter(
                 )
                 if file is None:
                     return {"a": "File not found"}, 404
-                if (
-                    file.owner
-                    != (get_or_pop(kwargs, "author", use_author)).id
-                ):
+                if file.owner != (get_or_pop(kwargs, "author", use_author)).id:
                     return {"a": "Access denied"}, 403
                 if not type_only:
                     if use_session:

@@ -15,7 +15,10 @@ def changes(value):
 class Settings(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument(
-        "changed", type=changes, required=True, help="A dict of changed settings"
+        "changed",
+        type=changes,
+        required=True,
+        help="A dict of changed settings",
     )
 
     @controller.jwt_authorizer(User, use_session=False)
