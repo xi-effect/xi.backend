@@ -20,3 +20,15 @@ repos:
           - flake8
           - wemake-python-styleguide
           - flake8-bugbear
+
+          # Bugs
+          - flake8-2020
+          - flake8-alfred
+          - flake8-bugbear
+          - flake8-debugger
+          - flake8-string-format
+          - flake8-unused-arguments
+          # TODO - flake8-encodings
+          # TODO - flake8-secure-coding-standard
+          # - flake8-warnings
+          # - flake8-useless-assert  # unusable with pytest

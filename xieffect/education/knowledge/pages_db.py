@@ -50,9 +50,7 @@ class Page(Base, Identifiable, Marshalable):
         author_name: str
 
         @classmethod
-        def callback_convert(
-            cls, callback: Callable, orm_object: Page, **context
-        ) -> None:
+        def callback_convert(cls, callback: Callable, orm_object: Page, **_) -> None:
             callback(author_name=orm_object.author.pseudonym)
 
     @classmethod

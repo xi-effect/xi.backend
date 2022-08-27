@@ -110,7 +110,7 @@ def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 
 
 @mark.order(540)
 def test_reply_and_results(client: FlaskClient):  # relies on module#7
-    module = check_code(client.get(f"/modules/7/"))
+    module = check_code(client.get("/modules/7/"))
     assert module["type"] == "test"
     assert "map" in module.keys()
 
@@ -135,7 +135,7 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
         assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == reply["answers"]
 
     point_id: Optional[int] = None
-    for i, reply in enumerate(check_code(client.get(f"/modules/7/results/"))["result"]):
+    for i, reply in enumerate(check_code(client.get("/modules/7/results/"))["result"]):
         assert dict_equal(reply, replies[i], "right-answers", "total-answers", "answers")
         assert point_id is None or reply["point-id"] > point_id
         point_id = reply["point-id"]

@@ -126,9 +126,7 @@ class WIPPage(JSONFile):
         views: int = None
 
         @classmethod
-        def callback_convert(
-            cls, callback: Callable, orm_object: WIPPage, **context
-        ) -> None:
+        def callback_convert(cls, callback: Callable, orm_object: WIPPage, **_) -> None:
             callback(views=orm_object.get_views())
 
     def update_metadata(self, json_data: dict) -> None:
@@ -164,7 +162,7 @@ class WIPModule(JSONFile):
 
         @classmethod
         def callback_convert(
-            cls, callback: Callable, orm_object: WIPModule, **context
+            cls, callback: Callable, orm_object: WIPModule, **_
         ) -> None:
             callback(views=orm_object.get_views())
 

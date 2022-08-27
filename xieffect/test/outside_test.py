@@ -8,7 +8,8 @@ from werkzeug.test import TestResponse
 from __lib__.flask_fullstack import check_code, dict_equal
 from common import mail, mail_initialized
 from other import EmailType
-from wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
+from users import dumps_feedback, generate_code
+from wsgi import Invite, TEST_INVITE_ID
 from .conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
@@ -142,7 +143,7 @@ def test_feedback(base_client: FlaskClient, client: FlaskClient):  # assumes use
 
 
 @mark.order(50)
-def test_invite_curds(client: FlaskClient, admin_client: FlaskClient, list_tester):
+def test_invite_curds(client: FlaskClient, admin_client: FlaskClient):
     def request_assert_admin(method, url: str, json=None):
         assert check_code(method(client, url, json=json), 403)["a"] == "Permission denied"
         return check_code(method(admin_client, url, json=json))

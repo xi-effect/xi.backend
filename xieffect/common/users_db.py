@@ -100,9 +100,7 @@ class User(Base, UserRole, Identifiable):
         moderator_status: bool
 
         @classmethod
-        def callback_convert(
-            cls, callback: Callable, orm_object: User, **context
-        ) -> None:
+        def callback_convert(cls, callback: Callable, orm_object: User, **_) -> None:
             callback(
                 author_status=orm_object.get_author_status(),
                 moderator_status=orm_object.moderator is not None,

@@ -185,7 +185,7 @@ def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
 
 
 @mark.order(425)
-def test_module_sorting(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_module_sorting(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     sort_types: Dict[str, Callable[[dict, dict], None]] = {
         "popularity": assert_non_descending_order("views"),
         "creation-date": assert_non_descending_order("created", revert=True),
@@ -261,7 +261,7 @@ def test_hidden_module_ordering(client: FlaskClient, list_tester: Callable[[str,
             break
     else:
         assert met_module_id2, f"Met neither module_id1 ({module_id1}), nor module_id2 ({module_id2})"
-        assert False, f"Didn't meet module_id1 ({module_id1})"
+        raise AssertionError(f"Didn't meet module_id1 ({module_id1})")
 
     set_module_hidden(client, module_id1, False)
     set_module_hidden(client, module_id2, False)

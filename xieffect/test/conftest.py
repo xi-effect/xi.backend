@@ -14,7 +14,7 @@ from wsgi import application as app, TEST_EMAIL, BASIC_PASS, ADMIN_EMAIL, ADMIN_
 
 
 class RedirectedFlaskClient(FlaskClient):
-    def open(self, *args, **kwargs):
+    def open(self, *args, **kwargs):  # noqa: A003
         kwargs["follow_redirects"] = True
         return super(RedirectedFlaskClient, self).open(*args, **kwargs)
 
@@ -77,7 +77,7 @@ def admin_client() -> FlaskClient:
 
 
 @fixture
-def multi_client(base_client: FlaskClient) -> Callable[[str], FlaskClient]:
+def multi_client() -> Callable[[str], FlaskClient]:
     def multi_client_inner(user_email: str):
         return login(user_email, BASIC_PASS)
 

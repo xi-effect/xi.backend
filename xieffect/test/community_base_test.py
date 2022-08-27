@@ -35,8 +35,7 @@ def get_communities_list(client: FlaskClient):
 
 
 @mark.order(1000)
-def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
-                       list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient):
     community_ids = [d["id"] for d in get_communities_list(client)]
 
     community_data = {"name": "12345", "description": "test"}
@@ -54,8 +53,7 @@ def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
 
 
 @mark.order(1005)
-def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient,
-                        list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient):
     def assert_order():
         for i, data in enumerate(get_communities_list(client)):
             assert data["id"] == community_ids[i]
@@ -229,7 +227,7 @@ def create_assert_successful_join(list_tester, community_id, community_data):
                 limit_before = data.get("limit", None)
                 break
         else:
-            assert False, "Invitation not found inside assert_successful_join"
+            raise AssertionError("Invitation not found inside assert_successful_join")
 
         assert_successful_get(client, code, False)
         assert dict_equal(check_code(client.post(f"/communities/join/{code}/")), community_data, *community_data.keys())
