@@ -10,7 +10,7 @@ pytest
 pytest-order
 
 # Linters:Basics
-flake8
+flake8~=4.0.1
 flake8-bugbear
 wemake-python-styleguide
 
