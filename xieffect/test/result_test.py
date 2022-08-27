@@ -10,7 +10,7 @@ from __lib__.flask_fullstack import check_code, dict_equal
 @mark.order(545)
 def test_result(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
     # solve test
-    module = check_code(client.get(f"/modules/7/"))
+    module = check_code(client.get("/modules/7/"))
     assert module["type"] == "test"
     assert "map" in module.keys()
 
@@ -32,7 +32,7 @@ def test_result(client: FlaskClient, list_tester: Callable[[str, dict, int], Ite
         assert check_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)) == {"a": True}
         assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == reply["answers"]
 
-    result1 = check_code(client.get(f"/modules/7/results/"))
+    result1 = check_code(client.get("/modules/7/results/"))
     result_id = result1["id"]
 
     results = list(list_tester("/results/modules/7/", {}, 50))
