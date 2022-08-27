@@ -30,7 +30,7 @@ def init_test_mod(session):
 
 if (
     __name__ == "__main__"
-    or "pytest" in modules.keys()
+    or "pytest" in modules
     or db_url == "sqlite:///test.db"
     or "form-sio-docs" in argv
 ):
@@ -167,9 +167,8 @@ def init_chats(session):
 
 def version_check():
     if exists("../files/versions-lock.json"):
-        versions_lock: dict[str, str] = load(
-            open("../files/versions-lock.json", encoding="utf-8")
-        )
+        with open("../files/versions-lock.json", encoding="utf-8") as f:
+            versions_lock: dict[str, str] = load(f)
     else:
         versions_lock: dict[str, str] = {}
 
@@ -184,11 +183,8 @@ def version_check():
                 ]
             ).expandtabs(),
         )
-        dump(
-            versions,
-            open("../files/versions-lock.json", "w", encoding="utf-8"),
-            ensure_ascii=False,
-        )
+        with open("../files/versions-lock.json", "w", encoding="utf-8") as f:
+            dump(versions, f, ensure_ascii=False)
 
 
 @application.cli.command("form-sio-docs")

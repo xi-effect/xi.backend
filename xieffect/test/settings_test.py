@@ -8,7 +8,7 @@ from __lib__.flask_fullstack import check_code
 def test_getting_settings(client: FlaskClient):
     data: dict = check_code(client.get("/settings/"))
     for key in ("email", "email-confirmed", "username", "dark-theme", "language"):
-        assert key in data.keys()
+        assert key in data
 
 
 @mark.order(101)

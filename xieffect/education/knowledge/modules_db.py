@@ -248,12 +248,12 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
             }
         )
         entry.image_id = json_data.get("image-id", None)
-        if "map" in json_data.keys():
+        if "map" in json_data:
             entry.map = json_data["map"]
 
         if force:
             entry.views = json_data.get("views", 0)
-        if force and "created" in json_data.keys():
+        if force and "created" in json_data:
             entry.created = datetime.fromisoformat(json_data["created"])
         else:
             entry.created = datetime.utcnow()
@@ -333,7 +333,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
 
         global_filter: Union[str, None] = None
         if filters is not None:
-            if "global" in filters.keys():
+            if "global" in filters:
                 global_filter = filters.pop("global")
             stmt = stmt.filter_by(**filters)
 

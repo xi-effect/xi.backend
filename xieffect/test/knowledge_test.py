@@ -1,10 +1,10 @@
-from json import load
 from typing import Callable, Iterator, Optional, Dict, Any
 
 from flask.testing import FlaskClient
 from pytest import mark
 
 from __lib__.flask_fullstack import check_code
+from json import load
 
 PAGES_PER_REQUEST: int = 50
 MODULES_PER_REQUEST: int = 12
@@ -59,7 +59,7 @@ def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
                        check: Optional[Callable[[dict], bool]] = None) -> Optional[int]:
     module_id: Optional[int] = None
     for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
-        assert "id" in module.keys()
+        assert "id" in module
         if check is None or check(module):
             module_id = module["id"]
             break
@@ -85,7 +85,7 @@ def assert_with_global_filter(client: FlaskClient, list_tester: Callable[[str, d
 
     success: bool = False
     for module in iterator:
-        assert filter_name in module.keys()
+        assert filter_name in module
         assert module[filter_name] != reverse
         if module["id"] == module_id:
             success = True
@@ -121,7 +121,7 @@ def test_simple_module_filtering(list_tester: Callable[[str, dict, int], Iterato
         for filter_value in values:
             success: bool = False
             for module in lister_with_filters(list_tester, {filter_name: filter_value}):
-                assert filter_name in module.keys(), module
+                assert filter_name in module, module
                 assert module[filter_name] == filter_value, module
                 success = True
             assert success, f"No modules found for filter: {filter_name} == {filter_value}"
@@ -145,7 +145,7 @@ def temp_list_tester(client: FlaskClient, module_id: int, include: bool):
         for content in response_json["results"]:
             # yield content
             # changed from !list_tester!
-            assert "id" in content.keys()
+            assert "id" in content
             assert (content["id"] == module_id) == include
 
         amount = len(response_json["results"])
@@ -176,7 +176,7 @@ def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
         if revert:
             module1, module2 = module2, module1
         if default is None:
-            assert dict_key in module1.keys() and dict_key in module2.keys()
+            assert dict_key in module1 and dict_key in module2
             assert module2[dict_key] >= module1[dict_key]
         else:
             assert module2.get(dict_key, default) >= module1.get(dict_key, default)
@@ -211,7 +211,7 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
 
     found: bool = False
     for hidden_module in list_tester("/modules/hidden/", {}, MODULES_PER_REQUEST):
-        assert "id" in hidden_module.keys()
+        assert "id" in hidden_module
         if hidden_module["id"] == module_id:
             found = True
             break
@@ -219,7 +219,7 @@ def assert_hidden(list_tester: Callable[[str, dict, int], Iterator[dict]], modul
 
     found: bool = False
     for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
-        assert "id" in module.keys()
+        assert "id" in module
         if module["id"] == module_id:
             found = True
             break
@@ -253,7 +253,7 @@ def test_hidden_module_ordering(client: FlaskClient, list_tester: Callable[[str,
 
     met_module_id2: bool = False
     for module in list_tester("/modules/hidden/", {}, MODULES_PER_REQUEST):
-        assert "id" in module.keys()
+        assert "id" in module
         if module["id"] == module_id2:
             met_module_id2 = True
         if module["id"] == module_id1:

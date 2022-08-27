@@ -12,7 +12,7 @@ def test_result(client: FlaskClient, list_tester: Callable[[str, dict, int], Ite
     # solve test
     module = check_code(client.get("/modules/7/"))
     assert module["type"] == "test"
-    assert "map" in module.keys()
+    assert "map" in module
 
     length: int = len(module["map"])
 

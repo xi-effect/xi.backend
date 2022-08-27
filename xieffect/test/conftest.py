@@ -33,7 +33,7 @@ def base_login(client: FlaskClient, account: str, password: str, mub: bool = Fal
     response: TestResponse = client.post("/mub/sign-in/" if mub else "/auth/",
                                          data={"username" if mub else "email": account, "password": password})
     assert response.status_code == 200
-    assert "Set-Cookie" in response.headers.keys()
+    assert "Set-Cookie" in response.headers
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
     client.set_cookie("test", "access_token_cookie", cookie[1])
@@ -100,8 +100,7 @@ def list_tester(full_client: FlaskClient) -> ListTesterProtocol:
 
             assert "results" in response_json
             assert isinstance(response_json["results"], list)
-            for content in response_json["results"]:
-                yield content
+            yield from response_json["results"]
 
             amount = len(response_json["results"])
             assert amount <= page_size

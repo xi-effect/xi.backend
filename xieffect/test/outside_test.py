@@ -18,7 +18,7 @@ TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
 @mark.order(1)
 def test_login(base_client: FlaskClient):
     response: TestResponse = check_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
-    assert "Set-Cookie" in response.headers.keys()
+    assert "Set-Cookie" in response.headers
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
 
@@ -52,7 +52,7 @@ def test_signup(base_client: FlaskClient):
     response = check_code(base_client.post("/reg/", json=data), get_json=False)
 
     # Checking for cookies
-    assert "Set-Cookie" in response.headers.keys()
+    assert "Set-Cookie" in response.headers
     cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
 

@@ -25,7 +25,7 @@ class UserIndexResource(Resource):
     def get(self, session, start: int, finish: int, **kwargs: str | None) -> list[User]:
         return User.search_by_params(session, start, finish - start, **kwargs)
 
-    parser: RequestParser = password_parser.copy()
+    parser: RequestParser = password_parser.copy()  # noqa: PIE794
     parser.add_argument(
         "email", required=True, help="Email to be connected to new user's account"
     )

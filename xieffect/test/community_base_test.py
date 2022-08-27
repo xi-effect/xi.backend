@@ -155,8 +155,8 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
     # create a new invitation
     invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
     assert isinstance(invitation, dict)
-    assert "id" in invitation.keys()
-    assert "code" in invitation.keys()
+    assert "id" in invitation
+    assert "code" in invitation
 
     assert len(socketio_client1.get_received()) == 0
     assert len(socketio_client3.get_received()) == 0
@@ -266,8 +266,8 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
         invitation_data["community-id"] = community_id
         invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
         assert isinstance(invitation, dict)
-        assert "id" in invitation.keys()
-        assert "code" in invitation.keys()
+        assert "id" in invitation
+        assert "code" in invitation
 
         assert len(socketio_client1.get_received()) == 0
         assert len(socketio_client3.get_received()) == 0
@@ -424,8 +424,8 @@ def test_invitation_errors(multi_client, list_tester):
     # setup from test-1020
     invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
     assert isinstance(invitation, dict)
-    assert "id" in invitation.keys()
-    assert "code" in invitation.keys()
+    assert "id" in invitation
+    assert "code" in invitation
 
     assert len(socketio_client1.get_received()) == 0
 

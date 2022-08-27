@@ -32,3 +32,8 @@ repos:
           # TODO - flake8-secure-coding-standard
           # - flake8-warnings
           # - flake8-useless-assert  # unusable with pytest
+
+          # Simplifications
+          - dlint
+          - flake8-pie
+          - flake8-simplify

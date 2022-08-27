@@ -30,7 +30,7 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
                    {"a": f"Module of type {module_type} can't use direct navigation"}
 
         if module_type in ("theory-block", "test"):
-            assert "map" in module.keys()
+            assert "map" in module
             map_length = len(module["map"]) - 1
             check_code(client.get(f"/modules/{module_id}/points/{map_length}/"))
             assert check_code(client.post(f"/modules/{module_id}/next/"), 400) == \
@@ -41,7 +41,7 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
                    {"a": f"Module of type {module_type} can't use progress saving"}
 
         if module_type == "test":
-            assert "map" in module.keys()
+            assert "map" in module
             map_length = len(module["map"]) - 1
             json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
             assert check_code(client.post(f"/modules/{module_id}/points/{map_length}/reply/",
@@ -64,13 +64,13 @@ def test_standard_module_session(client: FlaskClient):  # relies on module#5
     def scroll_through() -> Iterator[int]:
         while True:
             result: TestResponse = check_code(client.post("/modules/5/next/"), get_json=False)
-            if len(result.history):  # it was redirected
-                page: dict = result.get_json()
-                assert "id" in page.keys()
-                yield page["id"]
-            else:
+            if len(result.history) == 0:
                 assert result.get_json() == {"a": "You have reached the end"}
                 break
+            else:  # it was redirected
+                page: dict = result.get_json()
+                assert "id" in page
+                yield page["id"]
 
     for _ in scroll_through():
         pass  # if any session was started before, reset the module
@@ -88,7 +88,7 @@ def test_module_navigation(client: FlaskClient):  # relies on module#9
     module = check_code(client.get("/modules/9/"))
     assert module["type"] == "theory-block"
 
-    assert "map" in module.keys()
+    assert "map" in module
     length = len(module["map"])
 
     for point_id in range(length):
@@ -112,7 +112,7 @@ def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 
 def test_reply_and_results(client: FlaskClient):  # relies on module#7
     module = check_code(client.get("/modules/7/"))
     assert module["type"] == "test"
-    assert "map" in module.keys()
+    assert "map" in module
 
     length: int = len(module["map"])
 

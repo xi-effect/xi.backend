@@ -41,5 +41,5 @@ def test_user_profile(client: FlaskClient):
     data: dict = check_code(client.get("/users/1/profile"))
 
     for key, value in new_settings.items():
-        assert key in data.keys()
+        assert key in data
         assert data[key] == value

@@ -176,23 +176,23 @@ class User(Base, UserRole, Identifiable):
         self, new_values: dict[str, Union[str, int, bool]]
     ) -> None:  # auto-commit
         # TODO redo
-        if "username" in new_values.keys():
+        if "username" in new_values:
             self.username = new_values["username"]
-        if "dark-theme" in new_values.keys():
+        if "dark-theme" in new_values:
             self.dark_theme = new_values["dark-theme"]
-        if "language" in new_values.keys():
+        if "language" in new_values:
             self.language = new_values["language"]
-        if "name" in new_values.keys():
+        if "name" in new_values:
             self.name = new_values["name"]
-        if "surname" in new_values.keys():
+        if "surname" in new_values:
             self.surname = new_values["surname"]
-        if "patronymic" in new_values.keys():
+        if "patronymic" in new_values:
             self.patronymic = new_values["patronymic"]
-        if "bio" in new_values.keys():
+        if "bio" in new_values:
             self.bio = new_values["bio"]
-        if "group" in new_values.keys():
+        if "group" in new_values:
             self.group = new_values["group"]
-        if "avatar" in new_values.keys():
+        if "avatar" in new_values:
             self.avatar = new_values["avatar"]
 
     def get_author_status(self) -> str:

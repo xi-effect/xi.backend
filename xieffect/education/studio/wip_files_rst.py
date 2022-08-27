@@ -106,7 +106,7 @@ def file_getter(
             else:
                 return {"a": f"File type '{file_type}' is not supported"}, 400
 
-            if "file_id" in kwargs.keys():
+            if "file_id" in kwargs:
                 file: result = result.find_by_id(
                     session, kwargs["file_id"] if type_only else kwargs.pop("file_id")
                 )
@@ -189,7 +189,7 @@ class FilePublisher(Resource):
         with open(file.get_link(), "rb") as f:
             content: dict = load(f)
             content["id"] = file.id  # just making sure
-            result: bool = (Page if type(file) == WIPPage else Module).find_or_create(
+            result: bool = (Page if isinstance(file, WIPPage) else Module).find_or_create(
                 session, content, author
             ) is None
         return "File already exists" if result else "Success"  # redo!!!

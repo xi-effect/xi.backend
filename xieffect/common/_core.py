@@ -73,7 +73,8 @@ def init_xieffect() -> tuple[
     #     }
     # })
 
-    versions = load(open("../static/versions.json", encoding="utf-8"))
+    with open("../static/versions.json", encoding="utf-8") as f:
+        versions = load(f)
 
     app: Flask = Flask(
         __name__,
@@ -81,7 +82,7 @@ def init_xieffect() -> tuple[
         static_url_path="/static/",
         versions=versions,
     )
-    app.config["TESTING"] = "pytest" in modules.keys()
+    app.config["TESTING"] = "pytest" in modules
     app.secrets_from_env("hope it's local")
     # TODO DI to use secrets in `URLSafeSerializer`s
     app.configure_cors()
