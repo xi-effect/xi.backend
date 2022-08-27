@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from os import getenv
-from typing import Union
 
 from itsdangerous.url_safe import URLSafeSerializer
 from sqlalchemy import Column, select
@@ -35,11 +34,11 @@ class Invite(Base):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[Invite, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Invite | None:
         return session.get_first(select(cls).filter(cls.id == entry_id))
 
     @classmethod
-    def find_by_code(cls, session: sessionmaker, code: str) -> Union[Invite, None]:
+    def find_by_code(cls, session: sessionmaker, code: str) -> Invite | None:
         return cls.find_by_id(session, cls.serializer.loads(code)[0])
 
     @classmethod

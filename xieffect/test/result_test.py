@@ -1,5 +1,5 @@
+from collections.abc import Iterator, Callable
 from random import randint
-from typing import Iterator, Callable
 
 from flask.testing import FlaskClient
 from pytest import mark

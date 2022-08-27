@@ -1,6 +1,7 @@
+from collections.abc import Iterable
 from io import BytesIO
 from os.path import exists
-from typing import TypeVar, Iterable
+from typing import TypeVar
 
 from flask.testing import FlaskClient
 from pytest import mark

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Callable
+from collections.abc import Callable
 
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
@@ -38,7 +38,7 @@ class Author(Base, UserRole):
     @classmethod
     def find_by_id(
         cls, session: sessionmaker, entry_id: int, include_banned: bool = False
-    ) -> Optional[Author]:
+    ) -> Author | None:
         stmt: Select = select(cls).filter_by(id=entry_id)
         if not include_banned:
             stmt = stmt.filter_by(banned=False)

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
-
 from flask_restx import fields
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer
@@ -69,7 +67,7 @@ class TestResult(Base):
     @classmethod
     def find_by_id(
         cls, session: sessionmaker, entry_id: int
-    ) -> Union[TestModuleSession, None]:
+    ) -> TestModuleSession | None:
         return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod

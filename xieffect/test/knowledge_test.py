@@ -1,4 +1,6 @@
-from typing import Callable, Iterator, Optional, Dict, Any
+from __future__ import annotations
+
+from collections.abc import Callable, Iterator
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -56,8 +58,8 @@ def test_module_list(client: FlaskClient, list_tester: Callable[[str, dict, int]
 
 
 def get_some_module_id(list_tester: Callable[[str, dict, int], Iterator[dict]],
-                       check: Optional[Callable[[dict], bool]] = None) -> Optional[int]:
-    module_id: Optional[int] = None
+                       check: Callable[[dict], bool] = None) -> int | None:
+    module_id: int | None = None
     for module in list_tester("/modules/", {}, MODULES_PER_REQUEST):
         assert "id" in module
         if check is None or check(module):
@@ -174,7 +176,7 @@ def test_module_filtering_multiuser(multi_client: Callable[[str], FlaskClient],
     temp_list_tester(user2, module_id, False)
 
 
-def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
+def assert_non_descending_order(dict_key: str, default: ... = None,
                                 /, revert: bool = False) -> Callable[[dict, dict], None]:
     def assert_non_descending_order_inner(module1: dict, module2: dict):
         if revert:
@@ -190,14 +192,14 @@ def assert_non_descending_order(dict_key: str, default: Optional[Any] = None,
 
 @mark.order(425)
 def test_module_sorting(list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    sort_types: Dict[str, Callable[[dict, dict], None]] = {
+    sort_types: dict[str, Callable[[dict, dict], None]] = {
         "popularity": assert_non_descending_order("views"),
         "creation-date": assert_non_descending_order("created", revert=True),
         "visit-date": assert_non_descending_order("visited", "", revert=True),
     }
 
     for sort_name, assert_in_order in sort_types.items():
-        prev_module: Optional[dict] = None
+        prev_module: dict | None = None
         for module in list_tester("/modules/", {"sort": sort_name}, MODULES_PER_REQUEST):
             if prev_module is not None:
                 assert_in_order(prev_module, module)

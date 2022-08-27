@@ -1,7 +1,6 @@
 from json import dumps
 from os import getenv
 from sys import modules
-from typing import Type
 
 from flask import Response
 from flask_mail import Mail
@@ -32,7 +31,7 @@ class Flask(_Flask):
 
 
 def init_xieffect() -> tuple[
-    str, MetaData, Type[ModBase], Sessionmaker, IndexService, dict, Flask, bool, Mail
+    str, MetaData, type[ModBase], Sessionmaker, IndexService, dict, Flask, bool, Mail
 ]:
     # xieffect specific:
 

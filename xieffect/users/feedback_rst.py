@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from enum import Enum
 from functools import wraps
 from os import getenv
-from typing import Union, Type
 
 from flask import request
 from flask_restx import Resource, Model
@@ -18,7 +19,7 @@ feedback_serializer: URLSafeSerializer = URLSafeSerializer(
 )  # TODO redo
 
 
-def enum_response(enum: Type[Enum]):  # TODO move to ffs
+def enum_response(enum: type[Enum]):  # TODO move to ffs
     model = {
         "a": StringField(enum=[member.value for member in enum.__members__.values()])
     }
@@ -59,10 +60,10 @@ class FeedbackSaver(Resource):
     def post(
         self,
         session,
-        user: Union[User, None],
+        user: User | None,
         feedback_type: str,
         data: dict,
-        code: Union[str, None],
+        code: str | None,
     ):
         feedback_type = FeedbackType.from_string(feedback_type)
         if feedback_type is None:

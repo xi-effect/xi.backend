@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
-
 from sqlalchemy import Column, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Float, JSON
@@ -15,7 +13,7 @@ class ModuleProgressSession(BaseModuleSession):
     progress = Column(Integer, nullable=True)
     theory_level = Column(Float, nullable=True)  # temp disabled for theory blocks
 
-    def get_theory_level(self, session: sessionmaker) -> Union[float, None]:
+    def get_theory_level(self, session: sessionmaker) -> float | None:
         if self.theory_level is None:
             return None
         return (
@@ -40,7 +38,7 @@ class TestModuleSession(BaseModuleSession):
 
     def find_point_session(
         self, session: sessionmaker, point_id: int
-    ) -> Union[TestPointSession, None]:
+    ) -> TestPointSession | None:
         return TestPointSession.find_by_ids(
             session, self.user_id, self.module_id, point_id
         )

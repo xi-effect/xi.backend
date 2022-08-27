@@ -1,4 +1,4 @@
-from typing import Iterator, Callable
+from collections.abc import Iterator, Callable
 
 from flask.testing import FlaskClient
 

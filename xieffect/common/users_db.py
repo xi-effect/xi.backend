@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, Callable
+from collections.abc import Callable
 
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
@@ -115,13 +115,13 @@ class User(Base, UserRole, Identifiable):
         return cls.find_by_id(session, identity)
 
     @classmethod
-    def find_by_email_address(cls, session: sessionmaker, email) -> Union[User, None]:
+    def find_by_email_address(cls, session: sessionmaker, email) -> User | None:
         return session.get_first(select(cls).filter_by(email=email))
 
     @classmethod  # TODO this class shouldn't know about invites
     def create(
         cls, session: sessionmaker, *, email: str, password: str, invite=None, **kwargs
-    ) -> Union[User, None]:
+    ) -> User | None:
         if cls.find_by_email_address(session, email):
             return None
         new_user = super().create(
@@ -149,7 +149,7 @@ class User(Base, UserRole, Identifiable):
         cls,
         session: sessionmaker,
         exclude_id: int,
-        search: Union[str, None],
+        search: str | None,
         offset: int,
         limit: int,
     ) -> list[User]:
@@ -172,7 +172,7 @@ class User(Base, UserRole, Identifiable):
         self.password = User.generate_hash(new_password)
 
     def change_settings(
-        self, new_values: dict[str, Union[str, int, bool]]
+        self, new_values: dict[str, str | int | bool]
     ) -> None:  # auto-commit
         # TODO redo
         if "username" in new_values:

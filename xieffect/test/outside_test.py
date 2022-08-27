@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from flask.testing import FlaskClient
 from flask_mail import Message
 from pytest import mark, skip
@@ -19,7 +17,7 @@ TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
 def test_login(base_client: FlaskClient):
     response: TestResponse = check_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
     assert "Set-Cookie" in response.headers
-    cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
 
     result: dict[str, ...] = response.json
@@ -53,7 +51,7 @@ def test_signup(base_client: FlaskClient):
 
     # Checking for cookies
     assert "Set-Cookie" in response.headers
-    cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
 
     # Checking the returned data

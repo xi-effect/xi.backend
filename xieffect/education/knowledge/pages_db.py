@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime
-from typing import Union
 
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
@@ -81,13 +80,13 @@ class Page(Base, Identifiable, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[Page, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Page | None:
         return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
     def find_or_create(
         cls, session: sessionmaker, json_data: dict[str, ...], author: Author
-    ) -> Union[Page, None]:
+    ) -> Page | None:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls._create(session, json_data, author)
@@ -106,7 +105,7 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def search(
-        cls, session: sessionmaker, search: Union[str, None], start: int, limit: int
+        cls, session: sessionmaker, search: str | None, start: int, limit: int
     ) -> list[Page]:
         stmt: Select = select(cls).filter_by(public=True)
         if (

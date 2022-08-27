@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from random import randint
-from typing import Union
 
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_
 from sqlalchemy.engine import Row
@@ -52,7 +51,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
     @classmethod
     def create(
         cls, session: sessionmaker, user_id: int, module_id: int
-    ) -> Union[ModuleFilterSession, None]:
+    ) -> ModuleFilterSession | None:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
         return super().create(
@@ -225,7 +224,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         json_data: dict[str, ...],
         author: Author,
         force: bool = False,
-    ) -> Union[Module, None]:
+    ) -> Module | None:
         if cls.find_by_id(session, json_data["id"]):
             return None
 
@@ -273,13 +272,13 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, module_id: int) -> Union[Module, None]:
+    def find_by_id(cls, session: sessionmaker, module_id: int) -> Module | None:
         return cls.find_first_by_kwargs(session, id=module_id)
 
     @classmethod
     def find_or_create(
         cls, session: sessionmaker, json_data: dict[str, ...], author: Author
-    ) -> Union[Module, None]:
+    ) -> Module | None:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls.create(session, json_data, author)
@@ -287,7 +286,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
     @classmethod
     def find_with_relation(
         cls, session: sessionmaker, module_id: int, user_id: int
-    ) -> Union[Row, None]:
+    ) -> Row | None:
         stmt: Select = select(
             *cls.__table__.columns,
             *ModuleFilterSession.__table__.columns,
@@ -306,7 +305,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
     def get_module_list(
         cls,
         session: sessionmaker,
-        filters: Union[dict[str, str], None],
+        filters: dict[str, str] | None,
         search: str,
         sort: SortType,
         user_id: int,
@@ -323,7 +322,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         if search is not None and len(search) > 2:
             stmt = cls.search_stmt(search, stmt=stmt)
 
-        global_filter: Union[str, None] = None
+        global_filter: str | None = None
         if filters is not None:
             if "global" in filters:
                 global_filter = filters.pop("global")

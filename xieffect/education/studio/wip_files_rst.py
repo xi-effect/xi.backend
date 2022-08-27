@@ -1,7 +1,6 @@
 from functools import wraps
 from json import load
 from os import remove
-from typing import Type
 
 from flask import request, send_from_directory, redirect
 from flask_restx import Resource, Model
@@ -97,7 +96,7 @@ def file_getter(
         @wip_json_file_namespace.jwt_authorizer(Author)
         def get_file_or_type(*args, **kwargs):
             session = kwargs.pop("session")
-            result: Type[JSONFile]
+            result: type[JSONFile]
             file_type: str = kwargs.pop("file_type")
             if file_type == "modules":
                 result = WIPModule
@@ -139,7 +138,7 @@ class FileCreator(Resource):
         ResponseDoc(model=Model("ID Response", {"id": Integer}))
     )
     @file_getter()
-    def post(self, session, author: Author, file_type: Type[JSONFile]):
+    def post(self, session, author: Author, file_type: type[JSONFile]):
         """Creates a new wip-file, saves its contents and adds its metadata to index"""
         try:
             result: file_type = file_type.create_from_json(

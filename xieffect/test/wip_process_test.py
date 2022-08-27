@@ -1,4 +1,6 @@
-from typing import Callable, Iterator, Union, Optional
+from __future__ import annotations
+
+from collections.abc import Callable, Iterator
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -19,7 +21,7 @@ class WIPRecycler:
         self.wip_url: str = f"/wip/{self.file_type}/"
         self.wip_id_url: str = ""
 
-        self.file_id: Optional[Union[int, str]] = None
+        self.file_id: int | str | None = None
 
         with open(f"test/json/{file_name1}.json", "rb") as f:
             self.file_content1 = load(f)  # TODO content shouldn't have any id info!
@@ -27,7 +29,7 @@ class WIPRecycler:
         with open(f"test/json/{file_name2}.json", "rb") as f:
             self.file_content2 = load(f)
 
-    def is_in_list(self, url, per_request: int = None) -> Optional[dict]:
+    def is_in_list(self, url, per_request: int = None) -> dict | None:
         for file in self.list_tester(url, {}, PER_REQUEST if per_request is None else per_request):
             if file["id"] == self.file_id:
                 return file
@@ -70,7 +72,7 @@ class WIPRecycler:
     def publishing(self):
         assert self.file_id is not None
 
-        content: Optional[dict] = None
+        content: dict | None = None
         if self.is_same_on_server(self.wip_id_url, self.file_content1):
             content = self.file_content1
         elif self.is_same_on_server(self.wip_id_url, self.file_content2):

@@ -1,4 +1,5 @@
-from typing import Tuple, Iterator, Callable, Protocol
+from collections.abc import Callable, Iterator
+from typing import Protocol
 
 from flask.testing import FlaskClient
 from flask_socketio import SocketIOTestClient
@@ -31,7 +32,7 @@ def base_login(client: FlaskClient, account: str, password: str, mub: bool = Fal
                                          data={"username" if mub else "email": account, "password": password})
     assert response.status_code == 200
     assert "Set-Cookie" in response.headers
-    cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
     client.set_cookie("test", "access_token_cookie", cookie[1])
 

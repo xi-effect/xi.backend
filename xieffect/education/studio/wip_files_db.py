@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from json import dump
 from os import remove
-from typing import Union
 
 from sqlalchemy import Column
 from sqlalchemy.orm import relationship
@@ -54,7 +53,7 @@ class CATFile(Base, Identifiable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[CATFile, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> CATFile | None:
         return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
@@ -135,7 +134,7 @@ class WIPPage(JSONFile):
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
-    def get_views(self) -> Union[int, None]:
+    def get_views(self) -> int | None:
         return None if self.page is None else self.page.views
 
 
@@ -175,5 +174,5 @@ class WIPModule(JSONFile):
         self.category = json_data["category"]
         self.difficulty = json_data["difficulty"]
 
-    def get_views(self) -> Union[int, None]:
+    def get_views(self) -> int | None:
         return None if self.module is None else self.module.views

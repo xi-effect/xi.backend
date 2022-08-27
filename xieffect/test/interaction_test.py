@@ -1,5 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Iterator, Callable
 from random import shuffle, randint
-from typing import Iterator, Callable, Optional
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -134,7 +136,7 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
         assert check_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)) == {"a": True}
         assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == reply["answers"]
 
-    point_id: Optional[int] = None
+    point_id: int | None = None
     for i, reply in enumerate(check_code(client.get("/modules/7/results/"))["result"]):
         assert dict_equal(reply, replies[i], "right-answers", "total-answers", "answers")
         assert point_id is None or reply["point-id"] > point_id

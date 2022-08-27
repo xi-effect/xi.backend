@@ -1,4 +1,4 @@
-from typing import Union
+from __future__ import annotations
 
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
@@ -23,7 +23,7 @@ class PageLister(Resource):  # POST /pages/
     @controller.jwt_authorizer(User, check_only=True)
     @controller.argument_parser(parser)
     @controller.lister(50, Page.ShortModel)
-    def post(self, session, search: Union[str, None], start: int, finish: int) -> list:
+    def post(self, session, search: str | None, start: int, finish: int) -> list:
         """Lists index of pages with metadata only"""
         return Page.search(session, search, start, finish - start)
 

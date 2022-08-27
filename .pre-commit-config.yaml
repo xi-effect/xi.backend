@@ -71,3 +71,13 @@ repos:
           - flake8-executable
           # - flake8-coding  # wants encoding comments in every file
           # - flake8-noqa  # failed to install
+
+          # Typing
+          - flake8-annotations-coverage
+          - flake8-future-annotations
+          - flake8-new-union-types
+          - flake8-pep585
+          - flake8-pep604
+          - flake8-typing-imports
+          # TODO - flake8-annotations
+          # TODO - flake8-type-checking (https://github.com/snok/flake8-type-checking)
