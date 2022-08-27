@@ -13,14 +13,13 @@ class GithubWebhook(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("X-GitHub-Event", str, dest="event_type", location="headers")
 
+    @controller.deprecated
     @controller.argument_parser(parser)
-    def post(self, event_type: str):
+    def post(self, event_type: str):  # TODO remove
         if event_type == "push":
             send_discord_message(
                 WebhookURLs.GITHUB, "Got a push notification.\n" "Starting auto-update"
             )
-            # execute_in_console("git pull")
-            # reload_webapp()
         elif event_type == "release":
             send_discord_message(
                 WebhookURLs.GITHUB,

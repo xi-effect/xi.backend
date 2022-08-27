@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator, Callable
 from datetime import datetime, timedelta
-from typing import Iterator, Callable
 
 from flask.testing import FlaskClient
 from flask_socketio import SocketIOTestClient
@@ -86,7 +86,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     for community_data in community_datas:
         community_data["id"] = assert_double_create(community_data)
         community_ids.insert(0, community_data["id"])
-    # assert_order()
+    # assert_order
 
     # Reordering
     reorder_data = {"source-id": community_datas[0]["id"], "target-index": 0}
@@ -104,7 +104,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     community_ids.remove(reorder_data["source-id"])
     community_ids.insert(reorder_data["target-index"], reorder_data["source-id"])
-    # assert_order()
+    # assert_order
 
     # Leaving
     leave_data = {"community-id": community_datas[-1]["id"]}
@@ -121,7 +121,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     assert dict_equal(events[0]["args"][0], leave_data, *leave_data.keys())
 
     community_ids.remove(leave_data["community-id"])
-    # assert_order()
+    # assert_order
 
 
 @mark.skip

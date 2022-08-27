@@ -85,8 +85,6 @@ api.add_namespace(settings_namespace)
 api.add_namespace(feedback_namespace)
 api.add_namespace(invites_namespace)
 
-# api.add_namespace(chats_namespace)
-
 api.add_namespace(education_namespace)
 api.add_namespace(modules_view_namespace)
 api.add_namespace(pages_view_namespace)
@@ -121,23 +119,5 @@ socketio = SocketIO(
 )
 
 socketio.add_namespace("/", communities_meta_events, invitation_events, protected=True)
-
-# class MessagesNamespace(Namespace):
-#     @jwt_required()  # if not self.authenticate(request.args): raise ConnectionRefusedError("unauthorized!")
-#     def on_connect(self, _):
-#         join_room(f"user-{get_jwt_identity()}")
-#
-#     # def on_disconnect(self, session, user_id: int):
-#     #     chat_ids = [int(chat_id) for room_name in rooms() if (chat_id := room_name.partition("chat-")[2]) != ""]
-#     #     if len(chat_ids):
-#     #        UserToChat.find_and_close(session, user.id, ids)
-#
-#
-# messages_namespace = MessagesNamespace("/")
-# messages_namespace.attach_event_group(messaging_events, use_kebab_case=True)
-# messages_namespace.attach_event_group(chat_management_events, use_kebab_case=True)
-# messages_namespace.attach_event_group(user_management_events, use_kebab_case=True)
-#
-# socketio.on_namespace(messages_namespace)
 
 # remove-item alias:\curl

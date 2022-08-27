@@ -53,25 +53,10 @@ def init_xieffect() -> tuple[
     engine = create_engine(db_url, pool_recycle=280)  # echo=True
     db_meta = MetaData(bind=engine, naming_convention=convention)
     # TODO allow naming conventions in FFS
-    Base = create_base(db_meta)
+    Base = create_base(db_meta)  # noqa: N806
     sessionmaker = Sessionmaker(bind=engine, class_=Session)
 
     index_service = configure_whooshee(sessionmaker, "../files/temp/whoosh")
-    # configure_logging({
-    #     "version": 1,
-    #     "formatters": {"default": {
-    #         "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
-    #     }},
-    #     "handlers": {"wsgi": {
-    #         "class": "logging.StreamHandler",
-    #         "stream": "ext://flask.logging.wsgi_errors_stream",
-    #         "formatter": "default"
-    #     }},
-    #     "root": {
-    #         "level": "DEBUG",
-    #         "handlers": ["wsgi"]
-    #     }
-    # })
 
     with open("../static/versions.json", encoding="utf-8") as f:
         versions = load(f)

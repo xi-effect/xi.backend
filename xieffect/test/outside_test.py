@@ -81,6 +81,9 @@ def test_email_confirm(base_client: FlaskClient):
     if not mail_initialized:
         skip("Email module is not setup")
 
+    a = [1, 2, 3, 4]
+    assert 1 in a
+
     # TODO use hey@hey.hey but delete account form test_signup (& here)
     credentials = {
         "email": "hey2@hey.hey",

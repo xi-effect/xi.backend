@@ -1,4 +1,4 @@
-from typing import Union
+from __future__ import annotations
 
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
@@ -140,7 +140,7 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     @controller.a_response()
     def post(self, session, module_id: int, user: User, operation: str) -> None:
         """Changes user relation to some module"""
-        module: Union[ModuleFilterSession, None] = ModuleFilterSession.find_by_ids(
+        module: ModuleFilterSession | None = ModuleFilterSession.find_by_ids(
             session, user.id, module_id
         )
         if module is None:

@@ -314,30 +314,20 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         limit: int,
     ) -> list[Row]:
 
-        # print(filters, search, sort)
-        # print([(mfs.module_id, mfs.user_id, mfs.to_json())
-        # for mfs in session.execute(select(ModuleFilterSession)).scalars().all()])
-
         stmt = select(
             *cls.__table__.columns,
             *ModuleFilterSession.__table__.columns,
             Author.pseudonym,
         )
 
-        # print(len(session.execute(stmt).all()), stmt)
-
         if search is not None and len(search) > 2:
             stmt = cls.search_stmt(search, stmt=stmt)
-
-        # print(len(session.execute(stmt).scalars().all()), stmt)
 
         global_filter: Union[str, None] = None
         if filters is not None:
             if "global" in filters:
                 global_filter = filters.pop("global")
             stmt = stmt.filter_by(**filters)
-
-        # print(len(session.execute(stmt).scalars().all()), stmt)
 
         stmt = stmt.outerjoin(
             ModuleFilterSession,
@@ -348,11 +338,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         )
         # if session exists for another user, would it pick it up???
 
-        # print(len(session.execute(stmt).all()))
-
         stmt = stmt.filter(ModuleFilterSession.hidden.is_not(True))
-
-        # print(len(session.execute(stmt).scalars().all()), stmt)
 
         if global_filter is not None:
             stmt = stmt.filter_by(**{global_filter: True})
@@ -363,10 +349,6 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
             stmt = stmt.order_by(cls.created.desc())
         elif sort == SortType.VISIT_DATE:
             stmt = stmt.order_by(ModuleFilterSession.last_visited.desc())
-
-        # print(len(session.execute(stmt.offset(offset).limit(limit)).scalars().all()), stmt)
-        # print(stmt)
-        # print(session.execute(stmt.offset(offset).limit(limit)).first())
 
         return session.get_paginated_rows(stmt, offset, limit)
 
@@ -384,9 +366,6 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
             ),
         )
         stmt = stmt.order_by(ModuleFilterSession.last_changed.desc())
-        # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
-        #         for mfs in session.execute(select(ModuleFilterSession)).scalars().all() if mfs.hidden], sep="\n")
-        # print(stmt)
         return session.get_paginated_rows(stmt, offset, limit)
 
     def execute_point(self, point_id: int = None, theory_level: float = None) -> int:

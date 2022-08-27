@@ -160,10 +160,6 @@ class FileProcessor(Resource):
         with open(file.get_link(), "rb") as f:
             return load(f)
 
-    # @file_getter()  # PermissionError(13)
-    # def get(self, file_type: Type[CATFile], file_id: int):
-    #     return send_from_directory("../" + file_type.directory, f"{file_id}.{file_type.mimetype}")
-
     @wip_json_file_namespace.doc_file_param("json")
     @file_getter(type_only=False)
     @wip_json_file_namespace.a_response()

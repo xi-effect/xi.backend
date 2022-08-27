@@ -57,3 +57,17 @@ repos:
           # - flake8-literal  # black does this, but with double quotes (mb look into docs)
           # - flake8-scream  # too much screaming and that's the point
           # - flake8-strict  # failed to install
+
+          # Naming
+          - flake8-builtins
+          - pep8-naming
+          # - flake8-test-name
+          # - flake8-functions-names  # screams too much
+          # - flake8-variables-names  # screams at tables' ids
+
+          # Comments
+          - flake8-comments
+          - flake8-eradicate
+          - flake8-executable
+          # - flake8-coding  # wants encoding comments in every file
+          # - flake8-noqa  # failed to install

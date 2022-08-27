@@ -26,6 +26,5 @@ class SocketIO(_SocketIO):
     ):
         super().__init__(app, title, version, "/asyncapi.json", **kwargs)
 
-        # @self.on("connect")  # check everytime or save in session?
-        # def connect_user():  # https://python-socketio.readthedocs.io/en/latest/server.html#user-sessions
-        #     pass             # sio = main.socketio.server
+        # check everytime or save in session?
+        # https://python-socketio.readthedocs.io/en/latest/server.html#user-sessions

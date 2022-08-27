@@ -116,7 +116,6 @@ class User(Base, UserRole, Identifiable):
 
     @classmethod
     def find_by_email_address(cls, session: sessionmaker, email) -> Union[User, None]:
-        # send_generated_email(email, "pass", "password-reset-email.html")
         return session.get_first(select(cls).filter_by(email=email))
 
     @classmethod  # TODO this class shouldn't know about invites

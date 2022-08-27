@@ -197,13 +197,9 @@ init_folder_structure()
 init_users()
 init_knowledge()
 version_check()
-# init_chats()
 
 if __name__ == "__main__":  # test only
     socketio.run(
         application,
         reloader_options={"extra_files": ["../../static/public/index.html"]},
     )
-
-# if __name__ == "__main__":
-#     socketio.run(app, port=5050, debug=True)
