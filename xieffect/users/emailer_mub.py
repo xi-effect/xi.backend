@@ -27,7 +27,7 @@ class EmailQAResource(Resource):
     def post(self, session, user_email: str | None, tester_email: str, email_type: str) -> str:
         email_type = EmailType.from_string(email_type)
         if email_type is None:
-            controller.abort(400, f"Unsupported type")
+            controller.abort(400, "Unsupported type")
 
         if user_email is None:
             user_email = tester_email

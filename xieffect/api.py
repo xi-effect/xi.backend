@@ -31,7 +31,7 @@ def log_stuff(level: str, message: str):
                 response = send_file_discord_message(
                     WebhookURLs.ERRORS, message, "error_message.txt", "Server error appeared!")
             if response.status_code < 200 or response.status_code > 299:
-                send_discord_message(WebhookURLs.ERRORS, f"Server error appeared!\nBut I failed to report it...")
+                send_discord_message(WebhookURLs.ERRORS, "Server error appeared!\nBut I failed to report it...")
 
 
 jwt = app.configure_jwt_with_loaders(["cookies"], timedelta(hours=72), lambda *x: logger.warning(x[1]),

@@ -14,7 +14,7 @@ controller = ResourceController("invites", path="/invites/")
 def admin_only(use_session: bool = False):
     def admin_only_wrapper(function):
         @controller.doc_aborts(*controller.auth_errors)
-        @controller.doc_responses(ResponseDoc.error_response(f"403 ", "Permission denied"))
+        @controller.doc_abort("403 ", "Permission denied")
         @controller.doc(security="jwt")
         @wraps(function)
         @jwt_required()

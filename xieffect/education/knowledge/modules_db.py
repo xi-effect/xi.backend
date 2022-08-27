@@ -256,7 +256,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
 
         # print(len(session.execute(stmt).all()))
 
-        stmt = stmt.filter(or_(ModuleFilterSession.hidden != True, ModuleFilterSession.hidden.is_(None)))
+        stmt = stmt.filter(or_(ModuleFilterSession.hidden.in_((True, None))))
 
         # print(len(session.execute(stmt).scalars().all()), stmt)
 
@@ -281,7 +281,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         stmt = select(*cls.__table__.columns, Author.pseudonym)
         stmt = stmt.join(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
                                                    ModuleFilterSession.user_id == user_id,
-                                                   ModuleFilterSession.hidden == True))
+                                                   ModuleFilterSession.hidden.is_(True)))
         stmt = stmt.order_by(ModuleFilterSession.last_changed.desc())
         # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
         #         for mfs in session.execute(select(ModuleFilterSession)).scalars().all() if mfs.hidden], sep="\n")

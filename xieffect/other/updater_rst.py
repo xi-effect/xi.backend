@@ -16,13 +16,13 @@ class GithubWebhook(Resource):
     @controller.argument_parser(parser)
     def post(self, event_type: str):
         if event_type == "push":
-            send_discord_message(WebhookURLs.GITHUB, f"Got a push notification.\n"
-                                                     f"Starting auto-update")
+            send_discord_message(WebhookURLs.GITHUB, "Got a push notification.\n"
+                                                     "Starting auto-update")
             # execute_in_console("git pull")
             # reload_webapp()
         elif event_type == "release":
-            send_discord_message(WebhookURLs.GITHUB, f"Got a release notification.\n"
-                                                     f"Releases are not supported yet!")
+            send_discord_message(WebhookURLs.GITHUB, "Got a release notification.\n"
+                                                     "Releases are not supported yet!")
         else:
             send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
                                                      f"No action was applied.")
@@ -69,8 +69,8 @@ class NetlifyBuildWebhook(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, state: str, commit_url: str, **kwargs) -> None:
-        result: str = (f"__**Netlify build failed!**__\n" if state == "error" else
-                       f"__**Netlify build is {state}!**__\n")
+        result: str = ("__**Netlify build failed!**__\n" if state == "error" else
+                       "__**Netlify build is {state}!**__\n")
 
         result += "\n".join([
             f"{message}: `{arg}`"
@@ -103,7 +103,7 @@ class WebhookPassthrough(Resource):
 
 
 @controller.route("/lol-bot/")
-class WebhookPassthrough(Resource):
+class LolBot(Resource):
     def get(self):
         try:
             with open("../files/lol-counter.txt") as f:
@@ -111,7 +111,7 @@ class WebhookPassthrough(Resource):
             if "69" in count or count[-1] == "0":
                 send_discord_message(WebhookURLs.LOLBOT, f"Got another one! Total: {count}")
         except (FileNotFoundError, ValueError):
-            send_discord_message(WebhookURLs.LOLBOT, f"Reset happened... Got the first one!")
+            send_discord_message(WebhookURLs.LOLBOT, "Reset happened... Got the first one!")
             count = 1
         with open("../files/lol-counter.txt", "w") as f:
             f.write(str(count))

@@ -44,10 +44,10 @@ else:  # works on server restart
             send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for secret `{secret_name}`")
             setup_fail = True
     if db_url == "sqlite:///app.db":
-        send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for db url!")
+        send_discord_message(WebhookURLs.NOTIFY, "ERROR! No environmental variable for db url!")
         setup_fail = True
     if not mail_initialized:
-        send_discord_message(WebhookURLs.NOTIFY, f"ERROR! Some environmental variable(s) for main are missing!")
+        send_discord_message(WebhookURLs.NOTIFY, "ERROR! Some environmental variable(s) for main are missing!")
         setup_fail = True
     if setup_fail:
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
@@ -67,8 +67,6 @@ def init_folder_structure():
 
 @sessionmaker.with_begin
 def init_users(session):
-    from users.invites_db import Invite
-
     if (invite := Invite.find_by_id(session, TEST_INVITE_ID)) is None:
         log_stuff("status", "Database has been reset")
         invite: Invite = Invite.create(session, id=TEST_INVITE_ID, name="TEST_INVITE")
@@ -98,7 +96,7 @@ def init_knowledge(session):
 
     test_author: Author = User.find_by_email_address(session, TEST_EMAIL).author
 
-    with open(f"../static/test/page-bundle.json", "rb") as f:
+    with open("../static/test/page-bundle.json", "rb") as f:
         for page_data in load(f):
             WIPPage.create_from_json(session, test_author, page_data)
             Page.find_or_create(session, page_data, test_author)
