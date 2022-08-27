@@ -4,7 +4,7 @@ from datetime import datetime
 from random import randint
 from typing import Union
 
-from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_, or_
+from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
@@ -350,7 +350,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
 
         # print(len(session.execute(stmt).all()))
 
-        stmt = stmt.filter(or_(ModuleFilterSession.hidden.in_((True, None))))
+        stmt = stmt.filter(ModuleFilterSession.hidden.is_not(True))
 
         # print(len(session.execute(stmt).scalars().all()), stmt)
 
