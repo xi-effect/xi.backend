@@ -50,7 +50,10 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
 
     @classmethod
     def create(
-        cls, session: sessionmaker, user_id: int, module_id: int
+        cls,
+        session: sessionmaker,
+        user_id: int,
+        module_id: int,
     ) -> ModuleFilterSession | None:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
@@ -69,7 +72,9 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         self.note_change()
 
     def change_preference(
-        self, session: sessionmaker, operation: PreferenceOperation
+        self,
+        session: sessionmaker,
+        operation: PreferenceOperation,
     ) -> None:
         if operation == PreferenceOperation.HIDE:
             self.hidden = True
@@ -93,7 +98,8 @@ class PointToPage(Base):
     __tablename__ = "points_to_pages"
     __table_args__ = (
         ForeignKeyConstraint(
-            ("module_id", "point_id"), ("points.module_id", "points.point_id")
+            ("module_id", "point_id"),
+            ("points.module_id", "points.point_id"),
         ),
     )
 
@@ -126,7 +132,11 @@ class Point(Base):
 
     @classmethod
     def create(
-        cls, session, module_id: int, point_id: int, point_data: dict[str, str]
+        cls,
+        session,
+        module_id: int,
+        point_id: int,
+        point_data: dict[str, str],
     ) -> Point:
         point = cls(
             module_id=module_id,
@@ -212,7 +222,10 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
     # Other relations or relation-like
     image_id = Column(Integer, nullable=True)
     points = relationship(
-        "Point", back_populates="module", cascade="all, delete", order_by=Point.point_id
+        "Point",
+        back_populates="module",
+        cascade="all, delete",
+        order_by=Point.point_id,
     )
 
     ShortModel = PydanticModel.column_model(id, name, author_id, image_id)
@@ -277,7 +290,10 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
 
     @classmethod
     def find_or_create(
-        cls, session: sessionmaker, json_data: dict[str, ...], author: Author
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author,
     ) -> Module | None:
         if cls.find_by_id(session, json_data["id"]):
             return None
@@ -285,7 +301,10 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
 
     @classmethod
     def find_with_relation(
-        cls, session: sessionmaker, module_id: int, user_id: int
+        cls,
+        session: sessionmaker,
+        module_id: int,
+        user_id: int,
     ) -> Row | None:
         stmt: Select = select(
             *cls.__table__.columns,
@@ -353,7 +372,11 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
 
     @classmethod
     def get_hidden_module_list(
-        cls, session: sessionmaker, user_id: int, offset: int, limit: int
+        cls,
+        session: sessionmaker,
+        user_id: int,
+        offset: int,
+        limit: int,
     ) -> list[Row]:
         stmt = select(*cls.__table__.columns, Author.pseudonym)
         stmt = stmt.join(

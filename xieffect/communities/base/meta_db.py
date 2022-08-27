@@ -24,7 +24,11 @@ class Community(Base, Identifiable):
 
     @classmethod
     def create(
-        cls, session: sessionmaker, name: str, description: str | None, creator: User
+        cls,
+        session: sessionmaker,
+        name: str,
+        description: str | None,
+        creator: User,
     ) -> Community:
         entry: cls = super().create(session, name=name, description=description)
 
@@ -41,7 +45,11 @@ class Community(Base, Identifiable):
 
     @classmethod
     def find_by_user(
-        cls, session: sessionmaker, user: User, offset: int, limit: int
+        cls,
+        session: sessionmaker,
+        user: User,
+        offset: int,
+        limit: int,
     ) -> list[Community]:
         ids = session.get_paginated(
             select(Participant.community_id).filter_by(user_id=user.id), offset, limit
@@ -72,12 +80,18 @@ class Participant(Base):
         role: ParticipantRole,
     ):
         return super().create(
-            session, community_id=community_id, user_id=user_id, role=role
+            session,
+            community_id=community_id,
+            user_id=user_id,
+            role=role,
         )
 
     @classmethod
     def find_by_ids(
-        cls, session: sessionmaker, community_id: int, user_id: int
+        cls,
+        session: sessionmaker,
+        community_id: int,
+        user_id: int,
     ) -> Participant | None:
         return session.get_first(
             select(cls).filter_by(community_id=community_id, user_id=user_id)

@@ -37,7 +37,11 @@ class CommunitiesEventSpace(EventSpace):
     @controller.database_searcher(Community, use_session=True)
     @controller.force_ack()
     def leave_community(
-        self, event: DuplexEvent, session, user: User, community: Community
+        self,
+        event: DuplexEvent,
+        session,
+        user: User,
+        community: Community,
     ):
         cu = CommunitiesUser.find_or_create(session, user.id)
         cu.leave_community(session, community.id)
@@ -64,5 +68,7 @@ class CommunitiesEventSpace(EventSpace):
             controller.abort(404, "Community not in the list")
 
         event.emit_convert(
-            user_id=user.id, community_id=community.id, target_index=target_index
+            user_id=user.id,
+            community_id=community.id,
+            target_index=target_index,
         )

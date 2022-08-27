@@ -95,6 +95,21 @@ class User(Base, UserRole, Identifiable):
         email, email_confirmed, avatar, code, name, surname, patronymic, bio, group
     )
 
+    CHANGEABLE_FIELDS = tuple(
+        (field, field.replace("_", "-"))
+        for field in (
+            "username",
+            "dark_theme",
+            "language",
+            "name",
+            "surname",
+            "patronymic",
+            "bio",
+            "group",
+            "avatar",
+        )
+    )
+
     class RoleSettings(PydanticModel):
         author_status: str
         moderator_status: bool
@@ -120,7 +135,13 @@ class User(Base, UserRole, Identifiable):
 
     @classmethod  # TODO this class shouldn't know about invites
     def create(
-        cls, session: sessionmaker, *, email: str, password: str, invite=None, **kwargs
+        cls,
+        session: sessionmaker,
+        *,
+        email: str,
+        password: str,
+        invite=None,
+        **kwargs,
     ) -> User | None:
         if cls.find_by_email_address(session, email):
             return None
@@ -171,28 +192,11 @@ class User(Base, UserRole, Identifiable):
     def change_password(self, new_password: str) -> None:  # auto-commit
         self.password = User.generate_hash(new_password)
 
-    def change_settings(
-        self, new_values: dict[str, str | int | bool]
-    ) -> None:  # auto-commit
-        # TODO redo
-        if "username" in new_values:
-            self.username = new_values["username"]
-        if "dark-theme" in new_values:
-            self.dark_theme = new_values["dark-theme"]
-        if "language" in new_values:
-            self.language = new_values["language"]
-        if "name" in new_values:
-            self.name = new_values["name"]
-        if "surname" in new_values:
-            self.surname = new_values["surname"]
-        if "patronymic" in new_values:
-            self.patronymic = new_values["patronymic"]
-        if "bio" in new_values:
-            self.bio = new_values["bio"]
-        if "group" in new_values:
-            self.group = new_values["group"]
-        if "avatar" in new_values:
-            self.avatar = new_values["avatar"]
+    def change_settings(self, new_values: dict[str, str | int | bool]) -> None:
+        # auto-commit
+        for attribute, field in self.CHANGEABLE_FIELDS:
+            if field in new_values:
+                setattr(self, attribute, new_values[field])
 
     def author_status(self) -> str:
         if self.author is None:

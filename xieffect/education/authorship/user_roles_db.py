@@ -37,7 +37,10 @@ class Author(Base, UserRole):
 
     @classmethod
     def find_by_id(
-        cls, session: sessionmaker, entry_id: int, include_banned: bool = False
+        cls,
+        session,
+        entry_id: int,
+        include_banned: bool = False,
     ) -> Author | None:
         stmt: Select = select(cls).filter_by(id=entry_id)
         if not include_banned:

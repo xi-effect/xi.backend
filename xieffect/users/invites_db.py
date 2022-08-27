@@ -43,7 +43,10 @@ class Invite(Base):
 
     @classmethod
     def find_global(
-        cls, session: sessionmaker, offset: int, limit: int
+        cls,
+        session: sessionmaker,
+        offset: int,
+        limit: int,
     ) -> list[Invite]:
         return session.get_paginated(select(cls), offset, limit)
 

@@ -45,7 +45,10 @@ class EmailType(EmailTypeData, TypeEnum):
         "Смена адреса электронной почты на xieffect.ru",
         "email-change-email.html",
     )
-    PASSWORD = ("Смена пароля на xieffect.ru", "password-reset-email.html")
+    PASSWORD = (
+        "Смена пароля на xieffect.ru",
+        "password-reset-email.html",
+    )
 
 
 def generate_email(receiver: str, code: str, filename: str, theme: str) -> Message:

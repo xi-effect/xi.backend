@@ -47,7 +47,11 @@ class TestResult(Base):
 
     @classmethod
     def create(
-        cls, session: sessionmaker, user_id: int, module: Module, result
+        cls,
+        session: sessionmaker,
+        user_id: int,
+        module: Module,
+        result,
     ) -> TestResult:
         short_result = {
             "module-name": module.name,
@@ -66,16 +70,26 @@ class TestResult(Base):
 
     @classmethod
     def find_by_id(
-        cls, session: sessionmaker, entry_id: int
+        cls,
+        session: sessionmaker,
+        entry_id: int,
     ) -> TestModuleSession | None:
         return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
     def find_by_user(
-        cls, session: sessionmaker, user_id: int, offset: int, limit: int
+        cls,
+        session: sessionmaker,
+        user_id: int,
+        offset: int,
+        limit: int,
     ) -> list[TestModuleSession]:
         return cls.find_paginated_by_kwargs(
-            session, offset, limit, cls.id.desc(), user_id=user_id
+            session,
+            offset,
+            limit,
+            cls.id.desc(),
+            user_id=user_id,
         )
 
     @classmethod
@@ -88,5 +102,10 @@ class TestResult(Base):
         limit: int,
     ) -> list[TestModuleSession]:
         return cls.find_paginated_by_kwargs(
-            session, offset, limit, cls.id.desc(), user_id=user_id, module_id=module_id
+            session,
+            offset,
+            limit,
+            cls.id.desc(),
+            user_id=user_id,
+            module_id=module_id,
         )

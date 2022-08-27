@@ -29,7 +29,10 @@ class TestModuleSession(BaseModuleSession):
     points = relationship("TestPointSession", cascade="all, delete")
 
     def create_point_session(
-        self, session: sessionmaker, point_id: int, module
+        self,
+        session: sessionmaker,
+        point_id: int,
+        module,
     ) -> TestPointSession:
         page_id = module.execute_point(point_id)
         new_entry = TestPointSession(page_id=page_id, point_id=point_id)
@@ -38,7 +41,9 @@ class TestModuleSession(BaseModuleSession):
         return new_entry
 
     def find_point_session(
-        self, session: sessionmaker, point_id: int
+        self,
+        session: sessionmaker,
+        point_id: int,
     ) -> TestPointSession | None:
         return TestPointSession.find_by_ids(
             session, self.user_id, self.module_id, point_id
@@ -72,8 +77,15 @@ class TestPointSession(Base):
 
     @classmethod
     def find_by_ids(
-        cls, session: sessionmaker, user_id: int, module_id: int, point_id: int
+        cls,
+        session: sessionmaker,
+        user_id: int,
+        module_id: int,
+        point_id: int,
     ) -> TestModuleSession | None:
         return cls.find_first_by_kwargs(
-            session, user_id=user_id, module_id=module_id, point_id=point_id
+            session,
+            user_id=user_id,
+            module_id=module_id,
+            point_id=point_id,
         )

@@ -54,7 +54,10 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def _create(
-        cls, session: sessionmaker, json_data: dict[str, ...], author: Author
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author,
     ) -> Page:
         json_data["kind"] = PageKind.from_string(json_data["kind"])
         entry: cls = cls(
@@ -85,7 +88,10 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def find_or_create(
-        cls, session: sessionmaker, json_data: dict[str, ...], author: Author
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author,
     ) -> Page | None:
         if cls.find_by_id(session, json_data["id"]):
             return None
@@ -93,7 +99,10 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def create_or_update(
-        cls, session: sessionmaker, json_data: dict[str, ...], author: Author = None
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author = None,
     ) -> Page:
         # TODO utilize this, currently never used
         entry: cls
@@ -105,7 +114,11 @@ class Page(Base, Identifiable, Marshalable):
 
     @classmethod
     def search(
-        cls, session: sessionmaker, search: str | None, start: int, limit: int
+        cls,
+        session: sessionmaker,
+        search: str | None,
+        start: int,
+        limit: int,
     ) -> list[Page]:
         # TODO redo all search with pagination!!!
         stmt: Select = select(cls).filter_by(public=True)

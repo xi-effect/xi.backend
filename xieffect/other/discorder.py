@@ -24,7 +24,10 @@ def send_message(webhook_url: WebhookURLs, message: str) -> Response:
 
 
 def send_file_message(
-    webhook_url: WebhookURLs, file_content: str, file_name: str, message: str
+    webhook_url: WebhookURLs,
+    file_content: str,
+    file_name: str,
+    message: str,
 ) -> Response:
     webhook = DiscordWebhook(
         url=f"https://discord.com/api/webhooks/{webhook_url.value}"

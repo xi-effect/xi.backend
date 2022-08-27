@@ -43,17 +43,16 @@ class Invitation(Base, Identifiable):
         limit: int | None,
         days_to_live: int | None,
     ) -> Invitation:
-        deadline = (
-            None
-            if days_to_live is None
-            else datetime.utcnow() + timedelta(days=days_to_live)
-        )
         entry: cls = super().create(
             session,
             role=role,
             community_id=community_id,
             limit=limit,
-            deadline=deadline,
+            deadline=(
+                None
+                if days_to_live is None
+                else datetime.utcnow() + timedelta(days=days_to_live)
+            ),
         )
         entry.code = entry.generate_code()
         session.flush()

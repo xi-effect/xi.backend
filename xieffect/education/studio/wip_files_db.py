@@ -82,7 +82,10 @@ class JSONFile(CATFile):
 
     @classmethod
     def create_from_json(
-        cls, session: sessionmaker, owner: Author, json_data: dict
+        cls,
+        session: sessionmaker,
+        owner: Author,
+        json_data: dict,
     ) -> CATFile:
         if (
             "id" not in json_data.keys()
