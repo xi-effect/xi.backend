@@ -18,8 +18,8 @@ repos:
         additional_dependencies:
           # Basics
           - flake8
-          - wemake-python-styleguide  # TODO this does not work fully!
           - flake8-bugbear
+          - wemake-python-styleguide  # TODO this does not work fully!
 
           # Bugs
           - flake8-2020
@@ -30,8 +30,8 @@ repos:
           - flake8-unused-arguments
           # TODO - flake8-encodings
           # TODO - flake8-secure-coding-standard
-          # - flake8-warnings
-          # - flake8-useless-assert  # unusable with pytest
+          # - flake8-warnings  # failed to install
+          # - flake8-useless-assert  # failed to install & unusable with pytest
 
           # Simplifications
           - dlint
@@ -45,14 +45,14 @@ repos:
           # - flake8-import-order  # does not work properly
 
           # Style
-          - mccabe
-          - pycodestyle
           - flake8-broken-line
           - flake8-comprehensions
+          - flake8-multiline-containers
           - flake8-return
           - flake8-sql
-          - flake8-multiline-containers
-          # - flake8-class-attributes-order
+          - mccabe
+          - pycodestyle
+          # - flake8-class-attributes-order  # too much screaming
           # - flake8-commas  # too much screaming
           # - flake8-literal  # black does this, but with double quotes (mb look into docs)
           # - flake8-scream  # too much screaming and that's the point
@@ -60,8 +60,8 @@ repos:
 
           # Naming
           - flake8-builtins
+          - flake8-test-name
           - pep8-naming
-          # - flake8-test-name
           # - flake8-functions-names  # screams too much
           # - flake8-variables-names  # screams at tables' ids
 
@@ -69,8 +69,8 @@ repos:
           - flake8-comments
           - flake8-eradicate
           - flake8-executable
-          # - flake8-coding  # wants encoding comments in every file
-          # - flake8-noqa  # failed to install
+          - flake8-noqa
+          # TODO - flake8-coding  # wants encoding comments in every file
 
           # Typing
           - flake8-annotations-coverage
@@ -81,3 +81,24 @@ repos:
           - flake8-typing-imports
           # TODO - flake8-annotations
           # TODO - flake8-type-checking (https://github.com/snok/flake8-type-checking)
+
+          # Complexity
+          - flake8-annotations-complexity
+          # TODO - flake8-cognitive-complexity
+          # TODO - flake8-expression-complexity
+          # - cohesion  # screams at all Resources
+          # - flake8-functions  # weird
+          # - flake8-length  # built-in & handed over to black
+
+          # Random
+          - flake8-implicit-str-concat
+          - flake8-use-fstring
+          # TODO - flake8-use-pathlib
+          # - flake8-newspaper-style  # failed to install
+          # - flake8-print  # screams too much
+          # - flake8-requirements  # failed to install
+
+          # Tools
+          # - hacking  # failed to install
+          # - flakehell  # failed to install
+          # TODO - flake8-pylint (raw lib, not wrapper: https://github.com/PyCQA/pylint/ ?)

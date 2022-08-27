@@ -64,7 +64,7 @@ class CATFile(Base, Identifiable):
 
     def get_link(self) -> str:
         return (
-            f"{self.directory}/{self.id}" + f".{self.mimetype}"
+            f"{self.directory}/{self.id}.{self.mimetype}"
             if self.mimetype != ""
             else ""
         )

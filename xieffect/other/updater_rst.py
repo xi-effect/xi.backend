@@ -18,17 +18,17 @@ class GithubWebhook(Resource):
     def post(self, event_type: str):  # TODO remove
         if event_type == "push":
             send_discord_message(
-                WebhookURLs.GITHUB, "Got a push notification.\n" "Starting auto-update"
+                WebhookURLs.GITHUB, "Got a push notification.\nStarting auto-update"
             )
         elif event_type == "release":
             send_discord_message(
                 WebhookURLs.GITHUB,
-                "Got a release notification.\n" "Releases are not supported yet!",
+                "Got a release notification.\nReleases are not supported yet!",
             )
         else:
             send_discord_message(
                 WebhookURLs.GITHUB,
-                f"Got a {event_type} notification.\n" f"No action was applied.",
+                f"Got a {event_type} notification.\nNo action was applied.",
             )
 
 

@@ -17,7 +17,7 @@ class Author(Base, UserRole):
     id = Column(Integer, ForeignKey(User.id), primary_key=True)
     pseudonym = Column(String(100), nullable=False)
     banned = Column(Boolean, nullable=False, default=False)
-    last_image_id = Column(Integer, nullable=False, default=0)
+    last_image_id: int | Column = Column(Integer, nullable=False, default=0)
 
     modules = relationship("Module", back_populates="author")
 
@@ -64,4 +64,4 @@ class Author(Base, UserRole):
 
     def get_next_image_id(self) -> int:  # auto-commit
         self.last_image_id += 1
-        return self.last_image_id  # noqa
+        return self.last_image_id
