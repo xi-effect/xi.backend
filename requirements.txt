@@ -8,3 +8,6 @@ requests
 # Testing (dev)
 pytest
 pytest-order
+
+# Linter(s) (dev)
+pre-commit
