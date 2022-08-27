@@ -8,7 +8,7 @@ from __lib__.flask_fullstack import (
 
 
 class EventController(_EventController):
-    from ._core import sessionmaker
+    from ._core import sessionmaker  # noqa: WPS436
 
     def __init__(self, *args, **kwargs):
         kwargs["sessionmaker"] = kwargs.get("sessionmaker", self.sessionmaker)

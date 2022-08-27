@@ -10,7 +10,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 from __lib__.flask_fullstack import UserRole, PydanticModel, Identifiable
 from . import Base, sessionmaker
 
-DEFAULT_AVATAR: dict = {
+DEFAULT_AVATAR: dict = {  # noqa: WPS407
     "topType": 0,
     "accessoriesType": 0,
     "hairColor": 0,

@@ -15,9 +15,9 @@ class ResponseDoc(_ResponseDoc):
 
 success_response: ResponseDoc = ResponseDoc(
     model=Model("Default Response", {"a": BooleanField})
-)
-""" Default success response representation ({"a": :class:`bool`}) """
+)  # noqa: WPS462
+"""Default success response representation ({"a": :class:`bool`})"""  # noqa: WPS428, WPS322
 message_response: ResponseDoc = ResponseDoc(
     model=Model("Message Response", {"a": StringField})
-)
-""" Default message response representation ({"a": :class:`str`}) """
+)  # noqa: WPS462
+"""Default message response representation ({"a": :class:`str`})"""  # noqa: WPS322, WPS428

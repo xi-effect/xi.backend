@@ -9,7 +9,7 @@ repos:
   #       files: ^xieffect
   #       language_version: python3.9
   - repo: https://github.com/pycqa/flake8
-    rev: "5.0.4"
+    rev: "4.0.1"
     hooks:
       - id: flake8
         exclude: ^xieffect/(__lib__|test/chatting.*|.*2|alembic|communication)  # communication is temporarily deprecated
@@ -19,11 +19,12 @@ repos:
           # Basics
           - flake8
           - flake8-bugbear
-          - wemake-python-styleguide  # TODO this does not work fully!
+          - wemake-python-styleguide
 
           # Bugs
           - flake8-2020
           - flake8-alfred
+          - flake8-bandit
           - flake8-bugbear
           - flake8-debugger
           - flake8-string-format

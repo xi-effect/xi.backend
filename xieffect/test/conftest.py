@@ -60,12 +60,12 @@ def full_client() -> FlaskClient:
     return client
 
 
-def socketio_client_factory(client: FlaskClient) -> SocketIOTestClient:
+def socketio_client_factory(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
     return socketio.test_client(app, flask_test_client=client)
 
 
 @fixture
-def socketio_client(client: FlaskClient) -> SocketIOTestClient:
+def socketio_client(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
     return socketio_client_factory(client)
 
 
@@ -88,7 +88,7 @@ class ListTesterProtocol(Protocol):
 
 
 @fixture
-def list_tester(full_client: FlaskClient) -> ListTesterProtocol:
+def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
     def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
         counter = 0
         amount = page_size

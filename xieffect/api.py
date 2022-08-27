@@ -3,7 +3,7 @@ from logging import Logger
 from sys import stderr
 
 from common import app, versions, SocketIO
-from common import db_meta, db_url  # noqa
+from common import db_meta, db_url  # noqa: WPS
 from communities import (
     communities_namespace,
     invitation_namespace,

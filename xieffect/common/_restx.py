@@ -5,11 +5,11 @@ from functools import wraps
 from flask_restx import abort as default_abort
 
 from __lib__.flask_fullstack import ResourceController as _ResourceController
-from ._marshals import success_response, message_response
+from ._marshals import success_response, message_response  # noqa: WPS436
 
 
 class ResourceController(_ResourceController):
-    from ._core import sessionmaker
+    from ._core import sessionmaker  # noqa: WPS436
 
     def __init__(self, *args, **kwargs):
         kwargs["sessionmaker"] = kwargs.get("sessionmaker", self.sessionmaker)

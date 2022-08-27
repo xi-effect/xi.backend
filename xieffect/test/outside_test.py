@@ -10,7 +10,7 @@ from users import dumps_feedback, generate_code
 from wsgi import Invite, TEST_INVITE_ID
 from .conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
 
-TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
+TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
 
 
 @mark.order(1)

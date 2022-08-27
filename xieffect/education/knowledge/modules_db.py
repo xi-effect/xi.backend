@@ -17,7 +17,7 @@ from common import (
     PydanticModel,
 )
 from common import LambdaFieldDef, index_service, Base, sessionmaker
-from ._base_session import BaseModuleSession
+from ._base_session import BaseModuleSession  # noqa: WPS436
 from ..authorship.user_roles_db import Author
 
 

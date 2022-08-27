@@ -74,7 +74,7 @@ def test_standard_module_session(client: FlaskClient):  # relies on module#5
                 assert "id" in page
                 yield page["id"]
 
-    for _ in scroll_through():
+    for _ in scroll_through():  # noqa: WPS328
         pass  # if any session was started before, reset the module
 
     ids1: list[int] = list(scroll_through())

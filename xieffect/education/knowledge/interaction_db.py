@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Float, JSON
 
 from common import User, Base, sessionmaker, PydanticModel
-from ._base_session import BaseModuleSession
+from ._base_session import BaseModuleSession  # noqa: WPS436
 
 
 class ModuleProgressSession(BaseModuleSession):
@@ -13,7 +13,8 @@ class ModuleProgressSession(BaseModuleSession):
     progress = Column(Integer, nullable=True)
     theory_level = Column(Float, nullable=True)  # temp disabled for theory blocks
 
-    def get_theory_level(self, session: sessionmaker) -> float | None:
+    # TODO remove the noqa
+    def get_theory_level(self, session: sessionmaker) -> float | None:  # noqa: WPS615
         if self.theory_level is None:
             return None
         return (
