@@ -15,17 +15,26 @@ class CommunitiesUser(Base):
     id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     user = relationship("User")
 
-    communities = relationship("CommunityListItem", order_by="CommunityListItem.position",
-                               collection_class=ordering_list("position"))
+    communities = relationship(
+        "CommunityListItem",
+        order_by="CommunityListItem.position",
+        collection_class=ordering_list("position"),
+    )
 
     @PydanticModel.include_nest_model(User.MainData, "user")
     class FullModel(PydanticModel):
         communities: list[Community.IndexModel]
 
         @classmethod
-        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context) -> None:
-            callback(communities=[Community.IndexModel.convert(ci.community, **context)
-                                  for ci in orm_object.communities])
+        def callback_convert(
+            cls, callback, orm_object: CommunitiesUser, **context
+        ) -> None:
+            callback(
+                communities=[
+                    Community.IndexModel.convert(ci.community, **context)
+                    for ci in orm_object.communities
+                ]
+            )
 
     class TempModel(FullModel):
         a: str = "Success"
@@ -42,7 +51,9 @@ class CommunitiesUser(Base):
     def find_or_create(cls, session: sessionmaker, user_id: int) -> CommunitiesUser:
         return cls.find_by_id(session, user_id) or cls._create_empty(session, user_id)
 
-    def reorder_community_list(self, session, source_id: int, target_index: int) -> bool:
+    def reorder_community_list(
+        self, session, source_id: int, target_index: int
+    ) -> bool:
         list_item = CommunityListItem.find_by_community(session, source_id)
         if list_item is None:
             return False
@@ -50,7 +61,9 @@ class CommunitiesUser(Base):
         self.communities.insert(target_index, list_item)
         return True
 
-    def join_community(self, community_id: int) -> None:  # autocommit  # TODO find a way to reverse the list
+    def join_community(
+        self, community_id: int
+    ) -> None:  # autocommit  # TODO find a way to reverse the list
         new_item = CommunityListItem(community_id=community_id)
         self.communities.insert(0, new_item)
 
@@ -69,7 +82,9 @@ class CommunityListItem(Base):
     user_id = Column(Integer, ForeignKey("communities_users.id"))
     position = Column(Integer)
 
-    community_id = Column(Integer, ForeignKey("community.id"), nullable=False, unique=True)
+    community_id = Column(
+        Integer, ForeignKey("community.id"), nullable=False, unique=True
+    )
     community = relationship("Community")
 
     @classmethod

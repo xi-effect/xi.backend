@@ -17,14 +17,21 @@ class EmailQAResource(Resource):
     parser = RequestParser()
     parser.add_argument("user-email", dest="user_email", required=False)
     parser.add_argument("tester-email", dest="tester_email", required=True)
-    parser.add_argument("type", dest="email_type", choices=EmailType.get_all_field_names(), required=True)
+    parser.add_argument(
+        "type",
+        dest="email_type",
+        choices=EmailType.get_all_field_names(),
+        required=True,
+    )
 
     @controller.doc_abort(400, "Unsupported type")
     @controller.doc_abort(404, "User not found")
     @controller.require_permission(emailing, use_moderator=False)
     @controller.argument_parser(parser)
     @controller.a_response()
-    def post(self, session, user_email: str | None, tester_email: str, email_type: str) -> str:
+    def post(
+        self, session, user_email: str | None, tester_email: str, email_type: str
+    ) -> str:
         email_type = EmailType.from_string(email_type)
         if email_type is None:
             controller.abort(400, "Unsupported type")

@@ -16,13 +16,15 @@ report_parser.add_argument("message", required=False)
 @controller.route("/")
 class PageLister(Resource):  # POST /pages/
     parser: RequestParser = counter_parser.copy()
-    parser.add_argument("search", required=False, help="Search query (done with whoosh search)")
+    parser.add_argument(
+        "search", required=False, help="Search query (done with whoosh search)"
+    )
 
     @controller.jwt_authorizer(User, check_only=True)
     @controller.argument_parser(parser)
     @controller.lister(50, Page.ShortModel)
     def post(self, session, search: Union[str, None], start: int, finish: int) -> list:
-        """ Lists index of pages with metadata only """
+        """Lists index of pages with metadata only"""
         return Page.search(session, search, start, finish - start)
 
 
@@ -32,7 +34,7 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
     @controller.database_searcher(Page)
     @controller.marshal_with(Page.MainModel)
     def get(self, page: Page):  # add some access checks
-        """ Returns module's full metadata & content """
+        """Returns module's full metadata & content"""
         page.view()
         return page
 

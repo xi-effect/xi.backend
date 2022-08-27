@@ -36,7 +36,9 @@ class Author(Base, UserRole):
         return new_entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int, include_banned: bool = False) -> Optional[Author]:
+    def find_by_id(
+        cls, session: sessionmaker, entry_id: int, include_banned: bool = False
+    ) -> Optional[Author]:
         stmt: Select = select(cls).filter_by(id=entry_id)
         if not include_banned:
             stmt = stmt.filter_by(banned=False)

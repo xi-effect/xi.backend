@@ -16,16 +16,21 @@ class GithubWebhook(Resource):
     @controller.argument_parser(parser)
     def post(self, event_type: str):
         if event_type == "push":
-            send_discord_message(WebhookURLs.GITHUB, "Got a push notification.\n"
-                                                     "Starting auto-update")
+            send_discord_message(
+                WebhookURLs.GITHUB, "Got a push notification.\n" "Starting auto-update"
+            )
             # execute_in_console("git pull")
             # reload_webapp()
         elif event_type == "release":
-            send_discord_message(WebhookURLs.GITHUB, "Got a release notification.\n"
-                                                     "Releases are not supported yet!")
+            send_discord_message(
+                WebhookURLs.GITHUB,
+                "Got a release notification.\n" "Releases are not supported yet!",
+            )
         else:
-            send_discord_message(WebhookURLs.GITHUB, f"Got a {event_type} notification.\n"
-                                                     f"No action was applied.")
+            send_discord_message(
+                WebhookURLs.GITHUB,
+                f"Got a {event_type} notification.\n" f"No action was applied.",
+            )
 
 
 @controller.route("/update-docs/")
@@ -48,7 +53,9 @@ class HerokuBuildWebhook(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, resource: str, action: str) -> None:
-        send_discord_message(WebhookURLs.HEROKU, f"Heroku may be online [{resource}:{action}]")
+        send_discord_message(
+            WebhookURLs.HEROKU, f"Heroku may be online [{resource}:{action}]"
+        )
 
 
 @controller.route("/netlify-build/")
@@ -59,7 +66,7 @@ class NetlifyBuildWebhook(Resource):
         "branch": "Branch",
         "title": "Commit Title",
         "committer": "Committer",
-        "commit_url": "Commit URL"
+        "commit_url": "Commit URL",
     }
 
     parser: RequestParser = RequestParser()
@@ -69,14 +76,19 @@ class NetlifyBuildWebhook(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, state: str, commit_url: str, **kwargs) -> None:
-        result: str = ("__**Netlify build failed!**__\n" if state == "error" else
-                       "__**Netlify build is {state}!**__\n")
+        result: str = (
+            "__**Netlify build failed!**__\n"
+            if state == "error"
+            else "__**Netlify build is {state}!**__\n"
+        )
 
-        result += "\n".join([
-            f"{message}: `{arg}`"
-            for name, message in self.arguments.items()
-            if (arg := kwargs.get(name, None)) is not None and arg != ""
-        ])
+        result += "\n".join(
+            [
+                f"{message}: `{arg}`"
+                for name, message in self.arguments.items()
+                if (arg := kwargs.get(name, None)) is not None and arg != ""
+            ]
+        )
 
         if commit_url is not None:
             result += f"\nCommit URL:\n{commit_url}"
@@ -87,8 +99,12 @@ class NetlifyBuildWebhook(Resource):
 @controller.route("/pass-through/")
 class WebhookPassthrough(Resource):
     parser: RequestParser = RequestParser()
-    parser.add_argument("Authorization", required=True, location="headers", dest="api_key")
-    parser.add_argument("webhook", required=True, choices=WebhookURLs.get_all_field_names())
+    parser.add_argument(
+        "Authorization", required=True, location="headers", dest="api_key"
+    )
+    parser.add_argument(
+        "webhook", required=True, choices=WebhookURLs.get_all_field_names()
+    )
     parser.add_argument("message", required=True)
 
     from api import app
@@ -109,9 +125,13 @@ class LolBot(Resource):
             with open("../files/lol-counter.txt") as f:
                 count = str(int(f.read()) + 1)
             if "69" in count or count[-1] == "0":
-                send_discord_message(WebhookURLs.LOLBOT, f"Got another one! Total: {count}")
+                send_discord_message(
+                    WebhookURLs.LOLBOT, f"Got another one! Total: {count}"
+                )
         except (FileNotFoundError, ValueError):
-            send_discord_message(WebhookURLs.LOLBOT, "Reset happened... Got the first one!")
+            send_discord_message(
+                WebhookURLs.LOLBOT, "Reset happened... Got the first one!"
+            )
             count = 1
         with open("../files/lol-counter.txt", "w") as f:
             f.write(str(count))

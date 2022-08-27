@@ -38,4 +38,6 @@ class File(Base):
 
     @classmethod
     def get_for_mub(cls, session, offset: int, limit: int) -> list[File]:
-        return session.get_paginated(select(File).order_by(cls.id.desc()), offset, limit)
+        return session.get_paginated(
+            select(File).order_by(cls.id.desc()), offset, limit
+        )

@@ -19,7 +19,9 @@ controller = ResourceController("files")
 @controller.route("/")
 class FileUploader(Resource):
     parser = RequestParser()
-    parser.add_argument("file", location="files", dest="file_storage", type=FileStorage, required=True)
+    parser.add_argument(
+        "file", location="files", dest="file_storage", type=FileStorage, required=True
+    )
 
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)

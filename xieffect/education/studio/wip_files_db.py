@@ -25,8 +25,8 @@ class CATFile(Base, Identifiable):
     directory: str = "../files/tfs/other/"
 
     id = Column(Integer, primary_key=True)
-    owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
-                   default=0)  # TODO add relation to author
+    owner = Column(Integer, nullable=False, default=0)  # ForeignKey("authors.id"),
+    # TODO add relation to author
 
     status = Column(Enum(WIPStatus), nullable=False)
 
@@ -44,7 +44,9 @@ class CATFile(Base, Identifiable):
         return entry
 
     @classmethod
-    def create_with_file(cls, session: sessionmaker, owner: Author, data: bytes) -> CATFile:
+    def create_with_file(
+        cls, session: sessionmaker, owner: Author, data: bytes
+    ) -> CATFile:
         entry: cls = cls._create(owner)
         entry.update(data)
         session.add(entry)
@@ -56,11 +58,17 @@ class CATFile(Base, Identifiable):
         return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
-    def find_by_owner(cls, session: sessionmaker, owner: Author, start: int, limit: int) -> list[CATFile]:
+    def find_by_owner(
+        cls, session: sessionmaker, owner: Author, start: int, limit: int
+    ) -> list[CATFile]:
         return cls.find_paginated_by_kwargs(session, start, limit, owner=owner.id)
 
     def get_link(self) -> str:
-        return f"{self.directory}/{self.id}" + f".{self.mimetype}" if self.mimetype != "" else ""
+        return (
+            f"{self.directory}/{self.id}" + f".{self.mimetype}"
+            if self.mimetype != ""
+            else ""
+        )
 
     def update(self, data: bytes) -> None:
         with open(self.get_link(), "wb") as f:
@@ -76,8 +84,13 @@ class JSONFile(CATFile):
     mimetype: str = "json"
 
     @classmethod
-    def create_from_json(cls, session: sessionmaker, owner: Author, json_data: dict) -> CATFile:
-        if "id" not in json_data.keys() or (entry := cls.find_by_id(session, json_data["id"])) is None:
+    def create_from_json(
+        cls, session: sessionmaker, owner: Author, json_data: dict
+    ) -> CATFile:
+        if (
+            "id" not in json_data.keys()
+            or (entry := cls.find_by_id(session, json_data["id"])) is None
+        ):
             entry: cls = cls._create(owner)
             entry.update_json(session, json_data)
         return entry
@@ -113,7 +126,9 @@ class WIPPage(JSONFile):
         views: int = None
 
         @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: WIPPage, **context) -> None:
+        def callback_convert(
+            cls, callback: Callable, orm_object: WIPPage, **context
+        ) -> None:
             callback(views=orm_object.get_views())
 
     def update_metadata(self, json_data: dict) -> None:
@@ -148,7 +163,9 @@ class WIPModule(JSONFile):
         views: int = None
 
         @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: WIPModule, **context) -> None:
+        def callback_convert(
+            cls, callback: Callable, orm_object: WIPModule, **context
+        ) -> None:
             callback(views=orm_object.get_views())
 
     def update_metadata(self, json_data: dict) -> None:

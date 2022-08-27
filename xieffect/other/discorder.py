@@ -17,12 +17,18 @@ class WebhookURLs(TypeEnum):
 
 
 def send_message(webhook_url: WebhookURLs, message: str) -> Response:
-    return post(f"https://discord.com/api/webhooks/{webhook_url.value}", json={"content": message})
+    return post(
+        f"https://discord.com/api/webhooks/{webhook_url.value}",
+        json={"content": message},
+    )
 
 
-def send_file_message(webhook_url: WebhookURLs, file_content: str,
-                      file_name: str, message: str) -> Response:
-    webhook = DiscordWebhook(url=f"https://discord.com/api/webhooks/{webhook_url.value}")
+def send_file_message(
+    webhook_url: WebhookURLs, file_content: str, file_name: str, message: str
+) -> Response:
+    webhook = DiscordWebhook(
+        url=f"https://discord.com/api/webhooks/{webhook_url.value}"
+    )
     webhook.add_file(file=file_content, filename=file_name)
     webhook.set_content(message)
     return webhook.execute()

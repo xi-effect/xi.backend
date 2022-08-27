@@ -30,10 +30,15 @@ class ResourceController(_ResourceController):
         def a_response_wrapper(function):
             return_type = function.__annotations__.get("return", None)
             is_none = return_type is None or return_type == "None"
-            is_bool = (is_none or return_type == "bool"
-                       or (isinstance(return_type, type) and issubclass(return_type, bool)))
+            is_bool = (
+                is_none
+                or return_type == "bool"
+                or (isinstance(return_type, type) and issubclass(return_type, bool))
+            )
 
-            @self.response(*(success_response if is_bool else message_response).get_args())
+            @self.response(
+                *(success_response if is_bool else message_response).get_args()
+            )
             @wraps(function)
             def a_response_inner(*args, **kwargs):
                 result = function(*args, **kwargs)

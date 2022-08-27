@@ -26,8 +26,12 @@ class UserIndexResource(Resource):
         return User.search_by_params(session, start, finish - start, **kwargs)
 
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("email", required=True, help="Email to be connected to new user's account")
-    parser.add_argument("username", required=True, help="Username to be assigned to new user's account")
+    parser.add_argument(
+        "email", required=True, help="Email to be connected to new user's account"
+    )
+    parser.add_argument(
+        "username", required=True, help="Username to be assigned to new user's account"
+    )
     parser.add_argument("code", required=False, help="Serialized invite code")
 
     @controller.require_permission(manage_users, use_moderator=False)
@@ -37,6 +41,7 @@ class UserIndexResource(Resource):
         # TODO check password length and hash
         if code is None:
             from wsgi import TEST_INVITE_ID  # TODO redo without local imports!
+
             invite = Invite.find_by_id(session, TEST_INVITE_ID)
         else:
             try:
@@ -50,14 +55,18 @@ class UserIndexResource(Resource):
                 return {"a": "Invite code limit exceeded"}
         invite.accepted += 1
 
-        user = User.create(session, email=email, username=username, password=password, invite=invite)
+        user = User.create(
+            session, email=email, username=username, password=password, invite=invite
+        )
         return {"a": "Email already in use"} if user is None else user
 
 
 @controller.route("/<int:user_id>/")
 class UserManagerResource(Resource):
     parser = RequestParser()
-    parser.add_argument("email-confirmed", dest="email_confirmed", type=bool, store_missing=False)
+    parser.add_argument(
+        "email-confirmed", dest="email_confirmed", type=bool, store_missing=False
+    )
 
     @controller.require_permission(manage_users, use_moderator=False)
     @controller.argument_parser(parser, use_undefined=True)

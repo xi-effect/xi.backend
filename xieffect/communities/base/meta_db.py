@@ -23,7 +23,9 @@ class Community(Base, Identifiable):
     IndexModel = BaseModel.combine_with(CreateModel)
 
     @classmethod
-    def create(cls, session: sessionmaker, name: str, description: str | None, creator: User) -> Community:
+    def create(
+        cls, session: sessionmaker, name: str, description: str | None, creator: User
+    ) -> Community:
         entry: cls = super().create(session, name=name, description=description)
 
         participant = Participant(user=creator, role=ParticipantRole.OWNER)
@@ -38,8 +40,12 @@ class Community(Base, Identifiable):
         return session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_user(cls, session: sessionmaker, user: User, offset: int, limit: int) -> list[Community]:
-        ids = session.get_paginated(select(Participant.community_id).filter_by(user_id=user.id), offset, limit)
+    def find_by_user(
+        cls, session: sessionmaker, user: User, offset: int, limit: int
+    ) -> list[Community]:
+        ids = session.get_paginated(
+            select(Participant.community_id).filter_by(user_id=user.id), offset, limit
+        )
         return session.get_all(select(cls).filter(cls.id.in_(ids)))
 
 
@@ -58,9 +64,21 @@ class Participant(Base):
     role = Column(Enum(ParticipantRole), nullable=False)
 
     @classmethod
-    def create(cls, session: sessionmaker, community_id: int, user_id: int, role: ParticipantRole):
-        return super().create(session, community_id=community_id, user_id=user_id, role=role)
+    def create(
+        cls,
+        session: sessionmaker,
+        community_id: int,
+        user_id: int,
+        role: ParticipantRole,
+    ):
+        return super().create(
+            session, community_id=community_id, user_id=user_id, role=role
+        )
 
     @classmethod
-    def find_by_ids(cls, session: sessionmaker, community_id: int, user_id: int) -> Participant | None:
-        return session.get_first(select(cls).filter_by(community_id=community_id, user_id=user_id))
+    def find_by_ids(
+        cls, session: sessionmaker, community_id: int, user_id: int
+    ) -> Participant | None:
+        return session.get_first(
+            select(cls).filter_by(community_id=community_id, user_id=user_id)
+        )

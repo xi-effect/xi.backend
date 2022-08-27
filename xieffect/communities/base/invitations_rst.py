@@ -19,7 +19,9 @@ class InvitationLister(Resource):
     @controller.database_searcher(Community, check_only=True, use_session=True)
     @controller.lister(20, Invitation.IndexModel)
     def post(self, session, community_id: int, start: int, finish: int):
-        return Invitation.find_by_community(session, community_id, start, finish - start)
+        return Invitation.find_by_community(
+            session, community_id, start, finish - start
+        )
 
 
 def check_invitation(use_session: bool = False):
@@ -34,13 +36,21 @@ def check_invitation(use_session: bool = False):
             invitation: Invitation = Invitation.find_by_code(session, code)
             if invitation is None:
                 controller.abort(400, "Invalid invitation")
-            elif user is not None and Participant.find_by_ids(session, invitation.community_id, user.id) is not None:
-                return function(*args, invitation=None, community=invitation.community, **kwargs)
+            elif (
+                user is not None
+                and Participant.find_by_ids(session, invitation.community_id, user.id)
+                is not None
+            ):
+                return function(
+                    *args, invitation=None, community=invitation.community, **kwargs
+                )
             elif invitation.is_invalid():
                 invitation.delete(session)
                 controller.abort(400, "Invalid invitation")
 
-            return function(*args, invitation=invitation, community=invitation.community, **kwargs)
+            return function(
+                *args, invitation=invitation, community=invitation.community, **kwargs
+            )
 
         return check_invitation_inner
 
@@ -62,14 +72,16 @@ class InvitationJoin(Resource):
         return InvitePreview(
             joined=invitation is None,
             authorized=user is not None,
-            community=Community.IndexModel.convert(community)
+            community=Community.IndexModel.convert(community),
         )
 
     @controller.doc_abort(400, "User has already joined")
     @controller.jwt_authorizer(User)
     @check_invitation(use_session=True)
     @controller.marshal_with(Community.IndexModel)
-    def post(self, session, user: User, invitation: Invitation | None, community: Community):
+    def post(
+        self, session, user: User, invitation: Invitation | None, community: Community
+    ):
         if invitation is None:
             controller.abort(400, "User has already joined")
 
@@ -79,6 +91,8 @@ class InvitationJoin(Resource):
         elif invitation.limit is not None:
             invitation.limit -= 1
 
-        CommunitiesEventSpace.new_community.emit_convert(community, include_self=True, user_id=user.id)
+        CommunitiesEventSpace.new_community.emit_convert(
+            community, include_self=True, user_id=user.id
+        )
 
         return community

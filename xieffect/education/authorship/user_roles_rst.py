@@ -12,8 +12,8 @@ class AuthorInitializer(Resource):  # [GET] /authors/permit/
     @controller.jwt_authorizer(User)
     @controller.a_response()
     def get(self, session, user: User) -> bool:
-        """ Adds Author role to the User (requester).
-        Does nothing, if it has been added before. Will fail if Author was banned. """
+        """Adds Author role to the User (requester).
+        Does nothing, if it has been added before. Will fail if Author was banned."""
         return Author.initialize(session, user)
 
 

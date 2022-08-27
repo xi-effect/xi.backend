@@ -8,7 +8,6 @@ from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, db_url, db_meta, mail_initialized, versions
 from moderation import permission_index, Moderator
 from other import WebhookURLs, send_discord_message
-from users.feedback_rst import generate_code, dumps_feedback  # noqa  # passthrough for tests
 from users.invites_db import Invite  # noqa  # passthrough for tests
 
 TEST_EMAIL: str = "test@test.test"
@@ -29,7 +28,12 @@ def init_test_mod(session):
         moderator.super = True
 
 
-if __name__ == "__main__" or "pytest" in modules.keys() or db_url == "sqlite:///test.db" or "form-sio-docs" in argv:
+if (
+    __name__ == "__main__"
+    or "pytest" in modules.keys()
+    or db_url == "sqlite:///test.db"
+    or "form-sio-docs" in argv
+):
     application.debug = True
     if db_url == "sqlite:///app.db":
         db_meta.drop_all()
@@ -39,15 +43,28 @@ else:  # works on server restart
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
     setup_fail: bool = False
-    for secret_name in ["SECRET_KEY", "SECURITY_PASSWORD_SALT", "JWT_SECRET_KEY", "API_KEY"]:
+    for secret_name in [
+        "SECRET_KEY",
+        "SECURITY_PASSWORD_SALT",
+        "JWT_SECRET_KEY",
+        "API_KEY",
+    ]:
         if application.config[secret_name] == "hope it's local":
-            send_discord_message(WebhookURLs.NOTIFY, f"ERROR! No environmental variable for secret `{secret_name}`")
+            send_discord_message(
+                WebhookURLs.NOTIFY,
+                f"ERROR! No environmental variable for secret `{secret_name}`",
+            )
             setup_fail = True
     if db_url == "sqlite:///app.db":
-        send_discord_message(WebhookURLs.NOTIFY, "ERROR! No environmental variable for db url!")
+        send_discord_message(
+            WebhookURLs.NOTIFY, "ERROR! No environmental variable for db url!"
+        )
         setup_fail = True
     if not mail_initialized:
-        send_discord_message(WebhookURLs.NOTIFY, "ERROR! Some environmental variable(s) for main are missing!")
+        send_discord_message(
+            WebhookURLs.NOTIFY,
+            "ERROR! Some environmental variable(s) for main are missing!",
+        )
         setup_fail = True
     if setup_fail:
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
@@ -74,17 +91,27 @@ def init_users(session):
     from education.authorship import Author
 
     if (User.find_by_email_address(session, TEST_EMAIL)) is None:
-        test_user: User = User.create(session, email=TEST_EMAIL, username="test", password=BASIC_PASS, invite=invite)
+        test_user: User = User.create(
+            session,
+            email=TEST_EMAIL,
+            username="test",
+            password=BASIC_PASS,
+            invite=invite,
+        )
         test_user.author = Author.create(session, test_user)
 
-    if (User.find_by_email_address(session, ADMIN_EMAIL)) is None:  # TODO DEPRECATED, redo with MUB
+    if (
+        User.find_by_email_address(session, ADMIN_EMAIL)
+    ) is None:  # TODO DEPRECATED, redo with MUB
         User.create(session, email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
 
     with open("../static/test/user-bundle.json", encoding="utf-8") as f:
         for i, user_settings in enumerate(load(f)):
             email: str = f"{i}@user.user"
             if (user := User.find_by_email_address(session, email)) is None:
-                user = User.create(session, email=email, username=f"user-{i}", password=BASIC_PASS)
+                user = User.create(
+                    session, email=email, username=f"user-{i}", password=BASIC_PASS
+                )
             user.change_settings(user_settings)
 
 
@@ -121,11 +148,18 @@ def init_chats(session):
             chat: Chat = Chat.create(session, chat_data["name"], owner)
             for email, role in chat_data["participants"]:
                 if email != owner.email:
-                    chat.add_participant(session, User.find_by_email_address(session, email),
-                                         ChatRole.from_string(role))
+                    chat.add_participant(
+                        session,
+                        User.find_by_email_address(session, email),
+                        ChatRole.from_string(role),
+                    )
             for message_data in chat_data["messages"]:
-                sender = User.find_by_email_address(session, message_data["sender-email"])
-                message: Message = Message.create(session, chat, message_data["content"], sender, False)
+                sender = User.find_by_email_address(
+                    session, message_data["sender-email"]
+                )
+                message: Message = Message.create(
+                    session, chat, message_data["content"], sender, False
+                )
                 message.sent = datetime.fromisoformat(message_data["sent"])
                 if message_data["updated"] is not None:
                     message.updated = datetime.fromisoformat(message_data["updated"])
@@ -133,17 +167,28 @@ def init_chats(session):
 
 def version_check():
     if exists("../files/versions-lock.json"):
-        versions_lock: dict[str, str] = load(open("../files/versions-lock.json", encoding="utf-8"))
+        versions_lock: dict[str, str] = load(
+            open("../files/versions-lock.json", encoding="utf-8")
+        )
     else:
         versions_lock: dict[str, str] = {}
 
     if versions_lock != versions:
-        log_stuff("status", "\n".join([
-            f"{key:3} was updated to {versions[key]}"
-            for key in versions.keys()
-            if versions_lock.get(key, None) != versions[key]
-        ]).expandtabs())
-        dump(versions, open("../files/versions-lock.json", "w", encoding="utf-8"), ensure_ascii=False)
+        log_stuff(
+            "status",
+            "\n".join(
+                [
+                    f"{key:3} was updated to {versions[key]}"
+                    for key in versions.keys()
+                    if versions_lock.get(key, None) != versions[key]
+                ]
+            ).expandtabs(),
+        )
+        dump(
+            versions,
+            open("../files/versions-lock.json", "w", encoding="utf-8"),
+            ensure_ascii=False,
+        )
 
 
 @application.cli.command("form-sio-docs")
@@ -159,7 +204,10 @@ version_check()
 # init_chats()
 
 if __name__ == "__main__":  # test only
-    socketio.run(application, reloader_options={"extra_files": ["../../static/public/index.html"]})
+    socketio.run(
+        application,
+        reloader_options={"extra_files": ["../../static/public/index.html"]},
+    )
 
 # if __name__ == "__main__":
 #     socketio.run(app, port=5050, debug=True)

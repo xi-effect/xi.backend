@@ -14,7 +14,9 @@ from common import Base, sessionmaker, PydanticModel
 class Invite(Base):
     __tablename__ = "invites"
     not_found_text = "Invite not found"
-    serializer: URLSafeSerializer = URLSafeSerializer(getenv("SECRET_KEY", "local"))  # TODO redo
+    serializer: URLSafeSerializer = URLSafeSerializer(
+        getenv("SECRET_KEY", "local")
+    )  # TODO redo
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
@@ -41,7 +43,9 @@ class Invite(Base):
         return cls.find_by_id(session, cls.serializer.loads(code)[0])
 
     @classmethod
-    def find_global(cls, session: sessionmaker, offset: int, limit: int) -> list[Invite]:
+    def find_global(
+        cls, session: sessionmaker, offset: int, limit: int
+    ) -> list[Invite]:
         return session.get_paginated(select(cls), offset, limit)
 
     def generate_code(self, user_id: int):

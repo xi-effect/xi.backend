@@ -37,8 +37,14 @@ class EmailTypeData:
 
 
 class EmailType(EmailTypeData, TypeEnum):
-    CONFIRM = ("Подтверждение адреса электронной почты на xieffect.ru", "registration-email.html")
-    CHANGE = ("Смена адреса электронной почты на xieffect.ru", "email-change-email.html")
+    CONFIRM = (
+        "Подтверждение адреса электронной почты на xieffect.ru",
+        "registration-email.html",
+    )
+    CHANGE = (
+        "Смена адреса электронной почты на xieffect.ru",
+        "email-change-email.html",
+    )
     PASSWORD = ("Смена пароля на xieffect.ru", "password-reset-email.html")
 
 
@@ -56,7 +62,9 @@ def send_email(receiver: str, code: str, filename: str, theme: str):
         mail.send(generate_email(receiver, code, filename, theme))
     except SMTPDataError as e:
         print(e)
-        send_discord_message(WebhookURLs.MAILBT, f"Email for {receiver} not sent:\n```{e}```")
+        send_discord_message(
+            WebhookURLs.MAILBT, f"Email for {receiver} not sent:\n```{e}```"
+        )
 
 
 def send_code_email(receiver: str, email_type: EmailType) -> str:

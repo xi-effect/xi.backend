@@ -20,7 +20,9 @@ def admin_only(use_session: bool = False):
         @jwt_required()
         @controller.with_begin
         def admin_only_inner(*args, **kwargs):
-            admin = User.find_by_id(get_or_pop(kwargs, "session", use_session), get_jwt_identity()[""])
+            admin = User.find_by_id(
+                get_or_pop(kwargs, "session", use_session), get_jwt_identity()[""]
+            )
             if admin is None or admin.email != "admin@admin.admin":
                 return {"a": "Permission denied"}, 403
             return function(*args, **kwargs)
