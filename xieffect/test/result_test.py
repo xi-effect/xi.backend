@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Callable
-from random import randint
+from random import randint  # noqa: DUO102
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -16,11 +16,14 @@ def test_result(client: FlaskClient, list_tester: Callable[[str, dict, int], Ite
 
     length: int = len(module["map"])
 
-    replies: list[dict] = [{
-        "right-answers": (right := randint(0, 10)),
-        "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right * 2))),
-        "answers": {str(k): int(k) for k in range(randint(right, total))}
-    } for _ in range(length)]
+    def generate_reply():
+        return {
+            "right-answers": (right := randint(0, 10)),
+            "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right * 2))),
+            "answers": {str(k): int(k) for k in range(randint(right, total))}
+        }
+
+    replies: list[dict] = [generate_reply() for _ in range(length)]
 
     point_ids: list[int] = list(range(length))
     for point in point_ids:

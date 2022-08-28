@@ -195,8 +195,9 @@ class User(Base, UserRole, Identifiable):
     def change_settings(self, new_values: dict[str, str | int | bool]) -> None:
         # auto-commit
         for attribute, field in self.CHANGEABLE_FIELDS:
-            if field in new_values:
-                setattr(self, attribute, new_values[field])
+            value = new_values.get(field)
+            if value is not None:
+                setattr(self, attribute, value)
 
     def author_status(self) -> str:
         if self.author is None:

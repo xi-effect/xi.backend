@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Callable
-from random import shuffle, randint
+from random import shuffle, randint  # noqa: DUO102
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -54,8 +54,8 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
             assert check_code(client.post(
                 f"/modules/{module_id}/points/{map_length}/reply/",
-                json=json_test)
-            ).get("a", False)
+                json=json_test
+            )).get("a", False)
 
             reply = check_code(client.get(f"/modules/{module_id}/points/{map_length}/reply"))
             assert reply == json_test["answers"]
@@ -126,11 +126,14 @@ def test_reply_and_results(client: FlaskClient):  # relies on module#7
 
     length: int = len(module["map"])
 
-    replies: list[dict] = [{
-        "right-answers": (right := randint(0, 10)),
-        "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right * 2))),
-        "answers": {str(k): int(k) for k in range(randint(right, total))}
-    } for _ in range(length)]
+    def create_reply():
+        return {
+            "right-answers": (right := randint(0, 10)),
+            "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right * 2))),
+            "answers": {str(k): int(k) for k in range(randint(right, total))}
+        }
+
+    replies: list[dict] = [create_reply() for _ in range(length)]
 
     point_ids: list[int] = list(range(length))
     shuffle(point_ids)

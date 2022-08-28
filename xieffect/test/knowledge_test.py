@@ -104,7 +104,8 @@ def assert_with_global_filter(
         f"Module #{module_id}, marked as "
         + ("un" if reverse else "")
         + f"{filter_name}, was "
-        + ("" if reverse else "not ") + f"found in the list of {filter_name} modules"
+        + ("" if reverse else "not ")
+        + f"found in the list of {filter_name} modules"
     )
 
 

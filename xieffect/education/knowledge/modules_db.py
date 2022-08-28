@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from random import randint
+from random import randint  # noqa: DUO102
 
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_
 from sqlalchemy.engine import Row
@@ -260,8 +260,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
             }
         )
         entry.image_id = json_data.get("image-id", None)
-        if "map" in json_data:
-            entry.map = json_data["map"]
+        entry.map = json_data.get("map")
 
         if force:
             entry.views = json_data.get("views", 0)

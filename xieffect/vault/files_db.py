@@ -17,7 +17,8 @@ class File(Base):
     uploader_id: int | Column = Column(Integer, ForeignKey(User.id), nullable=False)
     uploader: User | relationship = relationship(User)
 
-    class FullModel(PydanticModel.column_model(id)):
+    @PydanticModel.include_columns(id)
+    class FullModel(PydanticModel):
         filename: str
 
         @classmethod
