@@ -48,7 +48,8 @@ class UserIndexResource(Resource):
     def post(self, session, email: str, password: str, username: str, code: str | None):
         # TODO check password length and hash
         if code is None:
-            from wsgi import TEST_INVITE_ID  # TODO redo without local imports!
+            # TODO redo without local imports!
+            from wsgi import TEST_INVITE_ID  # noqa: WPS433
 
             invite = Invite.find_by_id(session, TEST_INVITE_ID)
         else:

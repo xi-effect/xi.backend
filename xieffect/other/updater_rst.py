@@ -1,3 +1,4 @@
+from flask import current_app
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
@@ -80,11 +81,9 @@ class WebhookPassthrough(Resource):
         required=True,
     )
 
-    from api import app
-
     @controller.argument_parser(parser)
     def post(self, api_key: str, webhook: str, message: str):
-        if api_key != self.app.config["API_KEY"]:
+        if api_key != current_app.config["API_KEY"]:
             return {"a": "Wrong API_KEY"}, 403
         if (webhook_url := WebhookURLs.from_string(webhook)) is None:
             return {"a": f"Unsupported webhook URL: '{webhook}'"}, 400

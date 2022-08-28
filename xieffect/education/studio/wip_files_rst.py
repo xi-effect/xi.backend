@@ -1,5 +1,5 @@
 from functools import wraps
-from json import load
+from json import load as load_json
 from os import remove
 
 from flask import request, send_from_directory, redirect
@@ -97,7 +97,7 @@ def file_getter(
         @wraps(function)
         @wip_json_file_namespace.jwt_authorizer(Author)
         def get_file_or_type(*args, **kwargs):
-            session = kwargs.pop("session")
+            session = get_or_pop(kwargs, "session", use_session)
             result: type[JSONFile]
             file_type: str = kwargs.pop("file_type")
             if file_type == "modules":
@@ -109,18 +109,14 @@ def file_getter(
 
             if "file_id" in kwargs:
                 file: result = result.find_by_id(
-                    session, kwargs["file_id"] if type_only else kwargs.pop("file_id")
+                    session, get_or_pop(kwargs, "file_id", type_only)
                 )
                 if file is None:
                     return {"a": "File not found"}, 404
                 if file.owner != (get_or_pop(kwargs, "author", use_author)).id:
                     return {"a": "Access denied"}, 403
                 if not type_only:
-                    if use_session:
-                        return function(file=file, session=session, *args, **kwargs)
                     return function(file=file, *args, **kwargs)
-            if use_session:
-                return function(file_type=result, session=session, *args, **kwargs)
             return function(file_type=result, *args, **kwargs)
 
         return get_file_or_type
@@ -154,7 +150,7 @@ class FileProcessor(Resource):
     def get(self, file: JSONFile):
         """Loads author's wip-file's full contents"""
         with open(file.get_link(), "rb") as f:
-            return load(f)
+            return load_json(f)
 
     @wip_json_file_namespace.doc_file_param("json")
     @file_getter(type_only=False)
@@ -178,7 +174,7 @@ class FilePublisher(Resource):
     def post(self, session, file: JSONFile, author: Author) -> str:
         """Validates and then publishes author's wip-file"""
         with open(file.get_link(), "rb") as f:
-            content: dict = load(f)
+            content: dict = load_json(f)
             content["id"] = file.id  # just making sure
             klass = Page if isinstance(file, WIPPage) else Module
             result: bool = klass.find_or_create(session, content, author) is None

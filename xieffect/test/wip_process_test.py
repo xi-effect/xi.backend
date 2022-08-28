@@ -6,7 +6,7 @@ from flask.testing import FlaskClient
 from pytest import mark
 
 from __lib__.flask_fullstack import check_code
-from json import load
+from json import load as json_load
 
 PER_REQUEST = 50
 
@@ -30,10 +30,11 @@ class WIPRecycler:
         self.file_id: int | str | None = None
 
         with open(f"test/json/{file_name1}.json", "rb") as f:
-            self.file_content1 = load(f)  # TODO content shouldn't have any id info!
+            # TODO content shouldn't have any id info!
+            self.file_content1 = json_load(f)
 
         with open(f"test/json/{file_name2}.json", "rb") as f:
-            self.file_content2 = load(f)
+            self.file_content2 = json_load(f)
 
     def is_in_list(self, url, per_request: int = None) -> dict | None:
         for file in self.list_tester(url, {}, PER_REQUEST if per_request is None else per_request):

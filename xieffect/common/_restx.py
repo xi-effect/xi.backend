@@ -5,14 +5,13 @@ from functools import wraps
 from flask_restx import abort as default_abort
 
 from __lib__.flask_fullstack import ResourceController as _ResourceController
-from ._marshals import success_response, message_response  # noqa: WPS436
+from ._core import sessionmaker  # noqa: WPS436
+from ._marshals import success_response, message_response, ResponseDoc  # noqa: WPS436
 
 
 class ResourceController(_ResourceController):
-    from ._core import sessionmaker  # noqa: WPS436
-
     def __init__(self, *args, **kwargs):
-        kwargs["sessionmaker"] = kwargs.get("sessionmaker", self.sessionmaker)
+        kwargs["sessionmaker"] = kwargs.get("sessionmaker", sessionmaker)
         super().__init__(*args, **kwargs)
         success_response.register_model(self)
         message_response.register_model(self)
@@ -30,6 +29,7 @@ class ResourceController(_ResourceController):
         def a_response_wrapper(function):
             return_type = function.__annotations__.get("return", None)
             is_none = return_type is None or return_type == "None"
+            response: ResponseDoc
             if (
                 is_none
                 or return_type == "bool"

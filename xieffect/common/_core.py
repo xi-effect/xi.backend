@@ -1,4 +1,4 @@
-from json import dumps
+from json import dumps as dump_json
 from os import getenv
 from sys import modules
 
@@ -17,7 +17,7 @@ from __lib__.flask_fullstack.sqlalchemy import ModBase, create_base, Session
 
 class Flask(_Flask):
     def return_error(self, code: int, message: str):
-        return Response(dumps({"a": message}), code)
+        return Response(dump_json({"a": message}), code)
 
     def configure_jwt_with_loaders(self, *args, **kwargs) -> None:
         from .users_db import BlockedToken
@@ -30,22 +30,22 @@ class Flask(_Flask):
             return BlockedToken.find_by_jti(session, jwt_payload["jti"]) is not None
 
 
-def init_xieffect() -> tuple[
+def init_xieffect() -> tuple[  # noqa: WPS210
     str, MetaData, type[ModBase], Sessionmaker, IndexService, dict, Flask, bool, Mail
 ]:
     # xieffect specific:
 
     from dotenv import load_dotenv
-    from json import load
+    from json import load as load_json
 
     load_dotenv("../.env")
 
     convention = {
-        "ix": "ix_%(column_0_label)s",
-        "uq": "uq_%(table_name)s_%(column_0_name)s",
-        "ck": "ck_%(table_name)s_%(constraint_name)s",
-        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-        "pk": "pk_%(table_name)s",
+        "ix": "ix_%(column_0_label)s",  # noqa: WPS323
+        "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
+        "ck": "ck_%(table_name)s_%(constraint_name)s",  # noqa: WPS323
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",  # noqa: WPS323
+        "pk": "pk_%(table_name)s",  # noqa: WPS323
     }
 
     db_url: str = getenv("DB_LINK", "sqlite:///app.db")
@@ -58,7 +58,7 @@ def init_xieffect() -> tuple[
     index_service = configure_whooshee(sessionmaker, "../files/temp/whoosh")
 
     with open("../static/versions.json", encoding="utf-8") as f:
-        versions = load(f)
+        versions = load_json(f)
 
     app: Flask = Flask(
         __name__,

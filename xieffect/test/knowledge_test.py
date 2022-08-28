@@ -6,7 +6,7 @@ from flask.testing import FlaskClient
 from pytest import mark
 
 from __lib__.flask_fullstack import check_code
-from json import load
+from json import load as load_json
 
 PAGES_PER_REQUEST: int = 50
 MODULES_PER_REQUEST: int = 12
@@ -27,7 +27,7 @@ def test_getting_pages(client: FlaskClient):
     page_json: dict = check_code(client.get("/pages/1/"))
 
     with open("../static/test/page-bundle.json", "rb") as f:
-        file_content: dict = load(f)[0]
+        file_content: dict = load_json(f)[0]
     for key in ("blueprint", "reusable", "public"):
         file_content.pop(key)
 

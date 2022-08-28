@@ -5,13 +5,12 @@ from __lib__.flask_fullstack import (
     PydanticModel,
     SocketIO as _SocketIO,
 )
+from ._core import sessionmaker  # noqa: WPS436
 
 
 class EventController(_EventController):
-    from ._core import sessionmaker  # noqa: WPS436
-
     def __init__(self, *args, **kwargs):
-        kwargs["sessionmaker"] = kwargs.get("sessionmaker", self.sessionmaker)
+        kwargs["sessionmaker"] = kwargs.get("sessionmaker", sessionmaker)
         kwargs["use_kebab_case"] = kwargs.get("use_kebab_case", True)
         super().__init__(*args, **kwargs)
 

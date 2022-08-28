@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from json import dump
+from json import dump as dump_json
 from os import remove
 
 from sqlalchemy import Column
@@ -102,7 +102,7 @@ class JSONFile(CATFile):
 
         json_data["id"] = self.id
         with open(self.get_link(), "w", encoding="utf8") as f:
-            dump(json_data, f, ensure_ascii=False)
+            dump_json(json_data, f, ensure_ascii=False)
 
     def update_metadata(self, json_data: dict) -> None:
         raise NotImplementedError

@@ -3,12 +3,12 @@ from collections.abc import Iterator, Callable
 from flask.testing import FlaskClient
 
 from __lib__.flask_fullstack import check_code
-from json import load
+from json import load as load_json
 
 
 def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     with open("../static/test/user-bundle.json", encoding="utf-8") as f:
-        usernames = [user_data["username"] for user_data in load(f)]
+        usernames = [user_data["username"] for user_data in load_json(f)]
     usernames.append("hey")  # TODO add user deleting & use it in test_signup + remove this line
 
     admin_user_found = False
