@@ -95,7 +95,7 @@ class WebhookPassthrough(Resource):
 class LolBot(Resource):
     def get(self):
         try:
-            with open("../files/lol-counter.txt") as f:
+            with open("../files/lol-counter.txt", encoding="utf-8") as f:
                 count = str(int(f.read()) + 1)
             if "69" in count or count[-1] == "0":
                 message = f"Got another one! Total: {count}"
@@ -104,5 +104,5 @@ class LolBot(Resource):
             count = 1
 
         send_discord_message(WebhookURLs.LOLBOT, message)
-        with open("../files/lol-counter.txt", "w") as f:
+        with open("../files/lol-counter.txt", "w", encoding="utf-8") as f:
             f.write(str(count))

@@ -1,14 +1,14 @@
 # noqa: WPS201
 from datetime import datetime
-from json import load as load_json, dump as dump_json
+from json import dump as dump_json, load as load_json
 from os.path import exists
 from pathlib import Path
-from sys import modules, argv
+from sys import argv, modules
 
 from api import app as application, log_stuff, socketio
-from common import User, sessionmaker, db_url, db_meta, mail_initialized, versions
-from moderation import permission_index, Moderator
-from other import WebhookURLs, send_discord_message
+from common import db_meta, db_url, mail_initialized, sessionmaker, User, versions
+from moderation import Moderator, permission_index
+from other import send_discord_message, WebhookURLs
 from users.invites_db import (
     Invite,
 )  # noqa: F401  # noqa: WPS201  # passthrough for tests
@@ -201,7 +201,7 @@ def version_check():
 
 @application.cli.command("form-sio-docs")
 def form_sio_docs():
-    with open("../files/async-api.json", "w") as f:
+    with open("../files/async-api.json", "w", encoding="utf-8") as f:
         dump_json(socketio.docs(), f, ensure_ascii=False)
 
 

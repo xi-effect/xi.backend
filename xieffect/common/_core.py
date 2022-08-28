@@ -4,15 +4,10 @@ from sys import modules
 
 from flask import Response
 from flask_mail import Mail
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import create_engine, MetaData
 
-from __lib__.flask_fullstack import (
-    Flask as _Flask,
-    configure_whooshee,
-    Sessionmaker,
-    IndexService,
-)
-from __lib__.flask_fullstack.sqlalchemy import ModBase, create_base, Session
+from __lib__.flask_fullstack import (configure_whooshee, Flask as _Flask, IndexService, Sessionmaker)
+from __lib__.flask_fullstack.sqlalchemy import create_base, ModBase, Session
 
 
 class Flask(_Flask):
@@ -26,7 +21,7 @@ class Flask(_Flask):
 
         @jwt.token_in_blocklist_loader
         @sessionmaker.with_begin
-        def check_if_token_revoked(_, jwt_payload, session):
+        def check_if_token_revoked(_, jwt_payload, session) -> bool:
             return BlockedToken.find_by_jti(session, jwt_payload["jti"]) is not None
 
 

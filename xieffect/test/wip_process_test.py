@@ -36,7 +36,7 @@ class WIPRecycler:
         with open(f"test/json/{file_name2}.json", "rb") as f:
             self.file_content2 = json_load(f)
 
-    def is_in_list(self, url, per_request: int = None) -> dict | None:
+    def find_in_list(self, url, per_request: int = None) -> dict | None:
         for file in self.list_tester(url, {}, PER_REQUEST if per_request is None else per_request):
             if file["id"] == self.file_id:
                 return file
@@ -62,7 +62,7 @@ class WIPRecycler:
         assert self.file_id is not None
         self.wip_id_url = self.wip_url + f"{self.file_id}/"
 
-        assert self.is_in_list(self.wip_url + "index/") is not None
+        assert self.find_in_list(self.wip_url + "index/") is not None
         self.assert_same_on_server(self.wip_id_url, self.file_content1)
 
     def editing(self):
@@ -88,10 +88,10 @@ class WIPRecycler:
 
         check_code(self.client.post(self.wip_id_url + "publication/"))
         if self.file_type == "modules":
-            assert self.is_in_list(f"/{self.file_type}/", per_request=12) is not None
+            assert self.find_in_list(f"/{self.file_type}/", per_request=12) is not None
             content.pop("points")
         else:
-            assert self.is_in_list(f"/{self.file_type}/") is not None
+            assert self.find_in_list(f"/{self.file_type}/") is not None
         # TODO add using assert_same_on_server:
         # self.assert_same_on_server(f"/{self.file_type}/{self.file_id}/", content)  # noqa: E800
         # Doesn't work because of the modules' test-bundle!
@@ -99,11 +99,11 @@ class WIPRecycler:
     def deleting(self, published: bool):
         assert check_code(self.client.delete(self.wip_id_url)) == {"a": True}
 
-        assert self.is_in_list(self.wip_url + "index/") is None
+        assert self.find_in_list(self.wip_url + "index/") is None
         check_code(self.client.get(self.wip_id_url), 404)
 
         if published:
-            assert self.is_in_list(f"/{self.file_type}/") is None
+            assert self.find_in_list(f"/{self.file_type}/") is None
             check_code(self.client.get(f"/{self.file_type}/{self.file_id}/"), 404)
 
     def wip_full_cycle(self):

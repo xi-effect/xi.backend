@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Callable
-from random import shuffle, randint  # noqa: DUO102
+from collections.abc import Callable, Iterator
+from random import randint, shuffle  # noqa: DUO102
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -52,10 +52,12 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             assert "map" in module
             map_length = len(module["map"]) - 1
             json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
-            assert check_code(client.post(
-                f"/modules/{module_id}/points/{map_length}/reply/",
-                json=json_test
-            )).get("a", False)
+            assert check_code(
+                client.post(
+                    f"/modules/{module_id}/points/{map_length}/reply/",
+                    json=json_test
+                )
+            ).get("a", False)
 
             reply = check_code(client.get(f"/modules/{module_id}/points/{map_length}/reply"))
             assert reply == json_test["answers"]
