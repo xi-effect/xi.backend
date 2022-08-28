@@ -28,13 +28,16 @@ jobs:
           python-version: 3.9
           cache: pip
 
-      - name: Install Requirements
+      - id: install
+        name: Install Requirements
         run: pip install -r requirements.txt
 
-      - name: Run flake8
+      - id: flake8
+        name: Run flake8
         run: flake8 --config=setup.cfg xieffect
 
       - name: Run pytest
+        if: success() || (failure() && steps.install.conclusion == 'success')
         run: |
           cd xieffect
           pytest
