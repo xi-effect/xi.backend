@@ -13,7 +13,10 @@ dev_domain: str = "qwert45hi.pythonanywhere.com"
 
 def execute_in_console(line: str, console_id: int = None) -> bool:
     if console_id is None:
-        console_id = get(f"{base_url}/consoles/", headers=headers).json()[0]["id"]  # noqa: WPS221
+        res = get(f"{base_url}/consoles/", headers=headers)
+        if res.status_code != 200:
+            raise ValueError("Console execution did not return 200")
+        console_id = res.json()[0]["id"]
     response: Response = post(
         base_url + f"/consoles/{console_id}/send_input/",
         json={"input": f"{line}\n"},

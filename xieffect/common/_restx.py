@@ -34,9 +34,7 @@ class ResourceController(_ResourceController):
                 or return_type == "bool"
                 or (isinstance(return_type, type) and issubclass(return_type, bool))
             )
-            response: ResponseDoc = (
-                success_response if is_bool else message_response
-            )
+            response: ResponseDoc = success_response if is_bool else message_response
 
             @self.response(*response.get_args())
             @wraps(function)

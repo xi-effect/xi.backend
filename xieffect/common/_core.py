@@ -8,7 +8,12 @@ from flask import Response
 from flask_mail import Mail
 from sqlalchemy import create_engine, MetaData
 
-from __lib__.flask_fullstack import (configure_whooshee, Flask as _Flask, IndexService, Sessionmaker)
+from __lib__.flask_fullstack import (
+    configure_whooshee,
+    Flask as _Flask,
+    IndexService,
+    Sessionmaker,
+)
 from __lib__.flask_fullstack.sqlalchemy import create_base, ModBase, Session
 
 
