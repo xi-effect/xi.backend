@@ -456,14 +456,16 @@ def test_invitation_errors(multi_client, list_tester):
 
     delete_data = {"community-id": community_id, "invitation-id": invitation["id"]}
 
+    test_events = (
+        ("open-invites", room_data),
+        ("close-invites", room_data),
+        ("new-invite", invitation_data),
+        ("delete-invite", delete_data)
+    )
+
     # fail check function
     def assert_fail_event(sio, code: int, message: str):
-        for event_name, event_data in (
-            ("open-invites", room_data),
-            ("close-invites", room_data),
-            ("new-invite", invitation_data),
-            ("delete-invite", delete_data)
-        ):
+        for event_name, event_data in test_events:
             ack = sio.emit(event_name, event_data, callback=True)
             assert isinstance(ack, dict)
             assert ack.get("code", None) == code

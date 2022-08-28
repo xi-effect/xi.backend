@@ -9,7 +9,9 @@ from api import app as application, log_stuff, socketio
 from common import User, sessionmaker, db_url, db_meta, mail_initialized, versions
 from moderation import permission_index, Moderator
 from other import WebhookURLs, send_discord_message
-from users.invites_db import Invite  # noqa: F401  # noqa: WPS201  # passthrough for tests
+from users.invites_db import (
+    Invite,
+)  # noqa: F401  # noqa: WPS201  # passthrough for tests
 
 TEST_EMAIL: str = "test@test.test"
 ADMIN_EMAIL: str = "admin@admin.admin"
@@ -21,6 +23,13 @@ ADMIN_PASS: str = "2b003f13e43546e8b416a9ff3c40bc4ba694d0d098a5a5cda2e522d9993f4
 
 TEST_INVITE_ID: int = 0
 
+SECRETS = (
+    "SECRET_KEY",
+    "SECURITY_PASSWORD_SALT",
+    "JWT_SECRET_KEY",
+    "API_KEY",
+)
+
 
 @sessionmaker.with_begin
 def init_test_mod(session):
@@ -29,7 +38,7 @@ def init_test_mod(session):
         moderator.super = True
 
 
-if (
+if (  # noqa: WPS337
     __name__ == "__main__"
     or "pytest" in modules
     or db_url == "sqlite:///test.db"
@@ -44,12 +53,7 @@ else:  # works on server restart
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
     setup_fail: bool = False
-    for secret_name in (
-        "SECRET_KEY",
-        "SECURITY_PASSWORD_SALT",
-        "JWT_SECRET_KEY",
-        "API_KEY",
-    ):
+    for secret_name in SECRETS:
         if application.config[secret_name] == "hope it's local":
             send_discord_message(
                 WebhookURLs.NOTIFY,

@@ -30,8 +30,16 @@ class Flask(_Flask):
             return BlockedToken.find_by_jti(session, jwt_payload["jti"]) is not None
 
 
-def init_xieffect() -> tuple[  # noqa: WPS210
-    str, MetaData, type[ModBase], Sessionmaker, IndexService, dict, Flask, bool, Mail
+def init_xieffect() -> tuple[  # noqa: WPS210, WPS320
+    str,
+    MetaData,
+    type[ModBase],
+    Sessionmaker,
+    IndexService,
+    dict,
+    Flask,
+    bool,
+    Mail,
 ]:
     # xieffect specific:
 

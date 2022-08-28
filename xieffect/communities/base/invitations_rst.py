@@ -36,7 +36,7 @@ def check_invitation(use_session: bool = False):  # TODO # noqa: WPS231
             invitation: Invitation = Invitation.find_by_code(session, code)
             if invitation is None:
                 controller.abort(400, "Invalid invitation")
-            elif (
+            elif (  # noqa: WPS337
                 user is not None
                 and Participant.find_by_ids(session, invitation.community_id, user.id)
                 is not None

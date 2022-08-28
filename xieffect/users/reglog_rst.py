@@ -59,15 +59,14 @@ class UserRegistration(Resource):
             return {"a": "Invite code limit exceeded"}
         invite.accepted += 1
 
-        if (
-            user := User.create(
-                session,
-                email=email,
-                username=username,
-                password=password,
-                invite=invite,
-            )
-        ) is None:
+        user = User.create(
+            session,
+            email=email,
+            username=username,
+            password=password,
+            invite=invite,
+        )
+        if user is None:
             return {"a": "Email already in use"}
         send_code_email(email, EmailType.CONFIRM)
         cu = CommunitiesUser.find_or_create(session, user.id)

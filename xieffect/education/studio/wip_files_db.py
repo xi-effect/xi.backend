@@ -87,11 +87,11 @@ class JSONFile(CATFile):
         owner: Author,
         json_data: dict,
     ) -> CATFile:
-        if (
-            "id" not in json_data.keys()
-            or (entry := cls.find_by_id(session, json_data["id"])) is None
-        ):
-            entry: cls = cls._create(owner)
+        file_id = json_data.get("id")
+        entry = None if file_id is None else cls.find_by_id(session, json_data["id"])
+
+        if entry is None:
+            entry = cls._create(owner)
             entry.update_json(session, json_data)
         return entry
 
