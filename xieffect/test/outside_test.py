@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from flask.testing import FlaskClient
 from flask_mail import Message
 from pytest import mark, skip
@@ -8,7 +10,7 @@ from common import mail, mail_initialized
 from other import EmailType
 from users import dumps_feedback, generate_code
 from wsgi import Invite, TEST_INVITE_ID
-from .conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
+from .conftest import BASIC_PASS, socketio_client_factory, TEST_EMAIL
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
 

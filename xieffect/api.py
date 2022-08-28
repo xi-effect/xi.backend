@@ -1,43 +1,19 @@
+from __future__ import annotations
+
 from datetime import timedelta
 from logging import Logger
 from sys import stderr
 
-from common import app, versions, SocketIO
+from common import app, SocketIO, versions
 from common import db_meta, db_url  # noqa: WPS
-from communities import (
-    communities_namespace,
-    invitation_namespace,
-    communities_meta_events,
-    invitation_events,
-)
+from communities import (communities_meta_events, communities_namespace, invitation_events, invitation_namespace)
 from education import (
-    authors_namespace,
+    authors_namespace, education_namespace, images_view_namespace, interaction_namespace, modules_view_namespace, pages_view_namespace, result_namespace, wip_images_namespace, wip_index_namespace,
     wip_json_file_namespace,
-    wip_images_namespace,
-    images_view_namespace,
-    wip_index_namespace,
-    modules_view_namespace,
-    pages_view_namespace,
-    education_namespace,
-    interaction_namespace,
-    result_namespace,
 )
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
-from other import (
-    webhook_namespace,
-    send_discord_message,
-    send_file_discord_message,
-    WebhookURLs,
-)
-from users import (
-    reglog_namespace,
-    users_namespace,
-    invites_namespace,
-    feedback_namespace,
-    settings_namespace,
-    users_mub_namespace,
-    emailer_qa_namespace,
-)
+from other import (send_discord_message, send_file_discord_message, webhook_namespace, WebhookURLs)
+from users import (emailer_qa_namespace, feedback_namespace, invites_namespace, reglog_namespace, settings_namespace, users_mub_namespace, users_namespace)
 from vault import files_namespace, mub_files_namespace
 
 logger = Logger("flask-fullstack", "WARN")

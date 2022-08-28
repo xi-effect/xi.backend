@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from flask.testing import FlaskClient
 from pytest import mark
 

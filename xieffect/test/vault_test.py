@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from io import BytesIO
 from os.path import exists
@@ -8,7 +10,7 @@ from pytest import mark
 from werkzeug.datastructures import FileStorage
 
 from __lib__.flask_fullstack import check_code
-from .conftest import login, BASIC_PASS
+from .conftest import BASIC_PASS, login
 
 k = TypeVar("k")
 v = TypeVar("v")

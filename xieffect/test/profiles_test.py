@@ -1,4 +1,6 @@
-from collections.abc import Iterator, Callable
+from __future__ import annotations
+
+from collections.abc import Callable, Iterator
 
 from flask.testing import FlaskClient
 

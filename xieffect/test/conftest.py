@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterator
 from typing import Protocol
 
@@ -8,7 +10,7 @@ from werkzeug.test import TestResponse
 
 from __lib__.flask_fullstack import check_code
 from api import socketio
-from wsgi import application as app, TEST_EMAIL, BASIC_PASS, ADMIN_EMAIL, ADMIN_PASS, TEST_MOD_NAME, TEST_PASS
+from wsgi import ADMIN_EMAIL, ADMIN_PASS, application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
 
 class RedirectedFlaskClient(FlaskClient):

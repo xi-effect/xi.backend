@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, password_parser, User
-from other import EmailType, send_code_email, create_email_confirmer
+from common import password_parser, ResourceController, User
+from other import create_email_confirmer, EmailType, send_code_email
 
 controller = ResourceController("settings", path="/")
 

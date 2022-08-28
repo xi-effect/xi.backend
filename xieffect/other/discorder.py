@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from discord_webhook import DiscordWebhook
 from requests import post, Response
 

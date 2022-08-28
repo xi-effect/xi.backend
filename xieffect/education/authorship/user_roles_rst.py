@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 

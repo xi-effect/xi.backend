@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
-from common import EventController, EventSpace, DuplexEvent, User
+from common import DuplexEvent, EventController, EventSpace, User
 from .meta_db import Community
 from .users_ext_db import CommunitiesUser
 

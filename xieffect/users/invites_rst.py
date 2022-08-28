@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from functools import wraps
 
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, get_or_pop, User
+from common import counter_parser, get_or_pop, ResourceController, User
 from .invites_db import Invite
 
 controller = ResourceController("invites", path="/invites/")

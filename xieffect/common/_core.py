@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from json import dumps as dump_json
 from os import getenv
 from sys import modules

@@ -34,8 +34,7 @@ flake8-simplify
 # Linters:Imports
 flake8-tidy-imports
 flake8-obey-import-goat
-# - flake8-future-import  # too much screaming
-# - flake8-import-order  # does not work properly
+flake8-future-import
 
 # Linters:Style
 flake8-multiline-containers

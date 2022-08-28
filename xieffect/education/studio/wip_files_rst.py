@@ -1,15 +1,17 @@
+from __future__ import annotations
+
 from functools import wraps
 from json import load as load_json
 from os import remove
 
-from flask import request, send_from_directory, redirect
-from flask_restx import Resource, Model
+from flask import redirect, request, send_from_directory
+from flask_restx import Model, Resource
 from flask_restx.fields import Integer
 
-from common import ResourceController, ResponseDoc, User, counter_parser, get_or_pop
-from .wip_files_db import JSONFile, WIPPage, WIPModule
+from common import counter_parser, get_or_pop, ResourceController, ResponseDoc, User
+from .wip_files_db import JSONFile, WIPModule, WIPPage
 from ..authorship import Author
-from ..knowledge import Page, Module
+from ..knowledge import Module, Page
 
 wip_images_namespace = ResourceController("wip-images", path="/wip/images/")
 images_view_namespace = ResourceController("images", path="/images/")

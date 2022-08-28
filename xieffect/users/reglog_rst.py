@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 from flask import current_app
 from flask_jwt_extended import get_jwt
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
-from common import password_parser, ResourceController, BlockedToken, User
+from common import BlockedToken, password_parser, ResourceController, User
 from communities import CommunitiesUser
-from other import EmailType, send_code_email, create_email_confirmer
+from other import create_email_confirmer, EmailType, send_code_email
 from .invites_db import Invite
 
 controller = ResourceController("reglog", path="/")

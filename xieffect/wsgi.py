@@ -1,4 +1,6 @@
 # noqa: WPS201
+from __future__ import annotations
+
 from datetime import datetime
 from json import dump as dump_json, load as load_json
 from os.path import exists
