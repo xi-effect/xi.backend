@@ -43,7 +43,7 @@ from vault import files_namespace, mub_files_namespace
 logger = Logger("flask-fullstack", "WARN")
 
 
-def log_stuff(level: str, message: str):
+def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
     if app.debug:
         print(message, **({"file": stderr} if level == "error" else {}))
     else:

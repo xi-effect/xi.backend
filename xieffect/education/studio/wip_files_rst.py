@@ -88,12 +88,12 @@ class WIPPageLister(Resource):
         return WIPPage.find_by_owner(session, author, start, finish - start)
 
 
-def file_getter(
+def file_getter(  # TODO # noqa: WPS231
     type_only: bool = True,
     use_session: bool = True,
     use_author: bool = False,
 ):
-    def file_getter_wrapper(function):
+    def file_getter_wrapper(function):  # TODO # noqa: WPS231
         @wraps(function)
         @wip_json_file_namespace.jwt_authorizer(Author)
         def get_file_or_type(*args, **kwargs):

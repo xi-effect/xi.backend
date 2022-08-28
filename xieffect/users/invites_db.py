@@ -24,6 +24,7 @@ class Invite(Base):
     accepted = Column(Integer, nullable=False, default=0)
     invited = relationship("User", back_populates="invite")
 
+    IDModel = PydanticModel.column_model(id)
     IndexModel = PydanticModel.column_model(name, code, limit, accepted)
 
     @classmethod

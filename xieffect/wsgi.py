@@ -140,7 +140,7 @@ def init_knowledge(session):
 
 
 @sessionmaker.with_begin
-def init_chats(session):
+def init_chats(session):  # TODO # noqa: WPS231
     from communication.chatting_db import Chat, ChatRole, Message
 
     with open("../static/test/chat-bundle.json", encoding="utf-8") as f:

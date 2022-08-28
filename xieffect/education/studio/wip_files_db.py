@@ -63,9 +63,9 @@ class CATFile(Base, Identifiable):
         return cls.find_paginated_by_kwargs(session, start, limit, owner=owner.id)
 
     def get_link(self) -> str:
-        return (
-            "" if self.mimetype == "" else f"{self.directory}/{self.id}.{self.mimetype}"
-        )
+        if self.mimetype == "":
+            return ""
+        return f"{self.directory}/{self.id}.{self.mimetype}"
 
     def update(self, data: bytes) -> None:
         with open(self.get_link(), "wb") as f:

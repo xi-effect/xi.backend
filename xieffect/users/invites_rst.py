@@ -1,11 +1,10 @@
 from functools import wraps
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_restx import Resource, Model
-from flask_restx.fields import Integer
+from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, ResponseDoc, get_or_pop, User
+from common import ResourceController, counter_parser, get_or_pop, User
 from .invites_db import Invite
 
 controller = ResourceController("invites", path="/invites/")
@@ -38,11 +37,11 @@ class InviteCreator(Resource):
     parser.add_argument("name", type=str, required=True)
     parser.add_argument("limit", type=int, required=False)
 
-    @controller.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @admin_only(use_session=True)
     @controller.argument_parser(parser)
+    @controller.marshal_with(Invite.IDModel)
     def post(self, session, name: str, limit: int):
-        return {"id": Invite.create(session, name=name, limit=limit or -1).id}
+        return Invite.create(session, name=name, limit=limit or -1)
 
 
 @controller.route("/index/")

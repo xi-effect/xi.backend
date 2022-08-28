@@ -71,7 +71,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         self.last_visited = datetime.utcnow()
         self.note_change()
 
-    def change_preference(
+    def change_preference(  # TODO # noqa: WPS231
         self,
         session: sessionmaker,
         operation: PreferenceOperation,

@@ -24,7 +24,7 @@ class InvitationLister(Resource):
         )
 
 
-def check_invitation(use_session: bool = False):
+def check_invitation(use_session: bool = False):  # TODO # noqa: WPS231
     def check_invitation_wrapper(function):
         @wraps(function)
         @controller.doc_abort("400 ", "Invalid invitation")
