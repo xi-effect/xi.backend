@@ -23,8 +23,7 @@ flake8-debugger
 flake8-unused-arguments
 flake8-encodings
 flake8-secure-coding-standard
-# - flake8-warnings  # failed to install
-# - flake8-useless-assert  # failed to install & unusable with pytest
+flake8-useless-assert
 
 # Linters:Simplifications
 dlint
@@ -52,7 +51,7 @@ flake8-variables-names
 flake8-comments
 flake8-executable
 flake8-noqa
-flake8-coding  # wants encoding comments in every file
+flake8-coding
 
 # Linters:Typing
 flake8-annotations-coverage
@@ -62,25 +61,21 @@ flake8-pep585
 flake8-pep604
 flake8-typing-imports
 flake8-annotations
-flake8-type-checking  # (https://github.com/snok/flake8-type-checking)
+flake8-type-checking
 
 # Linters:Complexity
 flake8-annotations-complexity
 flake8-cognitive-complexity
 flake8-expression-complexity
-# - cohesion  # screams at all Resources
-# - flake8-functions  # weird
-# - flake8-length  # built-in & handed over to black
+flake8-functions
 
 # Linters:Random
 flake8-implicit-str-concat
 flake8-use-fstring
 flake8-use-pathlib
-# - flake8-newspaper-style  # failed to install
-# - flake8-print  # screams too much
-# - flake8-requirements  # failed to install
+flake8-print
 
 # Linters:Tools
-# - hacking  # failed to install
-# - flakehell  # failed to install
-flake8-pylint (raw lib, not wrapper: https://github.com/PyCQA/pylint/ ?)
+# TODO hacking
+# TODO flakehell
+flake8-pylint  # TODO use raw lib, not wrapper? https://github.com/PyCQA/pylint/
