@@ -1,4 +1,4 @@
-from typing import Tuple
+from __future__ import annotations
 
 from flask.testing import FlaskClient
 from flask_mail import Message
@@ -8,24 +8,25 @@ from werkzeug.test import TestResponse
 from __lib__.flask_fullstack import check_code, dict_equal
 from common import mail, mail_initialized
 from other import EmailType
-from wsgi import generate_code, dumps_feedback, Invite, TEST_INVITE_ID
-from .conftest import TEST_EMAIL, BASIC_PASS, socketio_client_factory
+from users import dumps_feedback, generate_code
+from wsgi import Invite, TEST_INVITE_ID
+from .conftest import BASIC_PASS, socketio_client_factory, TEST_EMAIL
 
-TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}
+TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
 
 
 @mark.order(1)
 def test_login(base_client: FlaskClient):
     response: TestResponse = check_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
-    assert "Set-Cookie" in response.headers.keys()
-    cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    assert "Set-Cookie" in response.headers
+    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
 
     result: dict[str, ...] = response.json
     assert result.pop("a", None) == "Success"
-    for key in ["communities", "user"]:
+    for key in ("communities", "user"):
         assert key in result
-    for key in ["id", "username", "dark-theme", "language"]:
+    for key in ("id", "username", "dark-theme", "language"):
         assert key in result["user"]
 
     check_code(base_client.post("/logout/"))
@@ -51,8 +52,8 @@ def test_signup(base_client: FlaskClient):
     response = check_code(base_client.post("/reg/", json=data), get_json=False)
 
     # Checking for cookies
-    assert "Set-Cookie" in response.headers.keys()
-    cookie: Tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    assert "Set-Cookie" in response.headers
+    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
     assert cookie[0] == "access_token_cookie"
 
     # Checking the returned data
@@ -80,9 +81,16 @@ def test_email_confirm(base_client: FlaskClient):
     if not mail_initialized:
         skip("Email module is not setup")
 
+    a = [1, 2, 3, 4]
+    assert 1 in a
+
     # TODO use hey@hey.hey but delete account form test_signup (& here)
-    credentials = {"email": "hey2@hey.hey", "password": "12345", "username": "hey",
-                   "code": Invite.serializer.dumps((TEST_INVITE_ID, 0))}
+    credentials = {
+        "email": "hey2@hey.hey",
+        "password": "12345",
+        "username": "hey",
+        "code": Invite.serializer.dumps((TEST_INVITE_ID, 0))
+    }
     link_start = "https://xieffect.ru/email/"
 
     with mail.record_messages() as outbox:
@@ -142,7 +150,7 @@ def test_feedback(base_client: FlaskClient, client: FlaskClient):  # assumes use
 
 
 @mark.order(50)
-def test_invite_curds(client: FlaskClient, admin_client: FlaskClient, list_tester):
+def test_invite_curds(client: FlaskClient, admin_client: FlaskClient):
     def request_assert_admin(method, url: str, json=None):
         assert check_code(method(client, url, json=json), 403)["a"] == "Permission denied"
         return check_code(method(admin_client, url, json=json))

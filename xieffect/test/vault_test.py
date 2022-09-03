@@ -1,21 +1,23 @@
+from __future__ import annotations
+
+from collections.abc import Iterable
 from io import BytesIO
 from os.path import exists
-from typing import TypeVar, Iterable
+from typing import TypeVar
 
 from flask.testing import FlaskClient
 from pytest import mark
 from werkzeug.datastructures import FileStorage
 
 from __lib__.flask_fullstack import check_code
-from .conftest import login, BASIC_PASS
+from .conftest import BASIC_PASS, login
 
 k = TypeVar("k")
 v = TypeVar("v")
 
 
 def spread_dict(dct: dict[k, v], *keys: k, default=None) -> Iterable[v]:
-    for key in keys:
-        yield dct.get(key, default)
+    yield from (dct.get(key, default) for key in keys)
 
 
 def assert_spread(dct: dict[k, v], *keys: k) -> Iterable[v]:

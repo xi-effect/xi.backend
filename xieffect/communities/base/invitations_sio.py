@@ -12,8 +12,13 @@ from .meta_db import Community, Participant, ParticipantRole
 controller = EventController()
 
 
-def check_participant_role(role: ParticipantRole, use_session: bool = True, use_user: bool = False,
-                           use_participant: bool = False, use_community: bool = True):
+def check_participant_role(
+    role: ParticipantRole,
+    use_session: bool = True,
+    use_user: bool = False,
+    use_participant: bool = False,
+    use_community: bool = True,
+):
     def check_participant_role_wrapper(function):
         @wraps(function)
         @controller.doc_abort(403, "Permission Denied")
@@ -70,8 +75,15 @@ class InvitationsEventSpace(EventSpace):
     @controller.mark_duplex(Invitation.IndexModel, use_event=True)
     @check_participant_role(ParticipantRole.OWNER)
     @controller.marshal_ack(Invitation.IndexModel)
-    def new_invite(self, event: DuplexEvent, session, community: Community,
-                   role: str, limit: int | None, days: int | None):
+    def new_invite(
+        self,
+        event: DuplexEvent,
+        session,
+        community: Community,
+        role: str,
+        limit: int | None,
+        days: int | None,
+    ):
         enum_role: ParticipantRole = ParticipantRole.from_string(role)
         if enum_role is None:
             controller.abort(400, f"Invalid role: {role}")
@@ -88,7 +100,12 @@ class InvitationsEventSpace(EventSpace):
     @check_participant_role(ParticipantRole.OWNER)
     @controller.database_searcher(Invitation, use_session=True)
     @controller.force_ack()
-    def delete_invite(self, event: DuplexEvent, session, community: Community, invitation: Invitation):
+    def delete_invite(
+        self, event: DuplexEvent, session, community: Community, invitation: Invitation
+    ):
         invitation.delete(session)
-        event.emit_convert(room=self.room_name(community_id=community.id),
-                           community_id=community.id, invitation_id=invitation.id)
+        event.emit_convert(
+            room=self.room_name(community_id=community.id),
+            community_id=community.id,
+            invitation_id=invitation.id,
+        )

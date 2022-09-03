@@ -26,5 +26,5 @@ class ProfileViewer(Resource):
     @controller.database_searcher(User, result_field_name="profile_viewer")
     @controller.marshal_with(User.FullProfile)
     def get(self, profile_viewer: User):
-        """Get profile """
+        """Get profile"""
         return profile_viewer

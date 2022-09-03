@@ -1,3 +1,81 @@
+# use xieffect/requirements.txt file for production
 -r xieffect/requirements.txt
 
-flask-mail
+# Random (dev)
+lorem
+requests
+
+# Testing (dev)
+pytest
+pytest-order
+
+# Formatter
+black
+
+# Linters:Basics
+flake8~=4.0.1
+wemake-python-styleguide
+
+# Linters:Bugs
+flake8-2020
+flake8-alfred
+flake8-debugger
+flake8-unused-arguments
+flake8-encodings
+flake8-secure-coding-standard
+flake8-useless-assert
+
+# Linters:Simplifications
+dlint
+flake8-pie
+flake8-simplify
+
+# Linters:Imports
+flake8-tidy-imports
+flake8-obey-import-goat
+flake8-future-import
+
+# Linters:Style
+flake8-multiline-containers
+flake8-return
+flake8-sql
+flake8-scream
+
+# Linters:Naming
+flake8-builtins
+flake8-test-name
+flake8-functions-names
+flake8-variables-names
+
+# Linters:Comments
+flake8-comments
+flake8-executable
+flake8-noqa
+flake8-coding
+
+# Linters:Typing
+flake8-annotations-coverage
+flake8-future-annotations
+flake8-new-union-types
+flake8-pep585
+flake8-pep604
+flake8-typing-imports
+flake8-annotations
+flake8-type-checking
+
+# Linters:Complexity
+flake8-annotations-complexity
+flake8-cognitive-complexity
+flake8-expression-complexity
+flake8-functions
+
+# Linters:Random
+flake8-implicit-str-concat
+flake8-use-fstring
+flake8-use-pathlib
+flake8-print
+
+# Linters:Tools
+# TODO hacking
+# TODO flakehell
+flake8-pylint  # TODO use raw lib, not wrapper? https://github.com/PyCQA/pylint/

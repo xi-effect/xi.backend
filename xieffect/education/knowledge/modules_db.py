@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 from datetime import datetime
-from random import randint
-from typing import Union
+from random import randint  # noqa: DUO102
 
-from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_, or_
+from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
-from common import Identifiable, TypeEnum, create_marshal_model, Marshalable, PydanticModel
+from common import (
+    Identifiable,
+    TypeEnum,
+    create_marshal_model,
+    Marshalable,
+    PydanticModel,
+)
 from common import LambdaFieldDef, index_service, Base, sessionmaker
-from ._base_session import BaseModuleSession
+from ._base_session import BaseModuleSession  # noqa: WPS436
 from ..authorship.user_roles_db import Author
 
 
@@ -25,7 +30,8 @@ class PreferenceOperation(TypeEnum):
     UNPIN = 5
 
 
-@create_marshal_model("mfs-full", "started", "starred", "pinned", use_defaults=True)  # TODO replace with new-marshals
+# TODO replace with new-marshals
+@create_marshal_model("mfs-full", "started", "starred", "pinned", use_defaults=True)
 class ModuleFilterSession(BaseModuleSession, Marshalable):
     __tablename__ = "module-filter-sessions"
     not_found_text = "Session not found"
@@ -43,10 +49,20 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         pass
 
     @classmethod
-    def create(cls, session: sessionmaker, user_id: int, module_id: int) -> Union[ModuleFilterSession, None]:
+    def create(
+        cls,
+        session: sessionmaker,
+        user_id: int,
+        module_id: int,
+    ) -> ModuleFilterSession | None:
         if cls.find_by_ids(session, user_id, module_id) is not None:
             return None
-        return super().create(session, user_id=user_id, module_id=module_id, last_changed=datetime.utcnow())
+        return super().create(
+            session,
+            user_id=user_id,
+            module_id=module_id,
+            last_changed=datetime.utcnow(),
+        )
 
     def note_change(self) -> None:  # auto-commit
         self.last_changed = datetime.utcnow()
@@ -55,7 +71,11 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         self.last_visited = datetime.utcnow()
         self.note_change()
 
-    def change_preference(self, session: sessionmaker, operation: PreferenceOperation) -> None:
+    def change_preference(  # TODO # noqa: WPS231
+        self,
+        session: sessionmaker,
+        operation: PreferenceOperation,
+    ) -> None:
         if operation == PreferenceOperation.HIDE:
             self.hidden = True
         elif operation == PreferenceOperation.SHOW:
@@ -68,16 +88,20 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
             self.pinned = True
         elif operation == PreferenceOperation.UNPIN:
             self.pinned = False
-        if not any((self.hidden, self.pinned, self.starred, self.started)):
-            self.delete(session)
-        else:
+        if any((self.hidden, self.pinned, self.starred, self.started)):
             self.note_change()
+        else:
+            self.delete(session)
 
 
 class PointToPage(Base):
     __tablename__ = "points_to_pages"
-
-    __table_args__ = (ForeignKeyConstraint(("module_id", "point_id"), ("points.module_id", "points.point_id")),)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ("module_id", "point_id"),
+            ("points.module_id", "points.point_id"),
+        ),
+    )
 
     module_id = Column(Integer, primary_key=True)
     point_id = Column(Integer, primary_key=True)
@@ -102,18 +126,30 @@ class Point(Base):
     type = Column(Enum(PointType), nullable=False)
     length = Column(Integer, nullable=False)
 
-    pages = relationship("PointToPage", cascade="all, delete", order_by=PointToPage.position)
+    pages = relationship(
+        "PointToPage", cascade="all, delete", order_by=PointToPage.position
+    )
 
     @classmethod
-    def create(cls, session, module_id: int, point_id: int, point_data: dict[str, str]) -> Point:
+    def create(
+        cls,
+        session,
+        module_id: int,
+        point_id: int,
+        point_data: dict[str, str],
+    ) -> Point:
         point = cls(
-            module_id=module_id, point_id=point_id, length=len(point_data["pages"]),
-            type=PointType.from_string(point_data["type"])
+            module_id=module_id,
+            point_id=point_id,
+            length=len(point_data["pages"]),
+            type=PointType.from_string(point_data["type"]),
         )
-        point.pages.extend([
-            PointToPage(position=i, page_id=page_id)
-            for i, page_id in enumerate(point_data["pages"])
-        ])
+        point.pages.extend(
+            [
+                PointToPage(position=i, page_id=page_id)
+                for i, page_id in enumerate(point_data["pages"])
+            ]
+        )
         session.add(point)
         session.flush()
         return point
@@ -132,10 +168,23 @@ class SortType(str, TypeEnum):
     CREATION_DATE = "creation-date"
 
 
+# TODO replace with new-marshals
 @index_service.register_as_searchable("name", "description")
-@create_marshal_model("module-meta", "map", "timer", inherit="module-index")  # TODO replace with new-marshals
-@create_marshal_model("module-index", "theme", "difficulty", "category", "type",  # TODO replace with new-marshals
-                      "description", "views", "created", "id", "name", "author_id", "image_id")
+@create_marshal_model("module-meta", "map", "timer", inherit="module-index")
+@create_marshal_model(
+    "module-index",
+    "theme",
+    "difficulty",
+    "category",
+    "type",
+    "description",
+    "views",
+    "created",
+    "id",
+    "name",
+    "author_id",
+    "image_id",
+)
 class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
     __tablename__ = "modules"
     not_found_text = "Module not found"
@@ -166,42 +215,68 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
     # Author-related
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=False)
     author = relationship("Author", back_populates="modules")  # redo all modules for it
-    author_name: LambdaFieldDef = LambdaFieldDef("module-short", str, lambda module: module.pseudonym)
+    author_name: LambdaFieldDef = LambdaFieldDef(
+        "module-short", str, lambda module: module.pseudonym
+    )
 
     # Other relations or relation-like
     image_id = Column(Integer, nullable=True)
-    points = relationship("Point", back_populates="module", cascade="all, delete", order_by=Point.point_id)
+    points = relationship(
+        "Point",
+        back_populates="module",
+        cascade="all, delete",
+        order_by=Point.point_id,
+    )
 
     ShortModel = PydanticModel.column_model(id, name, author_id, image_id)
 
     @classmethod
-    def create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author,
-               force: bool = False) -> Union[Module, None]:
+    def create(
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author,
+        force: bool = False,
+    ) -> Module | None:
         if cls.find_by_id(session, json_data["id"]):
-            return
+            return None
 
         json_data["type"] = ModuleType.from_string(json_data["type"])
         json_data["length"] = len(json_data["points"])
 
-        entry: cls = cls(**{key: json_data[key] for key in ("id", "length", "type", "name", "description",
-                                                            "theme", "category", "difficulty")})
+        entry: cls = cls(
+            **{
+                key: json_data[key]
+                for key in (
+                    "id",
+                    "length",
+                    "type",
+                    "name",
+                    "description",
+                    "theme",
+                    "category",
+                    "difficulty",
+                )
+            }
+        )
         entry.image_id = json_data.get("image-id", None)
-        if "map" in json_data.keys():
-            entry.map = json_data["map"]
+        entry.map = json_data.get("map")
 
         if force:
             entry.views = json_data.get("views", 0)
-        if force and "created" in json_data.keys():
+        if force and "created" in json_data:
             entry.created = datetime.fromisoformat(json_data["created"])
         else:
             entry.created = datetime.utcnow()
 
         entry.author = author
         # noinspection PyTypeChecker
-        entry.points.extend([
-            Point.create(session, entry.id, point_id, point_data)
-            for point_id, point_data in enumerate(json_data["points"])
-        ])
+        entry.points.extend(
+            [
+                Point.create(session, entry.id, point_id, point_data)
+                for point_id, point_data in enumerate(json_data["points"])
+            ]
+        )
 
         session.add(entry)
         session.flush()
@@ -209,56 +284,78 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, module_id: int) -> Union[Module, None]:
+    def find_by_id(cls, session: sessionmaker, module_id: int) -> Module | None:
         return cls.find_first_by_kwargs(session, id=module_id)
 
     @classmethod
-    def find_or_create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Union[Module, None]:
+    def find_or_create(
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author,
+    ) -> Module | None:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls.create(session, json_data, author)
 
     @classmethod
-    def find_with_relation(cls, session: sessionmaker, module_id: int, user_id: int) -> Union[Row, None]:
-        stmt: Select = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
-        stmt = stmt.outerjoin(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
-                                                        ModuleFilterSession.user_id == user_id))
+    def find_with_relation(
+        cls,
+        session: sessionmaker,
+        module_id: int,
+        user_id: int,
+    ) -> Row | None:
+        stmt: Select = select(
+            *cls.__table__.columns,
+            *ModuleFilterSession.__table__.columns,
+            Author.pseudonym,
+        )
+        stmt = stmt.outerjoin(
+            ModuleFilterSession,
+            and_(
+                ModuleFilterSession.module_id == cls.id,
+                ModuleFilterSession.user_id == user_id,
+            ),
+        )
         return session.get_first_row(stmt.filter(cls.id == module_id).limit(1))
 
     @classmethod
-    def get_module_list(cls, session: sessionmaker, filters: Union[dict[str, str], None], search: str,
-                        sort: SortType, user_id: int, offset: int, limit: int) -> list[Row]:
+    def get_module_list(
+        cls,
+        session: sessionmaker,
+        filters: dict[str, str] | None,
+        search: str,
+        sort: SortType,
+        user_id: int,
+        offset: int,
+        limit: int,
+    ) -> list[Row]:
 
-        # print(filters, search, sort)
-        # print([(mfs.module_id, mfs.user_id, mfs.to_json())
-        # for mfs in session.execute(select(ModuleFilterSession)).scalars().all()])
-
-        stmt = select(*cls.__table__.columns, *ModuleFilterSession.__table__.columns, Author.pseudonym)
-
-        # print(len(session.execute(stmt).all()), stmt)
+        stmt = select(
+            *cls.__table__.columns,
+            *ModuleFilterSession.__table__.columns,
+            Author.pseudonym,
+        )
 
         if search is not None and len(search) > 2:
             stmt = cls.search_stmt(search, stmt=stmt)
 
-        # print(len(session.execute(stmt).scalars().all()), stmt)
-
-        global_filter: Union[str, None] = None
+        global_filter: str | None = None
         if filters is not None:
-            if "global" in filters.keys():
+            if "global" in filters:
                 global_filter = filters.pop("global")
             stmt = stmt.filter_by(**filters)
 
-        # print(len(session.execute(stmt).scalars().all()), stmt)
-
-        stmt = stmt.outerjoin(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
-                                                        ModuleFilterSession.user_id == user_id))
+        stmt = stmt.outerjoin(
+            ModuleFilterSession,
+            and_(
+                ModuleFilterSession.module_id == cls.id,
+                ModuleFilterSession.user_id == user_id,
+            ),
+        )
         # if session exists for another user, would it pick it up???
 
-        # print(len(session.execute(stmt).all()))
-
-        stmt = stmt.filter(or_(ModuleFilterSession.hidden != True, ModuleFilterSession.hidden.is_(None)))
-
-        # print(len(session.execute(stmt).scalars().all()), stmt)
+        stmt = stmt.filter(ModuleFilterSession.hidden.is_not(True))
 
         if global_filter is not None:
             stmt = stmt.filter_by(**{global_filter: True})
@@ -270,22 +367,26 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         elif sort == SortType.VISIT_DATE:
             stmt = stmt.order_by(ModuleFilterSession.last_visited.desc())
 
-        # print(len(session.execute(stmt.offset(offset).limit(limit)).scalars().all()), stmt)
-        # print(stmt)
-        # print(session.execute(stmt.offset(offset).limit(limit)).first())
-
         return session.get_paginated_rows(stmt, offset, limit)
 
     @classmethod
-    def get_hidden_module_list(cls, session: sessionmaker, user_id: int, offset: int, limit: int) -> list[Row]:
+    def get_hidden_module_list(
+        cls,
+        session: sessionmaker,
+        user_id: int,
+        offset: int,
+        limit: int,
+    ) -> list[Row]:
         stmt = select(*cls.__table__.columns, Author.pseudonym)
-        stmt = stmt.join(ModuleFilterSession, and_(ModuleFilterSession.module_id == cls.id,
-                                                   ModuleFilterSession.user_id == user_id,
-                                                   ModuleFilterSession.hidden == True))
+        stmt = stmt.join(
+            ModuleFilterSession,
+            and_(
+                ModuleFilterSession.module_id == cls.id,
+                ModuleFilterSession.user_id == user_id,
+                ModuleFilterSession.hidden.is_(True),
+            ),
+        )
         stmt = stmt.order_by(ModuleFilterSession.last_changed.desc())
-        # print(*[(mfs.module_id, mfs.user_id, mfs.last_changed.isoformat())
-        #         for mfs in session.execute(select(ModuleFilterSession)).scalars().all() if mfs.hidden], sep="\n")
-        # print(stmt)
         return session.get_paginated_rows(stmt, offset, limit)
 
     def execute_point(self, point_id: int = None, theory_level: float = None) -> int:
