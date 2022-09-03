@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from os import urandom
-from random import randint
+from random import SystemRandom
 from smtplib import SMTPDataError
 
 from flask_mail import Message
@@ -12,12 +12,13 @@ from itsdangerous import URLSafeSerializer, BadSignature
 from common import mail, app, User, mail_initialized, TypeEnum
 from .discorder import send_message as send_discord_message, WebhookURLs
 
+safe_random = SystemRandom()
 EMAIL_FOLDER: str = "../static/emails/"
 SALT: str = app.config["SECURITY_PASSWORD_SALT"]
 
 
 def create_random_serializer():
-    return URLSafeSerializer(urandom(randint(32, 64)))
+    return URLSafeSerializer(urandom(safe_random.randint(32, 64)))
 
 
 @dataclass()
@@ -37,9 +38,18 @@ class EmailTypeData:
 
 
 class EmailType(EmailTypeData, TypeEnum):
-    CONFIRM = ("Подтверждение адреса электронной почты на xieffect.ru", "registration-email.html")
-    CHANGE = ("Смена адреса электронной почты на xieffect.ru", "email-change-email.html")
-    PASSWORD = ("Смена пароля на xieffect.ru", "password-reset-email.html")
+    CONFIRM = (
+        "Подтверждение адреса электронной почты на xieffect.ru",
+        "registration-email.html",
+    )
+    CHANGE = (
+        "Смена адреса электронной почты на xieffect.ru",
+        "email-change-email.html",
+    )
+    PASSWORD = (
+        "Смена пароля на xieffect.ru",
+        "password-reset-email.html",
+    )
 
 
 def generate_email(receiver: str, code: str, filename: str, theme: str) -> Message:
@@ -56,7 +66,9 @@ def send_email(receiver: str, code: str, filename: str, theme: str):
         mail.send(generate_email(receiver, code, filename, theme))
     except SMTPDataError as e:
         print(e)
-        send_discord_message(WebhookURLs.MAILBT, f"Email for {receiver} not sent:\n```{e}```")
+        send_discord_message(
+            WebhookURLs.MAILBT, f"Email for {receiver} not sent:\n```{e}```"
+        )
 
 
 def send_code_email(receiver: str, email_type: EmailType) -> str:

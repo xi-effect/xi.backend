@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from enum import Enum
 from functools import wraps
 from os import getenv
-from typing import Union, Type
 
 from flask import request
 from flask_restx import Resource, Model
@@ -13,11 +14,15 @@ from common import User, ResourceController, ResponseDoc
 from .feedback_db import Feedback, FeedbackType, FeedbackImage
 
 controller = ResourceController("feedback", path="/feedback/")
-feedback_serializer: URLSafeSerializer = URLSafeSerializer(getenv("JWT_SECRET_KEY", "local only"))  # TODO redo
+feedback_serializer: URLSafeSerializer = URLSafeSerializer(
+    getenv("JWT_SECRET_KEY", "local only")
+)  # TODO redo
 
 
-def enum_response(enum: Type[Enum]):  # TODO move to ffs
-    model = {"a": StringField(enum=[member.value for member in enum.__members__.values()])}
+def enum_response(enum: type[Enum]):  # TODO move to ffs
+    model = {
+        "a": StringField(enum=[member.value for member in enum.__members__.values()])
+    }
     model = controller.model(enum.__name__, model=model)
 
     def enum_response_wrapper(function):
@@ -34,9 +39,21 @@ def enum_response(enum: Type[Enum]):  # TODO move to ffs
 @controller.route("/")
 class FeedbackSaver(Resource):
     parser = RequestParser()
-    parser.add_argument("type", required=True, choices=FeedbackType.get_all_field_names(), dest="feedback_type")
-    parser.add_argument("data", required=True, type=dict)
-    parser.add_argument("code", required=False)
+    parser.add_argument(
+        "type",
+        required=True,
+        choices=FeedbackType.get_all_field_names(),
+        dest="feedback_type",
+    )
+    parser.add_argument(
+        "data",
+        required=True,
+        type=dict,
+    )
+    parser.add_argument(
+        "code",
+        required=False,
+    )
 
     class Responses(Enum):
         SUCCESS = "Success"
@@ -47,7 +64,14 @@ class FeedbackSaver(Resource):
     @controller.jwt_authorizer(User, optional=True)
     @controller.argument_parser(parser)
     @enum_response(Responses)
-    def post(self, session, user: Union[User, None], feedback_type: str, data: dict, code: Union[str, None]):
+    def post(
+        self,
+        session,
+        user: User | None,
+        feedback_type: str,
+        data: dict,
+        code: str | None,
+    ):
         feedback_type = FeedbackType.from_string(feedback_type)
         if feedback_type is None:
             controller.abort(400, "Unsupported feedback type")

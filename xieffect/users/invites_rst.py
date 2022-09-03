@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 from functools import wraps
 
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_restx import Resource, Model
-from flask_restx.fields import Integer
+from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, ResponseDoc, get_or_pop, User
+from common import counter_parser, get_or_pop, ResourceController, User
 from .invites_db import Invite
 
 controller = ResourceController("invites", path="/invites/")
@@ -14,13 +15,15 @@ controller = ResourceController("invites", path="/invites/")
 def admin_only(use_session: bool = False):
     def admin_only_wrapper(function):
         @controller.doc_aborts(*controller.auth_errors)
-        @controller.doc_responses(ResponseDoc.error_response(f"403 ", "Permission denied"))
+        @controller.doc_abort("403 ", "Permission denied")
         @controller.doc(security="jwt")
         @wraps(function)
         @jwt_required()
         @controller.with_begin
         def admin_only_inner(*args, **kwargs):
-            admin = User.find_by_id(get_or_pop(kwargs, "session", use_session), get_jwt_identity()[""])
+            admin = User.find_by_id(
+                get_or_pop(kwargs, "session", use_session), get_jwt_identity()[""]
+            )
             if admin is None or admin.email != "admin@admin.admin":
                 return {"a": "Permission denied"}, 403
             return function(*args, **kwargs)
@@ -36,11 +39,11 @@ class InviteCreator(Resource):
     parser.add_argument("name", type=str, required=True)
     parser.add_argument("limit", type=int, required=False)
 
-    @controller.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
     @admin_only(use_session=True)
     @controller.argument_parser(parser)
+    @controller.marshal_with(Invite.IDModel)
     def post(self, session, name: str, limit: int):
-        return {"id": Invite.create(session, name=name, limit=limit or -1).id}
+        return Invite.create(session, name=name, limit=limit or -1)
 
 
 @controller.route("/index/")

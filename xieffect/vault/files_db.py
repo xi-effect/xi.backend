@@ -17,7 +17,8 @@ class File(Base):
     uploader_id: int | Column = Column(Integer, ForeignKey(User.id), nullable=False)
     uploader: User | relationship = relationship(User)
 
-    class FullModel(PydanticModel.column_model(id)):
+    @PydanticModel.include_columns(id)
+    class FullModel(PydanticModel):
         filename: str
 
         @classmethod
@@ -38,4 +39,6 @@ class File(Base):
 
     @classmethod
     def get_for_mub(cls, session, offset: int, limit: int) -> list[File]:
-        return session.get_paginated(select(File).order_by(cls.id.desc()), offset, limit)
+        return session.get_paginated(
+            select(File).order_by(cls.id.desc()), offset, limit
+        )

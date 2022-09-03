@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator, Callable
 from datetime import datetime, timedelta
-from typing import Iterator, Callable
 
 from flask.testing import FlaskClient
 from flask_socketio import SocketIOTestClient
@@ -35,8 +35,7 @@ def get_communities_list(client: FlaskClient):
 
 
 @mark.order(1000)
-def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
-                       list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient):
     community_ids = [d["id"] for d in get_communities_list(client)]
 
     community_data = {"name": "12345", "description": "test"}
@@ -54,8 +53,7 @@ def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient,
 
 
 @mark.order(1005)
-def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient,
-                        list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient):
     def assert_order():
         for i, data in enumerate(get_communities_list(client)):
             assert data["id"] == community_ids[i]
@@ -72,22 +70,23 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
         events = socketio_client2.get_received()
         assert len(events) == 1
-        assert events[0]["name"] == "new-community"
-        assert len(events[0]["args"]) == 1
+        assert (event := events[0])["name"] == "new-community"
+        assert len(args := event["args"]) == 1
 
-        assert len(events[0]["args"][0]) == len(community_data) + 1
-        assert events[0]["args"][0].get("id", None) == community_id
-        assert dict_equal(events[0]["args"][0], community_data, *community_data.keys())
+        assert len(data := args[0]) == len(community_data) + 1
+        assert data.get("id", None) == community_id
+        assert dict_equal(data, community_data, *community_data.keys())
 
         return community_id
 
     community_datas: list[dict[str, str | int]] = [
-        {"name": "12345"}, {"name": "54321", "description": "hi"}, {"name": "test", "description": "i"}]
+        {"name": "12345"}, {"name": "54321", "description": "hi"}, {"name": "test", "description": "i"}
+    ]
 
     for community_data in community_datas:
         community_data["id"] = assert_double_create(community_data)
         community_ids.insert(0, community_data["id"])
-    # assert_order()
+    # assert_order
 
     # Reordering
     reorder_data = {"source-id": community_datas[0]["id"], "target-index": 0}
@@ -97,15 +96,15 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     events = socketio_client.get_received()
     assert len(events) == 1
-    assert events[0]["name"] == "reorder-community"
-    assert len(events[0]["args"]) == 1
+    assert (event := events[0])["name"] == "reorder-community"
+    assert len(args := event["args"]) == 1
 
-    assert len(events[0]["args"][0]) == 2
-    assert dict_equal(events[0]["args"][0], reorder_data, *reorder_data.keys())
+    assert len(data := args[0]) == 2
+    assert dict_equal(data, reorder_data, *reorder_data.keys())
 
     community_ids.remove(reorder_data["source-id"])
     community_ids.insert(reorder_data["target-index"], reorder_data["source-id"])
-    # assert_order()
+    # assert_order
 
     # Leaving
     leave_data = {"community-id": community_datas[-1]["id"]}
@@ -115,14 +114,14 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     events = socketio_client2.get_received()
     assert len(events) == 1
-    assert events[0]["name"] == "leave-community"
-    assert len(events[0]["args"]) == 1
+    assert (event := events[0])["name"] == "leave-community"
+    assert len(args := event["args"]) == 1
 
-    assert len(events[0]["args"][0]) == 1
-    assert dict_equal(events[0]["args"][0], leave_data, *leave_data.keys())
+    assert len(data := args[0]) == 1
+    assert dict_equal(data, leave_data, *leave_data.keys())
 
     community_ids.remove(leave_data["community-id"])
-    # assert_order()
+    # assert_order
 
 
 @mark.skip
@@ -152,13 +151,13 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
     manage_room(socketio_client1)
     manage_room(socketio_client2)
     manage_room(socketio_client3)
-    manage_room(socketio_client3, False)
+    manage_room(socketio_client3, join=False)
 
     # create a new invitation
     invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
     assert isinstance(invitation, dict)
-    assert "id" in invitation.keys()
-    assert "code" in invitation.keys()
+    assert "id" in invitation
+    assert "code" in invitation
 
     assert len(socketio_client1.get_received()) == 0
     assert len(socketio_client3.get_received()) == 0
@@ -166,17 +165,19 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
 
     events = socketio_client2.get_received()
     assert len(events) == 1
-    assert events[0].get("name", None) == "new-invite"
+    assert (event := events[0]).get("name", None) == "new-invite"
 
-    args = events[0].get("args", None)
+    args = event.get("args", None)
     assert isinstance(args, list) and len(args) == 1
-    assert isinstance(args[0], dict)
+    assert isinstance(data := args[0], dict)
 
-    assert dict_equal(args[0], invitation_data, *[key for key in ("role", "limit") if key in invitation_data])
-    if "days" in invitation_data:
-        assert "deadline" in args[0]
-        dt: datetime = datetime.fromisoformat(args[0]["deadline"])
-        assert dt.day == (datetime.utcnow() + timedelta(days=invitation_data["days"])).day
+    assert dict_equal(data, invitation_data, *[key for key in ("role", "limit") if key in invitation_data])
+    days = invitation_data.get("days")
+    if days is not None:
+        deadline = data.get("deadline")
+        assert deadline is not None
+        dt: datetime = datetime.fromisoformat(deadline)
+        assert dt.day == (datetime.utcnow() + timedelta(days=days)).day
 
     # check if invitation list was updated
     data = list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))
@@ -197,12 +198,12 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
 
     events = socketio_client1.get_received()
     assert len(events) == 1
-    assert events[0].get("name", None) == "delete-invite"
+    assert (event := events[0]).get("name", None) == "delete-invite"
 
-    args = events[0].get("args", None)
+    args = event.get("args", None)
     assert isinstance(args, list) and len(args) == 1
-    assert isinstance(args[0], dict)
-    assert dict_equal(args[0], delete_data, *delete_data.keys())
+    assert isinstance(data := args[0], dict)
+    assert dict_equal(data, delete_data, *delete_data.keys())
 
     assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
 
@@ -229,9 +230,9 @@ def create_assert_successful_join(list_tester, community_id, community_data):
                 limit_before = data.get("limit", None)
                 break
         else:
-            assert False, "Invitation not found inside assert_successful_join"
+            raise AssertionError("Invitation not found inside assert_successful_join")
 
-        assert_successful_get(client, code, False)
+        assert_successful_get(client, code, joined=False)
         assert dict_equal(check_code(client.post(f"/communities/join/{code}/")), community_data, *community_data.keys())
 
         if limit_before is None:
@@ -246,9 +247,9 @@ def create_assert_successful_join(list_tester, community_id, community_data):
         for sio in sio_clients:
             events = sio.get_received()
             assert len(events) == 1
-            assert events[0].get("name", None) == "new-community"
+            assert (event := events[0]).get("name", None) == "new-community"
 
-            args = events[0].get("args", None)
+            args = event.get("args", None)
             assert isinstance(args, list) and len(args) == 1
             assert isinstance(args[0], dict)
 
@@ -259,8 +260,11 @@ def create_assert_successful_join(list_tester, community_id, community_data):
 
 @mark.skip
 @mark.order(1022)
-def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient],
-                          list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_invitation_joins(
+    base_client,
+    multi_client: Callable[[str], FlaskClient],
+    list_tester: Callable[[str, dict, int], Iterator[dict]]
+):
     community_data = {"name": "test", "description": "12345"}
 
     # functions
@@ -268,8 +272,8 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
         invitation_data["community-id"] = community_id
         invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
         assert isinstance(invitation, dict)
-        assert "id" in invitation.keys()
-        assert "code" in invitation.keys()
+        assert "id" in invitation
+        assert "code" in invitation
 
         assert len(socketio_client1.get_received()) == 0
         assert len(socketio_client3.get_received()) == 0
@@ -277,17 +281,19 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
 
         events = socketio_client2.get_received()
         assert len(events) == 1
-        assert events[0].get("name", None) == "new-invite"
+        assert (event := events[0]).get("name", None) == "new-invite"
 
-        args = events[0].get("args", None)
+        args = event.get("args", None)
         assert isinstance(args, list) and len(args) == 1
-        assert isinstance(args[0], dict)
+        assert isinstance((data := args[0]), dict)
 
-        assert dict_equal(args[0], invitation_data, *[key for key in ("role", "limit") if key in invitation_data])
-        if "days" in invitation_data:
-            assert "deadline" in args[0]
-            dt: datetime = datetime.fromisoformat(args[0]["deadline"])
-            assert dt.day == (datetime.utcnow() + timedelta(days=invitation_data["days"])).day
+        assert dict_equal(data, invitation_data, *[key for key in ("role", "limit") if key in invitation_data])
+        days = invitation_data.get("days")
+        if days is not None:
+            deadline = data.get("deadline")
+            assert deadline is not None
+            dt: datetime = datetime.fromisoformat(deadline)
+            assert dt.day == (datetime.utcnow() + timedelta(days=days)).day
 
         if check_auth:
             assert_unauthorized(invitation["code"])
@@ -313,7 +319,7 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
         assert check_code(client.post(f"/communities/join/{code}/"), 400)["a"] == "Invalid invitation"
 
     def assert_already_joined(client: FlaskClient, code: str):
-        assert_successful_get(client, code, True)
+        assert_successful_get(client, code, joined=True)
         assert check_code(client.post(f"/communities/join/{code}/"), 400)["a"] == "User has already joined"
 
     anatol = multi_client("1@user.user")
@@ -343,7 +349,7 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
     manage_room(socketio_client1)
     manage_room(socketio_client2)
     manage_room(socketio_client3)
-    manage_room(socketio_client3, False)
+    manage_room(socketio_client3, join=False)
 
     assert_successful_join = create_assert_successful_join(list_tester, community_id, community_data)
 
@@ -380,12 +386,12 @@ def test_invitation_joins(base_client, multi_client: Callable[[str], FlaskClient
 
     events = socketio_client1.get_received()
     assert len(events) == 1
-    assert events[0].get("name", None) == "delete-invite"
+    assert (event := events[0]).get("name", None) == "delete-invite"
 
-    args = events[0].get("args", None)
+    args = event.get("args", None)
     assert isinstance(args, list) and len(args) == 1
-    assert isinstance(args[0], dict)
-    assert dict_equal(args[0], delete_data, *delete_data.keys())
+    assert isinstance((data := args[0]), dict)
+    assert dict_equal(data, delete_data, *delete_data.keys())
 
     # testing deleted invite
     assert_invalid_invitation(vasil1, code1)  # , "User has already joined")
@@ -426,32 +432,41 @@ def test_invitation_errors(multi_client, list_tester):
     # setup from test-1020
     invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
     assert isinstance(invitation, dict)
-    assert "id" in invitation.keys()
-    assert "code" in invitation.keys()
+    assert "id" in invitation
+    assert "code" in invitation
 
     assert len(socketio_client1.get_received()) == 0
 
     events = socketio_client2.get_received()
     assert len(events) == 1
-    assert events[0].get("name", None) == "new-invite"
+    assert (event := events[0]).get("name", None) == "new-invite"
 
-    args = events[0].get("args", None)
+    args = event.get("args", None)
     assert isinstance(args, list) and len(args) == 1
-    assert isinstance(args[0], dict)
+    assert isinstance((data := args[0]), dict)
 
-    assert dict_equal(args[0], invitation_data, *[key for key in ("role", "limit") if key in invitation_data])
-    if "days" in invitation_data:
-        assert "deadline" in args[0]
-        dt: datetime = datetime.fromisoformat(args[0]["deadline"])
-        assert dt.day == (datetime.utcnow() + timedelta(days=invitation_data["days"])).day
+    keys = tuple(key for key in ("role", "limit") if key in invitation_data)
+    assert dict_equal(data, invitation_data, *keys)
+    days = invitation_data.get("days")
+    if days is not None:
+        deadline = data.get("deadline")
+        assert deadline is not None
+        dt: datetime = datetime.fromisoformat(deadline)
+        assert dt.day == (datetime.utcnow() + timedelta(days=days)).day
 
     delete_data = {"community-id": community_id, "invitation-id": invitation["id"]}
 
+    test_events = (
+        ("open-invites", room_data),
+        ("close-invites", room_data),
+        ("new-invite", invitation_data),
+        ("delete-invite", delete_data)
+    )
+
     # fail check function
     def assert_fail_event(sio, code: int, message: str):
-        for event, data in (("open-invites", room_data), ("close-invites", room_data),
-                            ("new-invite", invitation_data), ("delete-invite", delete_data)):
-            ack = sio.emit(event, data, callback=True)
+        for event_name, event_data in test_events:
+            ack = sio.emit(event_name, event_data, callback=True)
             assert isinstance(ack, dict)
             assert ack.get("code", None) == code
             assert ack.get("message", None) == message
