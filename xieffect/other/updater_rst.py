@@ -30,11 +30,10 @@ class HerokuBuildWebhook(Resource):
 class NetlifyBuildWebhook(Resource):
     arguments = {
         "state": None,
-        "error_message": "Error Message",
         "branch": "Branch",
-        "title": "Commit Title",
-        "committer": "Committer",
-        "commit_url": "Commit URL",
+        "title": "Title",
+        "committer": "Author",
+        "commit_url": "URL",
     }
 
     parser: RequestParser = RequestParser()
@@ -47,19 +46,17 @@ class NetlifyBuildWebhook(Resource):
         result: str = (
             "__**Netlify build failed!**__\n"
             if state == "error"
-            else "__**Netlify build is {state}!**__\n"
+            else f"__**Netlify build is {state}!**__\n"
         )
 
-        result += "\n".join(
-            [
-                f"{message}: `{arg}`"
-                for name, message in self.arguments.items()
-                if (arg := kwargs.get(name, None)) is not None and arg != ""
-            ]
-        )
+        result += "\n".join([
+            f"{message}: `{arg}`"
+            for name, message in self.arguments.items()
+            if (arg := kwargs.get(name, None)) is not None and arg != ""
+        ])
 
         if commit_url is not None:
-            result += f"\nCommit URL:\n{commit_url}"
+            result += f"\n{commit_url}"
 
         send_discord_message(WebhookURLs.NETLIF, result)
 
