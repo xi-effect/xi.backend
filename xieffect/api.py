@@ -15,6 +15,7 @@ from communities import (
     invitation_namespace,
     news_namespace,
     news_events,
+    tasks_namespace,
 )
 from education import (
     authors_namespace,
@@ -108,6 +109,7 @@ api.add_namespace(wip_index_namespace)
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
 api.add_namespace(news_namespace)
+api.add_namespace(tasks_namespace)
 
 api.add_namespace(webhook_namespace)
 
