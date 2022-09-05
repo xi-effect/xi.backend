@@ -4,7 +4,8 @@ from sys import stderr
 
 from common import app, versions, SocketIO
 from common import db_meta, db_url  # noqa
-from communities import (communities_namespace, invitation_namespace, communities_meta_events, invitation_events)
+from communities import (communities_namespace, invitation_namespace, communities_meta_events, invitation_events,
+                         news_namespace)
 # from communication import (chats_namespace)
 from education import (authors_namespace, wip_json_file_namespace, wip_images_namespace,
                        images_view_namespace, wip_index_namespace, modules_view_namespace,
@@ -65,6 +66,7 @@ api.add_namespace(wip_index_namespace)
 
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
+api.add_namespace(news_namespace)
 
 api.add_namespace(webhook_namespace)
 
