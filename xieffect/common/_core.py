@@ -14,7 +14,7 @@ from __lib__.flask_fullstack import (
     IndexService,
     Sessionmaker,
 )
-from __lib__.flask_fullstack.sqlalchemy import create_base, ModBase, Session
+from __lib__.flask_fullstack.utils import create_base, ModBase, Session
 
 
 class Flask(_Flask):

@@ -23,9 +23,10 @@ class EmptyBody(PydanticModel):
 
 class SocketIO(_SocketIO):
     def __init__(
-        self, app: Flask = None, title: str = "SIO", version: str = "1.0.0", **kwargs
+        self,
+        app: Flask = None,
+        title: str = "SIO",
+        version: str = "1.0.0",
+        **kwargs,
     ):
         super().__init__(app, title, version, "/asyncapi.json", **kwargs)
-
-        # check everytime or save in session?
-        # https://python-socketio.readthedocs.io/en/latest/server.html#user-sessions
