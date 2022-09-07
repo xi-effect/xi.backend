@@ -33,12 +33,12 @@ class News(Base, Identifiable):
     MainData = PydanticModel.column_model(id, title, description, create_datetime, change_datetime, deleted,
                                           user_id, community_id)
 
+    # Find a paginated list of community news
     @classmethod
-    def find_by_community(cls, session: sessionmaker, community_id: int) -> News | None:
-        return session.get_all(select(cls).filter_by(community_id=community_id))
-    # def find_by_community(cls, session: sessionmaker, community_id: int, offset: int, limit: int) -> list[News] | None:
-    #     return session.get_paginated(select(cls).fitler_by(community_id=community_id), offset, limit)
+    def find_by_community(cls, session: sessionmaker, community_id: int, offset: int, limit: int) -> list[News] | None:
+        return session.get_paginated(select(cls).filter_by(community_id=community_id), offset, limit)
 
+    # Create news
     @classmethod
     def create(cls, session: sessionmaker, title: str, description: str | None, create_datetime: inputs.datetime,
                change_datetime: inputs.datetime, deleted: bool, user_id: int, community_id: int) -> News:
@@ -48,6 +48,7 @@ class News(Base, Identifiable):
         session.flush()
         return entry
 
+    # Find list of community news by id
     @classmethod
     def find_by_id(cls, session: sessionmaker, community_id: int, entry_id: int) -> News | None:
         return session.get_first(select(cls).filter_by(community_id=community_id, id=entry_id))
