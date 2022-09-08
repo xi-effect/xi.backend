@@ -49,6 +49,17 @@ class NewsChanger(Resource):
     # Create title optionally for update news
     news_parser.replace_argument("title", type=str, required=False)
 
+    # Get news
+    @controller.doc_abort(404, "News not found")
+    @controller.jwt_authorizer(User, check_only=True)
+    @controller.database_searcher(Community, check_only=True, use_session=True)
+    @controller.marshal_with(Post.MainData)
+    def get(self, session, community_id: int, entry_id: int):
+        # News availability check
+        if (news := Post.find_by_id(session, entry_id)) is None or news.community_id != community_id:
+            return controller.abort(404, "News not found")
+        return news
+
     # Update news
     @controller.doc_abort(404, "News not found")
     @controller.doc_abort(403, "Permission Denied")
@@ -67,7 +78,7 @@ class NewsChanger(Resource):
         if participant.role == ParticipantRole.OWNER:
             update_news.title = update_news.title if title is None else title
             update_news.description = update_news.description if description is None else description
-            update_news.change_datetime = datetime.utcnow().replace(microsecond=0)
+            update_news.change_datetime = datetime.utcnow().replace()
             return update_news
         else:
             return controller.abort(403, "Permission Denied: Low role")
