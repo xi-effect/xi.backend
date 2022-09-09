@@ -1,8 +1,16 @@
-.archive
-.idea
+# IDEs
+.idea/
+.vscode/
+
+# Environments
 *.env
 venv/
-*.db
-xieffect/test/.pytest_cache
-files/
+
+# Cache
+.pytest_cache
 __pycache__
+
+# Project specific
+.archive/
+files/
+*.db

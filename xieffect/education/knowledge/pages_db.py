@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime
-from typing import Union
 
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
@@ -50,14 +49,32 @@ class Page(Base, Identifiable, Marshalable):
         author_name: str
 
         @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: Page, **context) -> None:
+        def callback_convert(cls, callback: Callable, orm_object: Page, **_) -> None:
             callback(author_name=orm_object.author.pseudonym)
 
     @classmethod
-    def _create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Page:
+    def _create(
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author,
+    ) -> Page:
         json_data["kind"] = PageKind.from_string(json_data["kind"])
-        entry: cls = cls(**{key: json_data[key] for key in ("id", "kind", "name", "theme", "description",
-                                                            "reusable", "public", "blueprint")})
+        entry: cls = cls(
+            **{
+                key: json_data[key]
+                for key in (
+                    "id",
+                    "kind",
+                    "name",
+                    "theme",
+                    "description",
+                    "reusable",
+                    "public",
+                    "blueprint",
+                )
+            }
+        )
         entry.components = json_data["components"]
         entry.updated = datetime.utcnow()
         entry.author = author
@@ -66,29 +83,46 @@ class Page(Base, Identifiable, Marshalable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[Page, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Page | None:
         return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
-    def find_or_create(cls, session: sessionmaker, json_data: dict[str, ...], author: Author) -> Union[Page, None]:
+    def find_or_create(
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author,
+    ) -> Page | None:
         if cls.find_by_id(session, json_data["id"]):
             return None
         return cls._create(session, json_data, author)
 
     @classmethod
-    def create_or_update(cls, session: sessionmaker, json_data: dict[str, ...], author: Author = None) -> Page:
+    def create_or_update(
+        cls,
+        session: sessionmaker,
+        json_data: dict[str, ...],
+        author: Author = None,
+    ) -> Page:
         # TODO utilize this, currently never used
         entry: cls
         if (entry := cls.find_by_id(session, json_data["id"])) is None:
             return cls._create(session, json_data, author)
-        else:  # redo... maybe...
-            entry.delete(session)
-            cls._create(session, json_data, author)
+        # redo... maybe...
+        entry.delete(session)
+        return cls._create(session, json_data, author)
 
     @classmethod
-    def search(cls, session: sessionmaker, search: Union[str, None], start: int, limit: int) -> list[Page]:
+    def search(
+        cls,
+        session: sessionmaker,
+        search: str | None,
+        start: int,
+        limit: int,
+    ) -> list[Page]:
+        # TODO redo all search with pagination!!!
         stmt: Select = select(cls).filter_by(public=True)
-        if search is not None and len(search) > 2:  # TODO redo all search with pagination!!!
+        if search is not None and len(search) > 2:
             stmt = cls.search_stmt(search, stmt=stmt)
         return session.get_paginated(stmt, start, limit)
 

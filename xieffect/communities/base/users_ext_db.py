@@ -12,20 +12,25 @@ from communities.base.meta_db import Community
 class CommunitiesUser(Base):
     __tablename__ = "communities_users"
 
-    id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    id: int | Column = Column(Integer, ForeignKey("users.id"), primary_key=True)
     user = relationship("User")
 
-    communities = relationship("CommunityListItem", order_by="CommunityListItem.position",
-                               collection_class=ordering_list("position"))
+    communities = relationship(
+        "CommunityListItem",
+        order_by="CommunityListItem.position",
+        collection_class=ordering_list("position"),
+    )
 
     @PydanticModel.include_nest_model(User.MainData, "user")
     class FullModel(PydanticModel):
         communities: list[Community.IndexModel]
 
         @classmethod
-        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context) -> None:
-            callback(communities=[Community.IndexModel.convert(ci.community, **context)
-                                  for ci in orm_object.communities])
+        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context):
+            callback(communities=[
+                Community.IndexModel.convert(ci.community, **context)
+                for ci in orm_object.communities
+            ])
 
     class TempModel(FullModel):
         a: str = "Success"
@@ -42,20 +47,27 @@ class CommunitiesUser(Base):
     def find_or_create(cls, session: sessionmaker, user_id: int) -> CommunitiesUser:
         return cls.find_by_id(session, user_id) or cls._create_empty(session, user_id)
 
-    def reorder_community_list(self, session, source_id: int, target_index: int) -> bool:
-        list_item = CommunityListItem.find_by_community(session, source_id)
+    def reorder_community_list(
+        self,
+        session,
+        source_id: int,
+        target_index: int,
+    ) -> bool:
+        # TODO target_index might change after deletion?
+        list_item = CommunityListItem.find_by_ids(session, self.id, source_id)
         if list_item is None:
             return False
         self.communities.remove(list_item)
         self.communities.insert(target_index, list_item)
         return True
 
-    def join_community(self, community_id: int) -> None:  # autocommit  # TODO find a way to reverse the list
-        new_item = CommunityListItem(community_id=community_id)
+    def join_community(self, community_id: int) -> None:
+        # autocommit  # TODO find a way to reverse the list
+        new_item = CommunityListItem(user_id=self.id, community_id=community_id)
         self.communities.insert(0, new_item)
 
     def leave_community(self, session, community_id: int) -> bool:
-        list_item = CommunityListItem.find_by_community(session, community_id)
+        list_item = CommunityListItem.find_by_ids(session, self.id, community_id)
         if list_item is None:
             return False
         self.communities.remove(list_item)
@@ -69,9 +81,16 @@ class CommunityListItem(Base):
     user_id = Column(Integer, ForeignKey("communities_users.id"))
     position = Column(Integer)
 
-    community_id = Column(Integer, ForeignKey("community.id"), nullable=False, unique=True)
+    community_id = Column(Integer, ForeignKey("community.id"), nullable=False)
     community = relationship("Community")
 
     @classmethod
-    def find_by_community(cls, session, community_id: int) -> CommunityListItem | None:
-        return session.get_first(select(cls).filter_by(community_id=community_id))
+    def find_by_ids(
+        cls,
+        session,
+        user_id: int,
+        community_id: int,
+    ) -> CommunityListItem | None:
+        return session.get_first(
+            select(cls).filter_by(user_id=user_id, community_id=community_id)
+        )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Callable
+from collections.abc import Callable
 
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
@@ -17,7 +17,7 @@ class Author(Base, UserRole):
     id = Column(Integer, ForeignKey(User.id), primary_key=True)
     pseudonym = Column(String(100), nullable=False)
     banned = Column(Boolean, nullable=False, default=False)
-    last_image_id = Column(Integer, nullable=False, default=0)
+    last_image_id: int | Column = Column(Integer, nullable=False, default=0)
 
     modules = relationship("Module", back_populates="author")
 
@@ -36,7 +36,12 @@ class Author(Base, UserRole):
         return new_entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int, include_banned: bool = False) -> Optional[Author]:
+    def find_by_id(
+        cls,
+        session,
+        entry_id: int,
+        include_banned: bool = False,
+    ) -> Author | None:
         stmt: Select = select(cls).filter_by(id=entry_id)
         if not include_banned:
             stmt = stmt.filter_by(banned=False)
@@ -48,8 +53,8 @@ class Author(Base, UserRole):
 
     @classmethod
     def find_or_create(cls, session: sessionmaker, user):  # User class
-        if (author := cls.find_by_id(session, user.id, True)) is None:
-            author = cls.create(session, user)
+        if (author := cls.find_by_id(session, user.id, include_banned=True)) is None:
+            return cls.create(session, user)
         return author
 
     @classmethod
@@ -62,4 +67,4 @@ class Author(Base, UserRole):
 
     def get_next_image_id(self) -> int:  # auto-commit
         self.last_image_id += 1
-        return self.last_image_id  # noqa
+        return self.last_image_id

@@ -1,14 +1,16 @@
-from json import load
-from typing import Iterator, Callable
+from __future__ import annotations
+
+from collections.abc import Callable, Iterator
 
 from flask.testing import FlaskClient
 
 from __lib__.flask_fullstack import check_code
+from json import load as load_json
 
 
-def test_user_search(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     with open("../static/test/user-bundle.json", encoding="utf-8") as f:
-        usernames = [user_data["username"] for user_data in load(f)]
+        usernames = [user_data["username"] for user_data in load_json(f)]
     usernames.append("hey")  # TODO add user deleting & use it in test_signup + remove this line
 
     admin_user_found = False
@@ -25,7 +27,7 @@ def test_user_search(client: FlaskClient, list_tester: Callable[[str, dict, int]
             if user["username"] == username:
                 break
         else:
-            assert False, f"{username} not found"
+            raise AssertionError(f"{username} not found")
 
 
 def test_user_profile(client: FlaskClient):
@@ -41,5 +43,5 @@ def test_user_profile(client: FlaskClient):
     data: dict = check_code(client.get("/users/1/profile"))
 
     for key, value in new_settings.items():
-        assert key in data.keys()
+        assert key in data
         assert data[key] == value

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from json import dump
+from json import dump as dump_json
 from os import remove
-from typing import Union
 
 from sqlalchemy import Column
 from sqlalchemy.orm import relationship
@@ -25,8 +24,8 @@ class CATFile(Base, Identifiable):
     directory: str = "../files/tfs/other/"
 
     id = Column(Integer, primary_key=True)
-    owner = Column(Integer, nullable=False,  # ForeignKey("authors.id"),
-                   default=0)  # TODO add relation to author
+    owner = Column(Integer, nullable=False, default=0)  # ForeignKey("authors.id"),
+    # TODO add relation to author
 
     status = Column(Enum(WIPStatus), nullable=False)
 
@@ -44,7 +43,9 @@ class CATFile(Base, Identifiable):
         return entry
 
     @classmethod
-    def create_with_file(cls, session: sessionmaker, owner: Author, data: bytes) -> CATFile:
+    def create_with_file(
+        cls, session: sessionmaker, owner: Author, data: bytes
+    ) -> CATFile:
         entry: cls = cls._create(owner)
         entry.update(data)
         session.add(entry)
@@ -52,15 +53,19 @@ class CATFile(Base, Identifiable):
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Union[CATFile, None]:
+    def find_by_id(cls, session: sessionmaker, entry_id: int) -> CATFile | None:
         return cls.find_first_by_kwargs(session, id=entry_id)
 
     @classmethod
-    def find_by_owner(cls, session: sessionmaker, owner: Author, start: int, limit: int) -> list[CATFile]:
+    def find_by_owner(
+        cls, session: sessionmaker, owner: Author, start: int, limit: int
+    ) -> list[CATFile]:
         return cls.find_paginated_by_kwargs(session, start, limit, owner=owner.id)
 
     def get_link(self) -> str:
-        return f"{self.directory}/{self.id}" + f".{self.mimetype}" if self.mimetype != "" else ""
+        if self.mimetype == "":
+            return ""
+        return f"{self.directory}/{self.id}.{self.mimetype}"
 
     def update(self, data: bytes) -> None:
         with open(self.get_link(), "wb") as f:
@@ -76,9 +81,17 @@ class JSONFile(CATFile):
     mimetype: str = "json"
 
     @classmethod
-    def create_from_json(cls, session: sessionmaker, owner: Author, json_data: dict) -> CATFile:
-        if "id" not in json_data.keys() or (entry := cls.find_by_id(session, json_data["id"])) is None:
-            entry: cls = cls._create(owner)
+    def create_from_json(
+        cls,
+        session: sessionmaker,
+        owner: Author,
+        json_data: dict,
+    ) -> CATFile:
+        file_id = json_data.get("id")
+        entry = None if file_id is None else cls.find_by_id(session, json_data["id"])
+
+        if entry is None:
+            entry = cls._create(owner)
             entry.update_json(session, json_data)
         return entry
 
@@ -89,7 +102,7 @@ class JSONFile(CATFile):
 
         json_data["id"] = self.id
         with open(self.get_link(), "w", encoding="utf8") as f:
-            dump(json_data, f, ensure_ascii=False)
+            dump_json(json_data, f, ensure_ascii=False)
 
     def update_metadata(self, json_data: dict) -> None:
         raise NotImplementedError
@@ -113,8 +126,8 @@ class WIPPage(JSONFile):
         views: int = None
 
         @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: WIPPage, **context) -> None:
-            callback(views=orm_object.get_views())
+        def callback_convert(cls, callback: Callable, orm_object: WIPPage, **_) -> None:
+            callback(views=orm_object.views())
 
     def update_metadata(self, json_data: dict) -> None:
         self.kind = PageKind.from_string(json_data["kind"])
@@ -122,7 +135,7 @@ class WIPPage(JSONFile):
         self.theme = json_data["theme"]
         self.description = json_data["description"]
 
-    def get_views(self) -> Union[int, None]:
+    def views(self) -> int | None:
         return None if self.page is None else self.page.views
 
 
@@ -148,8 +161,10 @@ class WIPModule(JSONFile):
         views: int = None
 
         @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: WIPModule, **context) -> None:
-            callback(views=orm_object.get_views())
+        def callback_convert(
+            cls, callback: Callable, orm_object: WIPModule, **_
+        ) -> None:
+            callback(views=orm_object.views())
 
     def update_metadata(self, json_data: dict) -> None:
         self.type = ModuleType.from_string(json_data["type"])
@@ -160,5 +175,5 @@ class WIPModule(JSONFile):
         self.category = json_data["category"]
         self.difficulty = json_data["difficulty"]
 
-    def get_views(self) -> Union[int, None]:
+    def views(self) -> int | None:
         return None if self.module is None else self.module.views

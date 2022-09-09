@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from flask_restx import Resource
 
-from common import ResourceController, User, counter_parser
+from common import counter_parser, ResourceController, User
 from .results_db import TestResult
 
 controller = ResourceController("result", path="/results/")
@@ -13,7 +15,9 @@ class PagesResult(Resource):
     # TODO @result_namespace.database_searcher(Module, use_session=True)  # deleted modules?
     @controller.lister(50, TestResult.ShortModel)
     def post(self, session, module_id: int, user: User, start: int, finish: int):
-        return TestResult.find_by_module(session, user.id, module_id, start, finish - start)
+        return TestResult.find_by_module(
+            session, user.id, module_id, start, finish - start
+        )
 
 
 @controller.route("/<int:testresult_id>/")

@@ -26,7 +26,15 @@ class Feedback(Base, Marshalable):
     type = Column(Enum(FeedbackType), nullable=False)
     data = Column(JSON, nullable=False)
 
-    FullModel = PydanticModel.column_model(id, user_id, type, data).nest_model(User.FullData, "user")
+    # fmt: off
+    # TODO black should fix https://github.com/psf/black/issues/571
+    FullModel = (
+        PydanticModel
+        .column_model(id, user_id, type, data)
+        .nest_model(User.FullData, "user")
+    )
+
+    # fmt: on
 
     @classmethod
     def dump_all(cls, session: sessionmaker) -> list[Row]:

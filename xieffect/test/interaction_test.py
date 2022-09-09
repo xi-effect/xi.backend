@@ -1,5 +1,7 @@
-from random import shuffle, randint
-from typing import Iterator, Callable, Optional
+from __future__ import annotations
+
+from collections.abc import Callable, Iterator
+from random import randint, shuffle  # noqa: DUO102
 
 from flask.testing import FlaskClient
 from pytest import mark
@@ -24,28 +26,38 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
             continue
         types_set.remove(module_type)
 
-        if module_type in ("standard", "practice-block"):
+        if module_type in {"standard", "practice-block"}:
             check_code(client.post(f"/modules/{module_id}/next/"))
-            assert check_code(client.get(f"/modules/{module_id}/points/0/"), 400) == \
-                   {"a": f"Module of type {module_type} can't use direct navigation"}
+            assert (
+                check_code(client.get(f"/modules/{module_id}/points/0/"), 400)
+                == {"a": f"Module of type {module_type} can't use direct navigation"}
+            )
 
-        if module_type in ("theory-block", "test"):
-            assert "map" in module.keys()
+        if module_type in {"theory-block", "test"}:
+            assert "map" in module
             map_length = len(module["map"]) - 1
             check_code(client.get(f"/modules/{module_id}/points/{map_length}/"))
-            assert check_code(client.post(f"/modules/{module_id}/next/"), 400) == \
-                   {"a": f"Module of type {module_type} can't use linear progression"}
+            assert (
+                check_code(client.post(f"/modules/{module_id}/next/"), 400)
+                == {"a": f"Module of type {module_type} can't use linear progression"}
+            )
 
-        if module_type in ("practice-block", "test"):
-            assert check_code(client.get(f"/modules/{module_id}/open/"), 400) == \
-                   {"a": f"Module of type {module_type} can't use progress saving"}
+        if module_type in {"practice-block", "test"}:
+            assert (
+                check_code(client.get(f"/modules/{module_id}/open/"), 400)
+                == {"a": f"Module of type {module_type} can't use progress saving"}
+            )
 
         if module_type == "test":
-            assert "map" in module.keys()
+            assert "map" in module
             map_length = len(module["map"]) - 1
             json_test: dict = {"right-answers": 1, "total-answers": 1, "answers": {"1": 2}}
-            assert check_code(client.post(f"/modules/{module_id}/points/{map_length}/reply/",
-                                          json=json_test)) == {"a": True}
+            assert check_code(
+                client.post(
+                    f"/modules/{module_id}/points/{map_length}/reply/",
+                    json=json_test
+                )
+            ).get("a", False)
 
             reply = check_code(client.get(f"/modules/{module_id}/points/{map_length}/reply"))
             assert reply == json_test["answers"]
@@ -64,19 +76,19 @@ def test_standard_module_session(client: FlaskClient):  # relies on module#5
     def scroll_through() -> Iterator[int]:
         while True:
             result: TestResponse = check_code(client.post("/modules/5/next/"), get_json=False)
-            if len(result.history):  # it was redirected
-                page: dict = result.get_json()
-                assert "id" in page.keys()
-                yield page["id"]
-            else:
+            if len(result.history) == 0:
                 assert result.get_json() == {"a": "You have reached the end"}
                 break
+            else:  # it was redirected
+                page: dict = result.get_json()
+                assert "id" in page
+                yield page["id"]
 
-    for _ in scroll_through():
+    for _ in scroll_through():  # noqa: WPS328
         pass  # if any session was started before, reset the module
 
-    ids1: list[int] = [page_id for page_id in scroll_through()]
-    ids2: list[int] = [page_id for page_id in scroll_through()]
+    ids1: list[int] = list(scroll_through())
+    ids2: list[int] = list(scroll_through())
 
     assert ids1 == ids2
 
@@ -88,7 +100,7 @@ def test_module_navigation(client: FlaskClient):  # relies on module#9
     module = check_code(client.get("/modules/9/"))
     assert module["type"] == "theory-block"
 
-    assert "map" in module.keys()
+    assert "map" in module
     length = len(module["map"])
 
     for point_id in range(length):
@@ -110,32 +122,37 @@ def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 
 
 @mark.order(540)
 def test_reply_and_results(client: FlaskClient):  # relies on module#7
-    module = check_code(client.get(f"/modules/7/"))
+    module = check_code(client.get("/modules/7/"))
     assert module["type"] == "test"
-    assert "map" in module.keys()
+    assert "map" in module
 
     length: int = len(module["map"])
 
-    replies: list[dict] = [{
-        "right-answers": (right := randint(0, 10)),
-        "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right * 2))),
-        "answers": {str(k): int(k) for k in range(randint(right, total))}
-    } for _ in range(length)]
+    def create_reply():
+        return {
+            "right-answers": (right := randint(0, 10)),
+            "total-answers": (total := (randint(1, 5) if right == 0 else randint(right, right * 2))),
+            "answers": {str(k): int(k) for k in range(randint(right, total))}
+        }
+
+    replies: list[dict] = [create_reply() for _ in range(length)]
 
     point_ids: list[int] = list(range(length))
     shuffle(point_ids)
 
     for point in point_ids:
-        assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == {}
+        data = check_code(client.get(f"/modules/7/points/{point}/reply/"))
+        assert isinstance(data, dict) and len(data) == 0
         check_code(client.get(f"/modules/7/points/{point}/"))
-        assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == {}
+        data = check_code(client.get(f"/modules/7/points/{point}/reply/"))
+        assert isinstance(data, dict) and len(data) == 0
 
         reply = replies[point]
-        assert check_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)) == {"a": True}
+        assert check_code(client.post(f"/modules/7/points/{point}/reply/", json=reply)).get("a", False)
         assert check_code(client.get(f"/modules/7/points/{point}/reply/")) == reply["answers"]
 
-    point_id: Optional[int] = None
-    for i, reply in enumerate(check_code(client.get(f"/modules/7/results/"))["result"]):
+    point_id: int | None = None
+    for i, reply in enumerate(check_code(client.get("/modules/7/results/"))["result"]):
         assert dict_equal(reply, replies[i], "right-answers", "total-answers", "answers")
         assert point_id is None or reply["point-id"] > point_id
         point_id = reply["point-id"]

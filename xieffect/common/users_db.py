@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, Callable
+from collections.abc import Callable
 
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
@@ -10,7 +10,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 from __lib__.flask_fullstack import UserRole, PydanticModel, Identifiable
 from . import Base, sessionmaker
 
-DEFAULT_AVATAR: dict = {
+DEFAULT_AVATAR: dict = {  # noqa: WPS407
     "topType": 0,
     "accessoriesType": 0,
     "hairColor": 0,
@@ -72,7 +72,8 @@ class User(Base, UserRole, Identifiable):
     filter_bind = Column(String(10), nullable=True)
 
     # Role-related:
-    author = relationship("Author", backref="user", uselist=False)  # TODO remove non-common reference
+    author = relationship("Author", backref="user", uselist=False)
+    # TODO remove non-common reference
     # moderator = relationship("Moderator", backref="user", uselist=False)  # TODO DEPRECATED, redo with MUB
 
     # Chat-related
@@ -80,22 +81,45 @@ class User(Base, UserRole, Identifiable):
 
     # Invite-related
     code = Column(String(100), nullable=True)
-    invite_id = Column(Integer, ForeignKey("invites.id"), nullable=True)  # TODO remove non-common reference
-    invite = relationship("Invite", back_populates="invited")  # TODO remove non-common reference
+    invite_id = Column(Integer, ForeignKey("invites.id"), nullable=True)
+    # TODO remove non-common reference
+    invite = relationship(
+        "Invite", back_populates="invited"
+    )  # TODO remove non-common reference
 
     IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
     FullProfile = IndexProfile.column_model(name, surname, patronymic, group)
 
     MainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
-    FullData = MainData.column_model(email, email_confirmed, avatar, code, name, surname, patronymic, bio, group)
+    FullData = MainData.column_model(
+        email, email_confirmed, avatar, code, name, surname, patronymic, bio, group
+    )
+
+    CHANGEABLE_FIELDS = tuple(
+        (field, field.replace("_", "-"))
+        for field in (
+            "username",
+            "dark_theme",
+            "language",
+            "name",
+            "surname",
+            "patronymic",
+            "bio",
+            "group",
+            "avatar",
+        )
+    )
 
     class RoleSettings(PydanticModel):
         author_status: str
         moderator_status: bool
 
         @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: User, **context) -> None:
-            callback(author_status=orm_object.get_author_status(), moderator_status=orm_object.moderator is not None)
+        def callback_convert(cls, callback: Callable, orm_object: User, **_) -> None:
+            callback(
+                author_status=orm_object.author_status(),
+                moderator_status=orm_object.moderator is not None,
+            )
 
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> User | None:
@@ -106,15 +130,28 @@ class User(Base, UserRole, Identifiable):
         return cls.find_by_id(session, identity)
 
     @classmethod
-    def find_by_email_address(cls, session: sessionmaker, email) -> Union[User, None]:
-        # send_generated_email(email, "pass", "password-reset-email.html")
+    def find_by_email_address(cls, session: sessionmaker, email) -> User | None:
         return session.get_first(select(cls).filter_by(email=email))
 
     @classmethod  # TODO this class shouldn't know about invites
-    def create(cls, session: sessionmaker, *, email: str, password: str, invite=None, **kwargs) -> Union[User, None]:
+    def create(
+        cls,
+        session: sessionmaker,
+        *,
+        email: str,
+        password: str,
+        invite=None,
+        **kwargs,
+    ) -> User | None:
         if cls.find_by_email_address(session, email):
             return None
-        new_user = super().create(session, email=email, password=cls.generate_hash(password), invite=invite, **kwargs)
+        new_user = super().create(
+            session,
+            email=email,
+            password=cls.generate_hash(password),
+            invite=invite,
+            **kwargs,
+        )
         if invite is not None:
             new_user.code = new_user.invite.generate_code(new_user.id)
             session.flush()
@@ -129,8 +166,14 @@ class User(Base, UserRole, Identifiable):
         return session.get_paginated(stmt, offset, limit)
 
     @classmethod
-    def search_by_username(cls, session: sessionmaker, exclude_id: int, search: Union[str, None],
-                           offset: int, limit: int) -> list[User]:
+    def search_by_username(
+        cls,
+        session: sessionmaker,
+        exclude_id: int,
+        search: str | None,
+        offset: int,
+        limit: int,
+    ) -> list[User]:
         stmt = select(cls).filter(cls.id != exclude_id)
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
@@ -149,28 +192,17 @@ class User(Base, UserRole, Identifiable):
     def change_password(self, new_password: str) -> None:  # auto-commit
         self.password = User.generate_hash(new_password)
 
-    def change_settings(self, new_values: dict[str, Union[str, int, bool]]) -> None:  # auto-commit  # TODO redo
-        if "username" in new_values.keys():
-            self.username = new_values["username"]
-        if "dark-theme" in new_values.keys():
-            self.dark_theme = new_values["dark-theme"]
-        if "language" in new_values.keys():
-            self.language = new_values["language"]
-        if "name" in new_values.keys():
-            self.name = new_values["name"]
-        if "surname" in new_values.keys():
-            self.surname = new_values["surname"]
-        if "patronymic" in new_values.keys():
-            self.patronymic = new_values["patronymic"]
-        if "bio" in new_values.keys():
-            self.bio = new_values["bio"]
-        if "group" in new_values.keys():
-            self.group = new_values["group"]
-        if "avatar" in new_values.keys():
-            self.avatar = new_values["avatar"]
+    def change_settings(self, new_values: dict[str, str | int | bool]) -> None:
+        # auto-commit
+        for attribute, field in self.CHANGEABLE_FIELDS:
+            value = new_values.get(field)
+            if value is not None:
+                setattr(self, attribute, value)
 
-    def get_author_status(self) -> str:
-        return "not-yet" if self.author is None else "banned" if self.author.banned else "current"
+    def author_status(self) -> str:
+        if self.author is None:
+            return "not-yet"
+        return "banned" if self.author.banned else "current"
 
 
 UserRole.default_role = User

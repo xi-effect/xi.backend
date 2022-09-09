@@ -1,48 +1,51 @@
+from __future__ import annotations
+
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, password_parser, User
-from other import EmailType, send_code_email, create_email_confirmer
+from common import password_parser, ResourceController, User
+from other import create_email_confirmer, EmailType, send_code_email
 
 controller = ResourceController("settings", path="/")
 
 
-def changed(value):
+def changes(value):
     return dict(value)
-
-
-changed.__schema__ = {
-    "type": "object",
-    "format": "changed",
-    "example": '{"dark-theme": true | false, ' +
-               ", ".join(f'"{key}": ""' for key in ["username", "language", "name", "surname", "patronymic",
-                                                    "bio", "group", "avatar"]) + "}"
-}
 
 
 @controller.route("/settings/")
 class Settings(Resource):
     parser: RequestParser = RequestParser()
-    parser.add_argument("changed", type=changed, required=True, help="A dict of changed settings")
+    parser.add_argument(
+        "changed",
+        type=changes,
+        required=True,
+        help="A dict of changed settings",
+    )
 
     @controller.jwt_authorizer(User, use_session=False)
     @controller.marshal_with(User.FullData)
     def get(self, user: User):
-        """ Loads user's own full settings """
+        """Loads user's own full settings"""
         return user
 
     @controller.jwt_authorizer(User, use_session=False)
     @controller.argument_parser(parser)  # TODO fix with json schema validation
     @controller.a_response()
     def post(self, user: User, changed: dict) -> None:
-        """ Overwrites values in user's settings with ones form payload """
+        """Overwrites values in user's settings with ones form payload"""
         user.change_settings(changed)
 
 
 @controller.route("/email-change/")
 class EmailChanger(Resource):
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("new-email", dest="new_email", required=True, help="Email to be connected to the user")
+    parser.add_argument(
+        "new-email",
+        dest="new_email",
+        required=True,
+        help="Email to be connected to the user",
+    )
 
     @controller.doc_abort(200, "Success")
     @controller.doc_abort("200 ", "Wrong password")
@@ -51,7 +54,7 @@ class EmailChanger(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, session, user: User, password: str, new_email: str) -> str:
-        """ Verifies user's password and changes user's email to a new one """
+        """Verifies user's password and changes user's email to a new one"""
 
         if not User.verify_hash(password, user.password):
             return "Wrong password"
@@ -64,13 +67,20 @@ class EmailChanger(Resource):
         return "Success"
 
 
-EmailChangeConfirmer = create_email_confirmer(controller, "/email-change-confirm/", EmailType.CHANGE)
+EmailChangeConfirmer = create_email_confirmer(
+    controller, "/email-change-confirm/", EmailType.CHANGE
+)
 
 
 @controller.route("/password-change/")
 class PasswordChanger(Resource):
     parser: RequestParser = password_parser.copy()
-    parser.add_argument("new-password", dest="new_password", required=True, help="Password that will be used in future")
+    parser.add_argument(
+        "new-password",
+        dest="new_password",
+        required=True,
+        help="Password that will be used in future",
+    )
 
     @controller.doc_abort(200, "Success")
     @controller.doc_abort("200 ", "Wrong password")
@@ -78,10 +88,9 @@ class PasswordChanger(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, user: User, password: str, new_password: str) -> str:
-        """ Verifies user's password and changes it to a new one """
+        """Verifies user's password and changes it to a new one"""
 
         if User.verify_hash(password, user.password):
             user.change_password(new_password)
             return "Success"
-        else:
-            return "Wrong password"
+        return "Wrong password"

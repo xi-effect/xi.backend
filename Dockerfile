@@ -14,8 +14,6 @@ COPY ./*.sh /app
 RUN chmod +x /app/*.sh
 
 WORKDIR /app
-RUN flask form-sio-docs
-
 EXPOSE 5000
 
 ENTRYPOINT ["/app/gunicorn.sh"]
