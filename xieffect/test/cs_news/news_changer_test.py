@@ -6,8 +6,6 @@ from random import choice
 
 from __lib__.flask_fullstack import check_code
 from .news_lister_test import TEST_IDS, TEST_COMMUNITY
-from communities.services.news_rst import Post
-from common import sessionmaker
 
 
 # Update test news
@@ -76,15 +74,3 @@ def test_soft_delete_news(client: FlaskClient):
 
     # Check the right response of server
     assert delete["a"] == "News was successfully deleted"
-
-    # Clear database before tests
-    @sessionmaker.with_begin
-    def clear(session):
-        for ids in TEST_IDS:
-            post_for_delete = Post.find_by_id(session, ids)
-
-            session.delete(post_for_delete)
-            session.flush()
-
-            # Check the absence test news in the database
-            assert check_code(client.get(f"/communities/{TEST_COMMUNITY}/news/{ids}/"), 404)
