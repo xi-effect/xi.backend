@@ -20,11 +20,15 @@ news_parser.add_argument("description", type=str)
 @controller.route("/<int:community_id>/news/index/")
 class NewsLister(Resource):
     # Get list of news with pagination
-    @controller.jwt_authorizer(User, check_only=True)
+    @controller.doc_abort(403, "Permission Denied")
+    @controller.jwt_authorizer(User)
     @controller.argument_parser(counter_parser)
     @controller.database_searcher(Community, check_only=True, use_session=True)
     @controller.lister(20, Post.MainData)
-    def get(self, session, community_id: int, start: int, finish: int):
+    def get(self, session, community_id: int, user: User,  start: int, finish: int):
+        # Community membership check
+        if Participant.find_by_ids(session, community_id, user.id) is None:
+            return controller.abort(403, "Permission Denied: Participant not found")
         return Post.find_by_community(session, community_id, start, finish - start)
 
     # Create news
@@ -51,10 +55,13 @@ class NewsChanger(Resource):
 
     # Get news
     @controller.doc_abort(404, "News not found")
-    @controller.jwt_authorizer(User, check_only=True)
+    @controller.jwt_authorizer(User)
     @controller.database_searcher(Community, check_only=True, use_session=True)
     @controller.marshal_with(Post.MainData)
-    def get(self, session, community_id: int, entry_id: int):
+    def get(self, session, community_id: int, entry_id: int, user: User):
+        # Community membership check
+        if Participant.find_by_ids(session, community_id, user.id) is None:
+            return controller.abort(403, "Permission Denied: Participant not found")
         # News availability check
         if (news := Post.find_by_id(session, entry_id)) is None or news.community_id != community_id:
             return controller.abort(404, "News not found")
