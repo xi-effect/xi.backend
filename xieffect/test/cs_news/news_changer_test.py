@@ -49,8 +49,8 @@ def test_update_news(client: FlaskClient, title, description, code):
         assert update_post["description"] == description
 
     # Check saving other data
-    assert update_post["create-datetime"] == post["create-datetime"]
-    assert update_post["change-datetime"] != post["change-datetime"]
+    assert update_post["created"] == post["created"]
+    assert update_post["changed"] != post["changed"]
     assert update_post["deleted"] == post["deleted"]
     assert update_post["community-id"] == post["community-id"]
     assert update_post["user-id"] == post["user-id"]
