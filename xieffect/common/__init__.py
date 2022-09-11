@@ -21,7 +21,7 @@ from __lib__.flask_fullstack.restx import (  # noqa: WPS !DEPRECATED!
 )
 from ._core import (  # noqa: WPS436
     db_url,
-    db_meta,
+    db,
     Base,
     sessionmaker,
     index_service,

@@ -5,13 +5,11 @@ from functools import wraps
 from flask_restx import abort as default_abort
 
 from __lib__.flask_fullstack import ResourceController as _ResourceController
-from ._core import sessionmaker  # noqa: WPS436
 from ._marshals import success_response, message_response, ResponseDoc  # noqa: WPS436
 
 
 class ResourceController(_ResourceController):
     def __init__(self, *args, **kwargs):
-        kwargs["sessionmaker"] = kwargs.get("sessionmaker", sessionmaker)
         super().__init__(*args, **kwargs)
         success_response.register_model(self)
         message_response.register_model(self)

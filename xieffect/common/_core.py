@@ -6,15 +6,18 @@ from sys import modules
 
 from flask import Response
 from flask_mail import Mail
-from sqlalchemy import create_engine, MetaData
+from flask_sqlalchemy import Model
+from sqlalchemy import MetaData, select
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.sql import Select
 
 from __lib__.flask_fullstack import (
     configure_whooshee,
     Flask as _Flask,
     IndexService,
-    Sessionmaker,
+    ModBaseMeta,
 )
-from __lib__.flask_fullstack.utils import create_base, ModBase, Session
+from common._fsqla import SQLAlchemy  # noqa: WPS436
 
 
 class Flask(_Flask):
@@ -34,9 +37,7 @@ class Flask(_Flask):
 
 def init_xieffect() -> tuple[  # noqa: WPS210, WPS320
     str,
-    MetaData,
-    type[ModBase],
-    Sessionmaker,
+    SQLAlchemy,
     IndexService,
     dict,
     Flask,
@@ -50,23 +51,6 @@ def init_xieffect() -> tuple[  # noqa: WPS210, WPS320
 
     load_dotenv("../.env")
 
-    convention = {
-        "ix": "ix_%(column_0_label)s",  # noqa: WPS323
-        "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
-        "ck": "ck_%(table_name)s_%(constraint_name)s",  # noqa: WPS323
-        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",  # noqa: WPS323
-        "pk": "pk_%(table_name)s",  # noqa: WPS323
-    }
-
-    db_url: str = getenv("DB_LINK", "sqlite:///app.db")
-    engine = create_engine(db_url, pool_recycle=280)  # echo=True
-    db_meta = MetaData(bind=engine, naming_convention=convention)
-    # TODO allow naming conventions in FFS
-    Base = create_base(db_meta)  # noqa: N806
-    sessionmaker = Sessionmaker(bind=engine, class_=Session)
-
-    index_service = configure_whooshee(sessionmaker, "../files/temp/whoosh")
-
     with open("../static/versions.json", encoding="utf-8") as f:
         versions = load_json(f)
 
@@ -76,6 +60,27 @@ def init_xieffect() -> tuple[  # noqa: WPS210, WPS320
         static_url_path="/static/",
         versions=versions,
     )
+
+    convention = {
+        "ix": "ix_%(column_0_label)s",  # noqa: WPS323
+        "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
+        "ck": "ck_%(table_name)s_%(constraint_name)s",  # noqa: WPS323
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",  # noqa: WPS323
+        "pk": "pk_%(table_name)s",  # noqa: WPS323
+    }  # TODO allow naming conventions in FFS
+
+    db_url: str = getenv("DB_LINK", "sqlite:///../app.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db_meta = MetaData(naming_convention=convention)
+    db = SQLAlchemy(
+        app,
+        metadata=db_meta,
+        model_class=declarative_base(cls=Model, metaclass=ModBaseMeta),
+        engine_options={"pool_recycle": 280},  # "echo": True
+    )
+    index_service = configure_whooshee(db.session, "../files/temp/whoosh")
+
     app.config["TESTING"] = "pytest" in modules
     app.secrets_from_env("hope it's local")
     # TODO DI to use secrets in `URLSafeSerializer`s
@@ -95,9 +100,7 @@ def init_xieffect() -> tuple[  # noqa: WPS210, WPS320
 
     return (
         db_url,
-        db_meta,
-        Base,
-        sessionmaker,
+        db,
         index_service,
         versions,
         app,
@@ -108,9 +111,7 @@ def init_xieffect() -> tuple[  # noqa: WPS210, WPS320
 
 (
     db_url,
-    db_meta,
-    Base,
-    sessionmaker,
+    db,
     index_service,
     versions,
     app,
