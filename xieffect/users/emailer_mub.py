@@ -3,13 +3,13 @@ from __future__ import annotations
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import sessionmaker, User
+from common import User
 from moderation import MUBController, permission_index
 from other import EmailType, send_code_email
 
 qa_section = permission_index.add_section("quality assurance")
 emailing = permission_index.add_permission(qa_section, "emailing")
-controller = MUBController("emailer", path="/emailer/", sessionmaker=sessionmaker)
+controller = MUBController("emailer", path="/emailer/")
 
 
 @controller.route("/send/")
@@ -39,7 +39,6 @@ class EmailQAResource(Resource):
     @controller.a_response()
     def post(
         self,
-        session,
         user_email: str | None,
         tester_email: str,
         email_type: str,
@@ -50,7 +49,7 @@ class EmailQAResource(Resource):
 
         if user_email is None:
             user_email = tester_email
-        user = User.find_by_email_address(session, user_email)
+        user = User.find_by_email_address(user_email)
         if user is None:
             controller.abort(404, "User not found")
 

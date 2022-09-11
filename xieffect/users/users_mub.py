@@ -4,13 +4,13 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
-from common import sessionmaker, User, password_parser, counter_parser, Undefined
+from common import User, password_parser, counter_parser, Undefined
 from moderation import MUBController, permission_index
 from users.invites_db import Invite
 
 user_section = permission_index.add_section("users")
 manage_users = permission_index.add_permission(user_section, "manage")
-controller = MUBController("users", sessionmaker=sessionmaker)
+controller = MUBController("users")
 
 
 @controller.route("/")
@@ -22,8 +22,8 @@ class UserIndexResource(Resource):
     @controller.require_permission(manage_users, use_moderator=False)
     @controller.argument_parser(parser)
     @controller.lister(50, User.FullData)
-    def get(self, session, start: int, finish: int, **kwargs: str | None) -> list[User]:
-        return User.search_by_params(session, start, finish - start, **kwargs)
+    def get(self, start: int, finish: int, **kwargs: str | None) -> list[User]:
+        return User.search_by_params(start, finish - start, **kwargs)
 
     parser: RequestParser = password_parser.copy()  # noqa: PIE794
     parser.add_argument(
@@ -45,16 +45,16 @@ class UserIndexResource(Resource):
     @controller.require_permission(manage_users, use_moderator=False)
     @controller.argument_parser(parser)
     @controller.marshal_with(User.FullData)
-    def post(self, session, email: str, password: str, username: str, code: str | None):
+    def post(self, email: str, password: str, username: str, code: str | None):
         # TODO check password length and hash
         if code is None:
             # TODO redo without local imports!
             from wsgi import TEST_INVITE_ID  # noqa: WPS433
 
-            invite = Invite.find_by_id(session, TEST_INVITE_ID)
+            invite = Invite.find_by_id(TEST_INVITE_ID)
         else:
             try:
-                invite = Invite.find_by_code(session, code)
+                invite = Invite.find_by_code(code)
             except BadSignature:
                 return {"a": "Malformed code (BadSignature)"}, 400
 
@@ -65,7 +65,6 @@ class UserIndexResource(Resource):
         invite.accepted += 1
 
         user = User.create(
-            session,
             email=email,
             username=username,
             password=password,
