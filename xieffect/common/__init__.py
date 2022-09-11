@@ -23,7 +23,6 @@ from ._core import (  # noqa: WPS436
     db_url,
     db,
     Base,
-    sessionmaker,
     index_service,
     versions,
     app,
