@@ -5,7 +5,7 @@ from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import PydanticModel, Base, sessionmaker, User
+from common import PydanticModel, Base, User, db
 from communities.base.meta_db import Community
 
 
@@ -27,34 +27,35 @@ class CommunitiesUser(Base):
 
         @classmethod
         def callback_convert(cls, callback, orm_object: CommunitiesUser, **context):
-            callback(communities=[
-                Community.IndexModel.convert(ci.community, **context)
-                for ci in orm_object.communities
-            ])
+            callback(
+                communities=[
+                    Community.IndexModel.convert(ci.community, **context)
+                    for ci in orm_object.communities
+                ]
+            )
 
     class TempModel(FullModel):
         a: str = "Success"
 
     @classmethod
-    def _create_empty(cls, session, user_id: int) -> CommunitiesUser:
-        return cls.create(session, id=user_id)
+    def _create_empty(cls, user_id: int) -> CommunitiesUser:
+        return cls.create(id=user_id)
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, user_id: int) -> CommunitiesUser | None:
-        return session.get_first(select(cls).filter_by(id=user_id))
+    def find_by_id(cls, user_id: int) -> CommunitiesUser | None:
+        return db.session.get_first(select(cls).filter_by(id=user_id))
 
     @classmethod
-    def find_or_create(cls, session: sessionmaker, user_id: int) -> CommunitiesUser:
-        return cls.find_by_id(session, user_id) or cls._create_empty(session, user_id)
+    def find_or_create(cls, user_id: int) -> CommunitiesUser:
+        return cls.find_by_id(user_id) or cls._create_empty(user_id)
 
     def reorder_community_list(
         self,
-        session,
         source_id: int,
         target_index: int,
     ) -> bool:
         # TODO target_index might change after deletion?
-        list_item = CommunityListItem.find_by_ids(session, self.id, source_id)
+        list_item = CommunityListItem.find_by_ids(self.id, source_id)
         if list_item is None:
             return False
         self.communities.remove(list_item)
@@ -66,8 +67,8 @@ class CommunitiesUser(Base):
         new_item = CommunityListItem(user_id=self.id, community_id=community_id)
         self.communities.insert(0, new_item)
 
-    def leave_community(self, session, community_id: int) -> bool:
-        list_item = CommunityListItem.find_by_ids(session, self.id, community_id)
+    def leave_community(self, community_id: int) -> bool:
+        list_item = CommunityListItem.find_by_ids(self.id, community_id)
         if list_item is None:
             return False
         self.communities.remove(list_item)
@@ -87,10 +88,9 @@ class CommunityListItem(Base):
     @classmethod
     def find_by_ids(
         cls,
-        session,
         user_id: int,
         community_id: int,
     ) -> CommunityListItem | None:
-        return session.get_first(
+        return db.session.get_first(
             select(cls).filter_by(user_id=user_id, community_id=community_id)
         )

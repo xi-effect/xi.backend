@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
-from common import User, UserRole, Base, sessionmaker, PydanticModel
+from common import User, UserRole, Base, db, PydanticModel
 
 
 class Author(Base, UserRole):
@@ -28,38 +28,37 @@ class Author(Base, UserRole):
             pass
 
     @classmethod
-    def create(cls, session: sessionmaker, user: User) -> Author:
+    def create(cls, user: User) -> Author:
         new_entry = cls(pseudonym=user.username)
         user.author = new_entry
-        session.add(new_entry)
-        session.flush()
+        db.session.add(new_entry)
+        db.session.flush()
         return new_entry
 
     @classmethod
     def find_by_id(
         cls,
-        session,
         entry_id: int,
         include_banned: bool = False,
     ) -> Author | None:
         stmt: Select = select(cls).filter_by(id=entry_id)
         if not include_banned:
             stmt = stmt.filter_by(banned=False)
-        return session.get_first(stmt)
+        return db.session.get_first(stmt)
 
     @classmethod
-    def find_by_identity(cls, session, identity: int) -> Author | None:
-        return cls.find_by_id(session, identity)
+    def find_by_identity(cls, identity: int) -> Author | None:
+        return cls.find_by_id(identity)
 
     @classmethod
-    def find_or_create(cls, session: sessionmaker, user):  # User class
-        if (author := cls.find_by_id(session, user.id, include_banned=True)) is None:
-            return cls.create(session, user)
+    def find_or_create(cls, user):  # User class
+        if (author := cls.find_by_id(user.id, include_banned=True)) is None:
+            return cls.create(user)
         return author
 
     @classmethod
-    def initialize(cls, session: sessionmaker, user: User) -> bool:
-        author = cls.find_or_create(session, user)
+    def initialize(cls, user: User) -> bool:
+        author = cls.find_or_create(user)
         return not author.banned
 
     def get_identity(self):

@@ -7,7 +7,7 @@ from sqlalchemy import Column, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String
 
-from common import Base, sessionmaker, PydanticModel
+from common import Base, db, PydanticModel
 
 
 class Invite(Base):
@@ -28,28 +28,23 @@ class Invite(Base):
     IndexModel = PydanticModel.column_model(name, code, limit, accepted)
 
     @classmethod
-    def create(cls, session: sessionmaker, **kwargs) -> Invite:
-        entry = super().create(session, **kwargs)
+    def create(cls, **kwargs) -> Invite:
+        entry = super().create(**kwargs)
         entry.code = entry.generate_code(0)
-        session.flush()
+        db.session.flush()
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Invite | None:
-        return session.get_first(select(cls).filter(cls.id == entry_id))
+    def find_by_id(cls, entry_id: int) -> Invite | None:
+        return db.session.get_first(select(cls).filter(cls.id == entry_id))
 
     @classmethod
-    def find_by_code(cls, session: sessionmaker, code: str) -> Invite | None:
-        return cls.find_by_id(session, cls.serializer.loads(code)[0])
+    def find_by_code(cls, code: str) -> Invite | None:
+        return cls.find_by_id(cls.serializer.loads(code)[0])
 
     @classmethod
-    def find_global(
-        cls,
-        session: sessionmaker,
-        offset: int,
-        limit: int,
-    ) -> list[Invite]:
-        return session.get_paginated(select(cls), offset, limit)
+    def find_global(cls, offset: int, limit: int) -> list[Invite]:
+        return db.session.get_paginated(select(cls), offset, limit)
 
     def generate_code(self, user_id: int):
         return self.serializer.dumps((self.id, user_id))
