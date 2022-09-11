@@ -66,7 +66,6 @@ class FeedbackSaver(Resource):
     @enum_response(Responses)
     def post(
         self,
-        session,
         user: User | None,
         feedback_type: str,
         data: dict,
@@ -82,13 +81,13 @@ class FeedbackSaver(Resource):
             except BadSignature:
                 return self.Responses.BAD_SIGNATURE
             if user is None or user.id != user_id:
-                user = User.find_by_id(session, user_id)
+                user = User.find_by_id(user_id)
             if user is None:
                 return self.Responses.USER_NOT_FOUND
         elif user is None:
             return self.Responses.NO_AUTH_PROVIDED
 
-        Feedback.create(session, user_id=user.id, type=feedback_type, data=data)
+        Feedback.create(user_id=user.id, type=feedback_type, data=data)
         return self.Responses.SUCCESS
 
 
@@ -96,8 +95,8 @@ class FeedbackSaver(Resource):
 class ImageAttacher(Resource):
     @controller.doc_file_param("image")
     @controller.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
-    def post(self, session):
-        image_id = FeedbackImage.create(session).id
+    def post(self):
+        image_id = FeedbackImage.create().id
         with open(f"../files/images/feedback-{image_id}.png", "wb") as f:
             f.write(request.data)
         return {"id": image_id}
@@ -107,16 +106,15 @@ class ImageAttacher(Resource):
 class FeedbackDumper(Resource):
     @controller.jwt_authorizer(User)
     @controller.marshal_list_with(Feedback.FullModel)
-    def get(self, session, user: User):
+    def get(self, user: User):
         if user.email != "admin@admin.admin":
             controller.abort(403, "Permission denied")
-        return Feedback.dump_all(session)
+        return Feedback.dump_all()
 
 
 def generate_code(user_id: int):
     return feedback_serializer.dumps(user_id)
 
 
-@controller.with_begin
-def dumps_feedback(session) -> list[dict]:
-    return controller.marshal(Feedback.dump_all(session), Feedback.FullModel)
+def dumps_feedback() -> list[dict]:
+    return controller.marshal(Feedback.dump_all(), Feedback.FullModel)

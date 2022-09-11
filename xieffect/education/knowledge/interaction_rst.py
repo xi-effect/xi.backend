@@ -19,7 +19,7 @@ def module_typed(op_name, *possible_module_types: ModuleType):
     def module_typed_wrapper(function):
         @controller.doc_abort(400, "Unacceptable module type")
         @controller.jwt_authorizer(User)
-        @controller.database_searcher(Module, use_session=True)
+        @controller.database_searcher(Module)
         @wraps(function)
         def module_typed_inner(*args, **kwargs):
             module_type: ModuleType = kwargs["module"].type
@@ -69,11 +69,11 @@ class ModuleOpener(Resource):
     @redirected_to_pages(
         "progress saving", ModuleType.STANDARD, ModuleType.THEORY_BLOCK
     )
-    def get(self, session, user: User, module: Module, module_type: ModuleType):
+    def get(self, user: User, module: Module, module_type: ModuleType):
         """Endpoint for starting a Standard Module or Theory Block from the last visited point"""
 
         module_session: ModuleProgressSession | None = (
-            ModuleProgressSession.find_by_ids(session, user.id, module.id)
+            ModuleProgressSession.find_by_ids(user.id, module.id)
         )
         if module_type == ModuleType.STANDARD:
             if module_session is None or module_session.progress is None:
@@ -91,12 +91,12 @@ class ModuleProgresser(Resource):
     @redirected_to_pages(
         "linear progression", ModuleType.STANDARD, ModuleType.PRACTICE_BLOCK
     )
-    def post(self, session, user: User, module: Module, module_type: ModuleType):
+    def post(self, user: User, module: Module, module_type: ModuleType):
         """Endpoint for progressing a Standard Module or Practice Block"""
 
         if module_type == ModuleType.STANDARD:
             module_session: ModuleProgressSession = (
-                ModuleProgressSession.find_or_create(session, user.id, module.id)
+                ModuleProgressSession.find_or_create(user.id, module.id)
             )
 
             if module_session.progress is None:
@@ -106,11 +106,11 @@ class ModuleProgresser(Resource):
                 module_session.progress += 1
 
             if module_session.progress >= module.length:
-                module_session.delete(session)
+                module_session.delete()
                 return {"a": "You have reached the end"}
 
             return module.execute_point(
-                module_session.progress, module_session.get_theory_level(session)
+                module_session.progress, module_session.get_theory_level()
             )
 
         # ModuleType.PRACTICE_BLOCK
@@ -123,7 +123,6 @@ class ModuleNavigator(Resource):
     @with_point_id
     def get(
         self,
-        session,
         user: User,
         module: Module,
         module_type: ModuleType,
@@ -132,19 +131,15 @@ class ModuleNavigator(Resource):
         """Endpoint for navigating a Theory Block or Test"""
 
         if module_type == ModuleType.TEST:
-            new_test_session = TestModuleSession.find_or_create(
-                session, user.id, module.id
-            )
-            new_test_point = new_test_session.find_point_session(session, point_id)
+            new_test_session = TestModuleSession.find_or_create(user.id, module.id)
+            new_test_point = new_test_session.find_point_session(point_id)
             if new_test_point is None:
-                new_test_point = new_test_session.create_point_session(
-                    session, point_id, module
-                )
+                new_test_point = new_test_session.create_point_session(point_id, module)
             return new_test_point.page_id
 
         # ModuleType.THEORY_BLOCK
         module_session: ModuleProgressSession = ModuleProgressSession.find_or_create(
-            session, user.id, module.id
+            user.id, module.id
         )
         module_session.progress = point_id
         return module.execute_point(point_id)
@@ -154,15 +149,15 @@ def with_test_session(function):
     @controller.doc_abort(404, TestModuleSession.not_found_text)
     @module_typed("reply & results functionality", ModuleType.TEST)
     @wraps(function)
-    def with_test_session_inner(session, user: User, module: Module, *args, **kwargs):
+    def with_test_session_inner(user: User, module: Module, *args, **kwargs):
         test_session: TestModuleSession = TestModuleSession.find_by_ids(
-            session, user.id, module.id
+            user.id, module.id
         )
         if test_session is None:
             return {"a": TestModuleSession.not_found_text}, 404
 
         kwargs["test_session"] = test_session
-        return function(session, *args, **kwargs)
+        return function(*args, **kwargs)
 
     return with_test_session_inner
 
@@ -177,9 +172,9 @@ class TestReplyManager(Resource):
     @controller.doc_responses(ResponseDoc(200, "Answers object"))
     @module_typed("reply functionality", ModuleType.TEST)
     @with_point_id
-    def get(self, session, point_id, user: User, module: Module):
+    def get(self, point_id, user: User, module: Module):
         point_session: TestPointSession = TestPointSession.find_by_ids(
-            session, user.id, module.id, point_id
+            user.id, module.id, point_id
         )
         if point_session is None or point_session.answers is None:
             return {}
@@ -191,7 +186,6 @@ class TestReplyManager(Resource):
     @controller.a_response()
     def post(
         self,
-        session,
         point_id,
         user: User,
         module: Module,
@@ -200,9 +194,7 @@ class TestReplyManager(Resource):
         answers,
     ) -> bool:
         """Saves user's reply to an open test"""
-        point_session = TestPointSession.find_by_ids(
-            session, user.id, module.id, point_id
-        )
+        point_session = TestPointSession.find_by_ids(user.id, module.id, point_id)
         if point_session is not None:
             point_session.right_answers = right_answers
             point_session.total_answers = total_answers
@@ -214,14 +206,14 @@ class TestReplyManager(Resource):
 @controller.route("/results/")
 class TestSaver(Resource):
     @controller.jwt_authorizer(User)
-    @controller.database_searcher(Module, use_session=True)
+    @controller.database_searcher(Module)
     @controller.marshal_with(TestResult.FullModel)
-    def get(self, session, user: User, module: Module):
-        test_session = TestModuleSession.find_by_ids(session, user.id, module.id)
+    def get(self, user: User, module: Module):
+        test_session = TestModuleSession.find_by_ids(user.id, module.id)
         if test_session is None:
             controller.abort(400, "Test not started")
-        t = test_session.collect_all(session)
+        t = test_session.collect_all()
         print(t[0].right_answers)
         result = controller.marshal(t, TestPointSession.IndexModel)
         print(result)
-        return TestResult.create(session, user.id, module, result)
+        return TestResult.create(user.id, module, result)

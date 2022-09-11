@@ -5,7 +5,7 @@ from logging import Logger
 from sys import stderr
 
 from common import app, SocketIO, versions
-from common import db_meta, db_url  # noqa: WPS
+from common import db, db_url  # noqa: WPS
 from communities import (
     communities_meta_events,
     communities_namespace,

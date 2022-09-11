@@ -13,15 +13,15 @@ controller = ResourceController("authors", path="/authors")
 class AuthorInitializer(Resource):  # [GET] /authors/permit/
     @controller.jwt_authorizer(User)
     @controller.a_response()
-    def get(self, session, user: User) -> bool:
+    def get(self, user: User) -> bool:
         """Adds Author role to the User (requester).
         Does nothing, if it has been added before. Will fail if Author was banned."""
-        return Author.initialize(session, user)
+        return Author.initialize(user)
 
 
 @controller.route("/settings/")
 class ChangeAuthorSetting(Resource):
-    @controller.jwt_authorizer(Author, use_session=False)
+    @controller.jwt_authorizer(Author)
     @controller.marshal_with(Author.SettingsModel)
     def get(self, author: Author):
         return author
@@ -29,7 +29,7 @@ class ChangeAuthorSetting(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("pseudonym", required=False)
 
-    @controller.jwt_authorizer(Author, use_session=False)
+    @controller.jwt_authorizer(Author)
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, author: Author, pseudonym: str) -> None:

@@ -23,13 +23,13 @@ class Settings(Resource):
         help="A dict of changed settings",
     )
 
-    @controller.jwt_authorizer(User, use_session=False)
+    @controller.jwt_authorizer(User)
     @controller.marshal_with(User.FullData)
     def get(self, user: User):
         """Loads user's own full settings"""
         return user
 
-    @controller.jwt_authorizer(User, use_session=False)
+    @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)  # TODO fix with json schema validation
     @controller.a_response()
     def post(self, user: User, changed: dict) -> None:
@@ -53,17 +53,17 @@ class EmailChanger(Resource):
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
     @controller.a_response()
-    def post(self, session, user: User, password: str, new_email: str) -> str:
+    def post(self, user: User, password: str, new_email: str) -> str:
         """Verifies user's password and changes user's email to a new one"""
 
         if not User.verify_hash(password, user.password):
             return "Wrong password"
 
-        if User.find_by_email_address(session, new_email):
+        if User.find_by_email_address(new_email):
             return "Email in use"
 
         send_code_email(new_email, EmailType.CHANGE)
-        user.change_email(session, new_email)  # close all other JWT sessions
+        user.change_email(new_email)  # close all other JWT sessions
         return "Success"
 
 
@@ -84,7 +84,7 @@ class PasswordChanger(Resource):
 
     @controller.doc_abort(200, "Success")
     @controller.doc_abort("200 ", "Wrong password")
-    @controller.jwt_authorizer(User, use_session=False)
+    @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, user: User, password: str, new_password: str) -> str:
