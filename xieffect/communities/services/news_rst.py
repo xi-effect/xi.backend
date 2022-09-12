@@ -17,7 +17,6 @@ class NewsLister(Resource):
     @controller.doc_abort(403, "Permission Denied")
     @controller.jwt_authorizer(User)
     @controller.argument_parser(counter_parser)
-    @controller.database_searcher(Community, check_only=True, use_session=True)
     @controller.lister(20, Post.IndexModel)
     def get(self, session, community_id: int, user: User, start: int, finish: int):
         # Community membership check
@@ -28,10 +27,9 @@ class NewsLister(Resource):
 
 @controller.route("/<int:entry_id>/")
 class NewsChanger(Resource):
-    # Get news
+    @controller.doc_abort(403, "Permission Denied")
     @controller.doc_abort(404, "Post not found")
     @controller.jwt_authorizer(User)
-    @controller.database_searcher(Community, check_only=True, use_session=True)
     @controller.marshal_with(Post.IndexModel)
     def get(self, session, community_id: int, entry_id: int, user: User):
         post = Post.find_by_id(session, entry_id)

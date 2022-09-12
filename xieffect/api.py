@@ -123,6 +123,12 @@ socketio = SocketIO(
     engineio_logger=True,
 )
 
-socketio.add_namespace("/", communities_meta_events, invitation_events, news_events, protected=True)
+socketio.add_namespace(
+    "/",
+    communities_meta_events,
+    invitation_events,
+    news_events,
+    protected=True
+)
 
 # remove-item alias:\curl

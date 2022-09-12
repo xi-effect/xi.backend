@@ -10,6 +10,7 @@ from ..base.meta_db import Community
 
 class Post(Base, Identifiable):
     __tablename__ = "cs_posts"
+    not_found_text = "Post not found"
 
     # Vital
     id = Column(Integer, primary_key=True)
@@ -48,7 +49,6 @@ class Post(Base, Identifiable):
             limit,
         )
 
-    # Create news
     @classmethod
     def create(
         cls,

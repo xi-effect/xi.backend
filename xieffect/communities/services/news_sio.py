@@ -23,15 +23,13 @@ class PostEventSpace(EventSpace):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant_role(ParticipantRole.OWNER, use_session=False)
-    @controller.database_searcher(Community, use_session=True)
+    @check_participant_role(ParticipantRole.BASE, use_session=False)
     @controller.force_ack()
     def open_news(self, community: Community):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant_role(ParticipantRole.OWNER, use_session=False)
-    @controller.database_searcher(Community, use_session=True)
+    @check_participant_role(ParticipantRole.BASE, use_session=False)
     @controller.force_ack()
     def close_news(self, community: Community):
         leave_room(self.room_name(community.id))
@@ -41,8 +39,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
-    @check_participant_role(ParticipantRole.OWNER)
-    @controller.jwt_authorizer(User)
+    @check_participant_role(ParticipantRole.OWNER, use_user=True)
     @controller.marshal_ack(Post.IndexModel)
     def new_post(
         self,
@@ -58,51 +55,48 @@ class PostEventSpace(EventSpace):
         return post
 
     class UpdateModel(Post.CreationBaseModel, CommunityIdModel):
-        entry_id: int
+        post_id: int
 
+    @controller.doc_abort(404, "Post not found")
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
     @check_participant_role(ParticipantRole.OWNER)
-    @controller.jwt_authorizer(User, check_only=True)
     @controller.marshal_ack(Post.IndexModel)
+    @controller.database_searcher(Post)
     def update_post(
         self,
         event: DuplexEvent,
-        session,
         title: str | None,
         description: str | None,
         community: Community,
-        entry_id: int,
+        post: Post,
     ):
-        if (updated_post := Post.find_by_id(session, entry_id)) is None:
-            controller.abort(404, "News not found")
         if title is not None:
-            updated_post.title = title
+            post.title = title
         if description is not None:
-            updated_post.description = description
-        updated_post.changed = datetime.utcnow().replace()
+            post.description = description
+        if title is not None or description is not None:
+            post.changed = datetime.utcnow().replace()
 
-        event.emit_convert(updated_post, self.room_name(community.id))
-        return updated_post
+        event.emit_convert(post, self.room_name(community.id))
+        return post
 
     class DeleteModel(BaseModel):
         community_id: int
-        entry_id: int
+        post_id: int
 
+    @controller.doc_abort(404, "Post not found")
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
     @check_participant_role(ParticipantRole.OWNER)
-    @controller.jwt_authorizer(User, check_only=True)
+    @controller.database_searcher(Post)
+    @controller.force_ack()
     def delete_post(
         self,
         event: DuplexEvent,
-        session,
         community: Community,
-        entry_id: int,
+        post: Post,
     ):
-        if (deleted_post := Post.find_by_id(session, entry_id)) is None:
-            controller.abort(404, "News not found")
-        deleted_post.deleted = True
+        post.deleted = True
 
-        event.emit_convert(deleted_post, self.room_name(community.id))
-        return {"a": "Post was successfully deleted"}, 200
+        event.emit_convert(post, self.room_name(community.id))
