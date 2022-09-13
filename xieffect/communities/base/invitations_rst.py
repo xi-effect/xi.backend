@@ -6,8 +6,9 @@ from flask_restx import Resource
 
 from common import ResourceController, PydanticModel, counter_parser, User
 from .invitations_db import Invitation
-from .meta_db import Community, Participant
+from .meta_db import Community, Participant, ParticipantRole
 from .meta_sio import CommunitiesEventSpace
+from .meta_utl import check_participant_role
 
 controller = ResourceController("communities-invitation", path="/communities/")
 
@@ -16,10 +17,10 @@ controller = ResourceController("communities-invitation", path="/communities/")
 class InvitationLister(Resource):
     @controller.jwt_authorizer(User, check_only=True)
     @controller.argument_parser(counter_parser)
-    @controller.database_searcher(Community, check_only=True)
+    @check_participant_role(controller, ParticipantRole.OWNER)
     @controller.lister(20, Invitation.IndexModel)
-    def post(self, community_id: int, start: int, finish: int):
-        return Invitation.find_by_community(community_id, start, finish - start)
+    def post(self, community: Community, start: int, finish: int):
+        return Invitation.find_by_community(community, start, finish - start)
 
 
 def check_invitation():  # TODO # noqa: WPS231

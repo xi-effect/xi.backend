@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer
 
 from common import PydanticModel, Base, User, db
-from communities.base.meta_db import Community
+from .meta_db import Community
 
 
 class CommunitiesUser(Base):
