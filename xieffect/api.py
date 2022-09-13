@@ -11,6 +11,8 @@ from communities import (
     communities_namespace,
     invitation_events,
     invitation_namespace,
+    news_namespace,
+    news_events,
 )
 from education import (
     authors_namespace,
@@ -102,6 +104,7 @@ api.add_namespace(wip_index_namespace)
 
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
+api.add_namespace(news_namespace)
 
 api.add_namespace(webhook_namespace)
 
@@ -120,6 +123,12 @@ socketio = SocketIO(
     engineio_logger=True,
 )
 
-socketio.add_namespace("/", communities_meta_events, invitation_events, protected=True)
+socketio.add_namespace(
+    "/",
+    communities_meta_events,
+    invitation_events,
+    news_events,
+    protected=True
+)
 
 # remove-item alias:\curl
