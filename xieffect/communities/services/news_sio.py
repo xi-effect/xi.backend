@@ -57,12 +57,11 @@ class PostEventSpace(EventSpace):
     class UpdateModel(Post.CreationBaseModel, CommunityIdModel):
         post_id: int
 
-    @controller.doc_abort(404, "Post not found")
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
     @check_participant_role(ParticipantRole.OWNER)
-    @controller.marshal_ack(Post.IndexModel)
     @controller.database_searcher(Post)
+    @controller.marshal_ack(Post.IndexModel)
     def update_post(
         self,
         event: DuplexEvent,
@@ -84,7 +83,6 @@ class PostEventSpace(EventSpace):
     class DeleteModel(CommunityIdModel):
         post_id: int
 
-    @controller.doc_abort(404, "Post not found")
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(DeleteModel, use_event=True)
     @check_participant_role(ParticipantRole.OWNER)
