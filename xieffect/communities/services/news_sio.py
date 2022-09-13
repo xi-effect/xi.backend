@@ -76,18 +76,17 @@ class PostEventSpace(EventSpace):
         if description is not None:
             post.description = description
         if title is not None or description is not None:
-            post.changed = datetime.utcnow().replace()
+            post.changed = datetime.utcnow()
 
         event.emit_convert(post, self.room_name(community.id))
         return post
 
-    class DeleteModel(BaseModel):
-        community_id: int
+    class DeleteModel(CommunityIdModel):
         post_id: int
 
     @controller.doc_abort(404, "Post not found")
     @controller.argument_parser(DeleteModel)
-    @controller.mark_duplex(Post.IndexModel, use_event=True)
+    @controller.mark_duplex(DeleteModel, use_event=True)
     @check_participant_role(ParticipantRole.OWNER)
     @controller.database_searcher(Post)
     @controller.force_ack()
@@ -98,5 +97,8 @@ class PostEventSpace(EventSpace):
         post: Post,
     ):
         post.deleted = True
-
-        event.emit_convert(post, self.room_name(community.id))
+        event.emit_convert(
+            room=self.room_name(community_id=community.id),
+            community_id=community.id,
+            post_id=post.id,
+        )

@@ -16,11 +16,13 @@ class Post(Base, Identifiable):
     id = Column(Integer, primary_key=True)
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    created = Column(DateTime, server_default=sql.func.now())
+    created = Column(DateTime, server_default=sql.func.now(), nullable=False)
     changed = Column(
-        DateTime, server_default=sql.func.now(), server_onupdate=sql.func.now()
+        DateTime, server_default=sql.func.now(),
+        server_onupdate=sql.func.now(),
+        nullable=False,
     )
-    deleted = Column(Boolean, default=False)
+    deleted = Column(Boolean, default=False, nullable=False)
 
     # User-related
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
@@ -38,16 +40,12 @@ class Post(Base, Identifiable):
         deleted, created, changed, community_id, user_id
     ).combine_with(CreationBaseModel)
 
-    # Find a paginated list of community news
     @classmethod
     def find_by_community(
         cls, session: sessionmaker, community_id: int, offset: int, limit: int
     ) -> list[Post]:
-        return session.get_paginated(
-            select(cls).filter_by(community_id=community_id, deleted=False),
-            offset,
-            limit,
-        )
+        stmt = select(cls).filter_by(community_id=community_id, deleted=False)
+        return session.get_paginated(stmt, offset, limit)
 
     @classmethod
     def create(
@@ -66,7 +64,6 @@ class Post(Base, Identifiable):
             community_id=community_id,
         )
 
-    # Find list of community news by id
     @classmethod
     def find_by_id(cls, session: sessionmaker, entry_id: int) -> Post | None:
         return session.get_first(select(cls).filter_by(id=entry_id, deleted=False))
