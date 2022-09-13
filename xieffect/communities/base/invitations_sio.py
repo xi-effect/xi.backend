@@ -14,7 +14,6 @@ controller = EventController()
 
 def check_participant_role(
     role: ParticipantRole,
-    use_session: bool = True,
     use_user: bool = False,
     use_participant: bool = False,
     use_community: bool = True,
@@ -23,13 +22,12 @@ def check_participant_role(
         @wraps(function)
         @controller.doc_abort(403, "Permission Denied")
         @controller.jwt_authorizer(User)
-        @controller.database_searcher(Community, use_session=True)
+        @controller.database_searcher(Community)
         def check_participant_role_inner(*args, **kwargs):
-            session = get_or_pop(kwargs, "session", use_session)
             user = get_or_pop(kwargs, "user", use_user)
             community = get_or_pop(kwargs, "community", use_community)
 
-            participant = Participant.find_by_ids(session, community.id, user.id)
+            participant = Participant.find_by_ids(community.id, user.id)
             if participant is None:
                 controller.abort(403, "Permission Denied: Participant not found")
 
@@ -56,13 +54,13 @@ class InvitationsEventSpace(EventSpace):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant_role(ParticipantRole.OWNER, use_session=False)
+    @check_participant_role(ParticipantRole.OWNER)
     @controller.force_ack()
     def open_invites(self, community: Community):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant_role(ParticipantRole.OWNER, use_session=False)
+    @check_participant_role(ParticipantRole.OWNER)
     @controller.force_ack()
     def close_invites(self, community: Community):
         leave_room(self.room_name(community.id))
@@ -78,7 +76,6 @@ class InvitationsEventSpace(EventSpace):
     def new_invite(
         self,
         event: DuplexEvent,
-        session,
         community: Community,
         role: str,
         limit: int | None,
@@ -88,7 +85,7 @@ class InvitationsEventSpace(EventSpace):
         if enum_role is None:
             controller.abort(400, f"Invalid role: {role}")
 
-        invitation = Invitation.create(session, community.id, enum_role, limit, days)
+        invitation = Invitation.create(community.id, enum_role, limit, days)
         event.emit_convert(invitation, self.room_name(community.id))
         return invitation
 
@@ -98,12 +95,12 @@ class InvitationsEventSpace(EventSpace):
     @controller.argument_parser(InvitationIdsModel)
     @controller.mark_duplex(InvitationIdsModel, use_event=True)
     @check_participant_role(ParticipantRole.OWNER)
-    @controller.database_searcher(Invitation, use_session=True)
+    @controller.database_searcher(Invitation)
     @controller.force_ack()
     def delete_invite(
-        self, event: DuplexEvent, session, community: Community, invitation: Invitation
+        self, event: DuplexEvent, community: Community, invitation: Invitation
     ):
-        invitation.delete(session)
+        invitation.delete()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
             community_id=community.id,

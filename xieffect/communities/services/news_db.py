@@ -4,7 +4,7 @@ from sqlalchemy import Column, select, ForeignKey, sql
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Text, DateTime
 
-from common import Base, sessionmaker, User, PydanticModel, Identifiable
+from common import Base, db, User, PydanticModel, Identifiable
 from ..base.meta_db import Community
 
 
@@ -42,22 +42,20 @@ class Post(Base, Identifiable):
 
     @classmethod
     def find_by_community(
-        cls, session: sessionmaker, community_id: int, offset: int, limit: int
+        cls, community_id: int, offset: int, limit: int
     ) -> list[Post]:
         stmt = select(cls).filter_by(community_id=community_id, deleted=False)
-        return session.get_paginated(stmt, offset, limit)
+        return db.session.get_paginated(stmt, offset, limit)
 
     @classmethod
     def create(
         cls,
-        session: sessionmaker,
         title: str,
         description: str | None,
         user_id: int,
         community_id: int,
     ) -> Post:
         return super().create(
-            session,
             title=title,
             description=description,
             user_id=user_id,
@@ -65,5 +63,5 @@ class Post(Base, Identifiable):
         )
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Post | None:
-        return session.get_first(select(cls).filter_by(id=entry_id, deleted=False))
+    def find_by_id(cls, entry_id: int) -> Post | None:
+        return db.session.get_first(select(cls).filter_by(id=entry_id, deleted=False))

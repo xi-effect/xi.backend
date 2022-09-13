@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 
 from __lib__.flask_fullstack import UserRole, PydanticModel, Identifiable
-from . import Base, sessionmaker
+from ._core import Base, db  # noqa: WPS436
 
 DEFAULT_AVATAR: dict = {  # noqa: WPS407
     "topType": 0,
@@ -31,8 +31,8 @@ class BlockedToken(Base):
     jti = Column(String(36), nullable=False)
 
     @classmethod
-    def find_by_jti(cls, session: sessionmaker, jti: str) -> BlockedToken:
-        return session.get_first(select(cls).filter_by(jti=jti))
+    def find_by_jti(cls, jti: str) -> BlockedToken:
+        return db.session.get_first(select(cls).filter_by(jti=jti))
 
 
 class User(Base, UserRole, Identifiable):
@@ -122,31 +122,29 @@ class User(Base, UserRole, Identifiable):
             )
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> User | None:
-        return session.get_first(select(cls).filter_by(id=entry_id))
+    def find_by_id(cls, entry_id: int) -> User | None:
+        return db.session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_identity(cls, session, identity: int) -> User | None:
-        return cls.find_by_id(session, identity)
+    def find_by_identity(cls, identity: int) -> User | None:
+        return cls.find_by_id(identity)
 
     @classmethod
-    def find_by_email_address(cls, session: sessionmaker, email) -> User | None:
-        return session.get_first(select(cls).filter_by(email=email))
+    def find_by_email_address(cls, email) -> User | None:
+        return db.session.get_first(select(cls).filter_by(email=email))
 
     @classmethod  # TODO this class shouldn't know about invites
     def create(
         cls,
-        session: sessionmaker,
         *,
         email: str,
         password: str,
         invite=None,
         **kwargs,
     ) -> User | None:
-        if cls.find_by_email_address(session, email):
+        if cls.find_by_email_address(email):
             return None
         new_user = super().create(
-            session,
             email=email,
             password=cls.generate_hash(password),
             invite=invite,
@@ -154,7 +152,7 @@ class User(Base, UserRole, Identifiable):
         )
         if invite is not None:
             new_user.code = new_user.invite.generate_code(new_user.id)
-            session.flush()
+            db.session.flush()
         return new_user
 
     @classmethod
@@ -168,7 +166,6 @@ class User(Base, UserRole, Identifiable):
     @classmethod
     def search_by_username(
         cls,
-        session: sessionmaker,
         exclude_id: int,
         search: str | None,
         offset: int,
@@ -177,13 +174,13 @@ class User(Base, UserRole, Identifiable):
         stmt = select(cls).filter(cls.id != exclude_id)
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
-        return session.get_paginated(stmt, offset, limit)
+        return db.session.get_paginated(stmt, offset, limit)
 
     def get_identity(self):
         return self.id
 
-    def change_email(self, session: sessionmaker, new_email: str) -> bool:
-        if User.find_by_email_address(session, new_email):
+    def change_email(self, new_email: str) -> bool:
+        if User.find_by_email_address(new_email):
             return False
         self.email = new_email
         self.email_confirmed = False

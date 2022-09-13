@@ -4,7 +4,7 @@ from flask_restx import fields
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import JSONWithModel, Base, sessionmaker, PydanticModel
+from common import JSONWithModel, Base, PydanticModel
 from .interaction_db import TestModuleSession
 from .modules_db import Module
 
@@ -48,7 +48,6 @@ class TestResult(Base):
     @classmethod
     def create(
         cls,
-        session: sessionmaker,
         user_id: int,
         module: Module,
         result,
@@ -61,7 +60,6 @@ class TestResult(Base):
             "total-answers": sum(r["total-answers"] for r in result),
         }
         return super().create(
-            session,
             user_id=user_id,
             module_id=module.id,
             short_result=short_result,
@@ -71,21 +69,18 @@ class TestResult(Base):
     @classmethod
     def find_by_id(
         cls,
-        session: sessionmaker,
         entry_id: int,
     ) -> TestModuleSession | None:
-        return cls.find_first_by_kwargs(session, id=entry_id)
+        return cls.find_first_by_kwargs(id=entry_id)
 
     @classmethod
     def find_by_user(
         cls,
-        session: sessionmaker,
         user_id: int,
         offset: int,
         limit: int,
     ) -> list[TestModuleSession]:
         return cls.find_paginated_by_kwargs(
-            session,
             offset,
             limit,
             cls.id.desc(),
@@ -95,14 +90,12 @@ class TestResult(Base):
     @classmethod
     def find_by_module(
         cls,
-        session: sessionmaker,
         user_id: int,
         module_id: int,
         offset: int,
         limit: int,
     ) -> list[TestModuleSession]:
         return cls.find_paginated_by_kwargs(
-            session,
             offset,
             limit,
             cls.id.desc(),

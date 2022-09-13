@@ -18,9 +18,6 @@ TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
 @mark.order(1)
 def test_login(base_client: FlaskClient):
     response: TestResponse = check_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
-    assert "Set-Cookie" in response.headers
-    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
-    assert cookie[0] == "access_token_cookie"
 
     result: dict[str, ...] = response.json
     assert result.pop("a", None) == "Success"
@@ -28,6 +25,10 @@ def test_login(base_client: FlaskClient):
         assert key in result
     for key in ("id", "username", "dark-theme", "language"):
         assert key in result["user"]
+
+    assert "Set-Cookie" in response.headers
+    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    assert cookie[0] == "access_token_cookie"
 
     check_code(base_client.post("/logout/"))
 
@@ -51,11 +52,6 @@ def test_signup(base_client: FlaskClient):
     data = dict(credentials, code=Invite.serializer.dumps((TEST_INVITE_ID, 0)))
     response = check_code(base_client.post("/reg/", json=data), get_json=False)
 
-    # Checking for cookies
-    assert "Set-Cookie" in response.headers
-    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
-    assert cookie[0] == "access_token_cookie"
-
     # Checking the returned data
     result: dict[str, ...] = response.json
     assert result.pop("a", None) == "Success"
@@ -68,6 +64,11 @@ def test_signup(base_client: FlaskClient):
     assert isinstance(user, dict)
     assert dict_equal(user, default_data, *default_data.keys())
     assert "id" in user
+
+    # Checking for cookies
+    assert "Set-Cookie" in response.headers
+    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
+    assert cookie[0] == "access_token_cookie"
 
     # Check the /home/ as well
     response = check_code(base_client.get("/home/"))

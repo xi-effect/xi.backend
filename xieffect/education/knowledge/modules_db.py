@@ -16,7 +16,7 @@ from common import (
     Marshalable,
     PydanticModel,
 )
-from common import LambdaFieldDef, index_service, Base, sessionmaker
+from common import LambdaFieldDef, index_service, Base, db
 from ._base_session import BaseModuleSession  # noqa: WPS436
 from ..authorship.user_roles_db import Author
 
@@ -51,14 +51,12 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
     @classmethod
     def create(
         cls,
-        session: sessionmaker,
         user_id: int,
         module_id: int,
     ) -> ModuleFilterSession | None:
-        if cls.find_by_ids(session, user_id, module_id) is not None:
+        if cls.find_by_ids(user_id, module_id) is not None:
             return None
         return super().create(
-            session,
             user_id=user_id,
             module_id=module_id,
             last_changed=datetime.utcnow(),
@@ -73,7 +71,6 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
 
     def change_preference(  # TODO # noqa: WPS231
         self,
-        session: sessionmaker,
         operation: PreferenceOperation,
     ) -> None:
         if operation == PreferenceOperation.HIDE:
@@ -91,7 +88,7 @@ class ModuleFilterSession(BaseModuleSession, Marshalable):
         if any((self.hidden, self.pinned, self.starred, self.started)):
             self.note_change()
         else:
-            self.delete(session)
+            self.delete()
 
 
 class PointToPage(Base):
@@ -133,7 +130,6 @@ class Point(Base):
     @classmethod
     def create(
         cls,
-        session,
         module_id: int,
         point_id: int,
         point_data: dict[str, str],
@@ -150,8 +146,8 @@ class Point(Base):
                 for i, page_id in enumerate(point_data["pages"])
             ]
         )
-        session.add(point)
-        session.flush()
+        db.session.add(point)
+        db.session.flush()
         return point
 
 
@@ -233,12 +229,11 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
     @classmethod
     def create(
         cls,
-        session: sessionmaker,
         json_data: dict[str, ...],
         author: Author,
         force: bool = False,
     ) -> Module | None:
-        if cls.find_by_id(session, json_data["id"]):
+        if cls.find_by_id(json_data["id"]):
             return None
 
         json_data["type"] = ModuleType.from_string(json_data["type"])
@@ -273,35 +268,33 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         # noinspection PyTypeChecker
         entry.points.extend(
             [
-                Point.create(session, entry.id, point_id, point_data)
+                Point.create(entry.id, point_id, point_data)
                 for point_id, point_data in enumerate(json_data["points"])
             ]
         )
 
-        session.add(entry)
-        session.flush()
+        db.session.add(entry)
+        db.session.flush()
 
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, module_id: int) -> Module | None:
-        return cls.find_first_by_kwargs(session, id=module_id)
+    def find_by_id(cls, module_id: int) -> Module | None:
+        return cls.find_first_by_kwargs(id=module_id)
 
     @classmethod
     def find_or_create(
         cls,
-        session: sessionmaker,
         json_data: dict[str, ...],
         author: Author,
     ) -> Module | None:
-        if cls.find_by_id(session, json_data["id"]):
+        if cls.find_by_id(json_data["id"]):
             return None
-        return cls.create(session, json_data, author)
+        return cls.create(json_data, author)
 
     @classmethod
     def find_with_relation(
         cls,
-        session: sessionmaker,
         module_id: int,
         user_id: int,
     ) -> Row | None:
@@ -317,12 +310,12 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
                 ModuleFilterSession.user_id == user_id,
             ),
         )
-        return session.get_first_row(stmt.filter(cls.id == module_id).limit(1))
+        stmt = stmt.filter(cls.id == module_id).limit(1)
+        return db.session.get_first_row(stmt)
 
     @classmethod
     def get_module_list(
         cls,
-        session: sessionmaker,
         filters: dict[str, str] | None,
         search: str,
         sort: SortType,
@@ -367,12 +360,11 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
         elif sort == SortType.VISIT_DATE:
             stmt = stmt.order_by(ModuleFilterSession.last_visited.desc())
 
-        return session.get_paginated_rows(stmt, offset, limit)
+        return db.session.get_paginated_rows(stmt, offset, limit)
 
     @classmethod
     def get_hidden_module_list(
         cls,
-        session: sessionmaker,
         user_id: int,
         offset: int,
         limit: int,
@@ -387,7 +379,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
             ),
         )
         stmt = stmt.order_by(ModuleFilterSession.last_changed.desc())
-        return session.get_paginated_rows(stmt, offset, limit)
+        return db.session.get_paginated_rows(stmt, offset, limit)
 
     def execute_point(self, point_id: int = None, theory_level: float = None) -> int:
         if point_id is None:

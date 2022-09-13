@@ -81,11 +81,10 @@ def create_email_confirmer(controller, route: str, email_type: EmailType):
     @controller.route(route + "<code>/")
     class EmailConfirmer(Resource):
         @controller.doc_abort(400, "Invalid code")
-        @controller.with_begin
         @controller.a_response()
-        def post(self, session, code: str) -> str:
+        def post(self, code: str) -> str:
             email = email_type.parse_code(code)
-            user = None if email is None else User.find_by_email_address(session, email)
+            user = None if email is None else User.find_by_email_address(email)
             if user is None:
                 controller.abort(400, "Invalid code")
             user.email_confirmed = True

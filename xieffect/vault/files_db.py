@@ -4,7 +4,7 @@ from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text
 
-from common import PydanticModel, Base, User
+from common import db, PydanticModel, Base, User
 
 
 class File(Base):
@@ -26,19 +26,19 @@ class File(Base):
             callback(filename=orm_object.filename)  # TODO allow this in FFS simpler!
 
     @classmethod
-    def create(cls, session, uploader: User, name: str) -> File:
-        return super().create(session, name=name, uploader=uploader)
+    def create(cls, uploader: User, name: str) -> File:
+        return super().create(name=name, uploader=uploader)
 
     @classmethod
-    def find_by_id(cls, session, entry_id: int) -> File | None:
-        return session.get_first(select(cls).filter_by(id=entry_id))
+    def find_by_id(cls, entry_id: int) -> File | None:
+        return db.session.get_first(select(cls).filter_by(id=entry_id))
 
     @property
     def filename(self) -> str:
         return str(self.id) + "-" + self.name
 
     @classmethod
-    def get_for_mub(cls, session, offset: int, limit: int) -> list[File]:
-        return session.get_paginated(
+    def get_for_mub(cls, offset: int, limit: int) -> list[File]:
+        return db.session.get_paginated(
             select(File).order_by(cls.id.desc()), offset, limit
         )
