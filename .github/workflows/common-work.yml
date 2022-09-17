@@ -56,21 +56,10 @@ jobs:
 
   build:
     needs: prepare
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-
-      - name: Build and push
-        uses: niqzart/ffs-devops/docker-build@main
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          repository: ${{ secrets.DOCKER_HUB_USERNAME }}
-          tag: ${{ inputs.tag }}
+    uses: xi-effect/xieffect-actions/.github/workflows/docker-build.yml@main
+    with:
+      tag: flask-prod
+    secrets: inherit
 
   docs:
     needs: prepare
