@@ -6,6 +6,10 @@ on:
       tag:
         type: string
         required: true
+      cache:
+        type: boolean
+        required: false
+        default: true
     secrets:
       DOCKER_HUB_USERNAME:
         required: true
@@ -55,8 +59,17 @@ jobs:
           retention-days: 1
 
   build:
+    if: inputs.cache == true
     needs: prepare
     uses: xi-effect/xieffect-actions/.github/workflows/docker-build.yml@main
+    with:
+      tag: flask-prod
+    secrets: inherit
+
+  build-nocache:
+    if: inputs.cache == false
+    needs: prepare
+    uses: xi-effect/xieffect-actions/.github/workflows/docker-build-nocache.yml@main
     with:
       tag: flask-prod
     secrets: inherit
