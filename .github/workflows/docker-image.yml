@@ -13,6 +13,13 @@ jobs:
 
   deploy:
     needs: build-test-docs
+    uses: xi-effect/xieffect-actions/.github/workflows/docker-deploy.yml@main
+    with:
+      images: flask
+    secrets: inherit
+
+  upload:
+    needs: build-test-docs
     runs-on: ubuntu-latest
 
     steps:
@@ -32,17 +39,3 @@ jobs:
           source: "./sio-doc/*"
           target: "~/xieffect-core/sio-docs-new/"
           strip_components: 1
-
-      - name: Run SSH command
-        uses: garygrossgarten/github-action-ssh@release
-        with:
-          command: |
-            cd ~/xieffect-core
-            docker system prune -a -f
-            docker-compose pull flask
-            docker-compose up -d
-          host: ${{ secrets.SERVER_IP }}
-          username: root
-          privateKey: ${{ secrets.SSH_PRIVATE_KEY }}
-        env:
-          CI: true
