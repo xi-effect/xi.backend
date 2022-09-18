@@ -4,7 +4,7 @@ from flask.testing import FlaskClient
 from pytest import mark
 
 from __lib__.flask_fullstack import check_code, dict_equal
-from users import dumps_feedback, generate_code  # noqa: WPS
+from users import dumps_feedback, generate_code
 
 
 def assert_feedback(client: FlaskClient, data: dict, a: str):
