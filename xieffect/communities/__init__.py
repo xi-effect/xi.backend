@@ -5,4 +5,4 @@ from .base import (
     invitation_events,
 )
 from .base import CommunitiesUser
-from .services import news_namespace, news_events
+from .services import news_namespace, news_events, channel_categories_events

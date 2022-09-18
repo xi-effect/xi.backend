@@ -13,6 +13,7 @@ from communities import (
     invitation_namespace,
     news_namespace,
     news_events,
+    channel_categories_events,
 )
 from education import (
     authors_namespace,
@@ -128,6 +129,7 @@ socketio.add_namespace(
     communities_meta_events,
     invitation_events,
     news_events,
+    channel_categories_events,
     protected=True
 )
 
