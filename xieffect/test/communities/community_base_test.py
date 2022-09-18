@@ -8,7 +8,7 @@ from flask_socketio import SocketIOTestClient
 from pytest import mark
 
 from __lib__.flask_fullstack import check_code, dict_equal
-from .conftest import socketio_client_factory
+from ..conftest import socketio_client_factory
 
 INVITATIONS_PER_REQUEST = 20
 

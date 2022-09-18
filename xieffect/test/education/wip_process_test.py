@@ -29,11 +29,11 @@ class WIPRecycler:
 
         self.file_id: int | str | None = None
 
-        with open(f"test/json/{file_name1}.json", "rb") as f:
+        with open(f"test/education/json/{file_name1}.json", "rb") as f:
             # TODO content shouldn't have any id info!
             self.file_content1 = json_load(f)
 
-        with open(f"test/json/{file_name2}.json", "rb") as f:
+        with open(f"test/education/json/{file_name2}.json", "rb") as f:
             self.file_content2 = json_load(f)
 
     def find_in_list(self, url, per_request: int = None) -> dict | None:

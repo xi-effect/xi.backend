@@ -38,7 +38,7 @@ def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client:
 
     # upload a file
     def upload(filename: str):
-        with open(f"test/json/{filename}", "rb") as f:
+        with open(f"test/education/json/{filename}", "rb") as f:
             contents: bytes = f.read()
         data = check_code(client.post(
             "/files/",

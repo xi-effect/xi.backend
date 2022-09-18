@@ -8,7 +8,7 @@ from werkzeug.test import TestResponse
 from __lib__.flask_fullstack import check_code, dict_equal
 from common import mail, mail_initialized
 from other import EmailType
-from users import dumps_feedback, generate_code
+from users import dumps_feedback, generate_code  # noqa: WPS
 from wsgi import Invite, TEST_INVITE_ID
 from .conftest import BASIC_PASS, socketio_client_factory, TEST_EMAIL
 
