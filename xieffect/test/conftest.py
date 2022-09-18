@@ -4,13 +4,13 @@ from collections.abc import Callable, Iterator
 from typing import Protocol
 
 from flask.testing import FlaskClient
-from flask_socketio import SocketIOTestClient
 from pytest import fixture
 from werkzeug.test import TestResponse
 
 from __lib__.flask_fullstack import check_code
 from api import socketio
 from wsgi import ADMIN_EMAIL, ADMIN_PASS, application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
+from .components import SocketIOTestClient
 
 
 class RedirectedFlaskClient(FlaskClient):
@@ -64,15 +64,6 @@ def full_client() -> FlaskClient:
     return test_client
 
 
-def socketio_client_factory(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
-    return socketio.test_client(app, flask_test_client=client)
-
-
-@fixture
-def socketio_client(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
-    return socketio_client_factory(client)
-
-
 @fixture
 def admin_client() -> FlaskClient:
     return login(ADMIN_EMAIL, ADMIN_PASS)
@@ -84,6 +75,15 @@ def multi_client() -> Callable[[str], FlaskClient]:
         return login(user_email, BASIC_PASS)
 
     return multi_client_inner
+
+
+def socketio_client_factory(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
+    return SocketIOTestClient(app, socketio, flask_test_client=client)
+
+
+@fixture
+def socketio_client(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
+    return socketio_client_factory(client)
 
 
 class ListTesterProtocol(Protocol):

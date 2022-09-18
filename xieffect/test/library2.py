@@ -1,63 +1,29 @@
-from collections import Callable
-from dataclasses import dataclass
-
 from flask import Flask
 from flask.testing import FlaskClient
-from flask_socketio.test_client import SocketIOTestClient as _SocketIOTestClient
 
 from common import SocketIO
-
-
-@dataclass
-class Event:
-    name: str
-    data: dict
-    namespace: str = "/"
-
-    @classmethod
-    def from_sio(cls, event: dict):
-        return cls(event["name"], event["args"][0], event.get("namespace", "/"))
-
-    def __eq__(self, other):
-        return isinstance(other, Event) and self.name == other.name \
-               and self.data == other.data and self.name == other.namespace
-
-
-class SocketIOTestClient(_SocketIOTestClient):
-    def _get_received(self, condition: Callable[[dict], bool] = lambda pkt: True, namespace: str = "/",
-                      keep_history: bool = False) -> list[Event]:
-        if not self.is_connected(namespace):
-            raise RuntimeError("not connected")
-        result = [pkt for pkt in self.queue[self.eio_sid] if condition(pkt)]
-        if not keep_history:
-            self.queue[self.eio_sid] = [pkt for pkt in self.queue[self.eio_sid] if pkt not in result]
-        return [Event.from_sio(pkt) for pkt in result]
-
-    def get_received(self, namespace: str = "/", keep_history: bool = False) -> list[Event]:
-        return self._get_received(lambda pkt: pkt["namespace"] == namespace, namespace, keep_history)
-
-    def filter_received(self, event_name: str, namespace: str = "/", keep_history: bool = False) -> list[Event]:
-        return self._get_received(lambda pkt: pkt["namespace"] == namespace and pkt["name"] == event_name,
-                                  namespace, keep_history)
-
-    def sort_received(self, event_names: list[str], namespace: str = "/", collect_rest: bool = True,
-                      keep_history: bool = False) -> dict[str, list[Event]]:
-        if collect_rest:
-            event_names.append("*")
-        return {name: [event for event in self.get_received(namespace, keep_history)
-                       if event.namespace == namespace and (name == "*" or event.name == name)]
-                for name in event_names}
-
-    def received_count(self, namespace: str = "/"):
-        return len(self.get_received(namespace, keep_history=True))
+from .components import SocketIOTestClient
 
 
 class DoubleClient:
-    def __init__(self, app: Flask, socketio: SocketIO, flask_client: FlaskClient = None):
-        if flask_client is None:
-            flask_client = app.test_client()
-        self.rst: FlaskClient = flask_client
-        self.sio: SocketIOTestClient = SocketIOTestClient(app, socketio, flask_test_client=self.rst)
+    def __init__(self, rst_client: FlaskClient, sio_client: SocketIOTestClient):
+        self.rst: FlaskClient = rst_client
+        self.sio: SocketIOTestClient = sio_client
+
+    @classmethod
+    def from_apps(cls, app: Flask, socketio: SocketIO = None):
+        if socketio is None:
+            socketio: SocketIO = app.extensions["socketio"]
+        rst_client = app.test_client()
+        sio_client = SocketIOTestClient(app, socketio, flask_test_client=rst_client)
+        return cls(rst_client, sio_client)
+
+    @classmethod
+    def from_flask(cls, flask_client: FlaskClient):
+        app: Flask = flask_client.application
+        socketio: SocketIO = app.extensions["socketio"]
+        sio_client = SocketIOTestClient(app, socketio, flask_test_client=flask_client)
+        return cls(flask_client, sio_client)
 
     def __enter__(self):
         return self
@@ -77,7 +43,9 @@ class MultiClient:
         return self
 
     def connect_user(self, flask_client: FlaskClient = None) -> DoubleClient:
-        return DoubleClient(self.app, self.socketio, flask_client)
+        if flask_client is None:
+            return DoubleClient.from_apps(self.app)
+        return DoubleClient.from_flask(flask_client)
 
     def attach_user(self, username: str) -> None:
         self.users[username] = self.connect_user()
@@ -89,39 +57,3 @@ class MultiClient:
         for user in self.users.values():
             user.__exit__()
         self.users.clear()
-
-
-# class MultiClient(_MultiClient):
-#     def auth_user(self, email: str, password: str) -> Union[DoubleClient, None]:
-#         raise NotImplementedError
-#
-#     def attach_auth_user(self, username: str, email: str, password: str) -> bool:
-#         if (client := self.auth_user(email, password)) is not None:
-#             self.users[username] = client
-#             return True
-#         return False
-#
-#     def get_tr_io(self, i: str = "1") -> tuple[SocketIOTestClient, SocketIOTestClient, SocketIOTestClient]:
-#         return self.users["Anatol-" + i].sio, self.users["Evgen-" + i].sio, self.users["Vasil-" + i].sio
-#
-#     def get_dtr_io(self) -> tuple[SocketIOTestClient, SocketIOTestClient, SocketIOTestClient,
-#                                   SocketIOTestClient, SocketIOTestClient, SocketIOTestClient]:
-#         return *self.get_tr_io("1"), *self.get_tr_io("2")  # noqa # I know better
-#
-#
-# @fixture(scope="session", autouse=True)
-# def multi_client():
-#     with MultiClient(app, socketio) as multi_client:
-#         yield multi_client
-#
-#
-# @fixture()
-# def socket_tr_io_client():  # add to library2.py
-#     with MultiClient(app, socketio) as multi_client:
-#         multi_client.attach_auth_user("Anatol-1", "8@user.user", BASIC_PASS)
-#         multi_client.attach_auth_user("Anatol-2", "8@user.user", BASIC_PASS)
-#         multi_client.attach_auth_user("Evgen-1", "test@test.test", BASIC_PASS)
-#         multi_client.attach_auth_user("Evgen-2", "test@test.test", BASIC_PASS)
-#         multi_client.attach_auth_user("Vasil-1", "7@user.user", BASIC_PASS)
-#         multi_client.attach_auth_user("Vasil-2", "7@user.user", BASIC_PASS)
-#         yield multi_client
