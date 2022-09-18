@@ -1,7 +1,6 @@
 # noqa: WPS201
 from __future__ import annotations
 
-from datetime import datetime
 from json import dump as dump_json, load as load_json
 from os.path import exists
 from pathlib import Path
@@ -136,36 +135,6 @@ def init_knowledge():
             module.id = module_data["id"]
             db.session.flush()
             Module.create(module_data, test_author, force=True)
-
-
-def init_chats():  # TODO # noqa: WPS231
-    from communication.chatting_db import Chat, ChatRole, Message
-
-    with open("../static/test/chat-bundle.json", encoding="utf-8") as f:
-        for i, chat_data in enumerate(load_json(f)):
-            if Chat.find_by_id(db.session, i + 1):
-                continue
-            owner: User = User.find_by_email_address(chat_data["owner-email"])
-            chat: Chat = Chat.create(db.session, chat_data["name"], owner)
-            for email, role in chat_data["participants"]:
-                if email != owner.email:
-                    chat.add_participant(
-                        db.session,
-                        User.find_by_email_address(email),
-                        ChatRole.from_string(role),
-                    )
-            for message_data in chat_data["messages"]:
-                sender = User.find_by_email_address(message_data["sender-email"])
-                message: Message = Message.create(
-                    db.session,
-                    chat,
-                    message_data["content"],
-                    sender,
-                    update_unread=False,
-                )
-                message.sent = datetime.fromisoformat(message_data["sent"])
-                if message_data["updated"] is not None:
-                    message.updated = datetime.fromisoformat(message_data["updated"])
 
 
 def version_check():
