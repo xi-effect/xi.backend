@@ -5,8 +5,8 @@ from pydantic import BaseModel
 
 from common import DuplexEvent, EventController, EventSpace, db
 from .channels_db import ChannelCategory, MAX_CHANNELS
-from ..base.meta_utl import check_participant_role
 from ..base.meta_db import ParticipantRole, Community
+from ..base.meta_utl import check_participant_role
 
 controller = EventController()
 
@@ -33,7 +33,7 @@ class ChannelCategoryEventSpace(EventSpace):
         leave_room(self.room_name(community.id))
 
     class CreateModel(ChannelCategory.CreateModel, CommunityIdModel):
-        position: int = None
+        next_id: int = None
 
     @controller.doc_abort(409, "Over limit")
     @controller.argument_parser(CreateModel)
@@ -46,60 +46,43 @@ class ChannelCategoryEventSpace(EventSpace):
         name: str,
         description: str,
         community: Community,
-        position: int,
+        next_id: int | None,
     ):
-        response = community.categories
+        cat_list = community.categories
 
         # Check category limit
-        if len(response) == MAX_CHANNELS:
+        if len(cat_list) == MAX_CHANNELS:
             controller.abort(409, "Over limit: Too many categories")
 
         # Create a category in empty list
-        if len(response) == 0:
-            prev_id = None
-            next_id = None
+        if len(cat_list) == 0:
+            prev_cat = None
+            next_cat = None
 
         else:
-            # Create a category at the end of the list
-            if position is None:
-                prev_cat = ChannelCategory.find_by_next_id(community.id, None)
-                prev_id = prev_cat.id
-                next_id = None
-
-            # Create a category at the top of the list
-            elif position == 0:
-                prev_cat = ChannelCategory.find_by_prev_id(community.id, None)
-                prev_id = None
-                next_id = prev_cat.id
-
+            next_cat = next_id
+            # Add to end to list
+            if next_id is None:
+                old_cat = ChannelCategory.find_by_next_id(community.id, None)
+                prev_cat = old_cat.id
+            # Add to the list
             else:
-                prev_cat = ChannelCategory.find_by_id(position)
-                # Checking if the previous category exists
-                if prev_cat is None or prev_cat.community_id != community.id:
-                    # Create a category at the end of the list
-                    prev_cat = ChannelCategory.find_by_next_id(community.id, None)
-                    prev_id = prev_cat.id
-                    next_id = None
-                else:
-                    prev_id = prev_cat.id
-                    next_id = prev_cat.next_category_id
+                old_cat = ChannelCategory.find_by_id(next_id)
+                prev_cat = old_cat.prev_category_id
 
         category = ChannelCategory.create(
             name,
             description,
-            prev_id,
-            next_id,
+            prev_cat,
+            next_cat,
             community.id,
         )
 
-        if len(response) > 0:
-            if position is None:
-                prev_cat.next_category_id = category.id
-            elif position == 0:
-                prev_cat.prev_category_id = category.id
-            else:
-                prev_cat.next_category.prev_category_id = category.id
-                prev_cat.next_category_id = category.id
+        # Stitching
+        if category.next_category_id is not None:
+            category.next_category.prev_category_id = category.id
+        if category.prev_category_id is not None:
+            category.prev_category.next_category_id = category.id
 
         db.session.commit()
         event.emit_convert(category, self.room_name(community.id))
@@ -136,7 +119,7 @@ class ChannelCategoryEventSpace(EventSpace):
 
     class MoveModel(CommunityIdModel):
         category_id: int
-        position: int
+        next_id: int = None
 
     @controller.argument_parser(MoveModel)
     @controller.mark_duplex(ChannelCategory.IndexModel, use_event=True)
@@ -152,64 +135,26 @@ class ChannelCategoryEventSpace(EventSpace):
         event: DuplexEvent,
         community: Community,
         category: ChannelCategory,
-        position: int
+        next_id: int | None,
     ):
-        def cut_it(cat):
-            """Cuts category and stitches side IDs"""
-            if cat.prev_category_id is not None and cat.next_category_id is not None:
-                cat.prev_category.next_category_id = cat.next_category_id
-                cat.next_category.prev_category_id = cat.prev_category_id
-            elif cat.prev_category_id is not None:
-                cat.prev_category.next_category_id = None
-                cat.next_category.prev_category_id = cat.prev_category_id
-            else:
-                cat.prev_category.next_category_id = cat.next_category_id
-                cat.next_category.prev_category_id = None
-            return cat
+        # Cutting and stitching
+        if category.next_category_id is not None:
+            category.next_category.prev_category_id = category.prev_category_id
+        if category.prev_category_id is not None:
+            category.prev_category.next_category_id = category.next_category_id
 
-        def post_end(cat):
-            """Inserts a category at the end of the list"""
-            cut_it(cat)
-            prev_cat = ChannelCategory.find_by_next_id(community.id, None)
-            prev_cat.next_category_id = cat.id
-            cat.prev_category_id = prev_cat.id
-            cat.next_category_id = None
-            return cat
-
-        def post_top(cat):
-            """Inserts a category at the top of the list"""
-            cut_it(cat)
-            next_cat = ChannelCategory.find_by_prev_id(community.id, None)
-            next_cat.prev_category_id = cat.id
-            cat.prev_category_id = None
-            cat.next_category_id = next_cat.id
-            return cat
-
-        def post_middle(cat, pos):
-            """Inserts a category at the list"""
-            cut_it(cat)
-            prev_cat = ChannelCategory.find_by_id(pos)
-            cat.prev_category_id = prev_cat.id
-            cat.next_category_id = prev_cat.next_category_id
-            prev_cat.next_category.prev_category_id = cat.id
-            prev_cat.next_category_id = cat.id
-            return cat
-
-        if position != category.prev_category_id:
-            if position is None:
-                if category.next_category_id is not None:
-                    post_end(category)
-
-            if position == 0:
-                if category.prev_category_id is not None:
-                    post_top(category)
-
-            else:
-                previous_cat = ChannelCategory.find_by_next_id(community.id, None)
-                if position == previous_cat.id:
-                    post_end(category)
-                else:
-                    post_middle(category, position)
+        # Move to the end of the list
+        if next_id is None:
+            old_cat = ChannelCategory.find_by_next_id(community.id, None)
+            old_cat.next_category_id = category.id
+            category.prev_category_id = old_cat.id
+        # Moving within a list
+        else:
+            old_cat = ChannelCategory.find_by_id(next_id)
+            category.prev_category_id = old_cat.prev_category_id
+            old_cat.prev_category.next_category_id = category.id
+            old_cat.prev_category_id = category.id
+        category.next_category_id = next_id
 
         db.session.commit()
         event.emit_convert(category, self.room_name(community.id))
