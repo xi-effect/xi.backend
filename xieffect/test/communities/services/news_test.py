@@ -1,38 +1,45 @@
 from __future__ import annotations
 
 from flask.testing import FlaskClient
-from pytest import mark
+from pytest import mark, fixture
 
 from __lib__.flask_fullstack import dict_equal, check_code
 from common.testing import SocketIOTestClient
+from ..base.meta_test import assert_create_community
+
+COMMUNITY_DATA = {"name": "test"}
+
+
+@fixture
+def test_community(socketio_client: SocketIOTestClient) -> int:
+    # TODO place more globally (duplicate from invites_test)
+    # TODO use yield & delete the community after
+    return assert_create_community(socketio_client, COMMUNITY_DATA)
 
 
 @mark.order(1100)
-def test_post_creation(client: FlaskClient, socketio_client: SocketIOTestClient):
-    community_data = {"name": "12345", "description": "test"}
-    community_id = assert_create_community(socketio_client, community_data)
-
-    community_id_json = {"community_id": community_id}
+def test_post_creation(client, socketio_client, test_community):
+    community_id_json = {"community_id": test_community}
     assert_open_news(socketio_client, community_id_json)
 
-    news_ids = [d["id"] for d in get_news_list(client, community_id)]
-    news_data = {"title": "tit", "description": "desc", "community_id": community_id}
+    news_ids = [d["id"] for d in get_news_list(client, test_community)]
+    news_data = {"title": "tit", "description": "desc", "community_id": test_community}
     news_id = assert_create_news(socketio_client, news_data)
     news_ids.append(news_id)
 
-    found_news = False
-    for data in get_news_list(client, community_id):
+    found = False
+    for data in get_news_list(client, test_community):
         assert data["id"] in news_ids
         if data["id"] == news_id:
-            assert not found_news
+            assert not found
             assert dict_equal(data, news_data, "title", "description")
             assert data["created"] is not None
             assert data["created"] == data["changed"]
             assert data["deleted"] is False
-            found_news = True
-    assert found_news
+            found = True
+    assert found
 
-    news_update: dict = {"community_id": community_id, "post_id": 1}
+    news_update: dict = {"community_id": test_community, "post_id": 1}
     assert_update_news(socketio_client, news_update, client)
 
     news_update1 = dict(news_update, title="new_title")
