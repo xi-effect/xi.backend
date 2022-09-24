@@ -17,6 +17,9 @@ class SocketIOTestClient(_SocketIOTestClient):
     def count_received(self):
         return len(self.queue[self.eio_sid])
 
+    def assert_nop(self):
+        assert self.count_received() == 0
+
     def assert_emit_ack(
         self,
         event_name: str,
@@ -24,12 +27,16 @@ class SocketIOTestClient(_SocketIOTestClient):
         code: int = 200,
         message: str | None = None,
         get_data: bool = True,
+        with_nop: bool = True,
         **kwargs,
     ):
         kwargs["callback"] = True
         ack = self.emit(event_name, *args, **kwargs)
-        assert isinstance(ack, dict)
 
+        if with_nop:
+            self.assert_nop()
+
+        assert isinstance(ack, dict)
         assert ack.get("code", None) == code
         if message is not None:
             assert ack.get("message", None) == message
@@ -38,7 +45,7 @@ class SocketIOTestClient(_SocketIOTestClient):
             return ack.get("data", None)
         return ack
 
-    def assert_received(self, event_name: str, data: dict, *, pop: bool = True):
+    def assert_received(self, event_name: str, data: dict, *, pop: bool = True) -> dict:
         result: list[tuple[..., int]] = [
             (pkt, i)
             for i, pkt in enumerate(self.queue[self.eio_sid])
@@ -47,22 +54,29 @@ class SocketIOTestClient(_SocketIOTestClient):
 
         assert len(result) == 1
         pkt, i = result[0]
-        assert dict_equal(pkt.data, data, *data.keys())
+        event_data = pkt["args"][0]
+        assert dict_equal(event_data, data, *data.keys())
 
         if pop:
             self.queue[self.eio_sid].pop(i)
 
+        return event_data
 
-def assert_broadcast(
-    event_name: str,
-    data: dict,
-    *clients: SocketIOTestClient,
-    pop: bool = True,
-):
-    for client in clients:
-        client.assert_received(event_name, data, pop=pop)
+    def assert_only_received(self, event_name: str, data: dict) -> dict:
+        assert self.count_received() == 1
+        return self.assert_received(event_name, data)
 
+    @staticmethod
+    def assert_broadcast(
+        event_name: str,
+        data: dict,
+        *clients: SocketIOTestClient,
+        pop: bool = True,
+    ) -> None:
+        for client in clients:
+            client.assert_received(event_name, data, pop=pop)
 
-def assert_nop(*clients: SocketIOTestClient):
-    for client in clients:
-        assert client.count_received() == 0
+    @staticmethod
+    def assert_bulk_nop(*clients: SocketIOTestClient) -> None:
+        for client in clients:
+            client.assert_nop()
