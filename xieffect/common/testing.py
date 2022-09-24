@@ -15,9 +15,11 @@ class SocketIOTestClient(_SocketIOTestClient):
         super().__init__(app, socketio, flask_test_client=flask_client)
 
     def count_received(self):
+        """Counts received server events in queue without modifying the queue"""
         return len(self.queue[self.eio_sid])
 
     def assert_nop(self):
+        """Asserts that there are no events in queue"""
         assert self.count_received() == 0
 
     def assert_emit_ack(
@@ -30,6 +32,18 @@ class SocketIOTestClient(_SocketIOTestClient):
         with_nop: bool = True,
         **kwargs,
     ):
+        """
+        Emits an event and compares the contents of its ack against provided data (with asserts)
+
+        :param event_name: a client event name
+        :param code: (default: 200) the code to expect in the ack
+        :param message: (default: None) the message to expect in the ack (None for no check)
+        :param get_data: (default: True) set True to only ack's data, False for the full ack
+        :param with_nop: (default: True) set True to additionally assert that there are no events in queue
+        :param args: arguments to pass to normal emit
+        :param kwargs: kwargs to pass to normal emit
+        :return: full ack (dict) or ack's data (likely dict)
+        """
         kwargs["callback"] = True
         ack = self.emit(event_name, *args, **kwargs)
 
@@ -54,6 +68,18 @@ class SocketIOTestClient(_SocketIOTestClient):
         with_nop: bool = True,
         **kwargs,
     ):
+        """
+        Emits an event and compares the contents of its ack against provided data (with asserts).
+        Defaults are set to compare with the standard success response from `.force_ack` decorator
+
+        :param event_name: a client event name
+        :param code: (default: 200) the code to expect in the ack
+        :param message: (default: "Success") the message to expect in the ack (None for no check)
+        :param with_nop: (default: True) set True to additionally assert that there are no events in queue
+        :param args: arguments to pass to normal emit
+        :param kwargs: kwargs to pass to normal emit
+        :return: None
+        """
         assert self.assert_emit_ack(
             event_name,
             *args,
@@ -64,6 +90,14 @@ class SocketIOTestClient(_SocketIOTestClient):
         ) is None
 
     def assert_received(self, event_name: str, data: dict, *, pop: bool = True) -> dict:
+        """
+        Checks if the socket received some event with some data and optionally removes it from the queue
+
+        :param event_name: a server event name
+        :param data: data, that the event should have
+        :param pop: (default: True) if True, the event is removed from queue
+        :return: received event's data
+        """
         result: list[tuple[..., int]] = [
             (pkt, i)
             for i, pkt in enumerate(self.queue[self.eio_sid])
@@ -86,6 +120,14 @@ class SocketIOTestClient(_SocketIOTestClient):
         return event_data
 
     def assert_only_received(self, event_name: str, data: dict) -> dict:
+        """
+        Same as `.assert_received`, but also checks if that's the only received event.
+        Checks if the socket received some event with some data and removes it from the queue
+
+        :param event_name: a server event name
+        :param data: data, that the event should have
+        :return: received event's data
+        """
         assert self.count_received() == 1
         return self.assert_received(event_name, data)
 
@@ -96,10 +138,21 @@ class SocketIOTestClient(_SocketIOTestClient):
         *clients: SocketIOTestClient,
         pop: bool = True,
     ) -> None:
+        """
+        Same as `.assert_received`, but for bulk checks.
+        For each socket it checks if that socket received some event
+        with some data and optionally removes it from the queue
+
+        :param event_name: a server event name
+        :param data: data, that the event should have
+        :param pop: (default: True) if True, the event is removed from queue
+        :return: received event's data
+        """
         for client in clients:
             client.assert_received(event_name, data, pop=pop)
 
     @staticmethod
     def assert_bulk_nop(*clients: SocketIOTestClient) -> None:
+        """Asserts that there is no events in queue for all clients"""
         for client in clients:
             client.assert_nop()
