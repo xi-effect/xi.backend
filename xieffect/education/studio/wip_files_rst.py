@@ -116,8 +116,8 @@ def file_getter(  # TODO # noqa: WPS231
                 if file.owner != (get_or_pop(kwargs, "author", use_author)).id:
                     return {"a": "Access denied"}, 403
                 if not type_only:
-                    return function(file=file, *args, **kwargs)
-            return function(file_type=result, *args, **kwargs)
+                    return function(*args, file=file, **kwargs)
+            return function(*args, file_type=result, **kwargs)
 
         return get_file_or_type
 
