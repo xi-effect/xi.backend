@@ -24,13 +24,12 @@ class CommunityReader(Resource):
         ) -> None:
             callback(
                 categories=[
-                    ChannelCategory.IndexModel.convert(ci, **context)
-                    for ci in orm_object.categories
+                    ChannelCategory.IndexModel.convert(category, **context)
+                    for category in ChannelCategory.find_by_community(orm_object.id)
                 ]
             )
 
     @check_participant_role(controller)
     @controller.marshal_with(FullModel)
     def get(self, community: Community):
-        community.categories = ChannelCategory.find_by_community(community.id)
         return community

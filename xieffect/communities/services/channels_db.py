@@ -71,11 +71,10 @@ class ChannelCategory(Base, Identifiable):
 
     @classmethod
     def find_by_next_id(cls, community_id: int, next_id: int | None) -> ChannelCategory | None:
-        stmt = select(cls).filter_by(
+        return db.session.get_first(select(cls).filter_by(
             community_id=community_id,
             next_category_id=next_id,
-        )
-        return db.session.get_first(stmt)
+        ))
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> ChannelCategory | None:
@@ -83,7 +82,6 @@ class ChannelCategory(Base, Identifiable):
 
     @classmethod
     def find_by_community(cls, community_id: int):
-
         root = aliased(cls)
         node = aliased(cls)
 
@@ -116,7 +114,6 @@ class Channel(Base, Identifiable):
     # Vital
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
-
     type = Column(Enum(ChannelType), nullable=False)
 
     # Previous channel related
@@ -162,11 +159,10 @@ class Channel(Base, Identifiable):
 
     @classmethod
     def find_by_next_id(cls, category_id: int | None, next_id: int | None) -> Channel | None:
-        stmt = select(cls).filter_by(
+        return db.session.get_first(select(cls).filter_by(
             category_id=category_id,
             next_channel_id=next_id,
-        )
-        return db.session.get_first(stmt)
+        ))
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Channel | None:
