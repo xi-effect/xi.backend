@@ -45,6 +45,24 @@ class SocketIOTestClient(_SocketIOTestClient):
             return ack.get("data", None)
         return ack
 
+    def assert_emit_success(
+        self,
+        event_name: str,
+        *args,
+        code: int = 200,
+        message: str | None = "Success",
+        with_nop: bool = True,
+        **kwargs,
+    ):
+        assert self.assert_emit_ack(
+            event_name,
+            *args,
+            code=code,
+            message=message,
+            with_nop=with_nop,
+            **kwargs,
+        ) is None
+
     def assert_received(self, event_name: str, data: dict, *, pop: bool = True) -> dict:
         result: list[tuple[..., int]] = [
             (pkt, i)
@@ -54,6 +72,11 @@ class SocketIOTestClient(_SocketIOTestClient):
 
         assert len(result) == 1
         pkt, i = result[0]
+
+        pkt_args = pkt.get("args")
+        assert isinstance(pkt_args, list)
+        assert len(pkt_args) == 1
+
         event_data = pkt["args"][0]
         assert dict_equal(event_data, data, *data.keys())
 

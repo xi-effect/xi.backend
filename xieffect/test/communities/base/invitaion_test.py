@@ -4,12 +4,19 @@ from collections.abc import Iterator, Callable
 from datetime import datetime, timedelta
 
 from flask.testing import FlaskClient
-from pytest import mark
+from pytest import mark, fixture
 
 from __lib__.flask_fullstack import check_code, dict_equal
 from common.testing import SocketIOTestClient
+from .meta_test import assert_create_community
 
 INVITATIONS_PER_REQUEST = 20
+
+
+@fixture
+def test_community(socketio_client: SocketIOTestClient) -> int:
+    # TODO use yield & delete the community after
+    return assert_create_community(socketio_client, {"name": "test"})
 
 
 @mark.order(1020)
@@ -21,89 +28,53 @@ def test_invitations(client, list_tester, test_community):
         "days": 10,
     }
     room_data = {"community-id": test_community}
-
-
-@mark.skip
-def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int], Iterator[dict]]):
-    community_data = {"name": "test", "description": "12345"}
-
-    community_id = check_code(client.post("/communities/", json=community_data)).get("id", None)  # TODO redo with sio
-    assert community_id is not None
-    invitation_data = {"role": "base", "limit": 2, "days": 10, "community-id": community_id}
-    room_data = {"community-id": community_id}
+    index_url = f"/communities/{test_community}/invitations/index/"
 
     # check that the invitation list is empty
-    assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
+    assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 0
 
     # init sio & join rooms
-    def manage_room(sio: SocketIOTestClient, join: bool = True):
-        ack = sio.emit("open-invites" if join else "close-invites", room_data, callback=True)
-        assert isinstance(ack, dict)
-        assert ack.get("code", None) == 200
-        assert ack.get("message", None) == "Success"
+    sio1 = SocketIOTestClient(client)
+    sio2 = SocketIOTestClient(client)
+    sio3 = SocketIOTestClient(client)
+    sio4 = SocketIOTestClient(client)
 
-    socketio_client1 = SocketIOTestClient(client)
-    socketio_client2 = SocketIOTestClient(client)
-    socketio_client3 = SocketIOTestClient(client)
-    socketio_client4 = SocketIOTestClient(client)
-    manage_room(socketio_client1)
-    manage_room(socketio_client2)
-    manage_room(socketio_client3)
-    manage_room(socketio_client3, join=False)
+    sio1.assert_emit_success("open-invites", room_data)
+    sio2.assert_emit_success("open-invites", room_data)
+    sio3.assert_emit_success("open-invites", room_data)
+    sio3.assert_emit_success("close-invites", room_data)
 
     # create a new invitation
-    invitation = socketio_client1.emit("new-invite", invitation_data, callback=True)["data"]
+    invitation = sio1.assert_emit_ack("new-invite", invitation_data)
     assert isinstance(invitation, dict)
     assert "id" in invitation
     assert "code" in invitation
+    assert dict_equal(invitation, invitation_data, "role", "limit")
 
-    assert len(socketio_client1.get_received()) == 0
-    assert len(socketio_client3.get_received()) == 0
-    assert len(socketio_client4.get_received()) == 0
-
-    events = socketio_client2.get_received()
-    assert len(events) == 1
-    assert (event := events[0]).get("name", None) == "new-invite"
-
-    args = event.get("args", None)
-    assert isinstance(args, list) and len(args) == 1
-    assert isinstance(data := args[0], dict)
-
-    assert dict_equal(data, invitation_data, *[key for key in ("role", "limit") if key in invitation_data])
     days = invitation_data.get("days")
     if days is not None:
-        deadline = data.get("deadline")
+        deadline = invitation.get("deadline")
         assert deadline is not None
         dt: datetime = datetime.fromisoformat(deadline)
         assert dt.day == (datetime.utcnow() + timedelta(days=days)).day
 
+    sio2.assert_only_received("new-invite", invitation)
+    sio3.assert_nop()
+    sio4.assert_nop()
+
     # check if invitation list was updated
-    data = list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))
+    data = list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))
     assert len(data) == 1
-    assert dict_equal(data[0], invitation, "id", "code")
-    assert dict_equal(data[0], invitation_data, "role", "limit")
+    assert dict_equal(data[0], invitation, *invitation.keys())
 
     # delete invitation & check again
-    delete_data = {"community-id": community_id, "invitation-id": invitation["id"]}
-    ack = socketio_client2.emit("delete-invite", delete_data, callback=True)
-    assert isinstance(ack, dict)
-    assert ack.get("code", None) == 200
-    assert ack.get("message", None) == "Success"
+    delete_data = {"community-id": test_community, "invitation-id": invitation["id"]}
+    sio1.assert_emit_success("delete-invite", delete_data)
+    sio2.assert_only_received("delete-invite", delete_data)
+    sio3.assert_nop()
+    sio4.assert_nop()
 
-    assert len(socketio_client2.get_received()) == 0
-    assert len(socketio_client3.get_received()) == 0
-    assert len(socketio_client4.get_received()) == 0
-
-    events = socketio_client1.get_received()
-    assert len(events) == 1
-    assert (event := events[0]).get("name", None) == "delete-invite"
-
-    args = event.get("args", None)
-    assert isinstance(args, list) and len(args) == 1
-    assert isinstance(data := args[0], dict)
-    assert dict_equal(data, delete_data, *delete_data.keys())
-
-    assert len(list(list_tester(f"/communities/{community_id}/invitations/index/", {}, INVITATIONS_PER_REQUEST))) == 0
+    assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 0
 
 
 def create_assert_successful_get(community_data):

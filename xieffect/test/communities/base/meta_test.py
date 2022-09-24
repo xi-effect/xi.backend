@@ -72,7 +72,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     # Reordering
     reorder_data = {"source-id": community_datas[0]["id"], "target-index": 0}
-    socketio_client.assert_emit_ack("reorder-community", reorder_data, message="Success")
+    socketio_client.assert_emit_success("reorder-community", reorder_data)
     socketio_client2.assert_only_received("reorder-community", reorder_data)
 
     community_ids.remove(reorder_data["source-id"])
