@@ -7,22 +7,10 @@ from __lib__.flask_fullstack import dict_equal, check_code
 from common.testing import SocketIOTestClient
 
 
-@mark.order(2000)
+@mark.order(1100)
 def test_post_creation(client: FlaskClient, socketio_client: SocketIOTestClient):
-    community_ids = [d["id"] for d in get_communities_list(client)]
-
     community_data = {"name": "12345", "description": "test"}
     community_id = assert_create_community(socketio_client, community_data)
-    community_ids.append(community_id)
-
-    found_community = False
-    for data in get_communities_list(client):
-        assert data["id"] in community_ids
-        if data["id"] == community_id:
-            assert not found_community
-            assert dict_equal(data, community_data, "name", "description")
-            found_community = True
-    assert found_community
 
     community_id_json = {"community_id": community_id}
     assert_open_news(socketio_client, community_id_json)
@@ -44,17 +32,15 @@ def test_post_creation(client: FlaskClient, socketio_client: SocketIOTestClient)
             found_news = True
     assert found_news
 
-    news_update = {"community_id": community_id, "post_id": 1}
+    news_update: dict = {"community_id": community_id, "post_id": 1}
     assert_update_news(socketio_client, news_update, client)
 
-    news_update1 = news_update.copy()
-    news_update1["title"] = "new_title"
+    news_update1 = dict(news_update, title="new_title")
     assert_update_news(socketio_client, news_update1, client)
     news_update1["description"] = "new_description"
     assert_update_news(socketio_client, news_update1, client)
 
-    news_update2 = news_update.copy()
-    news_update2["description"] = "new_description2"
+    news_update2 = dict(news_update, description="new_description2")
     assert_update_news(socketio_client, news_update2, client)
 
     assert_delete_news(socketio_client, news_update, client)
@@ -64,23 +50,6 @@ def test_post_creation(client: FlaskClient, socketio_client: SocketIOTestClient)
     ack = socketio_client.emit("leave-community", community_id_json, callback=True)
     assert dict_equal(ack, {"code": 200, "message": "Success"}, ("code", "message"))
     assert len(socketio_client.get_received()) == 0
-
-
-def assert_create_community(
-    socketio_client: SocketIOTestClient, community_data: dict
-):
-    ack = socketio_client.emit("new-community", community_data, callback=True)
-    events = socketio_client.get_received()
-    assert len(events) == 0
-    assert ack.get("code") == 200
-
-    result_data = ack.get("data")
-    assert result_data is not None
-
-    community_id = result_data.get("id")
-    assert isinstance(community_id, int)
-    assert dict_equal(result_data, community_data, *community_data.keys())
-    return community_id
 
 
 def assert_create_news(socketio_client: SocketIOTestClient, news_data: dict):
@@ -135,16 +104,10 @@ def assert_delete_news(socketio_client: SocketIOTestClient, news_del: dict, clie
     assert len(old_date) == 0
 
 
-def get_communities_list(client: FlaskClient):
-    result = check_code(client.get("/home/")).get("communities", None)
-    assert isinstance(result, list)
-    return result
-
-
 def get_news_list(client: FlaskClient, community_id):
     result = check_code(
         client.get(
-            f"/communities/{community_id}/news/index",
+            f"/communities/{community_id}/news/index/",
             json={"counter": 20, "offset": 0}
         )
     ).get("results")
