@@ -8,9 +8,8 @@ from pytest import fixture
 from werkzeug.test import TestResponse
 
 from __lib__.flask_fullstack import check_code
-from api import socketio
+from common.testing import SocketIOTestClient
 from wsgi import ADMIN_EMAIL, ADMIN_PASS, application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
-from .components import SocketIOTestClient
 
 
 class RedirectedFlaskClient(FlaskClient):
@@ -77,13 +76,9 @@ def multi_client() -> Callable[[str], FlaskClient]:
     return multi_client_inner
 
 
-def socketio_client_factory(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
-    return SocketIOTestClient(app, socketio, flask_test_client=client)
-
-
 @fixture
 def socketio_client(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
-    return socketio_client_factory(client)
+    return SocketIOTestClient(client)
 
 
 class ListTesterProtocol(Protocol):

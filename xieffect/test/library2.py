@@ -2,7 +2,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from common import SocketIO
-from .components import SocketIOTestClient
+from common.testing import SocketIOTestClient
 
 
 class DoubleClient:
@@ -11,19 +11,14 @@ class DoubleClient:
         self.sio: SocketIOTestClient = sio_client
 
     @classmethod
-    def from_apps(cls, app: Flask, socketio: SocketIO = None):
-        if socketio is None:
-            socketio: SocketIO = app.extensions["socketio"]
+    def from_app(cls, app: Flask):
         rst_client = app.test_client()
-        sio_client = SocketIOTestClient(app, socketio, flask_test_client=rst_client)
+        sio_client = SocketIOTestClient(rst_client)
         return cls(rst_client, sio_client)
 
     @classmethod
     def from_flask(cls, flask_client: FlaskClient):
-        app: Flask = flask_client.application
-        socketio: SocketIO = app.extensions["socketio"]
-        sio_client = SocketIOTestClient(app, socketio, flask_test_client=flask_client)
-        return cls(flask_client, sio_client)
+        return cls(flask_client, SocketIOTestClient(flask_client))
 
     def __enter__(self):
         return self
@@ -44,7 +39,7 @@ class MultiClient:
 
     def connect_user(self, flask_client: FlaskClient = None) -> DoubleClient:
         if flask_client is None:
-            return DoubleClient.from_apps(self.app)
+            return DoubleClient.from_app(self.app)
         return DoubleClient.from_flask(flask_client)
 
     def attach_user(self, username: str) -> None:

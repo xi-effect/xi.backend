@@ -10,7 +10,7 @@ from common import mail, mail_initialized
 from other import EmailType
 from users import dumps_feedback, generate_code  # noqa: WPS
 from wsgi import Invite, TEST_INVITE_ID
-from .conftest import BASIC_PASS, socketio_client_factory, TEST_EMAIL
+from .conftest import BASIC_PASS, TEST_EMAIL, SocketIOTestClient
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
 
@@ -118,11 +118,11 @@ def test_email_confirm(base_client: FlaskClient):
 
 @mark.order(15)
 def test_sio_connection(client: FlaskClient):
-    sio_client = socketio_client_factory(client)
+    sio_client = SocketIOTestClient(client)
     assert sio_client.connected.get("/", None) is True
 
 
 @mark.order(16)
 def test_sio_unauthorized(base_client: FlaskClient):
-    sio_client = socketio_client_factory(base_client)
+    sio_client = SocketIOTestClient(base_client)
     assert sio_client.connected.get("/", None) is False

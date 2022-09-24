@@ -4,11 +4,10 @@ from collections.abc import Iterator, Callable
 from datetime import datetime, timedelta
 
 from flask.testing import FlaskClient
-from flask_socketio import SocketIOTestClient
 from pytest import mark
 
 from __lib__.flask_fullstack import check_code, dict_equal
-from ..conftest import socketio_client_factory
+from common.testing import SocketIOTestClient
 
 INVITATIONS_PER_REQUEST = 20
 
@@ -58,7 +57,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
         for i, data in enumerate(get_communities_list(client)):
             assert data["id"] == community_ids[i]
 
-    socketio_client2 = socketio_client_factory(client)
+    socketio_client2 = SocketIOTestClient(client)
     community_ids = [d["id"] for d in get_communities_list(client)]
     assert_order()
 
@@ -144,10 +143,10 @@ def test_invitations(client: FlaskClient, list_tester: Callable[[str, dict, int]
         assert ack.get("code", None) == 200
         assert ack.get("message", None) == "Success"
 
-    socketio_client1 = socketio_client_factory(client)
-    socketio_client2 = socketio_client_factory(client)
-    socketio_client3 = socketio_client_factory(client)
-    socketio_client4 = socketio_client_factory(client)
+    socketio_client1 = SocketIOTestClient(client)
+    socketio_client2 = SocketIOTestClient(client)
+    socketio_client3 = SocketIOTestClient(client)
+    socketio_client4 = SocketIOTestClient(client)
     manage_room(socketio_client1)
     manage_room(socketio_client2)
     manage_room(socketio_client3)
@@ -338,13 +337,13 @@ def test_invitation_joins(
         assert ack.get("code", None) == 200
         assert ack.get("message", None) == "Success"
 
-    socketio_client1 = socketio_client_factory(anatol)
-    socketio_client2 = socketio_client_factory(anatol)
-    socketio_client3 = socketio_client_factory(anatol)
-    socketio_client4 = socketio_client_factory(anatol)
+    socketio_client1 = SocketIOTestClient(anatol)
+    socketio_client2 = SocketIOTestClient(anatol)
+    socketio_client3 = SocketIOTestClient(anatol)
+    socketio_client4 = SocketIOTestClient(anatol)
 
-    socketio_client5 = socketio_client_factory(vasil1)
-    socketio_client6 = socketio_client_factory(vasil1)
+    socketio_client5 = SocketIOTestClient(vasil1)
+    socketio_client6 = SocketIOTestClient(vasil1)
 
     manage_room(socketio_client1)
     manage_room(socketio_client2)
@@ -422,10 +421,10 @@ def test_invitation_errors(multi_client, list_tester):
         assert ack.get("code", None) == 200
         assert ack.get("message", None) == "Success"
 
-    socketio_client1 = socketio_client_factory(owner)
-    socketio_client2 = socketio_client_factory(owner)
-    socketio_client3 = socketio_client_factory(member)
-    socketio_client4 = socketio_client_factory(outsider)
+    socketio_client1 = SocketIOTestClient(owner)
+    socketio_client2 = SocketIOTestClient(owner)
+    socketio_client3 = SocketIOTestClient(member)
+    socketio_client4 = SocketIOTestClient(outsider)
     manage_room(socketio_client1)
     manage_room(socketio_client2)
 

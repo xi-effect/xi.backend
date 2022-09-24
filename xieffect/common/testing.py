@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from flask import Flask
+from flask.testing import FlaskClient
 from flask_socketio.test_client import SocketIOTestClient as _SocketIOTestClient
 
 from __lib__.flask_fullstack import dict_equal
+from common import SocketIO
 
 
 class SocketIOTestClient(_SocketIOTestClient):
+    def __init__(self, flask_client: FlaskClient):
+        app: Flask = flask_client.application
+        socketio: SocketIO = app.extensions["socketio"]
+        super().__init__(app, socketio, flask_test_client=flask_client)
+
     def count_received(self):
         return len(self.queue[self.eio_sid])
 

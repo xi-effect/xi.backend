@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
+from json import load as load_json
 
 from flask.testing import FlaskClient
 
 from __lib__.flask_fullstack import check_code
-from json import load as load_json
 
 
 def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):

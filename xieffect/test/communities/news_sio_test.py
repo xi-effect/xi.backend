@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from flask.testing import FlaskClient
-from flask_socketio import SocketIOTestClient
 from pytest import mark
 
 from __lib__.flask_fullstack import dict_equal, check_code
+from common.testing import SocketIOTestClient
 
 
 @mark.order(2000)
