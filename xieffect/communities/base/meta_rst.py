@@ -12,12 +12,16 @@ controller = ResourceController("communities-meta", path="/communities/")
 
 @controller.route("/<int:community_id>/")
 class CommunityReader(Resource):
-
     class FullModel(Community.IndexModel):
         categories: list[ChannelCategory.IndexModel]
 
         @classmethod
-        def callback_convert(cls, callback, orm_object: Community, **context) -> None:
+        def callback_convert(
+            cls,
+            callback,
+            orm_object: Community,
+            **context,
+        ) -> None:
             callback(
                 categories=[
                     ChannelCategory.IndexModel.convert(ci, **context)
@@ -28,4 +32,5 @@ class CommunityReader(Resource):
     @check_participant_role(controller)
     @controller.marshal_with(FullModel)
     def get(self, community: Community):
+        community.categories = ChannelCategory.find_by_community(community.id)
         return community

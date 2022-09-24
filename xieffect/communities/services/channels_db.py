@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from sqlalchemy import Column, ForeignKey, select
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, ForeignKey, select, literal
+from sqlalchemy.orm import relationship, backref, aliased
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
 from common import Base, Identifiable, db, PydanticModel, TypeEnum
@@ -80,6 +80,27 @@ class ChannelCategory(Base, Identifiable):
     @classmethod
     def find_by_id(cls, entry_id: int) -> ChannelCategory | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
+
+    @classmethod
+    def find_by_community(cls, community_id: int):
+
+        root = aliased(cls)
+        node = aliased(cls)
+
+        cte = select(root, literal(0).label("level")).filter_by(
+            community_id=community_id, prev_category_id=None
+        ).cte("cte", recursive=True)
+
+        result = cte.union_all(
+            select(node, cte.c.level + 1)
+            .join(cte, node.prev_category_id == cte.c.id)
+        )
+
+        return db.session.get_all(
+            select(ChannelCategory)
+            .join(result, cls.id == result.c.id)
+            .order_by(cte.c.level)
+        )
 
 
 class ChannelType(TypeEnum):

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from flask.testing import FlaskClient
 from flask_socketio import SocketIOTestClient
+from flask.testing import FlaskClient
 from pytest import mark
 
 from __lib__.flask_fullstack import dict_equal, check_code
+
+from communities.services.channels_db import ChannelCategory
 
 
 @mark.order(2000)
@@ -28,7 +30,12 @@ def test_post_creation(client: FlaskClient, socketio_client: SocketIOTestClient)
     assert_open_categories(socketio_client, community_id_json)
 
     categories_ids = [d["id"] for d in get_categories_list(client, community_id)]
-    categories_data = {"name": "cat", "description": "desc", "community_id": community_id, "position": 1}
+    categories_data = {
+        "name": "cat",
+        "description": "desc",
+        "community_id": community_id,
+        "next_id": 1
+    }
     categories_id = assert_create_categories(socketio_client, categories_data)
     categories_ids.append(categories_id)
 
@@ -41,23 +48,25 @@ def test_post_creation(client: FlaskClient, socketio_client: SocketIOTestClient)
             found_categories = True
     assert found_categories
 
-    a = [None, 0, 1, 1, None, 0, None, 3, 2, None]
+    a = [None, 1, 2, 2, None, 1, None, 5, 4, None]
     for i in a:
         categories_data = {
             "name": f"cat{i}",
             "description": "desc",
             "community_id": community_id,
-            "position": i
+            "next_id": i
         }
         categories_id = assert_create_categories(socketio_client, categories_data)
         categories_ids.append(categories_id)
 
-    cats = get_categories_list(client, community_id)
-    assert cats[0]["id"] == 1 and cats[0]["prev-category-id"] == 9
-    assert cats[3]["id"] == 4 and cats[3]["next-category-id"] == 2
-    assert cats[5]["id"] == 6 and cats[5]["prev-category-id"] == 10
-    assert cats[7]["id"] == 8 and cats[7]["next-category-id"] == 11
-    assert cats[9]["id"] == 10 and cats[7]["prev-category-id"] == 6
+    assert ChannelCategory.find_by_id(1).prev_category_id == 7
+    assert get_categories_list(client,community_id)[2]["id"] == 1
+    assert ChannelCategory.find_by_id(4).next_category_id == 9
+    assert get_categories_list(client, community_id)[6]["id"] == 5
+    assert ChannelCategory.find_by_id(6).prev_category_id == 2
+    assert ChannelCategory.find_by_id(8).next_category_id == 11
+    assert get_categories_list(client, community_id)[9]["id"] == 8
+    assert ChannelCategory.find_by_id(10).prev_category_id == 1
 
     category_update = {"community_id": community_id, "category_id": 1}
     assert_update_category(socketio_client, category_update, client)
@@ -72,8 +81,19 @@ def test_post_creation(client: FlaskClient, socketio_client: SocketIOTestClient)
     category_update2["description"] = "new_description2"
     assert_update_category(socketio_client, category_update2, client)
 
-    category_move = {"community_id": community_id, "category_id": 2, "position": 6}
-    assert_move_category(socketio_client, category_move, client)
+    category_move = {"community_id": community_id, "category_id": 2, "next_id": 4}
+    assert_move_category(socketio_client, category_move)
+    assert ChannelCategory.find_by_id(2).prev_category_id == 10
+    assert ChannelCategory.find_by_id(10).next_category_id == 2
+    assert ChannelCategory.find_by_id(5).next_category_id == 6
+    assert ChannelCategory.find_by_id(6).prev_category_id == 5
+
+    category_move = {"community_id": community_id, "category_id": 9}
+    assert_move_category(socketio_client, category_move)
+    assert ChannelCategory.find_by_id(9).prev_category_id == 11
+    assert ChannelCategory.find_by_id(11).next_category_id == 9
+    assert ChannelCategory.find_by_id(4).next_category_id == 5
+    assert ChannelCategory.find_by_id(5).prev_category_id == 4
 
     assert_close_categories(socketio_client, community_id_json)
 
@@ -122,7 +142,7 @@ def assert_update_category(
 ):
     ack = socketio_client.emit("update-category", category_upd, callback=True)
     events = socketio_client.get_received()
-    old_date = get_categories_list(client, category_upd["community_id"])[0]
+    old_date = get_categories_list(client, category_upd["community_id"])[2]
     assert len(events) == 0
     assert ack.get("code") == 200
 
@@ -147,7 +167,6 @@ def assert_update_category(
 def assert_move_category(
     socketio_client: SocketIOTestClient,
     category_move: dict,
-    client
 ):
     ack = socketio_client.emit("move-category", category_move, callback=True)
     events = socketio_client.get_received()
@@ -156,9 +175,13 @@ def assert_move_category(
 
     result_data = ack.get("data")
     assert result_data is not None
-    assert result_data["id"] == 2
-    assert result_data["prev-category-id"] == 6
-    assert result_data["next-category-id"] == 8
+    res_id = result_data.get("id")
+    next_id = category_move.get("next_id")
+    assert res_id == category_move["category_id"]
+    assert ChannelCategory.find_by_id(res_id).next_category_id == next_id
+
+    if next_id is not None:
+        assert ChannelCategory.find_by_id(next_id).prev_category_id == res_id
 
 
 def get_communities_list(client: FlaskClient):
