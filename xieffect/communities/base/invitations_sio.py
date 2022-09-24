@@ -5,7 +5,7 @@ from functools import wraps
 from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
-from common import EventController, EventSpace, DuplexEvent, User, get_or_pop
+from common import EventController, EventSpace, DuplexEvent, User, get_or_pop, db
 from .invitations_db import Invitation
 from .meta_db import Community, Participant, ParticipantRole
 
@@ -86,6 +86,7 @@ class InvitationsEventSpace(EventSpace):
             controller.abort(400, f"Invalid role: {role}")
 
         invitation = Invitation.create(community.id, enum_role, limit, days)
+        db.session.commit()
         event.emit_convert(invitation, self.room_name(community.id))
         return invitation
 
@@ -101,6 +102,7 @@ class InvitationsEventSpace(EventSpace):
         self, event: DuplexEvent, community: Community, invitation: Invitation
     ):
         invitation.delete()
+        db.session.commit()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
             community_id=community.id,
