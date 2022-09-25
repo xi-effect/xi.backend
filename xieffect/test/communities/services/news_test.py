@@ -19,36 +19,12 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
 
 @mark.order(1100)
 def test_post_creation(client, socketio_client, test_community):
-    def assert_update_post(post_upd: dict):
-        """Post update and validation"""
-        old_date = Post.find_by_id(post_upd.get("post_id"))
-        upd_ack = socketio_client.emit("update-post", post_upd, callback=True)
-        upd_events = socketio_client.get_received()
-        assert len(upd_events) == 0
-        assert upd_ack.get("code") == 200
-
-        upd_data = upd_ack.get("data")
-        assert upd_data.get("id") == post_upd.get("post_id")
-
-        if post_upd.get("title") is None:
-            assert upd_data.get("title") == old_date.title
-        else:
-            assert upd_data.get("title") == post_upd.get("title")
-
-        if post_upd.get("description") is None:
-            if old_date.description is not None:
-                assert upd_data.get("description") == old_date.description
-            else:
-                assert upd_data.get("description") is None
-        else:
-            assert upd_data.get("description") == post_upd.get("description")
-
-    def get_posts_list(community_id):
+    def get_posts_list(community_id: int) -> list[dict]:
         """Check the success of getting the list of posts"""
         result = check_code(
             client.get(
                 f"/communities/{community_id}/news/index/",
-                json={"counter": 20, "offset": 0}
+                json={"counter": 20, "offset": 0},
             )
         ).get("results")
         assert isinstance(result, list)
@@ -57,21 +33,13 @@ def test_post_creation(client, socketio_client, test_community):
     community_id_json = {"community_id": test_community}
 
     # Check successfully open news-room
-    ack = socketio_client.emit("open-news", community_id_json, callback=True)
-    events = socketio_client.get_received()
-    assert len(events) == 0
-    assert ack.get("code") == 200
-    assert ack.get("message") == "Success"
+    socketio_client.assert_emit_success("open-news", community_id_json)
 
     posts_ids = [d.get("id") for d in get_posts_list(test_community)]
     post_data = {"title": "tit", "description": "desc", "community_id": test_community}
 
     # Assert post creation
-    ack = socketio_client.emit("new-post", post_data, callback=True)
-    events = socketio_client.get_received()
-    assert len(events) == 0
-    assert ack.get("code") == 200
-    result_data = ack.get("data")
+    result_data = socketio_client.assert_emit_ack("new-post", post_data)
     post_id = result_data.get("id")
     assert isinstance(post_id, int)
     assert dict_equal(result_data, post_data, "title", "description")
@@ -90,36 +58,47 @@ def test_post_creation(client, socketio_client, test_community):
             found = True
     assert found
 
-    # Check post update
-    post_update: dict = {"community_id": test_community, "post_id": post_id}
-    assert_update_post(post_update)
+    # Check correct update posts
+    post_dict_list = [
+        {"community_id": test_community, "post_id": post_id},
+        {
+            "community_id": test_community,
+            "post_id": post_id,
+            "title": "new_title",
+            "description": "new_description"
+        },
+        {
+            "community_id": test_community,
+            "post_id": post_id,
+            "description": "the_newest_description"
+        },
+    ]
+    for post_upd in post_dict_list:
+        old_date = Post.find_by_id(post_upd.get("post_id"))
+        upd_data = socketio_client.assert_emit_ack("update-post", post_upd)
+        assert upd_data.get("id") == post_upd.get("post_id")
 
-    post_update1 = dict(post_update, title="new_title")
-    assert_update_post(post_update1)
-    post_update1["description"] = "new_description"
-    assert_update_post(post_update1)
+        if post_upd.get("title") is None:
+            assert upd_data.get("title") == old_date.title
+        else:
+            assert upd_data.get("title") == post_upd.get("title")
 
-    post_update2 = dict(post_update, description="new_description2")
-    assert_update_post(post_update2)
+        if post_upd.get("description") is None:
+            if old_date.description is not None:
+                assert upd_data.get("description") == old_date.description
+            else:
+                assert upd_data.get("description") is None
+        else:
+            assert upd_data.get("description") == post_upd.get("description")
 
     # Check successfully post delete
-    ack = socketio_client.emit("delete-post", post_update, callback=True)
-    events = socketio_client.get_received()
-    posts_list = get_posts_list(post_update.get("community_id"))
-    assert len(events) == 0
-    assert ack.get("code") == 200
-    assert ack.get("message") == "Success"
+    socketio_client.assert_emit_success("delete-post", post_dict_list[0])
+    posts_list = get_posts_list(post_dict_list[0].get("community_id"))
     assert isinstance(posts_list, list)
     assert len(posts_list) == 0
 
     # Check successfully close news-room
-    ack = socketio_client.emit("close-news", community_id_json, callback=True)
-    events = socketio_client.get_received()
-    assert len(events) == 0
-    assert ack.get("code") == 200
-    assert ack.get("message") == "Success"
+    socketio_client.assert_emit_success("close-news", community_id_json)
 
     # Check out community
-    ack = socketio_client.emit("leave-community", community_id_json, callback=True)
-    assert dict_equal(ack, {"code": 200, "message": "Success"}, ("code", "message"))
-    assert len(socketio_client.get_received()) == 0
+    socketio_client.assert_emit_success("leave-community", community_id_json, callback=True)
