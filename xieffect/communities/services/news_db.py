@@ -37,7 +37,7 @@ class Post(Base, Identifiable):
     BaseModel = PydanticModel.column_model(id)
     CreationBaseModel = PydanticModel.column_model(title, description)
     IndexModel = BaseModel.column_model(
-        deleted, created, changed, community_id, user_id
+        created, changed, community_id, user_id
     ).combine_with(CreationBaseModel)
 
     @classmethod
