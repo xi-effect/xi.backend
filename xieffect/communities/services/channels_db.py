@@ -135,7 +135,7 @@ class Channel(Base, Identifiable):
     # Category-related
     category_id = Column(
         Integer,
-        ForeignKey("channel_categories.id"),
+        ForeignKey("channel_categories.id", ondelete="SET NULL"),
         nullable=True,
     )
     category = relationship("ChannelCategory", backref=backref("channels"))
@@ -144,14 +144,14 @@ class Channel(Base, Identifiable):
     def create(
         cls,
         name: str,
-        type: ChannelType,
+        channel_type: ChannelType,
         prev_channel_id: int | None,
         next_channel_id: int | None,
         category_id: int | None,
     ) -> Channel:
         return super().create(
             name=name,
-            type=type,
+            type=channel_type,
             prev_channel_id=prev_channel_id,
             next_channel_id=next_channel_id,
             category_id=category_id,

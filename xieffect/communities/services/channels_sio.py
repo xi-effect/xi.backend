@@ -58,13 +58,14 @@ class ChannelCategoryEventSpace(EventSpace):
         if len(cat_list) == 0:
             prev_cat = None
             next_cat = None
-
         else:
             next_cat = next_id
+
             # Add to end to list
             if next_id is None:
                 old_cat = ChannelCategory.find_by_next_id(community.id, None)
                 prev_cat = old_cat.id
+
             # Add to the list
             else:
                 old_cat = ChannelCategory.find_by_id(next_id)
@@ -112,13 +113,44 @@ class ChannelCategoryEventSpace(EventSpace):
             category.name = name
         if description is not None:
             category.description = description
-        db.session.commit()
 
+        db.session.commit()
         event.emit_convert(category, self.room_name(community.id))
         return category
 
-    class MoveModel(CommunityIdModel):
+    class DeleteModel(CommunityIdModel):
         category_id: int
+
+    @controller.argument_parser(DeleteModel)
+    @controller.mark_duplex(ChannelCategory.IndexModel, use_event=True)
+    @check_participant_role(controller, ParticipantRole.OWNER)
+    @controller.database_searcher(
+        ChannelCategory,
+        input_field_name="category_id",
+        result_field_name="category",
+    )
+    @controller.force_ack()
+    def delete_category(
+        self,
+        event: DuplexEvent,
+        community: Community,
+        category: ChannelCategory,
+    ):
+        # Cutting and stitching
+        if category.next_category_id is not None:
+            category.next_category.prev_category_id = category.prev_category_id
+        if category.prev_category_id is not None:
+            category.prev_category.next_category_id = category.next_category_id
+
+        category.delete()
+        db.session.commit()
+        event.emit_convert(
+            room=self.room_name(community_id=community.id),
+            community_id=community.id,
+            category_id=category.id,
+        )
+
+    class MoveModel(DeleteModel):
         next_id: int = None
 
     @controller.argument_parser(MoveModel)
@@ -148,14 +180,15 @@ class ChannelCategoryEventSpace(EventSpace):
             old_cat = ChannelCategory.find_by_next_id(community.id, None)
             old_cat.next_category_id = category.id
             category.prev_category_id = old_cat.id
+
         # Moving within a list
         else:
             old_cat = ChannelCategory.find_by_id(next_id)
             category.prev_category_id = old_cat.prev_category_id
             old_cat.prev_category.next_category_id = category.id
             old_cat.prev_category_id = category.id
-        category.next_category_id = next_id
 
+        category.next_category_id = next_id
         db.session.commit()
         event.emit_convert(category, self.room_name(community.id))
         return category
