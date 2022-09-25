@@ -5,7 +5,7 @@ from flask_restx import Resource
 from common import ResourceController
 from .meta_db import Community
 from .meta_utl import check_participant_role
-from ..services.channels_db import ChannelCategory
+from ..services.channels_db import ChannelCategory, Channel
 
 controller = ResourceController("communities-meta", path="/communities/")
 
@@ -14,6 +14,7 @@ controller = ResourceController("communities-meta", path="/communities/")
 class CommunityReader(Resource):
     class FullModel(Community.IndexModel):
         categories: list[ChannelCategory.IndexModel]
+        channels: list[Channel.IndexModel]
 
         @classmethod
         def callback_convert(
@@ -26,7 +27,12 @@ class CommunityReader(Resource):
                 categories=[
                     ChannelCategory.IndexModel.convert(category, **context)
                     for category in ChannelCategory.find_by_community(orm_object.id)
+                ],
+                channels=[
+                    Channel.IndexModel.convert(channel, **context)
+                    for channel in Channel.find_by_ids(orm_object.id, None)
                 ]
+
             )
 
     @check_participant_role(controller)

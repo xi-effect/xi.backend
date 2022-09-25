@@ -81,7 +81,7 @@ class ChannelCategory(Base, Identifiable):
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_community(cls, community_id: int):
+    def find_by_community(cls, community_id: int) -> list[ChannelCategory]:
         root = aliased(cls)
         node = aliased(cls)
 
@@ -140,6 +140,17 @@ class Channel(Base, Identifiable):
     )
     category = relationship("ChannelCategory", backref=backref("channels"))
 
+    # Community-related
+    community_id = Column(Integer, ForeignKey("community.id"), nullable=False)
+    community = relationship(
+        "Community",
+        backref=backref("channels", cascade="all, delete, delete-orphan"),
+    )
+
+    BaseModel = PydanticModel.column_model(id)
+    CreateModel = PydanticModel.column_model(name, type)
+    IndexModel = BaseModel.combine_with(CreateModel)
+
     @classmethod
     def create(
         cls,
@@ -147,6 +158,7 @@ class Channel(Base, Identifiable):
         channel_type: ChannelType,
         prev_channel_id: int | None,
         next_channel_id: int | None,
+        community_id: int,
         category_id: int | None,
     ) -> Channel:
         return super().create(
@@ -154,12 +166,19 @@ class Channel(Base, Identifiable):
             type=channel_type,
             prev_channel_id=prev_channel_id,
             next_channel_id=next_channel_id,
+            community_id=community_id,
             category_id=category_id,
         )
 
     @classmethod
-    def find_by_next_id(cls, category_id: int | None, next_id: int | None) -> Channel | None:
+    def find_by_next_id(
+        cls,
+        community_id: int,
+        category_id: int | None,
+        next_id: int | None
+    ) -> Channel | None:
         return db.session.get_first(select(cls).filter_by(
+            community_id=community_id,
             category_id=category_id,
             next_channel_id=next_id,
         ))
@@ -167,3 +186,25 @@ class Channel(Base, Identifiable):
     @classmethod
     def find_by_id(cls, entry_id: int) -> Channel | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
+
+    @classmethod
+    def find_by_ids(cls, community_id: int, category_id: int | None) -> list[Channel]:
+        root = aliased(cls)
+        node = aliased(cls)
+
+        cte = select(root, literal(0).label("level")).filter_by(
+            community_id=community_id,
+            category_id=category_id,
+            prev_channel_id=None,
+        ).cte("cte", recursive=True)
+
+        result = cte.union_all(
+            select(node, cte.c.level + 1)
+            .join(cte, node.prev_channel_id == cte.c.id)
+        )
+
+        return db.session.get_all(
+            select(Channel)
+            .join(result, cls.id == result.c.id)
+            .order_by(cte.c.level)
+        )
