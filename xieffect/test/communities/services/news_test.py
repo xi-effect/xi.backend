@@ -18,7 +18,7 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
 
 
 @mark.order(1100)
-def test_post_creation(client, socketio_client, test_community):
+def test_post_creation(client, socketio_client, test_community, list_tester):
     def get_posts_list(community_id: int) -> list[dict]:
         """Check the success of getting the list of posts"""
         result = check_code(
@@ -36,7 +36,7 @@ def test_post_creation(client, socketio_client, test_community):
     socketio_client.assert_emit_success("open-news", community_id_json)
 
     posts_ids = [d.get("id") for d in get_posts_list(test_community)]
-    post_data = {"title": "tit", "description": "desc", "community_id": test_community}
+    post_data = dict(title="tit", description="desc", **community_id_json)
 
     # Assert post creation
     result_data = socketio_client.assert_emit_ack("new-post", post_data)
@@ -60,40 +60,24 @@ def test_post_creation(client, socketio_client, test_community):
 
     # Check correct update posts
     post_dict_list = [
-        {"community_id": test_community, "post_id": post_id},
-        {
-            "community_id": test_community,
-            "post_id": post_id,
-            "title": "new_title",
-            "description": "new_description"
-        },
-        {
-            "community_id": test_community,
-            "post_id": post_id,
-            "description": "the_newest_description"
-        },
+        {},
+        {"title": "new_title", "description": "new_description"},
+        {"description": "the_newest_description"},
     ]
+    post_ids = dict(post_id=post_id, **community_id_json)
     for post_upd in post_dict_list:
-        old_date = Post.find_by_id(post_upd.get("post_id"))
+        post_upd = dict(post_upd, **post_ids)
+        old_data = Post.find_by_id(post_id)
         upd_data = socketio_client.assert_emit_ack("update-post", post_upd)
-        assert upd_data.get("id") == post_upd.get("post_id")
 
-        if post_upd.get("title") is None:
-            assert upd_data.get("title") == old_date.title
-        else:
-            assert upd_data.get("title") == post_upd.get("title")
-
-        if post_upd.get("description") is None:
-            if old_date.description is not None:
-                assert upd_data.get("description") == old_date.description
-            else:
-                assert upd_data.get("description") is None
-        else:
-            assert upd_data.get("description") == post_upd.get("description")
+        assert upd_data.get("id") == post_id
+        assert upd_data.get("title") == post_upd.get("title") or old_data.title
+        description = post_upd.get("description") or old_data.description
+        assert upd_data.get("description") == description
 
     # Check successfully post delete
-    socketio_client.assert_emit_success("delete-post", post_dict_list[0])
-    posts_list = get_posts_list(post_dict_list[0].get("community_id"))
+    socketio_client.assert_emit_success("delete-post", post_ids)
+    posts_list = get_posts_list(test_community)
     assert isinstance(posts_list, list)
     assert len(posts_list) == 0
 
