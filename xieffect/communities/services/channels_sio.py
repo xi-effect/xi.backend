@@ -36,36 +36,37 @@ class ChannelEventSpace(EventSpace):
         category_id: int = None
         next_id: int = None
 
+    @controller.doc_abort(400, "Invalid type")
     @controller.doc_abort(409, "Over limit")
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Channel.IndexModel, use_event=True)
     @check_participant_role(controller, ParticipantRole.OWNER)
-    @controller.database_searcher(
-        ChannelCategory,
-        input_field_name="category_id",
-        result_field_name="category",
-    )
     @controller.marshal_ack(Channel.IndexModel)
     def new_channel(
         self,
         event: DuplexEvent,
         name: str,
-        channel_type: ChannelType,
+        type: str,
         community: Community,
-        category: ChannelCategory | None,
+        category_id: int | None,
         next_id: int | None,
     ):
-        channels_count = create_count = len(community.channels)
-        # if category is not None:
-        #     create_count = len(category.channels)
-        #     channels_count += count_in_category
+        enum_type: ChannelType = ChannelType.from_string(type)
+        if enum_type is None:
+            controller.abort(400, f"Invalid type {type}")
+
+        channels_count = len(community.channels)
+        if category_id is not None:
+            category = ChannelCategory.find_by_id(category_id)
+            channels_count += len(category.channels)
 
         # Check category limit
         if channels_count == MAX_CHANNELS:
             controller.abort(409, "Over limit: Too many channels")
 
         # Create a category in empty list
-        if create_count == 0:
+        type_list = Channel.find_by_type(community.id, category_id, enum_type)
+        if len(type_list) == 0:
             prev_chan = None
             next_chan = None
         else:
@@ -73,7 +74,7 @@ class ChannelEventSpace(EventSpace):
 
             # Add to end to list
             if next_id is None:
-                old_chan = Channel.find_by_next_id(community.id, None)
+                old_chan = Channel.find_by_next_id(community.id, category_id, next_id)
                 prev_chan = old_chan.id
 
             # Add to the list
@@ -83,17 +84,17 @@ class ChannelEventSpace(EventSpace):
 
         channel = Channel.create(
             name,
-            channel_type,
+            enum_type,
             prev_chan,
             next_chan,
             community.id,
-            category.id
+            category_id,
         )
 
         # Stitching
         if channel.next_channel_id is not None:
             channel.next_channel.prev_channel_id = channel.id
-        if category.prev_category_id is not None:
+        if channel.prev_channel_id is not None:
             channel.prev_channel.next_channel_id = channel.id
 
         db.session.commit()

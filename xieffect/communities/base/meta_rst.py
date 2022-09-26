@@ -29,10 +29,11 @@ class CommunityReader(Resource):
                     for category in ChannelCategory.find_by_community(orm_object.id)
                 ],
                 channels=[
+                    # Channel.IndexModel.convert(channel, **context)
+                    # for channel in Channel.find_by_ids(orm_object.id, None)
                     Channel.IndexModel.convert(channel, **context)
-                    for channel in Channel.find_by_ids(orm_object.id, None)
+                    for channel in orm_object.channels
                 ]
-
             )
 
     @check_participant_role(controller)

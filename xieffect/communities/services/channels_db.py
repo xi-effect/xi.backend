@@ -188,6 +188,19 @@ class Channel(Base, Identifiable):
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
+    def find_by_type(
+        cls,
+        community_id: int,
+        category_id: int,
+        channel_type: ChannelType
+    ) -> list[Channel]:
+        return db.session.get_all(select(cls).filter_by(
+            community_id=community_id,
+            category_id=category_id,
+            type=channel_type,
+        ))
+
+    @classmethod
     def find_by_ids(cls, community_id: int, category_id: int | None) -> list[Channel]:
         root = aliased(cls)
         node = aliased(cls)
@@ -195,7 +208,7 @@ class Channel(Base, Identifiable):
         cte = select(root, literal(0).label("level")).filter_by(
             community_id=community_id,
             category_id=category_id,
-            prev_channel_id=None,
+            prev_channel_id=category_id,
         ).cte("cte", recursive=True)
 
         result = cte.union_all(

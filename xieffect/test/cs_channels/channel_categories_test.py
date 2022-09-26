@@ -93,29 +93,30 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
     assert found_categories
 
     # Create categories & check correct sort AL
-    for num, value in enumerate([None, 1, 2, 2, None, 1, None, 5, 4, None]):
+    category_data_list = [None, 1, 2, 2, None, 1, None, 5, 4, None]
+    for category in category_data_list:
         categories_data = {
-            "name": f"cat{num+2}",
+            "name": "cat",
             "description": "desc",
             "community_id": community_id,
-            "next_id": value
+            "next_id": category
         }
-        if value is None:
+        if category is None:
             prev_cat = ChannelCategory.find_by_next_id(
                 community_id,
-                value,
+                category,
             ).id
         else:
-            prev_cat = ChannelCategory.find_by_id(value).prev_category_id
+            prev_cat = ChannelCategory.find_by_id(category).prev_category_id
 
         category_id = assert_create_category(categories_data)
         categories_ids.append(category_id)
 
         assert ChannelCategory.find_by_id(category_id).prev_category_id == prev_cat
-        assert ChannelCategory.find_by_id(category_id).next_category_id == value
+        assert ChannelCategory.find_by_id(category_id).next_category_id == category
 
     # Check correct update categories
-    for category_update in [
+    category_data_list = [
         {"community_id": community_id, "category_id": category_id},
         {
             "community_id": community_id,
@@ -128,7 +129,8 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
             "category_id": category_id,
             "description": "the_newest_description",
         }
-    ]:
+    ]
+    for category_update in category_data_list:
         old_date = ChannelCategory.find_by_id(category_update.get("category_id"))
         ack = socketio_client.emit("update-category", category_update, callback=True)
         events = socketio_client.get_received()
@@ -152,10 +154,11 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
             assert result_data.get("description") == category_update.get("description")
 
     # Check correct reordering categories
-    for category_move in [
+    category_data_list = [
         {"community_id": community_id, "category_id": 2, "next_id": 4},
         {"community_id": community_id, "category_id": 9},
-    ]:
+    ]
+    for category_move in category_data_list:
         category = ChannelCategory.find_by_id(category_move.get("category_id"))
         next_cat = category_move.get("next_id")
         old_prev = category.prev_category_id
