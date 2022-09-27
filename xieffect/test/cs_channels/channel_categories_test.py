@@ -74,11 +74,7 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
     assert ack.get("message") == "Success"
 
     categories_ids = [d.get("id") for d in get_categories_list(community_id)]
-    categories_data = {
-        "name": "cat",
-        "description": "desc",
-        "community_id": community_id,
-    }
+    categories_data = dict(name="cat", description="desc", **community_id_json)
     category_id = assert_create_category(categories_data)
     categories_ids.append(category_id)
 
@@ -95,12 +91,7 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
     # Create categories & check correct sort AL
     category_data_list = [None, 1, 2, 2, None, 1, None, 5, 4, None]
     for category in category_data_list:
-        categories_data = {
-            "name": "cat",
-            "description": "desc",
-            "community_id": community_id,
-            "next_id": category
-        }
+        category_data = dict(next_id=category, **categories_data)
         if category is None:
             prev_cat = ChannelCategory.find_by_next_id(
                 community_id,
@@ -109,56 +100,43 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
         else:
             prev_cat = ChannelCategory.find_by_id(category).prev_category_id
 
-        category_id = assert_create_category(categories_data)
+        category_id = assert_create_category(category_data)
         categories_ids.append(category_id)
 
         assert ChannelCategory.find_by_id(category_id).prev_category_id == prev_cat
         assert ChannelCategory.find_by_id(category_id).next_category_id == category
 
     # Check correct update categories
+    update_data = dict(category_id=category_id, **community_id_json)
     category_data_list = [
-        {"community_id": community_id, "category_id": category_id},
-        {
-            "community_id": community_id,
-            "category_id": category_id,
-            "name": "new_name",
-            "description": "new_description"
-        },
-        {
-            "community_id": community_id,
-            "category_id": category_id,
-            "description": "the_newest_description",
-        }
+        {},
+        {"name": "new_name", "description": "new_description"},
+        {"description": "the_newest_description"},
     ]
     for category_update in category_data_list:
-        old_date = ChannelCategory.find_by_id(category_update.get("category_id"))
+        category_update = dict(category_update, **update_data)
+        old_data = ChannelCategory.find_by_id(category_id)
         ack = socketio_client.emit("update-category", category_update, callback=True)
         events = socketio_client.get_received()
         assert len(events) == 0
         assert ack.get("code") == 200
 
         result_data = ack.get("data")
-        assert result_data.get("id") == category_update.get("category_id")
-
-        if category_update.get("name") is None:
-            assert result_data.get("name") == old_date.name
-        else:
-            assert result_data.get("name") == category_update.get("name")
-
-        if category_update.get("description") is None:
-            if old_date.description is not None:
-                assert result_data.get("description") == old_date.description
-            else:
-                assert result_data.get("description") is None
-        else:
-            assert result_data.get("description") == category_update.get("description")
+        assert result_data.get("id") == category_id
+        assert result_data.get("name") == category_update.get(
+            "name"
+        ) or old_data.name
+        assert result_data.get("description") == category_update.get(
+            "description"
+        ) or old_data.description
 
     # Check correct reordering categories
     category_data_list = [
-        {"community_id": community_id, "category_id": 2, "next_id": 4},
-        {"community_id": community_id, "category_id": 9},
+        {"category_id": 2, "next_id": 4},
+        {"category_id": 9},
     ]
     for category_move in category_data_list:
+        category_move = dict(category_move, **community_id_json)
         category = ChannelCategory.find_by_id(category_move.get("category_id"))
         next_cat = category_move.get("next_id")
         old_prev = category.prev_category_id
@@ -200,7 +178,7 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
 
         ack = socketio_client.emit(
             "delete-category",
-            {"community_id": community_id, "category_id": category_id},
+            dict(category_id=category_id, **community_id_json),
             callback=True,
         )
         count -= 1
