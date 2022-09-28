@@ -8,7 +8,7 @@ from common.testing import SocketIOTestClient
 
 
 def assert_create_community(socketio_client: SocketIOTestClient, community_data: dict) -> int:
-    result_data = socketio_client.assert_emit_ack("new-community", community_data)
+    result_data = socketio_client.assert_emit_ack("new_community", community_data)
     assert isinstance(result_data, dict)
     assert dict_equal(result_data, community_data, *community_data.keys())
 
@@ -56,7 +56,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     # Creating
     def assert_double_create(community_data: dict):
         community_id = assert_create_community(socketio_client, community_data)
-        socketio_client2.assert_received("new-community", dict(community_data, id=community_id))
+        socketio_client2.assert_received("new_community", dict(community_data, id=community_id))
         return community_id
 
     community_datas: list[dict[str, str | int]] = [
@@ -71,18 +71,18 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     # assert_order
 
     # Reordering
-    reorder_data = {"source-id": community_datas[0]["id"], "target-index": 0}
-    socketio_client.assert_emit_success("reorder-community", reorder_data)
-    socketio_client2.assert_only_received("reorder-community", reorder_data)
+    reorder_data = {"source_id": community_datas[0]["id"], "target_index": 0}
+    socketio_client.assert_emit_success("reorder_community", reorder_data)
+    socketio_client2.assert_only_received("reorder_community", reorder_data)
 
-    community_ids.remove(reorder_data["source-id"])
-    community_ids.insert(reorder_data["target-index"], reorder_data["source-id"])
+    community_ids.remove(reorder_data["source_id"])
+    community_ids.insert(reorder_data["target_index"], reorder_data["source_id"])
     # assert_order
 
     # Leaving
-    leave_data = {"community-id": community_datas[-1]["id"]}
-    socketio_client.assert_emit_ack("leave-community", leave_data, message="Success")
-    socketio_client2.assert_only_received("leave-community", leave_data)
+    leave_data = {"community_id": community_datas[-1]["id"]}
+    socketio_client.assert_emit_success("leave_community", leave_data)
+    socketio_client2.assert_only_received("leave_community", leave_data)
 
-    community_ids.remove(leave_data["community-id"])
+    community_ids.remove(leave_data["community_id"])
     # assert_order

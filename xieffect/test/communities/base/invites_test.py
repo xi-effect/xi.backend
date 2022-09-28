@@ -29,14 +29,14 @@ class InvitesTester:
         self.sio4 = SocketIOTestClient(client)
         self.clients = [self.sio1, self.sio2, self.sio3, self.sio4] + list(clients)
 
-        self.sio1.assert_emit_success("open-invites", room_data)
-        self.sio2.assert_emit_success("open-invites", room_data)
-        self.sio3.assert_emit_success("open-invites", room_data)
-        self.sio3.assert_emit_success("close-invites", room_data)
+        self.sio1.assert_emit_success("open_invites", room_data)
+        self.sio2.assert_emit_success("open_invites", room_data)
+        self.sio3.assert_emit_success("open_invites", room_data)
+        self.sio3.assert_emit_success("close_invites", room_data)
         self.assert_nop()
 
     def assert_create_invite(self, invite_data: dict) -> dict:
-        invite = self.sio1.assert_emit_ack("new-invite", invite_data)
+        invite = self.sio1.assert_emit_ack("new_invite", invite_data)
         assert isinstance(invite, dict)
         assert "id" in invite
         assert "code" in invite
@@ -49,14 +49,14 @@ class InvitesTester:
             dt: datetime = datetime.fromisoformat(deadline)
             assert dt.day == (datetime.utcnow() + timedelta(days=days)).day
 
-        self.sio2.assert_only_received("new-invite", invite)
+        self.sio2.assert_only_received("new_invite", invite)
         self.assert_nop()
 
         return invite
 
     def assert_delete_invite(self, delete_data: dict) -> None:
-        self.sio1.assert_emit_success("delete-invite", delete_data)
-        self.sio2.assert_only_received("delete-invite", delete_data)
+        self.sio1.assert_emit_success("delete_invite", delete_data)
+        self.sio2.assert_only_received("delete_invite", delete_data)
         self.assert_nop()
 
     def assert_nop(self):
@@ -66,7 +66,7 @@ class InvitesTester:
 @mark.order(1020)
 def test_invites(client, list_tester, test_community):
     invite_data = {
-        "community-id": test_community,
+        "community_id": test_community,
         "role": "base",
         "limit": 2,
         "days": 10,
@@ -77,7 +77,7 @@ def test_invites(client, list_tester, test_community):
     assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 0
 
     # init sio & join rooms
-    invite_tester = InvitesTester(client, {"community-id": test_community})
+    invite_tester = InvitesTester(client, {"community_id": test_community})
 
     # create a new invite
     invite = invite_tester.assert_create_invite(invite_data)
@@ -87,8 +87,8 @@ def test_invites(client, list_tester, test_community):
 
     # delete invite & check again
     invite_tester.assert_delete_invite({
-        "community-id": test_community,
-        "invitation-id": invite["id"],
+        "community_id": test_community,
+        "invitation_id": invite["id"],
     })
     assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 0
 
@@ -129,7 +129,7 @@ def create_assert_successful_join(list_tester, community_id):
                 assert invite["limit"] == limit_before - 1
 
         for sio in sio_clients:
-            sio.assert_only_received("new-community", COMMUNITY_DATA)
+            sio.assert_only_received("new_community", COMMUNITY_DATA)
 
     return assert_successful_join
 
@@ -144,7 +144,7 @@ def test_invite_joins(
 ):
     # functions
     def create_invite(invite_data, check_auth: bool = True):
-        invite_data["community-id"] = test_community
+        invite_data["community_id"] = test_community
         invite = invite_tester.assert_create_invite(invite_data)
 
         if check_auth:
@@ -176,7 +176,7 @@ def test_invite_joins(
     vasil3 = multi_client("3@user.user")
 
     # init sio & join rooms
-    invite_tester = InvitesTester(client, {"community-id": test_community})
+    invite_tester = InvitesTester(client, {"community_id": test_community})
     sio5 = SocketIOTestClient(vasil1)
     sio6 = SocketIOTestClient(vasil1)
 
@@ -202,8 +202,8 @@ def test_invite_joins(
 
     # delete invite from test-1020
     invite_tester.assert_delete_invite({
-        "community-id": test_community,
-        "invitation-id": invite_id1,
+        "community_id": test_community,
+        "invitation_id": invite_id1,
     })
 
     # testing deleted invite
@@ -217,23 +217,23 @@ def test_invites_errors(client, multi_client, list_tester, test_community):
     member = multi_client("1@user.user")
     outsider = multi_client("2@user.user")
 
-    invite_data = {"role": "base", "limit": 2, "days": 10, "community-id": test_community}
-    room_data = {"community-id": test_community}
+    invite_data = {"role": "base", "limit": 2, "days": 10, "community_id": test_community}
+    room_data = {"community_id": test_community}
 
     assert_successful_join = create_assert_successful_join(list_tester, test_community)
 
     # init sio, join rooms & set up the invite
     sio_member = SocketIOTestClient(member)
     sio_outsider = SocketIOTestClient(outsider)
-    invite_tester = InvitesTester(client, {"community-id": test_community}, sio_member, sio_outsider)
+    invite_tester = InvitesTester(client, {"community_id": test_community}, sio_member, sio_outsider)
     invite = invite_tester.assert_create_invite(invite_data)
 
-    delete_data = {"community-id": test_community, "invitation-id": invite["id"]}
+    delete_data = {"community_id": test_community, "invitation_id": invite["id"]}
     test_events = (
-        ("open-invites", room_data),
-        ("close-invites", room_data),
-        ("new-invite", invite_data),
-        ("delete-invite", delete_data)
+        ("open_invites", room_data),
+        ("close_invites", room_data),
+        ("new_invite", invite_data),
+        ("delete_invite", delete_data)
     )
 
     # fail check function
