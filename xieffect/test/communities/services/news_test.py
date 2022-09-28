@@ -56,23 +56,22 @@ def test_post_creation(
     )
     assert_successful_join(member, invite["id"], invite["code"], sio_member)
 
-    community_id_json = {"community_id": test_community}
+    community_id_json = {"community-id": test_community}
 
     # Check successfully open news-room
     for user in (socketio_client, socketio_client2, sio_member):
         user.assert_emit_success("open-news", community_id_json)
 
     posts_ids = [d.get("id") for d in get_posts_list(client, test_community)]
-    post_data = dict(title="tit", description="desc", **community_id_json)
+    post_data = dict(community_id_json, title="tit", description="desc")
 
     # Assert post creation
     result_data = socketio_client.assert_emit_ack("new-post", post_data)
-    for user in (socketio_client2, sio_member):
-        user.assert_only_received("new-post", result_data)
-
     post_id = result_data.get("id")
     assert isinstance(post_id, int)
     assert dict_equal(result_data, post_data, "title", "description")
+    for user in (socketio_client2, sio_member):
+        user.assert_only_received("new-post", result_data)
     posts_ids.append(post_id)
 
     # Check successfully post creation
@@ -93,28 +92,27 @@ def test_post_creation(
         {"title": "new_title", "description": "new_description"},
         {"description": "the_newest_description"},
     ]
-    post_ids = dict(post_id=post_id, **community_id_json)
+    id_dict = {"post-id": post_id}
+    post_ids = dict(community_id_json, **id_dict)
     for post_upd in post_dict_list:
         post_upd = dict(post_upd, **post_ids)
         old_data = Post.find_by_id(post_id)
         upd_data = socketio_client.assert_emit_ack("update-post", post_upd)
-        for user in (socketio_client2, sio_member):
-            user.assert_only_received("update-post", upd_data)
-
         assert upd_data.get("id") == post_id
         assert upd_data.get("title") == post_upd.get("title") or old_data.title
         description = post_upd.get("description") or old_data.description
         assert upd_data.get("description") == description
+        for user in (socketio_client2, sio_member):
+            user.assert_only_received("update-post", upd_data)
 
     # Check successfully post delete
     socketio_client.assert_emit_success("delete-post", post_ids)
-    for user in (client, member):
+    for user, sio_user in ((client, socketio_client2), (member, sio_member)):
         posts_list = get_posts_list(user, test_community)
         assert isinstance(posts_list, list)
         assert len(posts_list) == 0
+        sio_user.assert_only_received("delete-post", post_ids)
 
     # Check successfully close news-room
-    socketio_client.assert_emit_success("close-news", community_id_json)
-
-    # Check out community
-    socketio_client.assert_emit_success("leave-community", community_id_json)
+    for user in (socketio_client, socketio_client2, sio_member):
+        user.assert_emit_success("close-news", community_id_json)
