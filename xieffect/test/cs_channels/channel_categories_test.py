@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from random import shuffle
 
-from flask_socketio import SocketIOTestClient
+from common.testing import SocketIOTestClient
 from flask.testing import FlaskClient
 from pytest import mark
 
@@ -14,16 +14,10 @@ from communities.services.channels_db import ChannelCategory
 @mark.order(2000)
 def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestClient):
     def assert_create_category(data: dict):
-        create_ack = socketio_client.emit("new-category", data, callback=True)
-        create_events = socketio_client.get_received()
-        assert len(create_events) == 0
-        assert create_ack.get("code") == 200
-
-        result = create_ack.get("data")
+        result = socketio_client.assert_emit_ack("new-category", data)
         result_id = result.get("id")
         assert isinstance(result_id, int)
         assert dict_equal(result, data, "name", "description")
-
         return result_id
 
     def get_communities_list():
@@ -42,16 +36,10 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
     community_data = {"name": "12345", "description": "test"}
 
     # Assert community creation
-    ack = socketio_client.emit("new-community", community_data, callback=True)
-    events = socketio_client.get_received()
-    assert len(events) == 0
-    assert ack.get("code") == 200
-
-    create_data = ack.get("data")
+    create_data = socketio_client.assert_emit_ack("new-community", community_data)
     community_id = create_data.get("id")
     assert isinstance(community_id, int)
     assert dict_equal(create_data, community_data, *community_data.keys())
-
     community_ids.append(community_id)
 
     # Check successfully community creation
@@ -67,12 +55,9 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
     community_id_json = {"community_id": community_id}
 
     # Check successfully open category-room
-    ack = socketio_client.emit("open-category", community_id_json, callback=True)
-    events = socketio_client.get_received()
-    assert len(events) == 0
-    assert ack.get("code") == 200
-    assert ack.get("message") == "Success"
+    socketio_client.assert_emit_success("open-category", community_id_json)
 
+    # Assert category creation
     categories_ids = [d.get("id") for d in get_categories_list(community_id)]
     categories_data = dict(name="cat", description="desc", **community_id_json)
     category_id = assert_create_category(categories_data)
@@ -88,7 +73,7 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
             found_categories = True
     assert found_categories
 
-    # Create categories & check correct sort AL
+    # Check correct sort AL with create categories
     category_data_list = [None, 1, 2, 2, None, 1, None, 5, 4, None]
     for category in category_data_list:
         category_data = dict(next_id=category, **categories_data)
@@ -113,20 +98,15 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
         {"name": "new_name", "description": "new_description"},
         {"description": "the_newest_description"},
     ]
-    for category_update in category_data_list:
-        category_update = dict(category_update, **update_data)
+    for category_upd in category_data_list:
+        category_upd = dict(category_upd, **update_data)
         old_data = ChannelCategory.find_by_id(category_id)
-        ack = socketio_client.emit("update-category", category_update, callback=True)
-        events = socketio_client.get_received()
-        assert len(events) == 0
-        assert ack.get("code") == 200
-
-        result_data = ack.get("data")
+        result_data = socketio_client.assert_emit_ack("update-category", category_upd)
         assert result_data.get("id") == category_id
-        assert result_data.get("name") == category_update.get(
+        assert result_data.get("name") == category_upd.get(
             "name"
         ) or old_data.name
-        assert result_data.get("description") == category_update.get(
+        assert result_data.get("description") == category_upd.get(
             "description"
         ) or old_data.description
 
@@ -149,12 +129,7 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
         else:
             prev_cat = ChannelCategory.find_by_id(next_cat).prev_category_id
 
-        ack = socketio_client.emit("move-category", category_move, callback=True)
-        events = socketio_client.get_received()
-        assert len(events) == 0
-        assert ack.get("code") == 200
-
-        result_data = ack.get("data")
+        result_data = socketio_client.assert_emit_ack("move-category", category_move)
         res_id = result_data.get("id")
         next_id = category_move.get("next_id")
         assert res_id == category_move.get("category_id")
@@ -175,17 +150,10 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
     for category_id in categories_ids:
         prev_cat = ChannelCategory.find_by_id(category_id).prev_category_id
         next_cat = ChannelCategory.find_by_id(category_id).next_category_id
+        del_data = dict(category_id=category_id, **community_id_json)
 
-        ack = socketio_client.emit(
-            "delete-category",
-            dict(category_id=category_id, **community_id_json),
-            callback=True,
-        )
+        socketio_client.assert_emit_success("delete-category", del_data)
         count -= 1
-        events = socketio_client.get_received()
-        assert len(events) == 0
-        assert ack.get("code") == 200
-        assert ack.get("message") == "Success"
         assert len(get_categories_list(community_id)) == count
 
         if prev_cat is not None:
@@ -198,25 +166,7 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
             ).prev_category_id == prev_cat
 
     # Check successfully open category-room
-    ack = socketio_client.emit(
-        "close-category",
-        community_id_json,
-        callback=True,
-    )
-    events = socketio_client.get_received()
-    assert len(events) == 0
-    assert ack.get("code") == 200
-    assert ack.get("message") == "Success"
+    socketio_client.assert_emit_success("close-category", community_id_json)
 
     # Check out community
-    ack = socketio_client.emit(
-        "leave-community",
-        community_id_json,
-        callback=True,
-    )
-    assert dict_equal(
-        ack,
-        {"code": 200, "message": "Success"},
-        ("code", "message"),
-    )
-    assert len(socketio_client.get_received()) == 0
+    socketio_client.assert_emit_success("leave-community", community_id_json)
