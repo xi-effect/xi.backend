@@ -31,10 +31,16 @@ def get_posts_list(client, community_id: int) -> list[dict]:
 
 
 @mark.order(1100)
-def test_post_creation(client, multi_client, list_tester, socketio_client, test_community):
+def test_post_creation(
+    client,
+    multi_client,
+    list_tester,
+    socketio_client,
+    test_community,
+):
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
-    
+
     invite_data = {
         "community-id": test_community,
         "role": "base",
@@ -44,7 +50,10 @@ def test_post_creation(client, multi_client, list_tester, socketio_client, test_
     invite = socketio_client.assert_emit_ack("new-invite", invite_data)
     member = multi_client("1@user.user")
     sio_member = SocketIOTestClient(member)
-    assert_successful_join = create_assert_successful_join(list_tester, test_community)
+    assert_successful_join = create_assert_successful_join(
+        list_tester,
+        test_community,
+    )
     assert_successful_join(member, invite["id"], invite["code"], sio_member)
 
     community_id_json = {"community_id": test_community}
