@@ -8,6 +8,36 @@ from __lib__.flask_fullstack import dict_equal
 from common import SocketIO
 
 
+# TODO move to ffs utils (not test-bound)
+def kebabify_string(data: str) -> str:
+    return data.replace("_", "-")
+
+
+def _kebabify_key(key: str | ..., reverse: bool = False) -> str | ...:
+    if isinstance(key, str):
+        return key.replace("-", "_") if reverse else kebabify_string(key)
+    return key
+
+
+def _kebabify(data: ..., reverse: bool) -> ...:
+    if isinstance(data, list):
+        return [_kebabify(entry, reverse) for entry in data]
+    if isinstance(data, dict):
+        return {
+            _kebabify_key(k, reverse): _kebabify(v, reverse)
+            for k, v in data.items()
+        }
+    return data
+
+
+def kebabify(data: ...) -> ...:
+    return _kebabify(data, reverse=False)
+
+
+def dekebabify(data: ...) -> ...:
+    return _kebabify(data, reverse=True)
+
+
 class SocketIOTestClient(_SocketIOTestClient):
     def __init__(self, flask_client: FlaskClient):
         app: Flask = flask_client.application
@@ -25,6 +55,7 @@ class SocketIOTestClient(_SocketIOTestClient):
     def assert_emit_ack(
         self,
         event_name: str,
+        data: dict,
         *args,
         code: int = 200,
         message: str | None = None,
@@ -36,6 +67,7 @@ class SocketIOTestClient(_SocketIOTestClient):
         Emits an event and compares the contents of its ack against provided data (with asserts)
 
         :param event_name: a client event name
+        :param data: data to send with the event
         :param code: (default: 200) the code to expect in the ack
         :param message: (default: None) the message to expect in the ack (None for no check)
         :param get_data: (default: True) set True to only ack's data, False for the full ack
@@ -45,7 +77,8 @@ class SocketIOTestClient(_SocketIOTestClient):
         :return: full ack (dict) or ack's data (likely dict)
         """
         kwargs["callback"] = True
-        ack = self.emit(event_name, *args, **kwargs)
+        event_name = kebabify_string(event_name)
+        ack = dekebabify(self.emit(event_name, kebabify(data), *args, **kwargs))
 
         if with_nop:
             self.assert_nop()
@@ -98,6 +131,8 @@ class SocketIOTestClient(_SocketIOTestClient):
         :param pop: (default: True) if True, the event is removed from queue
         :return: received event's data
         """
+        data = kebabify(data)
+        event_name = kebabify_string(event_name)
         result: list[tuple[..., int]] = [
             (pkt, i)
             for i, pkt in enumerate(self.queue[self.eio_sid])
