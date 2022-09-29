@@ -33,7 +33,6 @@ class Feedback(Base, Marshalable):
         .column_model(id, user_id, type, data)
         .nest_model(User.FullData, "user")
     )
-
     # fmt: on
 
     @classmethod
@@ -43,5 +42,4 @@ class Feedback(Base, Marshalable):
 
 class FeedbackImage(Base):
     __tablename__ = "feedback-images"
-
     id = Column(Integer, primary_key=True)
