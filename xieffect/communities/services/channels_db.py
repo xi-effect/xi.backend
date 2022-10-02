@@ -9,8 +9,8 @@ from common import Base, Identifiable, db, PydanticModel, TypeEnum
 MAX_CHANNELS: int = 50
 
 
-class ChannelCategory(Base, Identifiable):
-    __tablename__ = "channel_categories"
+class Category(Base, Identifiable):
+    __tablename__ = "categories"
 
     # Vital
     id = Column(Integer, primary_key=True)
@@ -20,11 +20,11 @@ class ChannelCategory(Base, Identifiable):
     # Previous category related
     prev_category_id = Column(
         Integer,
-        ForeignKey("channel_categories.id"),
+        ForeignKey("categories.id"),
         nullable=True,
     )
     prev_category = relationship(
-        "ChannelCategory",
+        "Category",
         remote_side=[id],
         foreign_keys=[prev_category_id],
     )
@@ -32,11 +32,11 @@ class ChannelCategory(Base, Identifiable):
     # Next category related
     next_category_id = Column(
         Integer,
-        ForeignKey("channel_categories.id"),
+        ForeignKey("categories.id"),
         nullable=True,
     )
     next_category = relationship(
-        "ChannelCategory",
+        "Category",
         remote_side=[id],
         foreign_keys=[next_category_id],
     )
@@ -60,7 +60,7 @@ class ChannelCategory(Base, Identifiable):
         prev_category_id: int | None,
         next_category_id: int | None,
         community_id: int,
-    ) -> ChannelCategory:
+    ) -> Category:
         return super().create(
             name=name,
             description=description,
@@ -70,18 +70,18 @@ class ChannelCategory(Base, Identifiable):
         )
 
     @classmethod
-    def find_by_next_id(cls, community_id: int, next_id: int | None) -> ChannelCategory | None:
+    def find_by_next_id(cls, community_id: int, next_id: int | None) -> Category | None:
         return db.session.get_first(select(cls).filter_by(
             community_id=community_id,
             next_category_id=next_id,
         ))
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> ChannelCategory | None:
+    def find_by_id(cls, entry_id: int) -> Category | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_community(cls, community_id: int) -> list[ChannelCategory]:
+    def find_by_community(cls, community_id: int) -> list[Category]:
         root = aliased(cls)
         node = aliased(cls)
 
@@ -95,7 +95,7 @@ class ChannelCategory(Base, Identifiable):
         )
 
         return db.session.get_all(
-            select(ChannelCategory)
+            select(Category)
             .join(result, cls.id == result.c.id)
             .order_by(cte.c.level)
         )
@@ -135,10 +135,10 @@ class Channel(Base, Identifiable):
     # Category-related
     category_id = Column(
         Integer,
-        ForeignKey("channel_categories.id", ondelete="SET NULL"),
+        ForeignKey("categories.id", ondelete="SET NULL"),
         nullable=True,
     )
-    category = relationship("ChannelCategory", backref=backref("channels"))
+    category = relationship("Category", backref=backref("channels"))
 
     # Community-related
     community_id = Column(Integer, ForeignKey("community.id"), nullable=False)

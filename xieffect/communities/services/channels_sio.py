@@ -4,7 +4,7 @@ from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
 from common import DuplexEvent, EventController, EventSpace, db
-from .channels_db import ChannelCategory, Channel, ChannelType, MAX_CHANNELS
+from .channels_db import Category, Channel, ChannelType, MAX_CHANNELS
 from ..base.meta_db import ParticipantRole, Community
 from ..base.meta_utl import check_participant_role
 
@@ -57,7 +57,7 @@ class ChannelEventSpace(EventSpace):
 
         channels_count = len(community.channels)
         if category_id is not None:
-            category = ChannelCategory.find_by_id(category_id)
+            category = Category.find_by_id(category_id)
             channels_count += len(category.channels)
 
         # Check category limit

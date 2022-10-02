@@ -4,7 +4,7 @@ from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
 from common import DuplexEvent, EventController, EventSpace, db
-from .channels_db import ChannelCategory, MAX_CHANNELS
+from .channels_db import Category, MAX_CHANNELS
 from ..base.meta_db import ParticipantRole, Community
 from ..base.meta_utl import check_participant_role
 
@@ -32,14 +32,14 @@ class ChannelCategoryEventSpace(EventSpace):
     def close_category(self, community: Community):
         leave_room(self.room_name(community.id))
 
-    class CreateModel(ChannelCategory.CreateModel, CommunityIdModel):
+    class CreateModel(Category.CreateModel, CommunityIdModel):
         next_id: int = None
 
     @controller.doc_abort(409, "Over limit")
     @controller.argument_parser(CreateModel)
-    @controller.mark_duplex(ChannelCategory.IndexModel, use_event=True)
+    @controller.mark_duplex(Category.IndexModel, use_event=True)
     @check_participant_role(controller, ParticipantRole.OWNER)
-    @controller.marshal_ack(ChannelCategory.IndexModel)
+    @controller.marshal_ack(Category.IndexModel)
     def new_category(
         self,
         event: DuplexEvent,
@@ -63,15 +63,15 @@ class ChannelCategoryEventSpace(EventSpace):
 
             # Add to end to list
             if next_id is None:
-                old_cat = ChannelCategory.find_by_next_id(community.id, None)
+                old_cat = Category.find_by_next_id(community.id, None)
                 prev_cat = old_cat.id
 
             # Add to the list
             else:
-                old_cat = ChannelCategory.find_by_id(next_id)
+                old_cat = Category.find_by_id(next_id)
                 prev_cat = old_cat.prev_category_id
 
-        category = ChannelCategory.create(
+        category = Category.create(
             name,
             description,
             prev_cat,
@@ -89,25 +89,21 @@ class ChannelCategoryEventSpace(EventSpace):
         event.emit_convert(category, self.room_name(community.id))
         return category
 
-    class UpdateModel(ChannelCategory.CreateModel, CommunityIdModel):
+    class UpdateModel(Category.CreateModel, CommunityIdModel):
         category_id: int
 
     @controller.argument_parser(UpdateModel)
-    @controller.mark_duplex(ChannelCategory.IndexModel, use_event=True)
+    @controller.mark_duplex(Category.IndexModel, use_event=True)
     @check_participant_role(controller, ParticipantRole.OWNER)
-    @controller.database_searcher(
-        ChannelCategory,
-        input_field_name="category_id",
-        result_field_name="category",
-    )
-    @controller.marshal_ack(ChannelCategory.IndexModel)
+    @controller.database_searcher(Category)
+    @controller.marshal_ack(Category.IndexModel)
     def update_category(
         self,
         event: DuplexEvent,
         name: str | None,
         description: str | None,
         community: Community,
-        category: ChannelCategory,
+        category: Category,
     ):
         if name is not None:
             category.name = name
@@ -122,19 +118,15 @@ class ChannelCategoryEventSpace(EventSpace):
         category_id: int
 
     @controller.argument_parser(DeleteModel)
-    @controller.mark_duplex(ChannelCategory.IndexModel, use_event=True)
+    @controller.mark_duplex(Category.IndexModel, use_event=True)
     @check_participant_role(controller, ParticipantRole.OWNER)
-    @controller.database_searcher(
-        ChannelCategory,
-        input_field_name="category_id",
-        result_field_name="category",
-    )
+    @controller.database_searcher(Category)
     @controller.force_ack()
     def delete_category(
         self,
         event: DuplexEvent,
         community: Community,
-        category: ChannelCategory,
+        category: Category,
     ):
         # Cutting and stitching
         if category.next_category_id is not None:
@@ -154,19 +146,15 @@ class ChannelCategoryEventSpace(EventSpace):
         next_id: int = None
 
     @controller.argument_parser(MoveModel)
-    @controller.mark_duplex(ChannelCategory.IndexModel, use_event=True)
+    @controller.mark_duplex(Category.IndexModel, use_event=True)
     @check_participant_role(controller, ParticipantRole.OWNER)
-    @controller.database_searcher(
-        ChannelCategory,
-        input_field_name="category_id",
-        result_field_name="category",
-    )
-    @controller.marshal_ack(ChannelCategory.IndexModel)
+    @controller.database_searcher(Category)
+    @controller.marshal_ack(Category.IndexModel)
     def move_category(
         self,
         event: DuplexEvent,
         community: Community,
-        category: ChannelCategory,
+        category: Category,
         next_id: int | None,
     ):
         # Cutting and stitching
@@ -177,13 +165,13 @@ class ChannelCategoryEventSpace(EventSpace):
 
         # Move to the end of the list
         if next_id is None:
-            old_cat = ChannelCategory.find_by_next_id(community.id, None)
+            old_cat = Category.find_by_next_id(community.id, None)
             old_cat.next_category_id = category.id
             category.prev_category_id = old_cat.id
 
         # Moving within a list
         else:
-            old_cat = ChannelCategory.find_by_id(next_id)
+            old_cat = Category.find_by_id(next_id)
             category.prev_category_id = old_cat.prev_category_id
             old_cat.prev_category.next_category_id = category.id
             old_cat.prev_category_id = category.id

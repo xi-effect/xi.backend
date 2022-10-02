@@ -5,7 +5,7 @@ from flask_restx import Resource
 from common import ResourceController
 from .meta_db import Community
 from .meta_utl import check_participant_role
-from ..services.channels_db import ChannelCategory, Channel
+from ..services.channels_db import Category, Channel
 
 controller = ResourceController("communities-meta", path="/communities/")
 
@@ -13,7 +13,7 @@ controller = ResourceController("communities-meta", path="/communities/")
 @controller.route("/<int:community_id>/")
 class CommunityReader(Resource):
     class FullModel(Community.IndexModel):
-        categories: list[ChannelCategory.IndexModel]
+        categories: list[Category.IndexModel]
         channels: list[Channel.IndexModel]
 
         @classmethod
@@ -25,8 +25,8 @@ class CommunityReader(Resource):
         ) -> None:
             callback(
                 categories=[
-                    ChannelCategory.IndexModel.convert(category, **context)
-                    for category in ChannelCategory.find_by_community(orm_object.id)
+                    Category.IndexModel.convert(category, **context)
+                    for category in Category.find_by_community(orm_object.id)
                 ],
                 channels=[
                     # Channel.IndexModel.convert(channel, **context)
