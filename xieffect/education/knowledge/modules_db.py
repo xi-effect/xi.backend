@@ -254,7 +254,7 @@ class Module(Base, Identifiable, Marshalable):  # TODO update with new-mars
                 )
             }
         )
-        entry.image_id = json_data.get("image-id", None)
+        entry.image_id = json_data.get("image-id")
         entry.map = json_data.get("map")
 
         if force:

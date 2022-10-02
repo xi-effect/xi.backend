@@ -86,8 +86,8 @@ def init_xieffect() -> tuple[  # noqa: WPS210, WPS320
     # TODO DI to use secrets in `URLSafeSerializer`s
     app.configure_cors()
 
-    mail_username = getenv("MAIL_USERNAME", None)
-    mail_password = getenv("MAIL_PASSWORD", None)
+    mail_username = getenv("MAIL_USERNAME")
+    mail_password = getenv("MAIL_PASSWORD")
     mail_initialized = mail_username is not None and mail_password is not None
     if mail_initialized:
         app.config["MAIL_SERVER"] = "smtp.yandex.ru"

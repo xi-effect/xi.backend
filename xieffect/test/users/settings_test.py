@@ -25,7 +25,7 @@ def test_changing_settings(client: FlaskClient):
     }
 
     old_settings = check_code(client.get("/settings/"))
-    assert all(old_settings.get(key, None) != setting for key, setting in new_settings.items())
+    assert all(old_settings.get(key) != setting for key, setting in new_settings.items())
 
     check_code(client.post("/settings/", json={"changed": new_settings}))
 
@@ -35,7 +35,7 @@ def test_changing_settings(client: FlaskClient):
 
     check_code(client.post("/settings/", json={
         "changed": {
-            key: old_settings.get(key, None) for key in new_settings.keys()
+            key: old_settings.get(key) for key in new_settings.keys()
         }
     }))
     result_settings = check_code(client.get("/settings/"))

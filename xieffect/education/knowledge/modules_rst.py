@@ -99,7 +99,7 @@ class ModuleLister(Resource):  # [POST] /modules/
                 400, "Malformed filters parameter: use strings as values only"
             )
 
-        global_filter = filters.get("global", None)
+        global_filter = filters.get("global")
         if global_filter not in {"pinned", "starred", "started", "", None}:
             controller.abort(400, f"Global filter '{global_filter}' is not supported")
         user.filter_bind = global_filter

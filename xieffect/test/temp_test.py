@@ -38,7 +38,7 @@ def test_invite_curds(client: FlaskClient, admin_client: FlaskClient):
     invite_data = {"name": "test", "limit": -1, "accepted": 0}
     invite_data2 = {"name": "toast", "limit": 5, "accepted": 0}
 
-    assert (invite_id := request_assert_admin(FlaskClient.post, "/invites/", invite_data).get("id", None)) is not None
+    assert (invite_id := request_assert_admin(FlaskClient.post, "/invites/", invite_data).get("id")) is not None
     result = request_assert_admin(FlaskClient.get, f"/invites/{invite_id}/")
     assert dict_equal(result, invite_data, "name", "limit", "accepted")
     invite_data2["code"] = result["code"]

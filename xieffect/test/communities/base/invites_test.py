@@ -104,10 +104,10 @@ def find_invite(list_tester, community_id: int, invite_id: int) -> dict | None:
 
 def assert_successful_get(client: FlaskClient, code, joined: bool):
     data = check_code(client.get(f"/communities/join/{code}/"))
-    assert data.get("joined", None) is joined
-    assert data.get("authorized", None) is True
+    assert data.get("joined") is joined
+    assert data.get("authorized") is True
 
-    community = data.get("community", None)
+    community = data.get("community")
     assert community is not None
     assert dict_equal(community, COMMUNITY_DATA, *COMMUNITY_DATA.keys())
 
@@ -116,7 +116,7 @@ def create_assert_successful_join(list_tester, community_id):
     def assert_successful_join(client: FlaskClient, invite_id: int, code: str, *sio_clients: SocketIOTestClient):
         invite = find_invite(list_tester, community_id, invite_id)
         assert invite is not None, "Invitation not found inside assert_successful_join"
-        limit_before = invite.get("limit", None)
+        limit_before = invite.get("limit")
 
         assert_successful_get(client, code, joined=False)
         assert dict_equal(check_code(client.post(f"/communities/join/{code}/")), COMMUNITY_DATA, *COMMUNITY_DATA.keys())
@@ -150,10 +150,10 @@ def test_invite_joins(
         if check_auth:
             join_url = f"/communities/join/{invite['code']}/"
             data = check_code(base_client.get(join_url))
-            assert data.get("joined", None) is False
-            assert data.get("authorized", None) is False
+            assert data.get("joined") is False
+            assert data.get("authorized") is False
 
-            community = data.get("community", None)
+            community = data.get("community")
             assert community is not None
             assert dict_equal(community, COMMUNITY_DATA, *COMMUNITY_DATA.keys())
 

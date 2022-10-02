@@ -12,13 +12,13 @@ def assert_create_community(socketio_client: SocketIOTestClient, community_data:
     assert isinstance(result_data, dict)
     assert dict_equal(result_data, community_data, *community_data.keys())
 
-    community_id = result_data.get("id", None)
+    community_id = result_data.get("id")
     assert isinstance(community_id, int)
     return community_id
 
 
 def get_communities_list(client: FlaskClient) -> list[dict]:
-    result = check_code(client.get("/home/")).get("communities", None)
+    result = check_code(client.get("/home/")).get("communities")
     assert isinstance(result, list)
     return result
 

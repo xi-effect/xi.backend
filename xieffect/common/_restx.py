@@ -25,7 +25,7 @@ class ResourceController(_ResourceController):
         """
 
         def a_response_wrapper(function):
-            return_type = function.__annotations__.get("return", None)
+            return_type = function.__annotations__.get("return")
             is_none = return_type is None or return_type == "None"
             is_bool = (
                 is_none

@@ -151,7 +151,7 @@ def version_check():
                 [
                     f"{key:3} was updated to {versions[key]}"
                     for key in versions.keys()
-                    if versions_lock.get(key, None) != versions[key]
+                    if versions_lock.get(key) != versions[key]
                 ]
             ).expandtabs(),
         )

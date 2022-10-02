@@ -22,7 +22,7 @@ def spread_dict(dct: dict[k, v], *keys: k, default=None) -> Iterable[v]:
 
 def assert_spread(dct: dict[k, v], *keys: k) -> Iterable[v]:
     for key in keys:
-        result = dct.get(key, None)
+        result = dct.get(key)
         assert result is not None
         yield result
 

@@ -56,11 +56,11 @@ def test_signup(base_client: FlaskClient):
     result: dict[str, ...] = response.json
     assert result.pop("a", None) == "Success"
 
-    communities = result.get("communities", None)
+    communities = result.get("communities")
     assert isinstance(communities, list)
     assert len(communities) == 0
 
-    user = result.get("user", None)
+    user = result.get("user")
     assert isinstance(user, dict)
     assert dict_equal(user, default_data, *default_data.keys())
     assert "id" in user
@@ -109,9 +109,9 @@ def test_email_confirm(base_client: FlaskClient):
         assert len(recipients) == 1
         assert recipients[0] == credentials["email"]
 
-    assert check_code(base_client.get("/settings/")).get("email-confirmed", None) is False
+    assert check_code(base_client.get("/settings/")).get("email-confirmed") is False
     assert check_code(base_client.post(f"/email-confirm/{code}/"))["a"] == "Success"
-    assert check_code(base_client.get("/settings/")).get("email-confirmed", None) is True
+    assert check_code(base_client.get("/settings/")).get("email-confirmed") is True
 
     check_code(base_client.post("/logout/"))
 
@@ -119,10 +119,10 @@ def test_email_confirm(base_client: FlaskClient):
 @mark.order(15)
 def test_sio_connection(client: FlaskClient):
     sio_client = SocketIOTestClient(client)
-    assert sio_client.connected.get("/", None) is True
+    assert sio_client.connected.get("/") is True
 
 
 @mark.order(16)
 def test_sio_unauthorized(base_client: FlaskClient):
     sio_client = SocketIOTestClient(base_client)
-    assert sio_client.connected.get("/", None) is False
+    assert sio_client.connected.get("/") is False

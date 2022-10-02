@@ -85,12 +85,12 @@ class SocketIOTestClient(_SocketIOTestClient):
 
         print(type(ack), ack)
         assert isinstance(ack, dict)
-        assert ack.get("code", None) == code
+        assert ack.get("code") == code
         if message is not None:
-            assert ack.get("message", None) == message
+            assert ack.get("message") == message
 
         if get_data:
-            return ack.get("data", None)
+            return ack.get("data")
         return ack
 
     def assert_emit_success(

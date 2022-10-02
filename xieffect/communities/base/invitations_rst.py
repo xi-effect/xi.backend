@@ -28,7 +28,7 @@ def check_invitation():  # TODO # noqa: WPS231
         @controller.doc_abort("400 ", "Invalid invitation")
         def check_invitation_inner(*args, **kwargs):
             code: str = kwargs.pop("code")
-            user: User = kwargs.get("user", None)
+            user: User = kwargs.get("user")
 
             invitation: Invitation = Invitation.find_by_code(code)
             if invitation is None:
