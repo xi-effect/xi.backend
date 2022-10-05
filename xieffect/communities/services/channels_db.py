@@ -9,7 +9,65 @@ from common import Base, Identifiable, db, PydanticModel, TypeEnum
 MAX_CHANNELS: int = 50
 
 
-class Category(Base, Identifiable):
+class LinkedList(Base):
+    __abstract__ = True
+
+    @classmethod
+    def find_last(cls, cid) -> LinkedList | None:
+        return cls.find_first_by_kwargs(community_id=cid.community_id, next=None)
+
+    @classmethod
+    def stitch(cls, prev, next, cid=None) -> None:
+        nid = cid or next
+        pid = cid or prev
+
+        if prev:
+            if nid:
+                nid = nid.id
+            prev.next_id = nid
+        if next:
+            if pid:
+                pid = pid.id
+            next.prev_id = pid
+        db.session.flush()
+
+    @classmethod
+    def insert(cls, cid, next) -> None:
+        next = cls.find_first_by_kwargs(community_id=cid.community_id, id=next)
+        if next:
+            prev = next.prev
+        else:
+            prev = cls.find_last(cid)
+        cid.next = next
+        cid.prev = prev
+        db.session.flush()
+        cls.stitch(prev, next, cid)
+        return cid
+
+    @classmethod
+    def add(cls, next, **kwargs):
+        added = cls.create(**kwargs)
+        cls.insert(added, next)
+        return added
+
+    @classmethod
+    def remove(cls, cid) -> None:
+        removed = cls.find_first_by_kwargs(id=cid.id)
+        prev = removed.prev
+        next = removed.next
+        cls.stitch(prev, next)
+
+    def deleter(self, cid):
+        self.remove(cid)
+        self.delete()
+
+    @classmethod
+    def move(cls, cid, next) -> LinkedList:
+        cls.remove(cid)
+        return cls.insert(cid, next)
+
+
+class Category(LinkedList, Identifiable):
     __tablename__ = "categories"
 
     # Vital
@@ -18,27 +76,27 @@ class Category(Base, Identifiable):
     description = Column(Text, nullable=True)
 
     # Previous category related
-    prev_category_id = Column(
+    prev_id = Column(
         Integer,
         ForeignKey("categories.id"),
         nullable=True,
     )
-    prev_category = relationship(
+    prev = relationship(
         "Category",
         remote_side=[id],
-        foreign_keys=[prev_category_id],
+        foreign_keys=[prev_id],
     )
 
     # Next category related
-    next_category_id = Column(
+    next_id = Column(
         Integer,
         ForeignKey("categories.id"),
         nullable=True,
     )
-    next_category = relationship(
+    next = relationship(
         "Category",
         remote_side=[id],
-        foreign_keys=[next_category_id],
+        foreign_keys=[next_id],
     )
 
     # Community-related
@@ -53,30 +111,6 @@ class Category(Base, Identifiable):
     IndexModel = BaseModel.combine_with(CreateModel)
 
     @classmethod
-    def create(
-        cls,
-        name: str,
-        description: str | None,
-        prev_category_id: int | None,
-        next_category_id: int | None,
-        community_id: int,
-    ) -> Category:
-        return super().create(
-            name=name,
-            description=description,
-            prev_category_id=prev_category_id,
-            next_category_id=next_category_id,
-            community_id=community_id,
-        )
-
-    @classmethod
-    def find_by_next_id(cls, community_id: int, next_id: int | None) -> Category | None:
-        return db.session.get_first(select(cls).filter_by(
-            community_id=community_id,
-            next_category_id=next_id,
-        ))
-
-    @classmethod
     def find_by_id(cls, entry_id: int) -> Category | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
@@ -86,12 +120,12 @@ class Category(Base, Identifiable):
         node = aliased(cls)
 
         cte = select(root, literal(0).label("level")).filter_by(
-            community_id=community_id, prev_category_id=None
+            community_id=community_id, prev_id=None
         ).cte("cte", recursive=True)
 
         result = cte.union_all(
             select(node, cte.c.level + 1)
-            .join(cte, node.prev_category_id == cte.c.id)
+            .join(cte, node.prev_id == cte.c.id)
         )
 
         return db.session.get_all(
@@ -117,19 +151,19 @@ class Channel(Base, Identifiable):
     type = Column(Enum(ChannelType), nullable=False)
 
     # Previous channel related
-    prev_channel_id = Column(Integer, ForeignKey("channels.id"))
-    prev_channel = relationship(
+    prev_id = Column(Integer, ForeignKey("channels.id"))
+    prev = relationship(
         "Channel",
         remote_side=[id],
-        foreign_keys=[prev_channel_id],
+        foreign_keys=[prev_id],
     )
 
     # Next channel related
-    next_channel_id = Column(Integer, ForeignKey("channels.id"))
-    next_channel = relationship(
+    next_id = Column(Integer, ForeignKey("channels.id"))
+    next = relationship(
         "Channel",
         remote_side=[id],
-        foreign_keys=[next_channel_id],
+        foreign_keys=[next_id],
     )
 
     # Category-related
@@ -156,16 +190,16 @@ class Channel(Base, Identifiable):
         cls,
         name: str,
         channel_type: ChannelType,
-        prev_channel_id: int | None,
-        next_channel_id: int | None,
+        prev_id: int | None,
+        next_id: int | None,
         community_id: int,
         category_id: int | None,
     ) -> Channel:
         return super().create(
             name=name,
             type=channel_type,
-            prev_channel_id=prev_channel_id,
-            next_channel_id=next_channel_id,
+            prev_id=prev_id,
+            next_id=next_id,
             community_id=community_id,
             category_id=category_id,
         )
@@ -180,7 +214,7 @@ class Channel(Base, Identifiable):
         return db.session.get_first(select(cls).filter_by(
             community_id=community_id,
             category_id=category_id,
-            next_channel_id=next_id,
+            next_id=next_id,
         ))
 
     @classmethod
@@ -208,12 +242,12 @@ class Channel(Base, Identifiable):
         cte = select(root, literal(0).label("level")).filter_by(
             community_id=community_id,
             category_id=category_id,
-            prev_channel_id=category_id,
+            prev_id=category_id,
         ).cte("cte", recursive=True)
 
         result = cte.union_all(
             select(node, cte.c.level + 1)
-            .join(cte, node.prev_channel_id == cte.c.id)
+            .join(cte, node.prev_id == cte.c.id)
         )
 
         return db.session.get_all(

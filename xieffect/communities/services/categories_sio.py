@@ -54,36 +54,14 @@ class ChannelCategoryEventSpace(EventSpace):
         if len(cat_list) == MAX_CHANNELS:
             controller.abort(409, "Over limit: Too many categories")
 
-        # Create a category in empty list
-        if len(cat_list) == 0:
-            prev_cat = None
-            next_cat = None
-        else:
-            next_cat = next_id
-
-            # Add to end to list
-            if next_id is None:
-                old_cat = Category.find_by_next_id(community.id, None)
-                prev_cat = old_cat.id
-
-            # Add to the list
-            else:
-                old_cat = Category.find_by_id(next_id)
-                prev_cat = old_cat.prev_category_id
-
-        category = Category.create(
-            name,
-            description,
-            prev_cat,
-            next_cat,
-            community.id,
+        category = Category.add(
+            next_id,
+            name=name,
+            description=description,
+            prev_id=0,
+            next_id=0,
+            community_id=community.id,
         )
-
-        # Stitching
-        if category.next_category_id is not None:
-            category.next_category.prev_category_id = category.id
-        if category.prev_category_id is not None:
-            category.prev_category.next_category_id = category.id
 
         db.session.commit()
         event.emit_convert(category, self.room_name(community.id))
@@ -128,13 +106,7 @@ class ChannelCategoryEventSpace(EventSpace):
         community: Community,
         category: Category,
     ):
-        # Cutting and stitching
-        if category.next_category_id is not None:
-            category.next_category.prev_category_id = category.prev_category_id
-        if category.prev_category_id is not None:
-            category.prev_category.next_category_id = category.next_category_id
-
-        category.delete()
+        Category.deleter(category, cid=category)
         db.session.commit()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
@@ -157,26 +129,7 @@ class ChannelCategoryEventSpace(EventSpace):
         category: Category,
         next_id: int | None,
     ):
-        # Cutting and stitching
-        if category.next_category_id is not None:
-            category.next_category.prev_category_id = category.prev_category_id
-        if category.prev_category_id is not None:
-            category.prev_category.next_category_id = category.next_category_id
-
-        # Move to the end of the list
-        if next_id is None:
-            old_cat = Category.find_by_next_id(community.id, None)
-            old_cat.next_category_id = category.id
-            category.prev_category_id = old_cat.id
-
-        # Moving within a list
-        else:
-            old_cat = Category.find_by_id(next_id)
-            category.prev_category_id = old_cat.prev_category_id
-            old_cat.prev_category.next_category_id = category.id
-            old_cat.prev_category_id = category.id
-
-        category.next_category_id = next_id
+        category = Category.move(category, next_id)
         db.session.commit()
         event.emit_convert(category, self.room_name(community.id))
         return category
