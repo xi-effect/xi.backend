@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Column, ForeignKey, select, literal
+from sqlalchemy import Column, ForeignKey, select, literal, func
 from sqlalchemy.orm import relationship, backref, aliased
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
@@ -9,66 +9,64 @@ from common import Base, Identifiable, db, PydanticModel, TypeEnum
 MAX_CHANNELS: int = 50
 
 
-class LinkedList(Base):
+class LinkedListNode(Base):
     __abstract__ = True
 
     @classmethod
-    def find_last(cls, cid) -> LinkedList | None:
-        return cls.find_first_by_kwargs(community_id=cid.community_id, next=None)
+    def add(cls, entry_next_node, **kwargs) -> LinkedListNode:
+        added_node = cls.create(**kwargs)
+        cls.insert(added_node, entry_next_node)
+        return added_node
 
     @classmethod
-    def stitch(cls, prev, next, cid=None) -> None:
-        nid = cid or next
-        pid = cid or prev
+    def stitch(cls, entry_prev_node, entry_next_node, node=None) -> None:
+        next_node = node or entry_next_node
+        prev_node = node or entry_prev_node
 
-        if prev:
-            if nid:
-                nid = nid.id
-            prev.next_id = nid
-        if next:
-            if pid:
-                pid = pid.id
-            next.prev_id = pid
-        db.session.flush()
+        if entry_prev_node is not None:
+            if next_node is not None:
+                next_node = next_node.id
+            entry_prev_node.next_id = next_node
+        if entry_next_node is not None:
+            if prev_node is not None:
+                prev_node = prev_node.id
+            entry_next_node.prev_id = prev_node
 
-    @classmethod
-    def insert(cls, cid, next) -> None:
-        next = cls.find_first_by_kwargs(community_id=cid.community_id, id=next)
-        if next:
-            prev = next.prev
+    def find_last(self) -> LinkedListNode | None:
+        return self.find_first_by_kwargs(community_id=self.community_id, next=None)
+
+    def insert(self, entry_next_node) -> LinkedListNode:
+        next_node = self.find_first_by_kwargs(
+            community_id=self.community_id,
+            id=entry_next_node,
+        )
+        if next_node is not None:
+            prev_node = next_node.prev
         else:
-            prev = cls.find_last(cid)
-        cid.next = next
-        cid.prev = prev
+            prev_node = self.find_last()
+        self.next = next_node
+        self.prev = prev_node
         db.session.flush()
-        cls.stitch(prev, next, cid)
-        return cid
+        self.stitch(prev_node, next_node, node=self)
+        return self
 
-    @classmethod
-    def add(cls, next, **kwargs):
-        added = cls.create(**kwargs)
-        cls.insert(added, next)
-        return added
+    def remove(self) -> None:
+        removed_node = self.find_first_by_kwargs(id=self.id)
+        prev_node = removed_node.prev
+        next_node = removed_node.next
+        self.stitch(prev_node, next_node)
 
-    @classmethod
-    def remove(cls, cid) -> None:
-        removed = cls.find_first_by_kwargs(id=cid.id)
-        prev = removed.prev
-        next = removed.next
-        cls.stitch(prev, next)
+    def move(self, next_node) -> LinkedListNode:
+        self.remove()
+        return self.insert(next_node)
 
-    def deleter(self, cid):
-        self.remove(cid)
-        self.delete()
-
-    @classmethod
-    def move(cls, cid, next) -> LinkedList:
-        cls.remove(cid)
-        return cls.insert(cid, next)
+    def delete(self) -> None:
+        self.remove()
+        super().delete()
 
 
-class Category(LinkedList, Identifiable):
-    __tablename__ = "categories"
+class Category(LinkedListNode, Identifiable):
+    __tablename__ = "cs_categories"
 
     # Vital
     id = Column(Integer, primary_key=True)
@@ -78,7 +76,7 @@ class Category(LinkedList, Identifiable):
     # Previous category related
     prev_id = Column(
         Integer,
-        ForeignKey("categories.id"),
+        ForeignKey("cs_categories.id"),
         nullable=True,
     )
     prev = relationship(
@@ -90,7 +88,7 @@ class Category(LinkedList, Identifiable):
     # Next category related
     next_id = Column(
         Integer,
-        ForeignKey("categories.id"),
+        ForeignKey("cs_categories.id"),
         nullable=True,
     )
     next = relationship(
@@ -143,7 +141,7 @@ class ChannelType(TypeEnum):
 
 
 class Channel(Base, Identifiable):
-    __tablename__ = "channels"
+    __tablename__ = "cs_channels"
 
     # Vital
     id = Column(Integer, primary_key=True)
@@ -151,7 +149,7 @@ class Channel(Base, Identifiable):
     type = Column(Enum(ChannelType), nullable=False)
 
     # Previous channel related
-    prev_id = Column(Integer, ForeignKey("channels.id"))
+    prev_id = Column(Integer, ForeignKey("cs_channels.id"))
     prev = relationship(
         "Channel",
         remote_side=[id],
@@ -159,7 +157,7 @@ class Channel(Base, Identifiable):
     )
 
     # Next channel related
-    next_id = Column(Integer, ForeignKey("channels.id"))
+    next_id = Column(Integer, ForeignKey("cs_channels.id"))
     next = relationship(
         "Channel",
         remote_side=[id],
@@ -169,7 +167,7 @@ class Channel(Base, Identifiable):
     # Category-related
     category_id = Column(
         Integer,
-        ForeignKey("categories.id", ondelete="SET NULL"),
+        ForeignKey("cs_categories.id", ondelete="SET NULL"),
         nullable=True,
     )
     category = relationship("Category", backref=backref("channels"))
@@ -255,3 +253,9 @@ class Channel(Base, Identifiable):
             .join(result, cls.id == result.c.id)
             .order_by(cte.c.level)
         )
+
+    @classmethod
+    def count_by_category(cls, category_id: int):
+        return db.session.get_first(select(func.count(cls.id)).filter_by(
+            category_id=category_id
+        ))

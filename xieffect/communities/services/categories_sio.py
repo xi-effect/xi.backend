@@ -4,7 +4,7 @@ from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
 from common import DuplexEvent, EventController, EventSpace, db
-from .channels_db import Category, MAX_CHANNELS
+from .channels_db import Category, MAX_CHANNELS, Channel
 from ..base.meta_db import ParticipantRole, Community
 from ..base.meta_utl import check_participant_role
 
@@ -48,10 +48,8 @@ class ChannelCategoryEventSpace(EventSpace):
         community: Community,
         next_id: int | None,
     ):
-        cat_list = community.categories
-
         # Check category limit
-        if len(cat_list) == MAX_CHANNELS:
+        if Channel.count_by_category(community.id) == MAX_CHANNELS:
             controller.abort(409, "Over limit: Too many categories")
 
         category = Category.add(
@@ -106,7 +104,7 @@ class ChannelCategoryEventSpace(EventSpace):
         community: Community,
         category: Category,
     ):
-        Category.deleter(category, cid=category)
+        category.delete()
         db.session.commit()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
@@ -129,7 +127,7 @@ class ChannelCategoryEventSpace(EventSpace):
         category: Category,
         next_id: int | None,
     ):
-        category = Category.move(category, next_id)
+        category.move(next_id)
         db.session.commit()
         event.emit_convert(category, self.room_name(community.id))
         return category
