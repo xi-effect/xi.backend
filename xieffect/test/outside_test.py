@@ -5,7 +5,7 @@ from flask_mail import Message
 from pytest import mark, skip
 from werkzeug.test import TestResponse
 
-from __lib__.flask_fullstack import check_code, dict_equal
+from flask_fullstack import check_code, dict_equal
 from common import mail, mail_initialized
 from other import EmailType
 from users import dumps_feedback, generate_code  # noqa: WPS

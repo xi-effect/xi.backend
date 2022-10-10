@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask.testing import FlaskClient
 from pytest import mark
 
-from __lib__.flask_fullstack import check_code, dict_equal
+from flask_fullstack import check_code, dict_equal
 from users import dumps_feedback, generate_code
 
 

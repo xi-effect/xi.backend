@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator
 from flask.testing import FlaskClient
 from pytest import mark
 
-from __lib__.flask_fullstack import check_code
+from flask_fullstack import check_code
 from .module_list_test import MODULES_PER_REQUEST, lister_with_filters, temp_list_tester
 
 

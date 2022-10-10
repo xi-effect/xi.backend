@@ -1,4 +1,4 @@
--r __lib__/requirements.txt
+flask-fullstack==0.4.8
 
 # Misc
 discord-webhook~=0.14.0

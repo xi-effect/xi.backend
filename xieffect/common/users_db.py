@@ -7,7 +7,7 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
 
-from __lib__.flask_fullstack import UserRole, PydanticModel, Identifiable
+from flask_fullstack import UserRole, PydanticModel, Identifiable
 from ._core import Base, db  # noqa: WPS436
 
 DEFAULT_AVATAR: dict = {  # noqa: WPS407

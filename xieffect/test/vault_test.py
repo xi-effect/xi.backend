@@ -9,7 +9,7 @@ from flask.testing import FlaskClient
 from pytest import mark
 from werkzeug.datastructures import FileStorage
 
-from __lib__.flask_fullstack import check_code
+from flask_fullstack import check_code
 from .conftest import BASIC_PASS, login
 
 k = TypeVar("k")

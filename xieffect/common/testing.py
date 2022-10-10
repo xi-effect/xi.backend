@@ -4,7 +4,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 from flask_socketio.test_client import SocketIOTestClient as _SocketIOTestClient
 
-from __lib__.flask_fullstack import dict_equal
+from flask_fullstack import dict_equal
 from common import SocketIO
 
 

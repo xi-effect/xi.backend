@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytest import mark, fixture
 
-from __lib__.flask_fullstack import dict_equal, check_code
+from flask_fullstack import dict_equal, check_code
 from common.testing import SocketIOTestClient
 from communities.services.news_db import Post
 from ..base.meta_test import assert_create_community

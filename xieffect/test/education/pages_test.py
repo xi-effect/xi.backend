@@ -6,7 +6,7 @@ from json import load as load_json
 from flask.testing import FlaskClient
 from pytest import mark
 
-from __lib__.flask_fullstack import check_code
+from flask_fullstack import check_code
 
 PAGES_PER_REQUEST: int = 50
 

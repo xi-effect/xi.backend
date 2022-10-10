@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from flask.testing import FlaskClient
 from pytest import mark, fixture
 
-from __lib__.flask_fullstack import check_code, dict_equal
+from flask_fullstack import check_code, dict_equal
 from common.testing import SocketIOTestClient
 from .meta_test import assert_create_community
 

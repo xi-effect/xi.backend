@@ -6,7 +6,7 @@ from flask.testing import FlaskClient
 from pytest import mark
 from werkzeug.test import TestResponse
 
-from __lib__.flask_fullstack import check_code, dict_equal
+from flask_fullstack import check_code, dict_equal
 from .module_list_test import MODULES_PER_REQUEST
 
 

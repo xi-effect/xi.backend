@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator
 from flask.testing import FlaskClient
 from pytest import mark
 
-from __lib__.flask_fullstack import check_code
+from flask_fullstack import check_code
 
 MODULES_PER_REQUEST: int = 12
 

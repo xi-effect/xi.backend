@@ -1,4 +1,4 @@
-from __lib__.flask_fullstack import (  # noqa: WPS
+from flask_fullstack import (  # noqa: WPS
     ClientEvent,
     ServerEvent,
     DuplexEvent,
@@ -13,7 +13,7 @@ from __lib__.flask_fullstack import (  # noqa: WPS
     PydanticModel,
     EventSpace,
 )
-from __lib__.flask_fullstack.restx import (  # noqa: WPS !DEPRECATED!
+from flask_fullstack.restx import (  # noqa: WPS !DEPRECATED!
     unite_models,
     LambdaFieldDef,
     create_marshal_model,

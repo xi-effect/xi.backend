@@ -5,7 +5,7 @@ from json import load as load_json
 
 from flask.testing import FlaskClient
 
-from __lib__.flask_fullstack import check_code
+from flask_fullstack import check_code
 
 
 def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):

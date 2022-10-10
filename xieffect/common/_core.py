@@ -12,7 +12,7 @@ from sqlalchemy import MetaData, select
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import Select
 
-from __lib__.flask_fullstack import (
+from flask_fullstack import (
     configure_whooshee,
     Flask as _Flask,
     IndexService,
