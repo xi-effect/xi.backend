@@ -3,9 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 
 from flask.testing import FlaskClient
-from pytest import mark
-
 from flask_fullstack import check_code
+from pytest import mark
 
 MODULES_PER_REQUEST: int = 12
 

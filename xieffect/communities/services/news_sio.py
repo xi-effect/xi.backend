@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
-from common import DuplexEvent, EventController, EventSpace, User, db
+from common import EventController, User, db
 from .news_db import Post
 from ..base.invitations_sio import check_participant_role
 from ..base.meta_db import ParticipantRole, Community

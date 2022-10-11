@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from flask_fullstack import counter_parser
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, unite_models, User
+from common import ResourceController, unite_models, User
 from .modules_db import Module, SortType, ModuleFilterSession, PreferenceOperation
 
 education_namespace = ResourceController("modules", path="/")

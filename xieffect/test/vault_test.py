@@ -6,10 +6,10 @@ from os.path import exists
 from typing import TypeVar
 
 from flask.testing import FlaskClient
+from flask_fullstack import check_code
 from pytest import mark
 from werkzeug.datastructures import FileStorage
 
-from flask_fullstack import check_code
 from .conftest import BASIC_PASS, login
 
 k = TypeVar("k")

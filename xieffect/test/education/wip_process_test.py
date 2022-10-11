@@ -4,9 +4,8 @@ from collections.abc import Callable, Iterator
 from json import load as json_load
 
 from flask.testing import FlaskClient
-from pytest import mark
-
 from flask_fullstack import check_code
+from pytest import mark
 
 PER_REQUEST = 50
 

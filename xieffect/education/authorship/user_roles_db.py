@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from flask_fullstack import UserRole, PydanticModel
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean
 
-from common import User, UserRole, Base, db, PydanticModel
+from common import User, Base, db
 
 
 class Author(Base, UserRole):

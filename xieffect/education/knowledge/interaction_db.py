@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel
 from sqlalchemy import Column, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Float, JSON
 
-from common import User, Base, db, PydanticModel
+from common import User, Base, db
 from ._base_session import BaseModuleSession  # noqa: WPS436
 
 

@@ -5,11 +5,12 @@ from os import urandom
 from random import SystemRandom
 from smtplib import SMTPDataError
 
+from flask_fullstack import TypeEnum
 from flask_mail import Message
 from flask_restx import Resource
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import mail, app, User, mail_initialized, TypeEnum
+from common import mail, app, User, mail_initialized
 from .discorder import send_message as send_discord_message, WebhookURLs
 
 safe_random = SystemRandom()

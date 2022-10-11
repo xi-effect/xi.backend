@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from flask_fullstack import dict_equal, check_code
 from pytest import mark, fixture
 
-from flask_fullstack import dict_equal, check_code
 from common.testing import SocketIOTestClient
 from communities.services.news_db import Post
-from ..base.meta_test import assert_create_community
 from ..base.invites_test import create_assert_successful_join
+from ..base.meta_test import assert_create_community
 
 COMMUNITY_DATA = {"name": "test"}
 

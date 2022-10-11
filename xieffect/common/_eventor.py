@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from flask import Flask
-
 from flask_fullstack import (
     EventController as _EventController,
     PydanticModel,

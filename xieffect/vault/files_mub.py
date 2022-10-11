@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from os import remove
 
+from flask_fullstack import counter_parser
 from flask_restx import Resource
 
-from common import counter_parser
 from moderation import MUBController, permission_index
 from .files_db import File
 

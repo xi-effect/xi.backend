@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from flask_fullstack import counter_parser
 from flask_restx import Resource
 
-from common import ResourceController, User, counter_parser
+from common import ResourceController, User
 from .news_db import Post
 from ..base.meta_db import Participant
 

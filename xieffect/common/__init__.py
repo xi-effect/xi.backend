@@ -1,18 +1,3 @@
-from flask_fullstack import (  # noqa: WPS
-    ClientEvent,
-    ServerEvent,
-    DuplexEvent,
-    counter_parser,
-    password_parser,
-    get_or_pop,
-    TypeEnum,
-    Undefined,
-    JSONWithModel,
-    UserRole,
-    Identifiable,
-    PydanticModel,
-    EventSpace,
-)
 from flask_fullstack.restx import (  # noqa: WPS !DEPRECATED!
     unite_models,
     LambdaFieldDef,

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel, Identifiable
 from sqlalchemy import Column, select, ForeignKey, sql
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Text, DateTime
 
-from common import Base, db, User, PydanticModel, Identifiable
+from common import Base, db, User
 from ..base.meta_db import Community
 
 

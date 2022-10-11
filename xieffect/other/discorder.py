@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from discord_webhook import DiscordWebhook
+from flask_fullstack import TypeEnum
 from requests import post, Response
-
-from common import TypeEnum
 
 
 class WebhookURLs(TypeEnum):

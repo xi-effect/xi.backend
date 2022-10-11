@@ -4,7 +4,6 @@ from collections.abc import Callable, Iterator
 from json import load as load_json
 
 from flask.testing import FlaskClient
-
 from flask_fullstack import check_code
 
 

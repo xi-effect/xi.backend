@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel
 from sqlalchemy import Column
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import Base, PydanticModel
+from common import Base
 
 
 class BaseModuleSession(Base):

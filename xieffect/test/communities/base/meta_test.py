@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from flask.testing import FlaskClient
+from flask_fullstack import check_code, dict_equal
 from pytest import mark
 
-from flask_fullstack import check_code, dict_equal
 from common.testing import SocketIOTestClient
 
 

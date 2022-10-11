@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 
 from flask.testing import FlaskClient
+from flask_fullstack import check_code
 from pytest import mark
 
-from flask_fullstack import check_code
 from .module_list_test import MODULES_PER_REQUEST, lister_with_filters, temp_list_tester
 
 
