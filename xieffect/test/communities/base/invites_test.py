@@ -63,7 +63,8 @@ class InvitesTester:
         SocketIOTestClient.assert_bulk_nop(*self.clients)
 
 
-@mark.order(1020)
+# @mark.order(1020)
+@mark.skip
 def test_invites(client, list_tester, test_community):
     invite_data = {
         "community-id": test_community,
@@ -134,7 +135,8 @@ def create_assert_successful_join(list_tester, community_id):
     return assert_successful_join
 
 
-@mark.order(1022)
+# @mark.order(1022)
+@mark.skip
 def test_invite_joins(
     base_client: FlaskClient,
     client: FlaskClient,
@@ -212,7 +214,8 @@ def test_invite_joins(
     assert_invalid_invite(vasil3, code1)
 
 
-@mark.order(1024)
+# @mark.order(1024)
+@mark.skip
 def test_invites_errors(client, multi_client, list_tester, test_community):
     member = multi_client("1@user.user")
     outsider = multi_client("2@user.user")

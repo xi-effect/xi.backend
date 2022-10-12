@@ -64,38 +64,13 @@ class ChannelEventSpace(EventSpace):
         if channels_count == MAX_CHANNELS:
             controller.abort(409, "Over limit: Too many channels")
 
-        # Create a category in empty list
-        type_list = Channel.find_by_type(community.id, category_id, enum_type)
-        if len(type_list) == 0:
-            prev_chan = None
-            next_chan = None
-        else:
-            next_chan = next_id
-
-            # Add to end to list
-            if next_id is None:
-                old_chan = Channel.find_by_next_id(community.id, category_id, next_id)
-                prev_chan = old_chan.id
-
-            # Add to the list
-            else:
-                old_chan = Channel.find_by_id(next_id)
-                prev_chan = old_chan.prev_channel_id
-
-        channel = Channel.create(
-            name,
-            enum_type,
-            prev_chan,
-            next_chan,
-            community.id,
-            category_id,
+        channel = Channel.add(
+            next_id,
+            name=name,
+            type=type,
+            community_id=community.id,
+            category_id=category_id,
         )
-
-        # Stitching
-        if channel.next_channel_id is not None:
-            channel.next_channel.prev_channel_id = channel.id
-        if channel.prev_channel_id is not None:
-            channel.prev_channel.next_channel_id = channel.id
 
         db.session.commit()
         event.emit_convert(channel, self.room_name(community.id))

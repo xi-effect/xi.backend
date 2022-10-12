@@ -13,13 +13,31 @@ class LinkedListNode(Base):
     __abstract__ = True
 
     @classmethod
-    def add(cls, entry_next_node, **kwargs) -> LinkedListNode:
+    def add(
+        cls,
+        next_id: int | None,
+        **kwargs,
+    ) -> LinkedListNode:
+        category_id = kwargs.get("category_id")
+        prev_node, next_node = cls.find_prev(
+            next_id,
+            category_id,
+            kwargs["community_id"],
+        )
         added_node = cls.create(**kwargs)
-        cls.insert(added_node, entry_next_node)
+        added_node.prev = prev_node
+        added_node.next = next_node
+        db.session.flush()
+        cls.stitch(prev_node, next_node, added_node)
         return added_node
 
     @classmethod
-    def stitch(cls, entry_prev_node, entry_next_node, node=None) -> None:
+    def stitch(
+        cls,
+        entry_prev_node: LinkedListNode,
+        entry_next_node: LinkedListNode,
+        node: LinkedListNode = None,
+    ) -> None:
         next_node = node or entry_next_node
         prev_node = node or entry_prev_node
 
@@ -32,23 +50,48 @@ class LinkedListNode(Base):
                 prev_node = prev_node.id
             entry_next_node.prev_id = prev_node
 
-    def find_last(self) -> LinkedListNode | None:
-        return self.find_first_by_kwargs(community_id=self.community_id, next=None)
-
-    def insert(self, entry_next_node) -> LinkedListNode:
-        next_node = self.find_first_by_kwargs(
-            community_id=self.community_id,
-            id=entry_next_node,
-        )
-        if next_node is not None:
-            prev_node = next_node.prev
+    @classmethod
+    def find_last(
+        cls,
+        category_id: int | None,
+        community_id: int,
+    ) -> LinkedListNode | None:
+        if category_id is None:
+            return cls.find_first_by_kwargs(community_id=community_id, next=None)
         else:
-            prev_node = self.find_last()
+            return cls.find_first_by_kwargs(category_id=category_id, next=None)
+
+    def insert(self,
+               next_id: int | None,
+               category_id: int | None,
+               ) -> LinkedListNode:
+        prev_node, next_node = self.find_prev(
+            next_id,
+            category_id,
+            self.community_id,
+        )
         self.next = next_node
         self.prev = prev_node
         db.session.flush()
-        self.stitch(prev_node, next_node, node=self)
+        self.stitch(prev_node, next_node, self)
         return self
+
+    @classmethod
+    def find_prev(
+        cls,
+        entry_id: int | None,
+        category_id: int | None,
+        community_id: int,
+    ) -> list[LinkedListNode]:
+        next_node = cls.find_first_by_kwargs(
+            community_id=community_id,
+            id=entry_id,
+        )
+        if next_node is None:
+            prev_node = cls.find_last(category_id, community_id)
+        else:
+            prev_node = next_node.prev
+        return [prev_node, next_node]
 
     def remove(self) -> None:
         removed_node = self.find_first_by_kwargs(id=self.id)
@@ -56,9 +99,9 @@ class LinkedListNode(Base):
         next_node = removed_node.next
         self.stitch(prev_node, next_node)
 
-    def move(self, next_node) -> LinkedListNode:
+    def move(self, next_node: int | None, category_id=None) -> LinkedListNode:
         self.remove()
-        return self.insert(next_node)
+        return self.insert(next_node, category_id)
 
     def delete(self) -> None:
         self.remove()
@@ -140,7 +183,7 @@ class ChannelType(TypeEnum):
     ROOM = 4
 
 
-class Channel(Base, Identifiable):
+class Channel(LinkedListNode, Identifiable):
     __tablename__ = "cs_channels"
 
     # Vital
@@ -148,7 +191,7 @@ class Channel(Base, Identifiable):
     name = Column(String(100), nullable=False)
     type = Column(Enum(ChannelType), nullable=False)
 
-    # Previous channel related
+    # Local previous channel related
     prev_id = Column(Integer, ForeignKey("cs_channels.id"))
     prev = relationship(
         "Channel",
@@ -156,12 +199,28 @@ class Channel(Base, Identifiable):
         foreign_keys=[prev_id],
     )
 
-    # Next channel related
+    # Local next channel related
     next_id = Column(Integer, ForeignKey("cs_channels.id"))
     next = relationship(
         "Channel",
         remote_side=[id],
         foreign_keys=[next_id],
+    )
+
+    # Global previous channel related
+    global_prev_id = Column(Integer, ForeignKey("cs_channels.id"))
+    global_prev = relationship(
+        "Channel",
+        remote_side=[id],
+        foreign_keys=[global_prev_id],
+    )
+
+    # Global next channel related
+    global_next_id = Column(Integer, ForeignKey("cs_channels.id"))
+    global_next = relationship(
+        "Channel",
+        remote_side=[id],
+        foreign_keys=[global_next_id],
     )
 
     # Category-related
@@ -184,63 +243,42 @@ class Channel(Base, Identifiable):
     IndexModel = BaseModel.combine_with(CreateModel)
 
     @classmethod
-    def create(
-        cls,
-        name: str,
-        channel_type: ChannelType,
-        prev_id: int | None,
-        next_id: int | None,
-        community_id: int,
-        category_id: int | None,
-    ) -> Channel:
-        return super().create(
-            name=name,
-            type=channel_type,
-            prev_id=prev_id,
-            next_id=next_id,
-            community_id=community_id,
-            category_id=category_id,
-        )
-
-    @classmethod
-    def find_by_next_id(
-        cls,
-        community_id: int,
-        category_id: int | None,
-        next_id: int | None
-    ) -> Channel | None:
-        return db.session.get_first(select(cls).filter_by(
-            community_id=community_id,
-            category_id=category_id,
-            next_id=next_id,
-        ))
+    def bulk_add(cls, node):
+        pass
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Channel | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_type(
-        cls,
-        community_id: int,
-        category_id: int,
-        channel_type: ChannelType
-    ) -> list[Channel]:
-        return db.session.get_all(select(cls).filter_by(
-            community_id=community_id,
-            category_id=category_id,
-            type=channel_type,
-        ))
-
-    @classmethod
-    def find_by_ids(cls, community_id: int, category_id: int | None) -> list[Channel]:
+    def get_global_list(cls, community_id: int) -> list[Channel]:
         root = aliased(cls)
         node = aliased(cls)
 
         cte = select(root, literal(0).label("level")).filter_by(
             community_id=community_id,
+            prev_id=None,
+        ).cte("cte", recursive=True)
+
+        result = cte.union_all(
+            select(node, cte.c.level + 1)
+            .join(cte, node.prev_id == cte.c.id)
+        )
+
+        return db.session.get_all(
+            select(Channel)
+            .join(result, cls.id == result.c.id)
+            .order_by(cte.c.level)
+        )
+
+    @classmethod
+    def get_local_list(cls, category_id: int) -> list[Channel]:
+        root = aliased(cls)
+        node = aliased(cls)
+
+        cte = select(root, literal(0).label("level")).filter_by(
             category_id=category_id,
-            prev_id=category_id,
+            prev_id=None,
         ).cte("cte", recursive=True)
 
         result = cte.union_all(

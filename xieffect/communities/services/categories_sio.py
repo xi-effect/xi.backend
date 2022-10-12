@@ -56,11 +56,9 @@ class ChannelCategoryEventSpace(EventSpace):
             next_id,
             name=name,
             description=description,
-            prev_id=0,
-            next_id=0,
             community_id=community.id,
         )
-
+        # Channel.bulk_add(category)
         db.session.commit()
         event.emit_convert(category, self.room_name(community.id))
         return category

@@ -17,7 +17,8 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
         result = socketio_client.assert_emit_ack("new-channel", data)
         result_id = result.get("id")
         assert isinstance(result_id, int)
-        assert dict_equal(result, data, "name", "type")
+        assert result["name"] == data["name"]
+        assert result["type"] == data["type"].lower()
         return result_id
 
     def get_communities_list():
@@ -59,7 +60,7 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
 
     # Assert channel creation
     channels_ids = [d.get("id") for d in get_channels_list(community_id)]
-    channels_data = dict(name="chan", type="news", **community_id_json)
+    channels_data = dict(name="chan", type="NEWS", **community_id_json)
     channel_id = assert_create_channel(channels_data)
     channels_ids.append(channel_id)
 
@@ -69,13 +70,14 @@ def test_channel_categories(client: FlaskClient, socketio_client: SocketIOTestCl
         assert channel.get("id") in channels_ids
         if channel.get("id") == channel_id:
             assert not found_channels
-            assert dict_equal(channel, channels_data, "name", "type")
+            assert channel["name"] == channels_data["name"]
+            assert channel["type"] == channels_data["type"].lower()
             found_channels = True
     assert found_channels
 
     # Create channels & check correct sort AL
     channel_data_list = [None, 1, 2, 2, None, 1, None, 5, 4, None]
-    channel_type_list = ["news", "tasks", "chat", "room"]
+    channel_type_list = ["NEWS", "TASKS", "CHAT", "ROOM"]
     for channel in channel_data_list:
         channels_data = {
             "name": "cat",
