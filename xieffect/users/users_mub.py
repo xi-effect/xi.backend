@@ -5,7 +5,7 @@ from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
-from common import User
+from common import User, TEST_INVITE_ID
 from moderation import MUBController, permission_index
 from users.invites_db import Invite
 
@@ -49,9 +49,6 @@ class UserIndexResource(Resource):
     def post(self, email: str, password: str, username: str, code: str | None):
         # TODO check password length and hash
         if code is None:
-            # TODO redo without local imports!
-            from wsgi import TEST_INVITE_ID  # noqa: WPS433
-
             invite = Invite.find_by_id(TEST_INVITE_ID)
         else:
             try:
