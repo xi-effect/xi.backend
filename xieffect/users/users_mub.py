@@ -85,12 +85,7 @@ class UserManagerResource(Resource):
     @controller.argument_parser(parser, use_undefined=True)
     @controller.database_searcher(User)
     @controller.marshal_with(User.FullData)
-    def put(self, user, email_confirmed: bool | Undefined):
+    def put(self, user: User, email_confirmed: bool | Undefined):
         if email_confirmed is not Undefined:
             user.email_confirmed = email_confirmed
-
-    @controller.require_permission(manage_users, use_moderator=False)
-    @controller.database_searcher(User)
-    @controller.a_response()
-    def delete(self) -> None:
-        controller.abort(501, "Deleting is not implemented")
+            return user

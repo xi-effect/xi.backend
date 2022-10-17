@@ -82,18 +82,35 @@ def socketio_client(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
 
 
 class ListTesterProtocol(Protocol):
-    def __call__(self, link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
+    def __call__(
+        self,
+        link: str,
+        request_json: dict,
+        page_size: int,
+        status_code: int = 200,
+        use_post: bool = True,
+    ) -> Iterator[dict]:
         pass
 
 
 @fixture
 def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
-    def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
+    def list_tester_inner(
+        link: str,
+        request_json: dict,
+        page_size: int,
+        status_code: int = 200,
+        use_post: bool = True,
+    ) -> Iterator[dict]:
         counter = 0
         amount = page_size
         while amount == page_size:
             request_json["counter"] = counter
-            response_json: dict = check_code(full_client.post(link, json=request_json), status_code)
+            response_json: dict = check_code(full_client.open(
+                link,
+                json=request_json,
+                method="POST" if use_post else "GET",
+            ), status_code)
 
             assert "results" in response_json
             assert isinstance(response_json["results"], list)
