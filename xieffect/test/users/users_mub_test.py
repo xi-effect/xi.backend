@@ -8,18 +8,21 @@ counter = 0
 
 def assert_user_index(client, code=200, use_post=True, **kwargs):
     global counter
-    result = check_code(client.open(
-        "/mub/users/",
-        json=kwargs,
-        method="POST" if use_post else "GET",
-    ), code)
+    result = check_code(
+        client.open(
+            "/mub/users/",
+            json=kwargs,
+            method="POST" if use_post else "GET",
+        ),
+        code,
+    )
 
     if code == 403:
         assert result.get("a") == "Permission denied"
     else:
         assert dict_equal(result, kwargs, "username", "email")
         counter += 1
-        return result
+    return result
 
 
 def test_user_index(
@@ -41,20 +44,27 @@ def test_user_index(
     assert counter == len(list(list_tester("/mub/users/", {}, 50, use_post=False)))
 
     # Check email-confirmed update
-    old_date = list(list_tester(
-        "/mub/users/",
-        {"username": new_user["username"]},
-        50,
-        use_post=False,
-    ))
+    old_date = list(
+        list_tester(
+            "/mub/users/",
+            {"username": new_user["username"]},
+            50,
+            use_post=False,
+        )
+    )
     update_data = [
-        (mod_client, 200, True), (client, 403, True), (mod_client, 200, False)
+        (mod_client, 200, True),
+        (client, 403, True),
+        (mod_client, 200, False),
     ]
     for client, code, conf in update_data:
-        result = check_code(client.put(
-            f"/mub/users/{new_user['id']}/",
-            json={"email-confirmed": conf},
-        ), code)
+        result = check_code(
+            client.put(
+                f"/mub/users/{new_user['id']}/",
+                json={"email-confirmed": conf},
+            ),
+            code,
+        )
 
         assert isinstance(old_date[0], dict)
         assert old_date[0].get("id") == new_user["id"]

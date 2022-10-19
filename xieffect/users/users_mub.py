@@ -88,4 +88,4 @@ class UserManagerResource(Resource):
     def put(self, user: User, email_confirmed: bool | Undefined):
         if email_confirmed is not Undefined:
             user.email_confirmed = email_confirmed
-            return user
+        return user

@@ -110,7 +110,8 @@ def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
                 link,
                 json=request_json,
                 method="POST" if use_post else "GET",
-            ), status_code)
+            ), status_code
+            )
 
             assert "results" in response_json
             assert isinstance(response_json["results"], list)
