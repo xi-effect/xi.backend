@@ -41,18 +41,19 @@ def test_user_index(
     assert counter == len(list(list_tester("/mub/users/", {}, 50, use_post=False)))
 
     # Check email-confirmed update
-    email_conf = {"email-confirmed": True}
     old_date = list(list_tester(
         "/mub/users/",
         {"username": new_user["username"]},
         50,
         use_post=False,
     ))
-    update_data = [(mod_client, 200), (client, 403)]
-    for client, code in update_data:
+    update_data = [
+        (mod_client, 200, True), (client, 403, True), (mod_client, 200, False)
+    ]
+    for client, code, conf in update_data:
         result = check_code(client.put(
             f"/mub/users/{new_user['id']}/",
-            json=email_conf,
+            json={"email-confirmed": conf},
         ), code)
 
         assert isinstance(old_date[0], dict)
@@ -61,5 +62,5 @@ def test_user_index(
         if code == 403:
             assert result.get("a") == "Permission denied"
         else:
-            assert dict_equal(result, email_conf, "email-confirmed")
+            assert result.get("email-confirmed") == conf
             assert dict_equal(result, old_date[0], "id", "username", "email", "code")
