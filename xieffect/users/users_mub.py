@@ -54,12 +54,12 @@ class UserIndexResource(Resource):
             try:
                 invite = Invite.find_by_code(code)
             except BadSignature:
-                return {"a": "Malformed code (BadSignature)"}, 400
+                controller.abort(400, "Malformed code (BadSignature)")
 
             if invite is None:
-                return {"a": "Invite not found"}, 404
+                controller.abort(404, "Invite not found")
             if invite.limit == invite.accepted:
-                return {"a": "Invite code limit exceeded"}
+                controller.abort(403, "Invite code limit exceeded")
         invite.accepted += 1
 
         user = User.create(
@@ -68,7 +68,7 @@ class UserIndexResource(Resource):
             password=password,
             invite=invite,
         )
-        return {"a": "Email already in use"} if user is None else user
+        return controller.abort(400, "Email already in use") if user is None else user
 
 
 @controller.route("/<int:user_id>/")
