@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pytest import skip
 from flask.testing import FlaskClient
 from flask_fullstack import dict_equal, check_code
 from flask_mail import Message
@@ -22,7 +23,7 @@ def assert_error(
     )["a"] == message
 
 
-def test_user_index(
+def test_mub_users(
     client: FlaskClient,
     mod_client: FlaskClient,
     list_tester,
@@ -69,9 +70,19 @@ def test_user_index(
     cli_data = {"email-confirmed": True}
     assert_error(client, url, cli_status, cli_message, method="PUT", **cli_data)
 
-    # Check emailer
+
+def test_mub_emailer(
+    client: FlaskClient,
+    mod_client: FlaskClient,
+    list_tester,
+):
+    if not mail_initialized:
+        skip("Email module is not setup")
+
+    email_user = list(list_tester("/mub/users/", {}, 50, use_post=False))[-1]["email"]
+
     with mail.record_messages() as outbox:
-        url, user, tester = "/mub/emailer/send/", new_user["email"], "test@test.test"
+        url, user, tester = "/mub/emailer/send/", email_user, "test@test.test"
         circle_data = [
             ("confirm", "wrong@mail.it", 404, "User not found"),
             ("confirm", None, 200, None),
@@ -79,8 +90,11 @@ def test_user_index(
             ("password", user, 200, None),
         ]
         counter = 0
+
         for e_type, email, status, message in circle_data:
             data = {"type": e_type, "user-email": email, "tester-email": tester}
+
+            # Check successful sending
             if message is None:
                 mailer = check_code(mod_client.post(url, json=data))
                 email_type = EmailType.from_string(data["type"])
@@ -97,6 +111,8 @@ def test_user_index(
                 assert len(recipients) == 1
                 assert recipients[0] == tester
 
-                assert_error(client, url, cli_status, cli_message, **data)
+                # Check base-client exception
+                assert_error(client, url, 403, "Permission denied", **data)
             else:
+                # Check moderators exception
                 assert_error(mod_client, url, status, message, **data)
