@@ -29,22 +29,22 @@ def test_mub_users(
     list_tester,
 ):
     # Check getting list of users
-    url, cli_status, cli_message = "/mub/users/", 403, "Permission denied"
+    url, base_status, base_message = "/mub/users/", 403, "Permission denied"
     user_list = list(list_tester(url, {}, 50, use_post=False))
     counter = len(user_list)
     cli_data = {"counter": 50, "offset": 0}
-    assert_error(client, url, cli_status, cli_message, method="GET", **cli_data)
+    assert_error(client, url, base_status, base_message, method="GET", **cli_data)
 
     # Check creating
     invite_code = Invite.serializer.dumps((-1, 0))
-    circle_data = [
+    create_data = [
         ("fi", None, 200, None),
         ("fi", None, 200, "Email already in use"),
         ("se", "wrong.code", 400, "Malformed code (BadSignature)"),
         ("tr", invite_code, 404, "Invite not found"),
     ]
     user_data = {"username": "mub", "password": "123456"}
-    for i, code, status, message in circle_data:
+    for i, code, status, message in create_data:
         data = dict(user_data, code=code, email=f"{i}@test.mub")
         if message is None:
             new_user = check_code(mod_client.post(url, json=data))
@@ -53,7 +53,7 @@ def test_mub_users(
         else:
             assert_error(mod_client, url, status, message, **data)
     cli_data = dict(user_data, email="fo@test.mub")
-    assert_error(client, url, cli_status, cli_message, **cli_data)
+    assert_error(client, url, base_status, base_message, **cli_data)
     assert counter == len(list(list_tester("/mub/users/", {}, 50, use_post=False)))
 
     # Check email-confirmed update
@@ -67,8 +67,8 @@ def test_mub_users(
         assert old_date[0].get("id") == new_user["id"]
         assert result.get("email-confirmed") == conf
         assert dict_equal(result, old_date[0], "id", "username", "email", "code")
-    cli_data = {"email-confirmed": True}
-    assert_error(client, url, cli_status, cli_message, method="PUT", **cli_data)
+    base_data = {"email-confirmed": True}
+    assert_error(client, url, base_status, base_message, method="PUT", **base_data)
 
 
 def test_mub_emailer(
@@ -83,7 +83,7 @@ def test_mub_emailer(
 
     with mail.record_messages() as outbox:
         url, user, tester = "/mub/emailer/send/", email_user, "test@test.test"
-        circle_data = [
+        emailer_data = [
             ("confirm", "wrong@mail.it", 404, "User not found"),
             ("confirm", None, 200, None),
             ("change", user, 200, None),
@@ -91,7 +91,7 @@ def test_mub_emailer(
         ]
         counter = 0
 
-        for e_type, email, status, message in circle_data:
+        for e_type, email, status, message in emailer_data:
             data = {"type": e_type, "user-email": email, "tester-email": tester}
 
             # Check successful sending
