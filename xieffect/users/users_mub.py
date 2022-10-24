@@ -45,7 +45,6 @@ class UserIndexResource(Resource):
 
     @controller.require_permission(manage_users, use_moderator=False)
     @controller.argument_parser(parser)
-    @controller.marshal_with(User.FullData)
     def post(self, email: str, password: str, username: str, code: str | None):
         # TODO check password length and hash
         if code is None:
@@ -54,12 +53,12 @@ class UserIndexResource(Resource):
             try:
                 invite = Invite.find_by_code(code)
             except BadSignature:
-                controller.abort(400, "Malformed code (BadSignature)")
+                return {"a": "Malformed code (BadSignature)"}, 400
 
             if invite is None:
-                controller.abort(404, "Invite not found")
+                return {"a": "Invite not found"}, 404
             if invite.limit == invite.accepted:
-                controller.abort(403, "Invite code limit exceeded")
+                return {"a": "Invite code limit exceeded"}
         invite.accepted += 1
 
         user = User.create(
@@ -68,7 +67,8 @@ class UserIndexResource(Resource):
             password=password,
             invite=invite,
         )
-        return controller.abort(400, "Email already in use") if user is None else user
+        message = {"a": "Email already in use"}
+        return message if user is None else controller.marshal(user, User.FullData)
 
 
 @controller.route("/<int:user_id>/")
