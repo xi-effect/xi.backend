@@ -29,6 +29,7 @@ def test_feedback(base_client: FlaskClient, client: FlaskClient):  # assumes use
     assert dict_equal(result[0], feedback, "data", "type")
 
 
+@mark.skip
 @mark.order(50)
 def test_invite_curds(client: FlaskClient, admin_client: FlaskClient):
     def request_assert_admin(method, url: str, json=None):
