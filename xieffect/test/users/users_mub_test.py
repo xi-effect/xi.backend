@@ -26,10 +26,8 @@ def assert_error(
 def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
     # Check getting list of users
     url, base_status, base_message = "/mub/users/", 403, "Permission denied"
-    user_list = list(list_tester(url, {}, 50, use_post=False))
-    counter = len(user_list)
-    lister_data = {"counter": 50, "offset": 0}
-    assert_error(client, url, base_status, base_message, method="GET", **lister_data)
+    counter = len(list(list_tester(url, {}, 50, use_post=False)))
+    assert_error(client, url, base_status, base_message, method="GET", offset=0)
 
     # Check creating
     invite_code = Invite.serializer.dumps((-1, 0))
