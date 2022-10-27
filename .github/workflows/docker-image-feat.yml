@@ -1,9 +1,12 @@
 name: Feature Branch PR Pipeline
 
 on:
-  pull_request:
+  push:
     branches-ignore:
       - master
+      - prod
+
+  workflow_dispatch:
 
 jobs:
   build-test-docs:
