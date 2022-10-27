@@ -4,6 +4,8 @@ on:
   push:
     branches: [ master ]
 
+  workflow_dispatch:
+
 jobs:
   build-test-docs:
     uses: ./.github/workflows/common-work.yml
