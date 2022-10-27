@@ -8,7 +8,7 @@ try:
 except ImportError:
     from threading import get_ident as _ident_func
 
-from __lib__.flask_fullstack.utils import Session
+from flask_fullstack.utils import Session
 
 
 class ScopedSession(scoped_session, Session):

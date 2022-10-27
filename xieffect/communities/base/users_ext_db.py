@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import PydanticModel, Base, User, db
+from common import Base, User, db
 from communities.base.meta_db import Community
 
 

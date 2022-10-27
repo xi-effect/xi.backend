@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from functools import wraps
 
+from flask_fullstack import PydanticModel, counter_parser
 from flask_restx import Resource
 
-from common import ResourceController, PydanticModel, counter_parser, User
+from common import ResourceController, User
 from .invitations_db import Invitation
 from .meta_db import Community, Participant
 from .meta_sio import CommunitiesEventSpace

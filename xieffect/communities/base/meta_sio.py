@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from flask_fullstack import DuplexEvent, EventSpace
 from pydantic import BaseModel, Field
 
-from common import DuplexEvent, EventController, EventSpace, User, db
+from common import EventController, User, db
 from .meta_db import Community
 from .users_ext_db import CommunitiesUser
 

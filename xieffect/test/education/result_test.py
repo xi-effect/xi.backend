@@ -4,9 +4,8 @@ from collections.abc import Callable, Iterator
 from random import randint, shuffle  # noqa: DUO102
 
 from flask.testing import FlaskClient
+from flask_fullstack import check_code, dict_equal
 from pytest import mark
-
-from __lib__.flask_fullstack import check_code, dict_equal
 
 
 @mark.order(540)

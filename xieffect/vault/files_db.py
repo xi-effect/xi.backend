@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text
 
-from common import db, PydanticModel, Base, User
+from common import db, Base, User
 
 
 class File(Base):

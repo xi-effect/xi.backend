@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel, TypeEnum
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, JSON, Enum
 
-from __lib__.flask_fullstack import PydanticModel
-from common import create_marshal_model, Marshalable, TypeEnum, User, Base, db
+from common import create_marshal_model, Marshalable, User, Base, db
 
 
 class FeedbackType(TypeEnum):
@@ -33,6 +33,7 @@ class Feedback(Base, Marshalable):
         .column_model(id, user_id, type, data)
         .nest_model(User.FullData, "user")
     )
+
     # fmt: on
 
     @classmethod

@@ -3,13 +3,13 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime
 
+from flask_fullstack import PydanticModel, Identifiable, TypeEnum
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, Boolean, JSON, DateTime, Text, Enum
 
-from common import Identifiable, TypeEnum, Marshalable
-from common import index_service, Base, db, PydanticModel
+from common import Marshalable, index_service, Base, db
 from ..authorship import Author
 
 

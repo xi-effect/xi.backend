@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from functools import wraps
 
+from flask_fullstack import ResourceController as _ResourceController
 from flask_restx import abort as default_abort
 
-from __lib__.flask_fullstack import ResourceController as _ResourceController
 from ._marshals import success_response, message_response, ResponseDoc  # noqa: WPS436
 
 

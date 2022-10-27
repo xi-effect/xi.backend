@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from flask_fullstack import counter_parser
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, User
+from common import ResourceController, User
 
 controller = ResourceController("profiles", path="/users/")
 

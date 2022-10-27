@@ -6,18 +6,18 @@ from sys import modules
 from typing import TypeVar
 
 from flask import Response
+from flask_fullstack import (
+    configure_whooshee,
+    Flask as _Flask,
+    IndexService,
+    ModBaseMeta,
+)
 from flask_mail import Mail
 from flask_sqlalchemy import Model
 from sqlalchemy import MetaData, select
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import Select
 
-from __lib__.flask_fullstack import (
-    configure_whooshee,
-    Flask as _Flask,
-    IndexService,
-    ModBaseMeta,
-)
 from common._fsqla import SQLAlchemy  # noqa: WPS436
 
 

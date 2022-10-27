@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 
 from flask.testing import FlaskClient
+from flask_fullstack import check_code, dict_equal
 from pytest import mark
 from werkzeug.test import TestResponse
 
-from __lib__.flask_fullstack import check_code, dict_equal
 from .module_list_test import MODULES_PER_REQUEST
 
 

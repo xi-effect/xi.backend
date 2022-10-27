@@ -3,20 +3,15 @@ from __future__ import annotations
 from datetime import datetime
 from random import randint  # noqa: DUO102
 
+from flask_fullstack import PydanticModel, Identifiable, TypeEnum
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, select, and_
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
-from common import (
-    Identifiable,
-    TypeEnum,
-    create_marshal_model,
-    Marshalable,
-    PydanticModel,
-)
-from common import LambdaFieldDef, index_service, Base, db
+from common import create_marshal_model, Marshalable, LambdaFieldDef
+from common import index_service, Base, db
 from ._base_session import BaseModuleSession  # noqa: WPS436
 from ..authorship.user_roles_db import Author
 

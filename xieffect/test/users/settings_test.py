@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from flask.testing import FlaskClient
+from flask_fullstack import check_code
 from pytest import mark
-
-from __lib__.flask_fullstack import check_code
 
 
 @mark.order(100)

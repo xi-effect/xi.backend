@@ -4,12 +4,13 @@ from collections.abc import Callable
 from json import dump as dump_json
 from os import remove
 
+from flask_fullstack import Identifiable, TypeEnum, PydanticModel
 from sqlalchemy import Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from common import Identifiable, TypeEnum, PydanticModel, db
-from education.authorship.user_roles_db import Author, Base
+from common import db, Base
+from ..authorship import Author
 from ..knowledge import PageKind, ModuleType
 
 
