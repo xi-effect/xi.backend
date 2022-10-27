@@ -13,5 +13,6 @@ jobs:
     uses: ./.github/workflows/common-work.yml
     with:
       tag: flask-${{ github.event.issue.number }}
+      database: false
       cache: false
     secrets: inherit

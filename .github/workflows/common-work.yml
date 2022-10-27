@@ -6,6 +6,10 @@ on:
       tag:
         type: string
         required: true
+      database:
+        type: boolean
+        required: false
+        default: true
       cache:
         type: boolean
         required: false
@@ -19,6 +23,19 @@ on:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+
+    env:
+      DB_LINK: ${{ inputs.database && 'postgresql+psycopg2://test:test@localhost:5432/test' || 'sqlite:///app.db' }}
+
+    services:
+      db:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
 
     steps:
       - name: Checkout
@@ -36,15 +53,32 @@ jobs:
         name: Install Requirements
         run: pip install -r requirements.txt
 
-      - id: flake8
-        name: Run flake8
-        run: flake8 --config=setup.cfg xieffect
+      - id: alembic-upgrade
+        if: inputs.database
+        name: Upgrade database to latest migration
+        run: |
+          cd xieffect
+          alembic upgrade head
+
+      - id: alembic-revision
+        if: inputs.database
+        name: Check that database is up to date with code
+        run: |
+          cd xieffect
+          alembic revision --autogenerate -m "test" --rev-id 0
+          if [ $(cat ./alembic/versions/0_test.py | wc -l) -ne 28 ]; then 
+            exit 1
+          fi
 
       - name: Run pytest
-        if: success() || (failure() && steps.install.conclusion == 'success')
         run: |
           cd xieffect
           pytest
+
+      - id: flake8
+        if: success() || (failure() && steps.install.conclusion == 'success')
+        name: Run flake8
+        run: flake8 --config=setup.cfg xieffect
 
       - name: Generate docs
         run: |
