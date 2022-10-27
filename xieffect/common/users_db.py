@@ -156,12 +156,12 @@ class User(Base, UserRole, Identifiable):
         return new_user
 
     @classmethod
-    def search_by_params(cls, session, offset: int, limit: int, **kwargs: str | None):
+    def search_by_params(cls, offset: int, limit: int, **kwargs: str | None):
         stmt = select(cls)
         for k, v in kwargs.items():
             if v is not None:
                 stmt = stmt.filter(getattr(cls, k).contains(v))
-        return session.get_paginated(stmt, offset, limit)
+        return db.session.get_paginated(stmt, offset, limit)
 
     @classmethod
     def search_by_username(
