@@ -78,10 +78,10 @@ def test_standard_module_session(client: FlaskClient):  # relies on module#5
             if len(result.history) == 0:
                 assert result.get_json() == {"a": "You have reached the end"}
                 break
-            else:  # it was redirected
-                page: dict = result.get_json()
-                assert "id" in page
-                yield page["id"]
+
+            page: dict = result.get_json()
+            assert "id" in page
+            yield page["id"]
 
     for _ in scroll_through():  # noqa: WPS328
         pass  # if any session was started before, reset the module
