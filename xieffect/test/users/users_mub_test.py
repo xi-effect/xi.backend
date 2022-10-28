@@ -23,17 +23,11 @@ def assert_error(
     )["a"] == message
 
 
-def test_mub_users(
-    client: FlaskClient,
-    mod_client: FlaskClient,
-    list_tester,
-):
+def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
     # Check getting list of users
     url, base_status, base_message = "/mub/users/", 403, "Permission denied"
-    user_list = list(list_tester(url, {}, 50, use_post=False))
-    counter = len(user_list)
-    cli_data = {"counter": 50, "offset": 0}
-    assert_error(client, url, base_status, base_message, method="GET", **cli_data)
+    counter = len(list(list_tester(url, {}, 50, use_post=False)))
+    assert_error(client, url, base_status, base_message, method="GET", offset=0)
 
     # Check creating
     invite_code = Invite.serializer.dumps((-1, 0))
@@ -52,8 +46,8 @@ def test_mub_users(
             counter += 1
         else:
             assert_error(mod_client, url, status, message, **data)
-    cli_data = dict(user_data, email="fo@test.mub")
-    assert_error(client, url, base_status, base_message, **cli_data)
+    base_data = dict(user_data, email="fo@test.mub")
+    assert_error(client, url, base_status, base_message, **base_data)
     assert counter == len(list(list_tester("/mub/users/", {}, 50, use_post=False)))
 
     # Check email-confirmed update
@@ -71,11 +65,7 @@ def test_mub_users(
     assert_error(client, url, base_status, base_message, method="PUT", **base_data)
 
 
-def test_mub_emailer(
-    client: FlaskClient,
-    mod_client: FlaskClient,
-    list_tester,
-):
+def test_mub_emailer(client: FlaskClient, mod_client: FlaskClient, list_tester):
     if not mail_initialized:
         skip("Email module is not setup")
 
