@@ -1,22 +1,21 @@
 from __future__ import annotations
-
 from enum import Enum
 from functools import wraps
 from os import getenv
 
-from flask import request
-from flask_restx import Resource, Model
-from flask_restx.fields import Integer, String as StringField
+from flask_restx import Resource
+from flask_restx.fields import String as StringField
 from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
 from common import User, ResourceController, ResponseDoc
-from .feedback_db import Feedback, FeedbackType, FeedbackImage
+from vault import File
+from .feedback_db import Feedback, FeedbackType
 
-controller = ResourceController("feedback", path="/feedback/")
+controller = ResourceController("feedback")
 feedback_serializer: URLSafeSerializer = URLSafeSerializer(
     getenv("JWT_SECRET_KEY", "local only")
-)  # TODO redo
+)
 
 
 def enum_response(enum: type[Enum]):  # TODO move to ffs
@@ -51,6 +50,12 @@ class FeedbackSaver(Resource):
         type=dict,
     )
     parser.add_argument(
+        "files",
+        required=False,
+        type=int,
+        action="append",
+    )
+    parser.add_argument(
         "code",
         required=False,
     )
@@ -69,12 +74,13 @@ class FeedbackSaver(Resource):
         user: User | None,
         feedback_type: str,
         data: dict,
+        files: list[int],
         code: str | None,
     ):
         feedback_type = FeedbackType.from_string(feedback_type)
-        if feedback_type is None:
-            controller.abort(400, "Unsupported feedback type")
 
+        if len(files) > 10:
+            controller.abort(413, "Too much files")
         if code is not None:
             try:
                 user_id: int = feedback_serializer.loads(code)
@@ -87,34 +93,11 @@ class FeedbackSaver(Resource):
         elif user is None:
             return self.Responses.NO_AUTH_PROVIDED
 
-        Feedback.create(user_id=user.id, type=feedback_type, data=data)
+        feedback = Feedback.create(user_id=user.id, type=feedback_type, data=data)
+        files = File.find_by_ids(files)
+        feedback.add_files(files)
         return self.Responses.SUCCESS
-
-
-@controller.route("/images/")
-class ImageAttacher(Resource):
-    @controller.doc_file_param("image")
-    @controller.doc_responses(ResponseDoc(model=Model("ID Response", {"id": Integer})))
-    def post(self):
-        image_id = FeedbackImage.create().id
-        with open(f"../files/images/feedback-{image_id}.png", "wb") as f:
-            f.write(request.data)
-        return {"id": image_id}
-
-
-@controller.route("/dump/")
-class FeedbackDumper(Resource):
-    @controller.jwt_authorizer(User)
-    @controller.marshal_list_with(Feedback.FullModel)
-    def get(self, user: User):
-        if user.email != "admin@admin.admin":
-            controller.abort(403, "Permission denied")
-        return Feedback.dump_all()
 
 
 def generate_code(user_id: int):
     return feedback_serializer.dumps(user_id)
-
-
-def dumps_feedback() -> list[dict]:
-    return controller.marshal(Feedback.dump_all(), Feedback.FullModel)

@@ -10,7 +10,7 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.exceptions import NotFound
 
 from common import ResourceController, User, app
-from .files_db import File
+from vault import File
 
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 4  # 4 MiB max file size
 controller = ResourceController("files")

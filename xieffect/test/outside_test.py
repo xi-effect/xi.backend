@@ -8,7 +8,6 @@ from werkzeug.test import TestResponse
 
 from common import mail, mail_initialized
 from other import EmailType
-from users import dumps_feedback, generate_code  # noqa: WPS
 from wsgi import Invite, TEST_INVITE_ID
 from .conftest import BASIC_PASS, TEST_EMAIL, SocketIOTestClient
 

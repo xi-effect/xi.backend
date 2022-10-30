@@ -34,6 +34,11 @@ class File(Base):
     def find_by_id(cls, entry_id: int) -> File | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
+    @classmethod
+    def find_by_ids(cls, entry_ids: list) -> list[File]:
+        stmt = select(cls).filter(cls.id.in_(entry_ids))
+        return db.session.get_all(stmt)
+
     @property
     def filename(self) -> str:
         return str(self.id) + "-" + self.name

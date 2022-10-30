@@ -6,7 +6,7 @@ from flask_fullstack import counter_parser
 from flask_restx import Resource
 
 from moderation import MUBController, permission_index
-from .files_db import File
+from vault import File
 
 content_management = permission_index.add_section("content management")
 manage_files = permission_index.add_permission(content_management, "manage files")
