@@ -77,10 +77,14 @@ class FeedbackSaver(Resource):
         files: list[int],
         code: str | None,
     ):
-        feedback_type = FeedbackType.from_string(feedback_type)
-
         if len(files) > 10:
             controller.abort(413, "Too much files")
+
+        feedback_type = FeedbackType.from_string(feedback_type)
+        feedback_files = File.find_by_ids(files)
+
+        if len(feedback_files) != len(files):
+            controller.abort(404, "Files don't exist")
         if code is not None:
             try:
                 user_id: int = feedback_serializer.loads(code)
@@ -94,8 +98,7 @@ class FeedbackSaver(Resource):
             return self.Responses.NO_AUTH_PROVIDED
 
         feedback = Feedback.create(user_id=user.id, type=feedback_type, data=data)
-        files = File.find_by_ids(files)
-        feedback.add_files(files)
+        feedback.add_files(feedback_files)
         return self.Responses.SUCCESS
 
 

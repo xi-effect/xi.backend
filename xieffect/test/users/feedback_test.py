@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from flask.testing import FlaskClient
+from flask_fullstack import check_code, dict_equal
 from pytest import mark
 
-from __lib__.flask_fullstack import check_code, dict_equal
 from users import generate_code
 from ..vault_test import upload
 
@@ -52,6 +52,8 @@ def test_feedback(
         data = dict(feedback, type=feedback_type)
         assert_message(client, "/feedback/", "Success", **data)
         counter += 1
+    wrong_data = dict(feedback, files=[1, 3, 4])
+    assert_message(client, "/feedback/", "Files don't exist", 404, **wrong_data)
     new_list = list(list_tester(base_url, {}, 50, use_post=False))
     assert len(new_list) == counter
 
