@@ -1,4 +1,3 @@
-# noqa: WPS201
 from __future__ import annotations
 
 from json import dump as dump_json, load as load_json
@@ -23,7 +22,7 @@ from common import (
 )
 from moderation import Moderator, permission_index
 from other import send_discord_message, WebhookURLs
-from users.invites_db import Invite  # noqa: F401  # noqa: WPS201  # for tests
+from users.invites_db import Invite
 
 SECRETS = (
     "SECRET_KEY",

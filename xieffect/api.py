@@ -4,8 +4,9 @@ from datetime import timedelta
 from logging import Logger
 from sys import stderr
 
-from common import app, SocketIO, versions
-from common import db, db_url  # noqa: WPS
+from flask_fullstack import SocketIO
+
+from common import app, versions
 from communities import (
     communities_meta_events,
     communities_namespace,
@@ -119,8 +120,10 @@ api.add_namespace(invites_mub_namespace)
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
+    title="SIO",
     version=versions["SIO"],
+    doc_path="/asyncapi.json",
+    cors_allowed_origins="*",
     logger=True,
     engineio_logger=True,
 )

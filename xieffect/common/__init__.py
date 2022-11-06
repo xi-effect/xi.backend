@@ -14,7 +14,7 @@ from ._core import (  # noqa: WPS436
     mail,
     mail_initialized,
 )
-from ._eventor import EventController, SocketIO, EmptyBody  # noqa: WPS436
+from ._eventor import EventController, EmptyBody  # noqa: WPS436
 from ._marshals import message_response, success_response, ResponseDoc  # noqa: WPS436
 from ._restx import ResourceController  # noqa: WPS436
 from .consts import (
