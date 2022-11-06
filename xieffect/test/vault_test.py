@@ -31,26 +31,29 @@ def create_file(filename: str, contents: bytes):
     return FileStorage(stream=BytesIO(contents), filename=filename)
 
 
+def upload(client: FlaskClient, filename: str):
+    with open(f"test/education/json/{filename}", "rb") as f:
+        contents: bytes = f.read()
+    data = check_code(client.post(
+        "/files/",
+        content_type="multipart/form-data",
+        data={"file": create_file(filename, contents)}
+    ))
+
+    file_id, server_filename = assert_spread(data, "id", "filename")
+    assert server_filename == str(file_id) + "-" + filename
+    return data, contents
+
+
 @mark.order(70)
 def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client: FlaskClient, list_tester):
     # saving file list for future checks
     previous_file_list = list(list_tester("/mub/files/index/", {}, 20))
 
     # upload a file
-    def upload(filename: str):
-        with open(f"test/education/json/{filename}", "rb") as f:
-            contents: bytes = f.read()
-        data = check_code(client.post(
-            "/files/",
-            content_type="multipart/form-data",
-            data={"file": create_file(filename, contents)}
-        ))
-
-        file_id, server_filename = assert_spread(data, "id", "filename")
-        assert server_filename == str(file_id) + "-" + filename
-        return data, contents
-
-    new_files: list[tuple[dict, bytes]] = [upload(filename) for filename in ("sample-page.json", "sample-page-2.json")]
+    new_files: list[tuple[dict, bytes]] = [
+        upload(client, filename) for filename in ("sample-page.json", "sample-page-2.json")
+    ]
     new_files.reverse()
 
     # check file accessibility

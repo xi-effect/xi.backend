@@ -37,9 +37,10 @@ from users import (
     emailer_qa_namespace,
     feedback_namespace,
     invites_mub_namespace,
+    mub_feedback_namespace,
+    mub_users_namespace,
     reglog_namespace,
     settings_namespace,
-    users_mub_namespace,
     users_namespace,
 )
 from vault import files_namespace, mub_files_namespace
@@ -85,8 +86,9 @@ api.add_namespace(mub_files_namespace)
 api.add_namespace(reglog_namespace)
 api.add_namespace(users_namespace)
 
-api.add_namespace(settings_namespace)
 api.add_namespace(feedback_namespace)
+api.add_namespace(mub_feedback_namespace)
+api.add_namespace(settings_namespace)
 
 api.add_namespace(education_namespace)
 api.add_namespace(modules_view_namespace)
@@ -112,7 +114,7 @@ api.add_namespace(mub_base_namespace)
 api.add_namespace(mub_super_namespace)
 
 api.add_namespace(emailer_qa_namespace)
-api.add_namespace(users_mub_namespace)
+api.add_namespace(mub_users_namespace)
 api.add_namespace(invites_mub_namespace)
 
 socketio = SocketIO(

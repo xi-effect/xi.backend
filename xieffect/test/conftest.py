@@ -106,13 +106,14 @@ def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
         amount = page_size
         while amount == page_size:
             request_json["counter"] = counter
-            response_json: dict = check_code(full_client.open(
-                link,
-                json=request_json,
-                method="POST" if use_post else "GET",
-            ), status_code
+            response_json: dict = check_code(
+                full_client.open(
+                    link,
+                    json=request_json,
+                    method="POST" if use_post else "GET",
+                ),
+                status_code,
             )
-
             assert "results" in response_json
             assert isinstance(response_json["results"], list)
             yield from response_json["results"]
