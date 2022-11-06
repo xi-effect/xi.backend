@@ -41,7 +41,7 @@ class FileAccessor(Resource):
     def get(self, filename: str):
         try:
             return send_from_directory(absolute_path("files/vault/"), filename)
-        except NotFound:
+        except NotFound:  # TODO pragma: no coverage
             with suppress(ValueError):
                 file = File.find_by_id(int(filename.partition("-")[0]))
                 if file is not None:

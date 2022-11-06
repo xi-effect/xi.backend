@@ -42,7 +42,7 @@ if (  # noqa: WPS337
     or "pytest" in modules
     or db_url.endswith("test.db")
     or "form-sio-docs" in argv
-):
+):  # pragma: no coverage
     application.debug = True
     if db_url.endswith("app.db"):
         db.drop_all()
@@ -50,7 +50,7 @@ if (  # noqa: WPS337
     with application.app_context():
         init_test_mod()
         db.session.commit()
-else:  # works on server restart
+else:  # works on server restart  # pragma: no coverage
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
     setup_fail: bool = False
@@ -134,7 +134,7 @@ def init_knowledge():
             Module.create(module_data, test_author, force=True)
 
 
-def version_check():
+def version_check():  # TODO pragma: no coverage
     try:
         with open_file("files/versions-lock.json") as f:
             versions_lock: dict[str, str] = load_json(f)
@@ -157,7 +157,7 @@ def version_check():
 
 
 @application.cli.command("form-sio-docs")
-def form_sio_docs():
+def form_sio_docs():  # TODO pragma: no coverage
     with open_file("files/async-api.json", "w") as f:
         dump_json(socketio.docs(), f, ensure_ascii=False)
 

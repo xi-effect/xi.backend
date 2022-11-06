@@ -38,13 +38,6 @@ class Community(Base, Identifiable):
     def find_by_id(cls, entry_id: int) -> Community | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
-    @classmethod
-    def find_by_user(cls, user: User, offset: int, limit: int) -> list[Community]:
-        stmt = select(Participant.community_id).filter_by(user_id=user.id)
-        ids = db.session.get_paginated(stmt, offset, limit)
-        stmt = select(cls).filter(cls.id.in_(ids))
-        return db.session.get_all(stmt)
-
 
 class ParticipantRole(TypeEnum):
     BASE = 0

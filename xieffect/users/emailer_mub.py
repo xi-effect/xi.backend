@@ -13,7 +13,7 @@ controller = MUBController("emailer", path="/emailer/")
 
 
 @controller.route("/send/")
-class EmailQAResource(Resource):
+class EmailQAResource(Resource):  # TODO pragma: no coverage (action)
     parser = RequestParser()
     parser.add_argument(
         "user-email",
@@ -44,7 +44,7 @@ class EmailQAResource(Resource):
         email_type: str,
     ) -> str:
         email_type = EmailType.from_string(email_type)
-        if email_type is None:
+        if email_type is None:  # TODO pragma: no coverage (and others?)
             controller.abort(400, "Unsupported type")
 
         if user_email is None:

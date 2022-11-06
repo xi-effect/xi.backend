@@ -50,7 +50,7 @@ class InvitationsEventSpace(EventSpace):
         days: int | None,
     ):
         enum_role: ParticipantRole = ParticipantRole.from_string(role)
-        if enum_role is None:
+        if enum_role is None:  # TODO pragma: no coverage
             controller.abort(400, f"Invalid role: {role}")
 
         invitation = Invitation.create(community.id, enum_role, limit, days)

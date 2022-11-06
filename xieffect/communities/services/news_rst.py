@@ -24,7 +24,7 @@ class NewsLister(Resource):
 
 
 @controller.route("/<int:post_id>/")
-class NewsGetter(Resource):
+class NewsGetter(Resource):  # TODO pragma: no coverage
     @controller.doc_abort(403, "Permission Denied")
     @check_participant(controller)
     @controller.database_searcher(Post)

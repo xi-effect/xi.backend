@@ -57,7 +57,7 @@ class UserIndexResource(Resource):
 
             if invite is None:
                 return {"a": "Invite not found"}, 404
-            if invite.limit == invite.accepted:
+            if invite.limit == invite.accepted:  # TODO pragma: no coverage
                 return {"a": "Invite code limit exceeded"}
         invite.accepted += 1
 

@@ -10,7 +10,7 @@ controller = ResourceController("communities-meta", path="/communities/")
 
 
 @controller.route("/<int:community_id>/")
-class CommunityReader(Resource):
+class CommunityReader(Resource):  # TODO pragma: no coverage
     @controller.doc_abort(403, "Not a member")
     @check_participant(controller)
     @controller.marshal_with(Community.IndexModel)

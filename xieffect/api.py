@@ -52,7 +52,7 @@ logger = Logger("flask-fullstack", "WARN")
 def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
     if app.debug:
         print(message, **({"file": stderr} if level == "error" else {}))
-    else:
+    else:  # pragma: no cover
         if level == "status":
             send_discord_message(WebhookURLs.STATUS, message)
         else:

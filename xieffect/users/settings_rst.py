@@ -39,7 +39,7 @@ class Settings(Resource):
 
 
 @controller.route("/email-change/")
-class EmailChanger(Resource):
+class EmailChanger(Resource):  # TODO pragma: no coverage
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
         "new-email",
@@ -74,7 +74,7 @@ EmailChangeConfirmer = create_email_confirmer(
 
 
 @controller.route("/password-change/")
-class PasswordChanger(Resource):
+class PasswordChanger(Resource):  # TODO pragma: no coverage
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
         "new-password",

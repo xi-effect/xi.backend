@@ -5,7 +5,7 @@ from os.path import join, split
 
 current_directory = getcwd()
 dir_name, base_name = split(current_directory)
-if base_name == "xieffect":
+if base_name == "xieffect":  # pragma: no cover
     current_directory = dir_name
 
 
