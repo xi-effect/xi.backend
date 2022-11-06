@@ -8,6 +8,8 @@ requests
 # Testing (dev)
 pytest
 pytest-order
+coverage
+pytest-cov
 
 # Formatter
 black
