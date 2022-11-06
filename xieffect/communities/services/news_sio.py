@@ -8,8 +8,8 @@ from pydantic import BaseModel
 
 from common import EventController, User, db
 from .news_db import Post
-from ..base.invitations_sio import check_participant_role
-from ..base.meta_db import ParticipantRole, Community
+from ..base import ParticipantRole, Community
+from ..utils import check_participant
 
 controller = EventController()
 
@@ -24,13 +24,13 @@ class PostEventSpace(EventSpace):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant_role(ParticipantRole.BASE)
+    @check_participant(controller)
     @controller.force_ack()
     def open_news(self, community: Community):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant_role(ParticipantRole.BASE)
+    @check_participant(controller)
     @controller.force_ack()
     def close_news(self, community: Community):
         leave_room(self.room_name(community.id))
@@ -40,7 +40,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
-    @check_participant_role(ParticipantRole.OWNER, use_user=True)
+    @check_participant(controller, role=ParticipantRole.OWNER, use_user=True)
     @controller.marshal_ack(Post.IndexModel)
     def new_post(
         self,
@@ -60,7 +60,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
-    @check_participant_role(ParticipantRole.OWNER)
+    @check_participant(controller, role=ParticipantRole.OWNER)
     @controller.database_searcher(Post)
     @controller.marshal_ack(Post.IndexModel)
     def update_post(
@@ -87,7 +87,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(DeleteModel, use_event=True)
-    @check_participant_role(ParticipantRole.OWNER)
+    @check_participant(controller, role=ParticipantRole.OWNER)
     @controller.database_searcher(Post)
     @controller.force_ack()
     def delete_post(

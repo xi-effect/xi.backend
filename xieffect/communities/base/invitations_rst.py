@@ -7,20 +7,20 @@ from flask_restx import Resource
 
 from common import ResourceController, User
 from .invitations_db import Invitation
-from .meta_db import Community, Participant
+from .meta_db import Community, Participant, ParticipantRole
 from .meta_sio import CommunitiesEventSpace
+from ..utils import check_participant
 
 controller = ResourceController("communities-invitation", path="/communities/")
 
 
 @controller.route("/<int:community_id>/invitations/index/")
 class InvitationLister(Resource):
-    @controller.jwt_authorizer(User, check_only=True)
+    @check_participant(controller, role=ParticipantRole.OWNER)
     @controller.argument_parser(counter_parser)
-    @controller.database_searcher(Community, check_only=True)
     @controller.lister(20, Invitation.IndexModel)
-    def post(self, community_id: int, start: int, finish: int):
-        return Invitation.find_by_community(community_id, start, finish - start)
+    def post(self, community: Community, start: int, finish: int):
+        return Invitation.find_by_community(community.id, start, finish - start)
 
 
 def check_invitation():  # TODO # noqa: WPS231

@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Text, DateTime
 
 from common import Base, db, User
-from ..base.meta_db import Community
+from ..base import Community
 
 
 class Post(Base, Identifiable):

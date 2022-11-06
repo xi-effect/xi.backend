@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from flask_restx import Resource
 
-from common import ResourceController, User
-from .meta_db import Community, Participant
+from common import ResourceController
+from .meta_db import Community
+from ..utils import check_participant
 
 controller = ResourceController("communities-meta", path="/communities/")
 
@@ -11,10 +12,7 @@ controller = ResourceController("communities-meta", path="/communities/")
 @controller.route("/<int:community_id>/")
 class CommunityReader(Resource):
     @controller.doc_abort(403, "Not a member")
-    @controller.jwt_authorizer(User)
-    @controller.database_searcher(Community)
+    @check_participant(controller)
     @controller.marshal_with(Community.IndexModel)
-    def get(self, user, community: Community):
-        if Participant.find_by_ids(community.id, user.id) is None:
-            controller.abort(403, "Not a member")
+    def get(self, community: Community):
         return community
