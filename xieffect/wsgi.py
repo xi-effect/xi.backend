@@ -17,8 +17,7 @@ from common import (
     TEST_INVITE_ID,
     TEST_EMAIL,
     BASIC_PASS,
-    ADMIN_EMAIL,
-    ADMIN_PASS, absolute_path,
+    absolute_path,
 )
 from moderation import Moderator, permission_index
 from other import send_discord_message, WebhookURLs
@@ -102,10 +101,6 @@ def init_users():
             invite=invite,
         )
         test_user.author = Author.create(test_user)
-
-    if (User.find_by_email_address(ADMIN_EMAIL)) is None:
-        # TODO DEPRECATED, redo with MUB
-        User.create(email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
 
     with open_file("static/test/user-bundle.json") as f:
         for i, user_settings in enumerate(load_json(f)):

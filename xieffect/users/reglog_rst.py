@@ -129,7 +129,7 @@ class PasswordResetSender(Resource):
     def post(self, email: str) -> bool:
         """First step of resetting password, tries sending a password-reset email by the address given"""
         user = User.find_by_email_address(email)
-        if user is not None and email != "admin@admin.admin":
+        if user is not None:
             send_code_email(email, EmailType.PASSWORD)
             return True
         return False
