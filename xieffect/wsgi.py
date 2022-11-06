@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from json import dump as dump_json, load as load_json
-from os.path import exists
 from pathlib import Path
 from sys import argv, modules
 
 from api import app as application, log_stuff, socketio
 from common import (
+    db,
     db_url,
     mail_initialized,
-    db,
+    open_file,
     User,
     versions,
     TEST_MOD_NAME,
@@ -18,7 +18,7 @@ from common import (
     TEST_EMAIL,
     BASIC_PASS,
     ADMIN_EMAIL,
-    ADMIN_PASS,
+    ADMIN_PASS, absolute_path,
 )
 from moderation import Moderator, permission_index
 from other import send_discord_message, WebhookURLs
@@ -41,11 +41,11 @@ def init_test_mod():
 if (  # noqa: WPS337
     __name__ == "__main__"
     or "pytest" in modules
-    or db_url == "sqlite:///test.db"
+    or db_url.endswith("test.db")
     or "form-sio-docs" in argv
 ):
     application.debug = True
-    if db_url == "sqlite:///../app.db":
+    if db_url.endswith("app.db"):
         db.drop_all()
     db.create_all()
     with application.app_context():
@@ -62,7 +62,7 @@ else:  # works on server restart
                 f"ERROR! No environmental variable for secret `{secret_name}`",
             )
             setup_fail = True
-    if db_url == "sqlite:///app.db":
+    if db_url.endswith("app.db"):
         send_discord_message(
             WebhookURLs.NOTIFY, "ERROR! No environmental variable for db url!"
         )
@@ -78,13 +78,13 @@ else:  # works on server restart
 
 
 def init_folder_structure():
-    Path("../files/avatars").mkdir(parents=True, exist_ok=True)
-    Path("../files/images").mkdir(parents=True, exist_ok=True)
-    Path("../files/temp").mkdir(parents=True, exist_ok=True)
-    Path("../files/vault").mkdir(parents=True, exist_ok=True)
+    Path(absolute_path("files/avatars")).mkdir(parents=True, exist_ok=True)
+    Path(absolute_path("files/images")).mkdir(parents=True, exist_ok=True)
+    Path(absolute_path("files/temp")).mkdir(parents=True, exist_ok=True)
+    Path(absolute_path("files/vault")).mkdir(parents=True, exist_ok=True)
 
-    Path("../files/tfs/wip-pages").mkdir(parents=True, exist_ok=True)
-    Path("../files/tfs/wip-modules").mkdir(parents=True, exist_ok=True)
+    Path(absolute_path("files/tfs/wip-pages")).mkdir(parents=True, exist_ok=True)
+    Path(absolute_path("files/tfs/wip-modules")).mkdir(parents=True, exist_ok=True)
 
 
 def init_users():
@@ -107,7 +107,7 @@ def init_users():
         # TODO DEPRECATED, redo with MUB
         User.create(email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
 
-    with open("../static/test/user-bundle.json", encoding="utf-8") as f:
+    with open_file("static/test/user-bundle.json") as f:
         for i, user_settings in enumerate(load_json(f)):
             email: str = f"{i}@user.user"
             if (user := User.find_by_email_address(email)) is None:
@@ -126,12 +126,12 @@ def init_knowledge():
 
     test_author: Author = User.find_by_email_address(TEST_EMAIL).author
 
-    with open("../static/test/page-bundle.json", "rb") as f:
+    with open_file("static/test/page-bundle.json") as f:
         for page_data in load_json(f):
             WIPPage.create_from_json(test_author, page_data)
             Page.find_or_create(page_data, test_author)
 
-    with open("../static/test/module-bundle.json", encoding="utf-8") as f:
+    with open_file("static/test/module-bundle.json") as f:
         for module_data in load_json(f):
             module = WIPModule.create_from_json(test_author, module_data)
             module.id = module_data["id"]
@@ -140,10 +140,10 @@ def init_knowledge():
 
 
 def version_check():
-    if exists("../files/versions-lock.json"):
-        with open("../files/versions-lock.json", encoding="utf-8") as f:
+    try:
+        with open_file("files/versions-lock.json") as f:
             versions_lock: dict[str, str] = load_json(f)
-    else:
+    except FileNotFoundError:
         versions_lock: dict[str, str] = {}
 
     if versions_lock != versions:
@@ -157,13 +157,13 @@ def version_check():
                 ]
             ).expandtabs(),
         )
-        with open("../files/versions-lock.json", "w", encoding="utf-8") as f:
+        with open_file("files/versions-lock.json", "w") as f:
             dump_json(versions, f, ensure_ascii=False)
 
 
 @application.cli.command("form-sio-docs")
 def form_sio_docs():
-    with open("../files/async-api.json", "w", encoding="utf-8") as f:
+    with open_file("files/async-api.json", "w") as f:
         dump_json(socketio.docs(), f, ensure_ascii=False)
 
 
@@ -181,9 +181,8 @@ with application.app_context():
     version_check()
     db.session.commit()
 
-
 if __name__ == "__main__":  # test only
     socketio.run(
         application,
-        reloader_options={"extra_files": ["../../static/public/index.html"]},
+        reloader_options={"extra_files": [absolute_path("static/public/index.html")]},
     )

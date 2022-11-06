@@ -5,6 +5,7 @@ from os import remove
 from flask_fullstack import counter_parser
 from flask_restx import Resource
 
+from common import absolute_path
 from moderation import MUBController, permission_index
 from vault import File
 
@@ -28,5 +29,5 @@ class MUBFileManager(Resource):
     @controller.database_searcher(File)
     @controller.a_response()
     def delete(self, file: File) -> None:
-        remove(f"../files/vault/{file.filename}")
+        remove(absolute_path(f"files/vault/{file.filename}"))
         file.delete()

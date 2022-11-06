@@ -9,7 +9,7 @@ from sqlalchemy import Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from common import db, Base
+from common import db, Base, open_file, absolute_path
 from ..authorship import Author
 from ..knowledge import PageKind, ModuleType
 
@@ -22,7 +22,7 @@ class WIPStatus(TypeEnum):
 class CATFile(Base, Identifiable):
     __abstract__ = True
     mimetype: str = ""
-    directory: str = "../files/tfs/other/"
+    directory: str = "files/tfs/other/"
 
     id = Column(Integer, primary_key=True)
     owner = Column(Integer, nullable=False, default=0)  # ForeignKey("authors.id"),
@@ -65,11 +65,11 @@ class CATFile(Base, Identifiable):
         return f"{self.directory}/{self.id}.{self.mimetype}"
 
     def update(self, data: bytes) -> None:
-        with open(self.get_link(), "wb") as f:
+        with open_file(self.get_link(), "wb") as f:
             f.write(data)
 
     def delete(self) -> None:
-        remove(self.get_link())
+        remove(absolute_path(self.get_link()))
         super().delete()
 
 
@@ -97,7 +97,7 @@ class JSONFile(CATFile):
         db.session.flush()
 
         json_data["id"] = self.id
-        with open(self.get_link(), "w", encoding="utf8") as f:
+        with open_file(self.get_link(), "w") as f:
             dump_json(json_data, f, ensure_ascii=False)
 
     def update_metadata(self, json_data: dict) -> None:
@@ -107,7 +107,7 @@ class JSONFile(CATFile):
 class WIPPage(JSONFile):
     __tablename__ = "wip-pages"
     not_found_text = "Page not found"
-    directory: str = "../files/tfs/wip-pages/"
+    directory: str = "files/tfs/wip-pages/"
 
     kind = Column(Enum(PageKind), nullable=False)
 
@@ -138,7 +138,7 @@ class WIPPage(JSONFile):
 class WIPModule(JSONFile):
     __tablename__ = "wip-modules"
     not_found_text = "Module not found"
-    directory: str = "../files/tfs/wip-modules/"
+    directory: str = "files/tfs/wip-modules/"
 
     # Essentials:
     type = Column(Enum(ModuleType), nullable=False)

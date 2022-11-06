@@ -10,11 +10,11 @@ from flask_mail import Message
 from flask_restx import Resource
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import mail, app, User, mail_initialized
+from common import mail, app, User, mail_initialized, open_file
 from .discorder import send_message as send_discord_message, WebhookURLs
 
 safe_random = SystemRandom()
-EMAIL_FOLDER: str = "../static/emails/"
+EMAIL_FOLDER: str = "static/emails/"
 SALT: str = app.config["SECURITY_PASSWORD_SALT"]
 
 
@@ -54,8 +54,8 @@ class EmailType(EmailTypeData, TypeEnum):
 
 
 def generate_email(receiver: str, code: str, filename: str, theme: str) -> Message:
-    with open(EMAIL_FOLDER + filename, "rb") as f:
-        html: str = f.read().decode("utf-8").replace("&code", code)
+    with open_file(EMAIL_FOLDER + filename) as f:
+        html: str = f.read().replace("&code", code)
 
     return Message(theme, recipients=[receiver], html=html)
 

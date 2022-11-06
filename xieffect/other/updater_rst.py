@@ -4,7 +4,7 @@ from flask import current_app
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController
+from common import ResourceController, open_file
 from .discorder import send_message as send_discord_message, WebhookURLs
 
 github_token: str = ""
@@ -94,7 +94,7 @@ class WebhookPassthrough(Resource):
 class LolBot(Resource):
     def get(self):
         try:
-            with open("../files/lol-counter.txt", encoding="utf-8") as f:
+            with open_file("files/lol-counter.txt") as f:
                 count = str(int(f.read()) + 1)
             if "69" in count or count[-1] == "0":
                 message = f"Got another one! Total: {count}"
@@ -103,5 +103,5 @@ class LolBot(Resource):
             count = 1
 
         send_discord_message(WebhookURLs.LOLBOT, message)
-        with open("../files/lol-counter.txt", "w", encoding="utf-8") as f:
+        with open_file("files/lol-counter.txt", "w") as f:
             f.write(str(count))
