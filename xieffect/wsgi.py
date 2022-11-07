@@ -156,18 +156,6 @@ def version_check():  # TODO pragma: no coverage
             dump_json(versions, f, ensure_ascii=False)
 
 
-@application.cli.command("form-sio-docs")
-def form_sio_docs():  # TODO pragma: no coverage
-    with open_file("files/async-api.json", "w") as f:
-        dump_json(socketio.docs(), f, ensure_ascii=False)
-
-
-@application.after_request
-def hey(res):
-    db.session.commit()
-    return res
-
-
 with application.app_context():
     permission_index.initialize()
     init_folder_structure()
