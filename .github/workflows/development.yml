@@ -8,15 +8,12 @@ on:
 
   workflow_dispatch:
 
-env:
-  REAL: false
-
 jobs:
   build-test-docs:
     uses: ./.github/workflows/common-work.yml
     with:
       tag: flask-${{ github.event.issue.number }}
-      database: ${{ env.REAL }}
-      coverage: ${{ env.REAL }}
-      cache: ${{ env.REAL }}
+      database: false
+      coverage: false
+      cache: false
     secrets: inherit
