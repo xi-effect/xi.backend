@@ -10,6 +10,7 @@ from flask_fullstack import check_code
 from pytest import mark
 from werkzeug.datastructures import FileStorage
 
+from common import open_file, absolute_path
 from .conftest import BASIC_PASS, login
 
 k = TypeVar("k")
@@ -32,7 +33,7 @@ def create_file(filename: str, contents: bytes):
 
 
 def upload(client: FlaskClient, filename: str):
-    with open(f"test/education/json/{filename}", "rb") as f:
+    with open_file(f"xieffect/test/education/json/{filename}", "rb") as f:
         contents: bytes = f.read()
     data = check_code(client.post(
         "/files/",
@@ -68,7 +69,7 @@ def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client:
         assert_file_data(data["filename"], contents)
 
         filename: str = data["filename"]
-        filepath = f"../files/vault/{filename}"
+        filepath = absolute_path(f"files/vault/{filename}")
         assert exists(filepath)
         with open(filepath, "rb") as f:
             assert f.read() == contents
@@ -89,4 +90,4 @@ def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client:
         else:
             assert check_code(mod_client.delete(f"/mub/files/{file_id}/"))["a"]
 
-        assert not exists(f"../files/vault/{filename}")
+        assert not exists(absolute_path(f"files/vault/{filename}"))

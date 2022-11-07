@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from flask import Flask
 from flask.testing import FlaskClient
-from flask_fullstack import dict_equal
+from flask_fullstack import dict_equal, SocketIO
 from flask_socketio.test_client import SocketIOTestClient as _SocketIOTestClient
-
-from common import SocketIO
 
 
 # TODO move to ffs utils (not test-bound)

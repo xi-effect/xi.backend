@@ -71,9 +71,7 @@ jobs:
           fi
 
       - name: Run pytest
-        run: |
-          cd xieffect
-          pytest
+        run: pytest xieffect
 
       - id: flake8
         if: success() || (failure() && steps.install.conclusion == 'success')

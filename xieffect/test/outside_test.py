@@ -8,13 +8,25 @@ from werkzeug.test import TestResponse
 
 from common import mail, mail_initialized
 from other import EmailType
-from wsgi import Invite, TEST_INVITE_ID
+from wsgi import Invite, TEST_INVITE_ID, socketio
 from .conftest import BASIC_PASS, TEST_EMAIL, SocketIOTestClient
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
 
 
+@mark.order(0)
+def test_rest_docs(base_client: FlaskClient):
+    result = check_code(base_client.get("/doc/"), get_json=False)
+    assert "text/html" in result.content_type
+
+
 @mark.order(1)
+def test_sio_docs(base_client: FlaskClient):
+    result = check_code(base_client.get("/asyncapi.json"))
+    assert result == socketio.docs()
+
+
+@mark.order(10)
 def test_login(base_client: FlaskClient):
     response: TestResponse = check_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
 
@@ -32,7 +44,7 @@ def test_login(base_client: FlaskClient):
     check_code(base_client.post("/logout/"))
 
 
-@mark.order(10)
+@mark.order(11)
 def test_signup(base_client: FlaskClient):
     credentials = {"email": "hey@hey.hey", "password": "12345", "username": "hey"}
     default_data = {"username": credentials["username"], "dark-theme": True, "language": "russian"}
