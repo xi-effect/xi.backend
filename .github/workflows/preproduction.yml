@@ -2,7 +2,8 @@ name: Preproduction Pipeline
 
 on:
   push:
-    branches: [ prod ]
+    branches:
+      - prod
 
   workflow_dispatch:
 

@@ -10,6 +10,10 @@ on:
         type: boolean
         required: false
         default: true
+      coverage:
+        type: boolean
+        required: false
+        default: true
       cache:
         type: boolean
         required: false
@@ -56,22 +60,25 @@ jobs:
       - id: alembic-upgrade
         if: inputs.database
         name: Upgrade database to latest migration
-        run: |
-          cd xieffect
-          alembic upgrade head
+        working-directory: xieffect
+        run: alembic upgrade head
 
       - id: alembic-revision
         if: inputs.database
         name: Check that database is up to date with code
+        working-directory: xieffect
         run: |
-          cd xieffect
           alembic revision --autogenerate -m "test" --rev-id 0
           if [ $(cat ./alembic/versions/0_test.py | wc -l) -ne 28 ]; then 
             exit 1
           fi
 
       - name: Run pytest
-        run: pytest xieffect
+        run: pytest xieffect -p no:cacheprovider --cov=. --cov-fail-under=0
+
+      - name: Report test coverage
+        if: inputs.coverage
+        run: coverage report
 
       - id: flake8
         if: success() || (failure() && steps.install.conclusion == 'success')
@@ -79,9 +86,8 @@ jobs:
         run: flake8 --config=setup.cfg xieffect
 
       - name: Generate docs
-        run: |
-          cd xieffect
-          flask form-sio-docs
+        working-directory: xieffect
+        run: flask form-sio-docs
 
       - name: Upload docs to artifact
         uses: actions/upload-artifact@v3
