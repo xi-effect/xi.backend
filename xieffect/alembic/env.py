@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from common import db_url
-from wsgi import db
+from api import db
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

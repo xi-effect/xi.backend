@@ -77,7 +77,7 @@ class FeedbackSaver(Resource):
         files: list[int],
         code: str | None,
     ):
-        if len(files) > 10:
+        if len(files) > 10:  # TODO pragma: no coverage
             controller.abort(413, "Too much files")
 
         feedback_type = FeedbackType.from_string(feedback_type)

@@ -2,7 +2,8 @@ name: Production Pipeline
 
 on:
   push:
-    branches: [ master ]
+    branches:
+     - master
 
   workflow_dispatch:
 

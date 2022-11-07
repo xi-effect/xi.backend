@@ -20,7 +20,7 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
         module = check_code(client.get(f"/modules/{module_id}/"))
 
         if len(types_set) == 0:
-            return
+            break
         if module_type not in types_set:
             continue
         types_set.remove(module_type)
@@ -63,8 +63,8 @@ def test_module_type_errors(client: FlaskClient, list_tester: Callable[[str, dic
 
             reply = check_code(client.get(f"/modules/{module_id}/results/"))["result"][0]
             assert dict_equal(reply, json_test, "right-answers", "total-answers", "answers")
-
-    assert len(types_set) == 0
+    else:
+        raise AssertionError("Did not manage to find all module types")
 
 
 @mark.order(510)
@@ -107,8 +107,8 @@ def test_module_navigation(client: FlaskClient):  # relies on module#9
     check_code(client.get(f"/modules/9/points/{length}/"), 404)
 
 
-@mark.order(530)
-def test_module_opener(client: FlaskClient):  # relies on module#5 and module#9 (point#8 & point#9)
+@mark.order(530)  # relies on module#5 and module#9 (point#8 & point#9)
+def test_module_opener(client: FlaskClient):  # pragma: no coverage
     if (response_json := check_code(client.post("/modules/5/next/"))) == {"a": "You have reached the end"}:
         response_json = check_code(client.post("/modules/5/next/"))
     assert check_code(client.get("/modules/5/open/")) == response_json

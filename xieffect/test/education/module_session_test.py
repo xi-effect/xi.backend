@@ -128,7 +128,7 @@ def test_hidden_module_ordering(client: FlaskClient, list_tester: Callable[[str,
         if module["id"] == module_id1:
             assert met_module_id2, f"Met module_id1 ({module_id1}) before module_id2 ({module_id2})"
             break
-    else:
+    else:  # pragma: no coverage
         assert met_module_id2, f"Met neither module_id1 ({module_id1}), nor module_id2 ({module_id2})"
         raise AssertionError(f"Didn't meet module_id1 ({module_id1})")
 

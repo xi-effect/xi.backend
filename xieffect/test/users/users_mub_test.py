@@ -65,8 +65,8 @@ def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
     assert_error(client, url, base_status, base_message, method="PUT", **base_data)
 
 
-def test_mub_emailer(client: FlaskClient, mod_client: FlaskClient, list_tester):
-    if not mail_initialized:
+def test_mub_emailer(client: FlaskClient, mod_client: FlaskClient, list_tester):  # TODO pragma: no coverage (action)
+    if not mail_initialized:  # TODO pragma: no coverage
         skip("Email module is not setup")
 
     email_user = list(list_tester("/mub/users/", {}, 50, use_post=False))[-1]["email"]

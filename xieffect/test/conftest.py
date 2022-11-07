@@ -9,7 +9,7 @@ from pytest import fixture
 from werkzeug.test import TestResponse
 
 from common.testing import SocketIOTestClient
-from wsgi import ADMIN_EMAIL, ADMIN_PASS, application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
+from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
 
 class RedirectedFlaskClient(FlaskClient):
@@ -61,11 +61,6 @@ def full_client() -> FlaskClient:
     test_client = login(TEST_EMAIL, BASIC_PASS)
     base_login(test_client, TEST_MOD_NAME, TEST_PASS, mub=True)
     return test_client
-
-
-@fixture
-def admin_client() -> FlaskClient:
-    return login(ADMIN_EMAIL, ADMIN_PASS)
 
 
 @fixture

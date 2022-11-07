@@ -14,14 +14,9 @@ def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
         usernames = [user_data["username"] for user_data in load_json(f)]
     usernames.append("hey")  # TODO add user deleting & use it in test_signup + remove this line
 
-    admin_user_found = False
     for user in list_tester("/users/", {}, 10):
         assert user["username"] != "test"
-        if user["username"] == "admin":
-            admin_user_found = True
-        else:
-            assert user["username"] in usernames
-    assert admin_user_found
+        assert user["username"] in usernames
 
     for username in usernames[:-1]:
         for user in list_tester("/users/", {"search": username[1:-1]}, 10):

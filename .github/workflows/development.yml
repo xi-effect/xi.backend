@@ -3,16 +3,20 @@ name: Feature Branch PR Pipeline
 on:
   push:
     branches-ignore:
-      - master
-      - prod
+      - master  # see production.yml
+      - prod  # see preproduction.yml
 
   workflow_dispatch:
+
+env:
+  REAL: false
 
 jobs:
   build-test-docs:
     uses: ./.github/workflows/common-work.yml
     with:
       tag: flask-${{ github.event.issue.number }}
-      database: false
-      cache: false
+      database: ${{ env.REAL }}
+      coverage: ${{ env.REAL }}
+      cache: ${{ env.REAL }}
     secrets: inherit

@@ -17,8 +17,7 @@ from common import (
     TEST_INVITE_ID,
     TEST_EMAIL,
     BASIC_PASS,
-    ADMIN_EMAIL,
-    ADMIN_PASS, absolute_path,
+    absolute_path,
 )
 from moderation import Moderator, permission_index
 from other import send_discord_message, WebhookURLs
@@ -43,7 +42,7 @@ if (  # noqa: WPS337
     or "pytest" in modules
     or db_url.endswith("test.db")
     or "form-sio-docs" in argv
-):
+):  # pragma: no coverage
     application.debug = True
     if db_url.endswith("app.db"):
         db.drop_all()
@@ -51,7 +50,7 @@ if (  # noqa: WPS337
     with application.app_context():
         init_test_mod()
         db.session.commit()
-else:  # works on server restart
+else:  # works on server restart  # pragma: no coverage
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
     setup_fail: bool = False
@@ -103,10 +102,6 @@ def init_users():
         )
         test_user.author = Author.create(test_user)
 
-    if (User.find_by_email_address(ADMIN_EMAIL)) is None:
-        # TODO DEPRECATED, redo with MUB
-        User.create(email=ADMIN_EMAIL, username="admin", password=ADMIN_PASS)
-
     with open_file("static/test/user-bundle.json") as f:
         for i, user_settings in enumerate(load_json(f)):
             email: str = f"{i}@user.user"
@@ -139,7 +134,7 @@ def init_knowledge():
             Module.create(module_data, test_author, force=True)
 
 
-def version_check():
+def version_check():  # TODO pragma: no coverage
     try:
         with open_file("files/versions-lock.json") as f:
             versions_lock: dict[str, str] = load_json(f)
@@ -159,18 +154,6 @@ def version_check():
         )
         with open_file("files/versions-lock.json", "w") as f:
             dump_json(versions, f, ensure_ascii=False)
-
-
-@application.cli.command("form-sio-docs")
-def form_sio_docs():
-    with open_file("files/async-api.json", "w") as f:
-        dump_json(socketio.docs(), f, ensure_ascii=False)
-
-
-@application.after_request
-def hey(res):
-    db.session.commit()
-    return res
 
 
 with application.app_context():

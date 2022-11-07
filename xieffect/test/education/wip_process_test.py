@@ -81,7 +81,7 @@ class WIPRecycler:
         assert self.file_id is not None
 
         content: dict | None = None
-        if self.is_same_on_server(self.wip_id_url, self.file_content1):
+        if self.is_same_on_server(self.wip_id_url, self.file_content1):  # TODO pragma: no coverage
             content = self.file_content1
         elif self.is_same_on_server(self.wip_id_url, self.file_content2):
             content = self.file_content2

@@ -57,7 +57,7 @@ class CommunitiesUser(Base):
     ) -> bool:
         # TODO target_index might change after deletion?
         list_item = CommunityListItem.find_by_ids(self.id, source_id)
-        if list_item is None:
+        if list_item is None:  # TODO pragma: no coverage
             return False
         self.communities.remove(list_item)
         self.communities.insert(target_index, list_item)
@@ -70,7 +70,7 @@ class CommunitiesUser(Base):
 
     def leave_community(self, community_id: int) -> bool:
         list_item = CommunityListItem.find_by_ids(self.id, community_id)
-        if list_item is None:
+        if list_item is None:  # TODO pragma: no coverage
             return False
         self.communities.remove(list_item)
         return True

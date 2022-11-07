@@ -110,7 +110,7 @@ class User(Base, UserRole, Identifiable):
         )
     )
 
-    class RoleSettings(PydanticModel):
+    class RoleSettings(PydanticModel):  # TODO pragma: no coverage
         author_status: str
         moderator_status: bool
 
@@ -179,24 +179,23 @@ class User(Base, UserRole, Identifiable):
     def get_identity(self):
         return self.id
 
-    def change_email(self, new_email: str) -> bool:
+    def change_email(self, new_email: str) -> bool:  # TODO pragma: no coverage
         if User.find_by_email_address(new_email):
             return False
         self.email = new_email
         self.email_confirmed = False
         return True
 
-    def change_password(self, new_password: str) -> None:  # auto-commit
+    def change_password(self, new_password: str) -> None:  # TODO pragma: no coverage
         self.password = User.generate_hash(new_password)
 
     def change_settings(self, new_values: dict[str, str | int | bool]) -> None:
-        # auto-commit
         for attribute, field in self.CHANGEABLE_FIELDS:
             value = new_values.get(field)
             if value is not None:
                 setattr(self, attribute, value)
 
-    def author_status(self) -> str:
+    def author_status(self) -> str:  # TODO pragma: no coverage (with RoleModel)
         if self.author is None:
             return "not-yet"
         return "banned" if self.author.banned else "current"

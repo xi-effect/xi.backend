@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from json import dump as dump_json
 from logging import Logger
 from sys import stderr
 
 from flask_fullstack import SocketIO
 
-from common import app, versions
+from common import app, db, versions, open_file
 from communities import (
     communities_meta_events,
     communities_namespace,
@@ -52,7 +53,7 @@ logger = Logger("flask-fullstack", "WARN")
 def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
     if app.debug:
         print(message, **({"file": stderr} if level == "error" else {}))
-    else:
+    else:  # pragma: no cover
         if level == "status":
             send_discord_message(WebhookURLs.STATUS, message)
         else:
@@ -135,5 +136,17 @@ socketio.add_namespace(
     news_events,
     protected=True
 )
+
+
+@app.cli.command("form-sio-docs")
+def form_sio_docs():  # TODO pragma: no coverage
+    with open_file("files/async-api.json", "w") as f:
+        dump_json(socketio.docs(), f, ensure_ascii=False)
+
+
+@app.after_request
+def hey(res):
+    db.session.commit()
+    return res
 
 # remove-item alias:\curl

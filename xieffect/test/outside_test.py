@@ -89,8 +89,8 @@ def test_signup(base_client: FlaskClient):
 
 
 @mark.order(12)
-def test_email_confirm(base_client: FlaskClient):
-    if not mail_initialized:
+def test_email_confirm(base_client: FlaskClient):  # TODO pragma: no coverage (action)
+    if not mail_initialized:  # TODO pragma: no coverage
         skip("Email module is not setup")
 
     a = [1, 2, 3, 4]
