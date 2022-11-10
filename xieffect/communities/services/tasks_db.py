@@ -51,9 +51,7 @@ class Task(Base, Identifiable):
     community = relationship("Community")
 
     # TODO recheck the argument name after information pages will be added
-    page_id = Column(Integer, nullable=False)  # ForeignKey("page_table.id")
-    # page = relationship("Page_table")
-
+    page_id = Column(Integer, nullable=False)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     created = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -64,18 +62,14 @@ class Task(Base, Identifiable):
 
     files = relationship("TaskEmbed")
 
-    BaseModel = PydanticModel.column_model(
-        id,
-        name,
-        description,
-        updated,
-    )
+    BaseModel = PydanticModel.column_model(id, updated)
+    CreationBaseModel = PydanticModel.column_model(page_id, name, description)
 
-    class IndexModel(BaseModel):
+    class IndexModel(BaseModel, CreationBaseModel):
         username: str
 
         @classmethod
-        def callback_convert(cls, callback, orm_object: Task, **context) -> None:
+        def callback_convert(cls, callback, orm_object: Task, **_) -> None:
             callback(username=orm_object.user.username)
 
     FullModel = IndexModel.nest_model(TaskEmbed.FileModel, "files", as_list=True)
@@ -103,9 +97,7 @@ class Task(Base, Identifiable):
         )
 
     @classmethod
-    def update(cls, task_id: int, community_id: int, **kwargs) -> None:
+    def update(cls, task_id: int, **kwargs) -> None:
         db.session.execute(
-            update(cls)
-            .where(cls.id == task_id, cls.community_id == community_id)
-            .values(**kwargs)
+            update(cls).where(cls.id == task_id).values(**kwargs)
         )
