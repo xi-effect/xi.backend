@@ -78,11 +78,12 @@ app.secrets_from_env("hope it's local")
 # TODO DI to use secrets in `URLSafeSerializer`s
 app.configure_cors()
 
+mail_hostname = getenv("MAIL_HOSTNAME")
 mail_username = getenv("MAIL_USERNAME")
 mail_password = getenv("MAIL_PASSWORD")
-mail_initialized = mail_username is not None and mail_password is not None
+mail_initialized = all((mail_hostname, mail_username, mail_hostname))
 if mail_initialized:  # TODO pragma: no coverage (action)
-    app.config["MAIL_SERVER"] = "smtp.yandex.ru"
+    app.config["MAIL_SERVER"] = mail_hostname
     app.config["MAIL_PORT"] = 587
     app.config["MAIL_USERNAME"] = mail_username
     app.config["MAIL_DEFAULT_SENDER"] = mail_username
