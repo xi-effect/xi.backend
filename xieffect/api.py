@@ -131,6 +131,7 @@ socketio = SocketIO(
     logger=True,
     engineio_logger=True,
     remove_ping_pong_logs=True,
+    restx_models=api.models,
 )
 
 socketio.add_namespace(

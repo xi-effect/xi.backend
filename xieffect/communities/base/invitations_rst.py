@@ -25,8 +25,8 @@ class InvitationLister(Resource):
 
 def check_invitation():  # TODO # noqa: WPS231
     def check_invitation_wrapper(function):
-        @wraps(function)
         @controller.doc_abort("400 ", "Invalid invitation")
+        @wraps(function)
         def check_invitation_inner(*args, **kwargs):
             code: str = kwargs.pop("code")
             user: User = kwargs.get("user")
