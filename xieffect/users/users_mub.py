@@ -22,7 +22,7 @@ class UserIndexResource(Resource):
 
     @controller.require_permission(manage_users, use_moderator=False)
     @controller.argument_parser(parser)
-    @controller.lister(50, User.FullData)
+    @controller.lister(50, User.ProfileData)
     def get(self, start: int, finish: int, **kwargs: str | None) -> list[User]:
         return User.search_by_params(start, finish - start, **kwargs)
 
@@ -68,7 +68,7 @@ class UserIndexResource(Resource):
             invite=invite,
         )
         message = {"a": "Email already in use"}
-        return message if user is None else controller.marshal(user, User.FullData)
+        return message if user is None else controller.marshal(user, User.ProfileData)
 
 
 @controller.route("/<int:user_id>/")
@@ -84,7 +84,7 @@ class UserManagerResource(Resource):
     @controller.require_permission(manage_users, use_moderator=False)
     @controller.argument_parser(parser, use_undefined=True)
     @controller.database_searcher(User)
-    @controller.marshal_with(User.FullData)
+    @controller.marshal_with(User.ProfileData)
     def put(self, user: User, email_confirmed: bool | Undefined):
         if email_confirmed is not Undefined:
             user.email_confirmed = email_confirmed

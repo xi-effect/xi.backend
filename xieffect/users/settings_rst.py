@@ -25,7 +25,7 @@ class Settings(Resource):
     )
 
     @controller.jwt_authorizer(User)
-    @controller.marshal_with(User.FullData)
+    @controller.marshal_with(User.ProfileData)
     def get(self, user: User):
         """Loads user's own full settings"""
         return user

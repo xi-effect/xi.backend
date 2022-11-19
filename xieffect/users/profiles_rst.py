@@ -16,7 +16,7 @@ class UserFinder(Resource):
 
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
-    @controller.lister(10, User.IndexProfile)
+    @controller.lister(10, User.MainData)
     def post(self, user: User, search: str | None, start: int, finish: int):
         return User.search_by_username(user.id, search, start, finish - start)
 
@@ -25,7 +25,15 @@ class UserFinder(Resource):
 class ProfileViewer(Resource):
     @controller.jwt_authorizer(User, check_only=True)
     @controller.database_searcher(User, result_field_name="profile_viewer")
-    @controller.marshal_with(User.FullProfile)
+    @controller.marshal_with(User.ProfileData)
     def get(self, profile_viewer: User):
         """Get profile"""
         return profile_viewer
+
+
+@controller.route("/me/profile/")
+class UserProfile(Resource):
+    @controller.jwt_authorizer(User)
+    @controller.marshal_with(User.ProfileData)
+    def get(self, user: User):
+        return user

@@ -41,8 +41,10 @@ from users import (
     invites_mub_namespace,
     mub_feedback_namespace,
     mub_users_namespace,
+    reglog_old_namespace,
     reglog_namespace,
     settings_namespace,
+    users_old_namespace,
     users_namespace,
 )
 from vault import files_namespace, mub_files_namespace
@@ -85,7 +87,9 @@ api = app.configure_restx()
 api.add_namespace(files_namespace)
 api.add_namespace(mub_files_namespace)
 
+api.add_namespace(reglog_old_namespace)
 api.add_namespace(reglog_namespace)
+api.add_namespace(users_old_namespace)
 api.add_namespace(users_namespace)
 
 api.add_namespace(feedback_namespace)

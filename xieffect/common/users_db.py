@@ -7,10 +7,11 @@ from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
+from sqlalchemy.sql.sqltypes import DateTime
 
 from ._core import Base, db  # noqa: WPS436
 
-DEFAULT_AVATAR: dict = {  # noqa: WPS407
+DEFAULT_AVATAR: dict = {  # noqa: WPS407  # TODO remove after front update
     "topType": 0,
     "accessoriesType": 0,
     "hairColor": 0,
@@ -56,16 +57,13 @@ class User(Base, UserRole, Identifiable):
 
     # Settings:
     username = Column(String(100), nullable=False)
-    dark_theme = Column(Boolean, nullable=False, default=True)
-    language = Column(String(20), nullable=False, default="russian")
+    handle = Column(String(100), nullable=True, unique=True, index=True)
 
     # profile:
     name = Column(String(100), nullable=True)
     surname = Column(String(100), nullable=True)
     patronymic = Column(String(100), nullable=True)
-    bio = Column(Text, nullable=True)
-    group = Column(String(100), nullable=True)
-    avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
+    birthday = Column(DateTime, nullable=True)
 
     # Education data:
     theory_level = Column(Float, nullable=False, default=0.5)
@@ -87,11 +85,23 @@ class User(Base, UserRole, Identifiable):
         "Invite", back_populates="invited"
     )  # TODO remove non-common reference
 
+    # TODO remove after front update
+    dark_theme = Column(Boolean, nullable=False, default=True)
+    language = Column(String(20), nullable=False, default="russian")
+    bio = Column(Text, nullable=True)
+    group = Column(String(100), nullable=True)
+    avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
+
+    MainData = PydanticModel.column_model(id, username, handle)
+    ProfileData = MainData.column_model(
+        email, email_confirmed, name, surname, patronymic, birthday, code
+    )
+
+    # TODO remove after front update
     IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
     FullProfile = IndexProfile.column_model(name, surname, patronymic, group)
-
-    MainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
-    FullData = MainData.column_model(
+    OldMainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
+    FullData = OldMainData.column_model(
         email, email_confirmed, avatar, code, name, surname, patronymic, bio, group
     )
 
@@ -99,14 +109,16 @@ class User(Base, UserRole, Identifiable):
         (field, field.replace("_", "-"))
         for field in (
             "username",
-            "dark_theme",
-            "language",
+            "handle",
+            "dark_theme",  # TODO remove after front update
+            "language",  # TODO remove after front update
             "name",
             "surname",
             "patronymic",
-            "bio",
-            "group",
-            "avatar",
+            "birthday",
+            "bio",  # TODO remove after front update
+            "group",  # TODO remove after front update
+            "avatar",  # TODO remove after front update
         )
     )
 
