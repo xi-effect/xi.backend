@@ -131,6 +131,7 @@ socketio = SocketIO(
     cors_allowed_origins="*",
     logger=True,
     engineio_logger=True,
+    remove_ping_pong_logs=True,
 )
 
 socketio.add_namespace(
