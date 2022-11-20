@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel
 from sqlalchemy import Column, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Float, JSON
 
-from common import User, Base, sessionmaker, PydanticModel
+from common import User, Base, db
 from ._base_session import BaseModuleSession  # noqa: WPS436
 
 
@@ -14,12 +15,11 @@ class ModuleProgressSession(BaseModuleSession):
     theory_level = Column(Float, nullable=True)  # temp disabled for theory blocks
 
     # TODO remove the noqa
-    def get_theory_level(self, session: sessionmaker) -> float | None:  # noqa: WPS615
+    def get_theory_level(self) -> float | None:  # noqa: WPS615
         if self.theory_level is None:
             return None
         return (
-            User.find_by_id(session, self.user_id).theory_level * 0.2
-            + self.theory_level * 0.8
+            User.find_by_id(self.user_id).theory_level * 0.2 + self.theory_level * 0.8
         )
 
 
@@ -30,27 +30,20 @@ class TestModuleSession(BaseModuleSession):
 
     def create_point_session(
         self,
-        session: sessionmaker,
         point_id: int,
         module,
     ) -> TestPointSession:
         page_id = module.execute_point(point_id)
         new_entry = TestPointSession(page_id=page_id, point_id=point_id)
         self.points.append(new_entry)
-        session.flush()
+        db.session.flush()
         return new_entry
 
-    def find_point_session(
-        self,
-        session: sessionmaker,
-        point_id: int,
-    ) -> TestPointSession | None:
-        return TestPointSession.find_by_ids(
-            session, self.user_id, self.module_id, point_id
-        )
+    def find_point_session(self, point_id: int) -> TestPointSession | None:
+        return TestPointSession.find_by_ids(self.user_id, self.module_id, point_id)
 
-    def collect_all(self, session: sessionmaker) -> list[TestPointSession]:
-        session.delete(self)
+    def collect_all(self) -> list[TestPointSession]:
+        db.session.delete(self)
         return self.points
 
 
@@ -78,13 +71,11 @@ class TestPointSession(Base):
     @classmethod
     def find_by_ids(
         cls,
-        session: sessionmaker,
         user_id: int,
         module_id: int,
         point_id: int,
     ) -> TestModuleSession | None:
         return cls.find_first_by_kwargs(
-            session,
             user_id=user_id,
             module_id=module_id,
             point_id=point_id,

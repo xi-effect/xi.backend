@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+from flask_fullstack import ResponseDoc as _ResponseDoc
 from flask_restx import Model
 from flask_restx.fields import Boolean as BooleanField, String as StringField
-
-from __lib__.flask_fullstack import ResponseDoc as _ResponseDoc
 
 
 class ResponseDoc(_ResponseDoc):

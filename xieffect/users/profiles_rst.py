@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from flask_fullstack import counter_parser
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, User
+from common import ResourceController, User
 
 controller = ResourceController("profiles", path="/users/")
 
@@ -15,16 +16,24 @@ class UserFinder(Resource):
 
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
-    @controller.lister(10, User.IndexProfile)
-    def post(self, session, user: User, search: str | None, start: int, finish: int):
-        return User.search_by_username(session, user.id, search, start, finish - start)
+    @controller.lister(10, User.MainData)
+    def post(self, user: User, search: str | None, start: int, finish: int):
+        return User.search_by_username(user.id, search, start, finish - start)
 
 
 @controller.route("/<int:user_id>/profile/")
 class ProfileViewer(Resource):
-    @controller.jwt_authorizer(User, check_only=True, use_session=False)
+    @controller.jwt_authorizer(User, check_only=True)
     @controller.database_searcher(User, result_field_name="profile_viewer")
-    @controller.marshal_with(User.FullProfile)
+    @controller.marshal_with(User.ProfileData)
     def get(self, profile_viewer: User):
         """Get profile"""
         return profile_viewer
+
+
+@controller.route("/me/profile/")
+class UserProfile(Resource):
+    @controller.jwt_authorizer(User)
+    @controller.marshal_with(User.ProfileData)
+    def get(self, user: User):
+        return user

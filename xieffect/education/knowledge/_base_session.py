@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel
 from sqlalchemy import Column
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import Base, PydanticModel
+from common import Base
 
 
 class BaseModuleSession(Base):
@@ -16,14 +17,12 @@ class BaseModuleSession(Base):
     BaseModel = PydanticModel.column_model(user_id=user_id, module_id=module_id)
 
     @classmethod
-    def find_by_ids(
-        cls, session, user_id: int, module_id: int
-    ) -> BaseModuleSession | None:
-        return cls.find_first_by_kwargs(session, user_id=user_id, module_id=module_id)
+    def find_by_ids(cls, user_id: int, module_id: int) -> BaseModuleSession | None:
+        return cls.find_first_by_kwargs(user_id=user_id, module_id=module_id)
 
     @classmethod
-    def find_or_create(cls, session, user_id: int, module_id: int) -> BaseModuleSession:
-        entry = cls.find_by_ids(session, user_id, module_id)
+    def find_or_create(cls, user_id: int, module_id: int) -> BaseModuleSession:
+        entry = cls.find_by_ids(user_id, module_id)
         if entry is None:
-            return cls.create(session, user_id=user_id, module_id=module_id)
+            return cls.create(user_id=user_id, module_id=module_id)
         return entry

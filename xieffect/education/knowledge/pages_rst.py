@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from flask_fullstack import counter_parser
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, User
+from common import ResourceController, User
 from .pages_db import Page
 
 controller = ResourceController("pages")
@@ -25,14 +26,14 @@ class PageLister(Resource):  # POST /pages/
     @controller.jwt_authorizer(User, check_only=True)
     @controller.argument_parser(parser)
     @controller.lister(50, Page.ShortModel)
-    def post(self, session, search: str | None, start: int, finish: int) -> list:
+    def post(self, search: str | None, start: int, finish: int) -> list:
         """Lists index of pages with metadata only"""
-        return Page.search(session, search, start, finish - start)
+        return Page.search(search, start, finish - start)
 
 
 @controller.route("/<int:page_id>/")
 class PageGetter(Resource):  # GET /pages/<int:page_id>/
-    @controller.jwt_authorizer(User, check_only=True, use_session=False)
+    @controller.jwt_authorizer(User, check_only=True)
     @controller.database_searcher(Page)
     @controller.marshal_with(Page.MainModel)
     def get(self, page: Page):  # add some access checks
@@ -43,7 +44,7 @@ class PageGetter(Resource):  # GET /pages/<int:page_id>/
 
 @controller.route("/<int:page_id>/report/")
 class PageReporter(Resource):
-    @controller.jwt_authorizer(User, check_only=True, use_session=False)
+    @controller.jwt_authorizer(User, check_only=True)
     @controller.argument_parser(report_parser)
     @controller.database_searcher(Page)
     @controller.a_response()

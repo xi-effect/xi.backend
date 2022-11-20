@@ -6,10 +6,11 @@ from os.path import exists
 from typing import TypeVar
 
 from flask.testing import FlaskClient
+from flask_fullstack import check_code
 from pytest import mark
 from werkzeug.datastructures import FileStorage
 
-from __lib__.flask_fullstack import check_code
+from common import open_file, absolute_path
 from .conftest import BASIC_PASS, login
 
 k = TypeVar("k")
@@ -22,7 +23,7 @@ def spread_dict(dct: dict[k, v], *keys: k, default=None) -> Iterable[v]:
 
 def assert_spread(dct: dict[k, v], *keys: k) -> Iterable[v]:
     for key in keys:
-        result = dct.get(key, None)
+        result = dct.get(key)
         assert result is not None
         yield result
 
@@ -31,26 +32,29 @@ def create_file(filename: str, contents: bytes):
     return FileStorage(stream=BytesIO(contents), filename=filename)
 
 
+def upload(client: FlaskClient, filename: str):
+    with open_file(f"xieffect/test/education/json/{filename}", "rb") as f:
+        contents: bytes = f.read()
+    data = check_code(client.post(
+        "/files/",
+        content_type="multipart/form-data",
+        data={"file": create_file(filename, contents)}
+    ))
+
+    file_id, server_filename = assert_spread(data, "id", "filename")
+    assert server_filename == str(file_id) + "-" + filename
+    return data, contents
+
+
 @mark.order(70)
 def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client: FlaskClient, list_tester):
     # saving file list for future checks
     previous_file_list = list(list_tester("/mub/files/index/", {}, 20))
 
     # upload a file
-    def upload(filename: str):
-        with open(f"test/json/{filename}", "rb") as f:
-            contents: bytes = f.read()
-        data = check_code(client.post(
-            "/files/",
-            content_type="multipart/form-data",
-            data={"file": create_file(filename, contents)}
-        ))
-
-        file_id, server_filename = assert_spread(data, "id", "filename")
-        assert server_filename == str(file_id) + "-" + filename
-        return data, contents
-
-    new_files: list[tuple[dict, bytes]] = [upload(filename) for filename in ("sample-page.json", "sample-page-2.json")]
+    new_files: list[tuple[dict, bytes]] = [
+        upload(client, filename) for filename in ("sample-page.json", "sample-page-2.json")
+    ]
     new_files.reverse()
 
     # check file accessibility
@@ -65,7 +69,7 @@ def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client:
         assert_file_data(data["filename"], contents)
 
         filename: str = data["filename"]
-        filepath = f"../files/vault/{filename}"
+        filepath = absolute_path(f"files/vault/{filename}")
         assert exists(filepath)
         with open(filepath, "rb") as f:
             assert f.read() == contents
@@ -86,4 +90,4 @@ def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client:
         else:
             assert check_code(mod_client.delete(f"/mub/files/{file_id}/"))["a"]
 
-        assert not exists(f"../files/vault/{filename}")
+        assert not exists(absolute_path(f"files/vault/{filename}"))

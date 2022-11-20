@@ -1,0 +1,19 @@
+name: Feature Branch PR Pipeline
+
+on:
+  push:
+    branches-ignore:
+      - master  # see production.yml
+      - prod  # see preproduction.yml
+
+  workflow_dispatch:
+
+jobs:
+  build-test-docs:
+    uses: ./.github/workflows/common-work.yml
+    with:
+      tag: flask-${{ github.event.issue.number }}
+      database: false
+      coverage: false
+      cache: false
+    secrets: inherit

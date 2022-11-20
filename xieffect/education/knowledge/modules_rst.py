@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from flask_fullstack import counter_parser
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import ResourceController, counter_parser, unite_models, User
+from common import ResourceController, unite_models, User
 from .modules_db import Module, SortType, ModuleFilterSession, PreferenceOperation
 
 education_namespace = ResourceController("modules", path="/")
@@ -31,7 +32,7 @@ report_parser.add_argument("message", required=False)
 
 @education_namespace.route("/filters/")
 class FilterGetter(Resource):  # [GET] /filters/
-    @education_namespace.jwt_authorizer(User, use_session=False)
+    @education_namespace.jwt_authorizer(User)
     @education_namespace.a_response()
     def get(self, user: User) -> str:
         """Gets user's saved global filter. Deprecated?"""
@@ -79,7 +80,6 @@ class ModuleLister(Resource):  # [POST] /modules/
     @controller.lister(12, module_index_json)
     def post(
         self,
-        session,
         user: User,
         start: int,
         finish: int,
@@ -100,13 +100,13 @@ class ModuleLister(Resource):  # [POST] /modules/
                 400, "Malformed filters parameter: use strings as values only"
             )
 
-        global_filter = filters.get("global", None)
+        global_filter = filters.get("global")
         if global_filter not in {"pinned", "starred", "started", "", None}:
             controller.abort(400, f"Global filter '{global_filter}' is not supported")
         user.filter_bind = global_filter
 
         return Module.get_module_list(
-            session, filters, search, sort, user.id, start, finish - start
+            filters, search, sort, user.id, start, finish - start
         )
 
 
@@ -115,20 +115,20 @@ class HiddenModuleLister(Resource):  # [POST] /modules/hidden/
     @controller.jwt_authorizer(User)
     @controller.argument_parser(counter_parser)
     @controller.lister(12, Module.ShortModel)
-    def post(self, session, user: User, start: int, finish: int) -> list:
+    def post(self, user: User, start: int, finish: int) -> list:
         """Lists short metadata for hidden modules"""
-        return Module.get_hidden_module_list(session, user.id, start, finish - start)
+        return Module.get_hidden_module_list(user.id, start, finish - start)
 
 
 @controller.route("/<int:module_id>/")
 class ModuleGetter(Resource):  # GET /modules/<int:module_id>/
     @controller.jwt_authorizer(User)
-    @controller.database_searcher(Module, use_session=True, check_only=True)
+    @controller.database_searcher(Module, check_only=True)
     @controller.marshal_with(module_view_json)
-    def get(self, session, user: User, module_id: int):
+    def get(self, user: User, module_id: int):
         """Returns module's full metadata & some user relation"""
-        ModuleFilterSession.find_or_create(session, user.id, module_id).visit_now()
-        return Module.find_with_relation(session, module_id, user.id)
+        ModuleFilterSession.find_or_create(user.id, module_id).visit_now()
+        return Module.find_with_relation(module_id, user.id)
 
 
 @controller.route("/<int:module_id>/preference/")
@@ -142,24 +142,24 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
     )
 
     @controller.jwt_authorizer(User)
-    @controller.database_searcher(Module, check_only=True, use_session=True)
+    @controller.database_searcher(Module, check_only=True)
     @controller.argument_parser(parser)
     @controller.a_response()
-    def post(self, session, module_id: int, user: User, operation: str) -> None:
+    def post(self, module_id: int, user: User, operation: str) -> None:
         """Changes user relation to some module"""
         module: ModuleFilterSession | None = ModuleFilterSession.find_by_ids(
-            session, user.id, module_id
+            user.id, module_id
         )
         if module is None:
             if operation.startswith("un"):
                 return
-            module = ModuleFilterSession.create(session, user.id, module_id)
-        module.change_preference(session, PreferenceOperation.from_string(operation))
+            module = ModuleFilterSession.create(user.id, module_id)
+        module.change_preference(PreferenceOperation.from_string(operation))
 
 
 @controller.route("/<int:module_id>/report/")
 class ModuleReporter(Resource):  # [POST] /modules/<int:module_id>/report/
-    @controller.jwt_authorizer(User, check_only=True, use_session=False)
+    @controller.jwt_authorizer(User, check_only=True)
     @controller.database_searcher(Module)
     @controller.argument_parser(report_parser)
     @controller.a_response()

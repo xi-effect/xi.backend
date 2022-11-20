@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from flask_fullstack import Identifiable, TypeEnum, PydanticModel
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from common import Identifiable, TypeEnum, PydanticModel, User, Base, sessionmaker
+from common import User, Base, db
 
 
 class Community(Base, Identifiable):
@@ -23,38 +24,19 @@ class Community(Base, Identifiable):
     IndexModel = BaseModel.combine_with(CreateModel)
 
     @classmethod
-    def create(
-        cls,
-        session: sessionmaker,
-        name: str,
-        description: str | None,
-        creator: User,
-    ) -> Community:
-        entry: cls = super().create(session, name=name, description=description)
+    def create(cls, name: str, description: str | None, creator: User) -> Community:
+        entry: cls = super().create(name=name, description=description)
 
         participant = Participant(user=creator, role=ParticipantRole.OWNER)
         entry.participants.append(participant)
-        session.add(participant)
-        session.flush()
+        db.session.add(participant)
+        db.session.flush()
 
         return entry
 
     @classmethod
-    def find_by_id(cls, session: sessionmaker, entry_id: int) -> Community | None:
-        return session.get_first(select(cls).filter_by(id=entry_id))
-
-    @classmethod
-    def find_by_user(
-        cls,
-        session: sessionmaker,
-        user: User,
-        offset: int,
-        limit: int,
-    ) -> list[Community]:
-        ids = session.get_paginated(
-            select(Participant.community_id).filter_by(user_id=user.id), offset, limit
-        )
-        return session.get_all(select(cls).filter(cls.id.in_(ids)))
+    def find_by_id(cls, entry_id: int) -> Community | None:
+        return db.session.get_first(select(cls).filter_by(id=entry_id))
 
 
 class ParticipantRole(TypeEnum):
@@ -72,27 +54,15 @@ class Participant(Base):
     role = Column(Enum(ParticipantRole), nullable=False)
 
     @classmethod
-    def create(
-        cls,
-        session: sessionmaker,
-        community_id: int,
-        user_id: int,
-        role: ParticipantRole,
-    ):
+    def create(cls, community_id: int, user_id: int, role: ParticipantRole):
         return super().create(
-            session,
             community_id=community_id,
             user_id=user_id,
             role=role,
         )
 
     @classmethod
-    def find_by_ids(
-        cls,
-        session: sessionmaker,
-        community_id: int,
-        user_id: int,
-    ) -> Participant | None:
-        return session.get_first(
+    def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
+        return db.session.get_first(
             select(cls).filter_by(community_id=community_id, user_id=user_id)
         )

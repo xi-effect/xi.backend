@@ -2,16 +2,14 @@ from __future__ import annotations
 
 from functools import wraps
 
+from flask_fullstack import ResourceController as _ResourceController
 from flask_restx import abort as default_abort
 
-from __lib__.flask_fullstack import ResourceController as _ResourceController
-from ._core import sessionmaker  # noqa: WPS436
 from ._marshals import success_response, message_response, ResponseDoc  # noqa: WPS436
 
 
 class ResourceController(_ResourceController):
     def __init__(self, *args, **kwargs):
-        kwargs["sessionmaker"] = kwargs.get("sessionmaker", sessionmaker)
         super().__init__(*args, **kwargs)
         success_response.register_model(self)
         message_response.register_model(self)
@@ -27,7 +25,7 @@ class ResourceController(_ResourceController):
         """
 
         def a_response_wrapper(function):
-            return_type = function.__annotations__.get("return", None)
+            return_type = function.__annotations__.get("return")
             is_none = return_type is None or return_type == "None"
             is_bool = (
                 is_none

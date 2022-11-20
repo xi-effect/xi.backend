@@ -1,0 +1,35 @@
+name: Preproduction Pipeline
+
+on:
+  push:
+    branches:
+      - prod
+
+  workflow_dispatch:
+
+jobs:
+  build-test-docs:
+    uses: ./.github/workflows/common-work.yml
+    with:
+      tag: flask-prod
+    secrets: inherit
+
+  pull-request:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Run the Action
+        uses: devops-infra/action-pull-request@v0.5.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source_branch: prod
+          target_branch: master
+          title: New Version
+          body: |
+            - [ ] migrations
+            - [ ] version update
