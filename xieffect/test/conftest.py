@@ -4,13 +4,12 @@ from collections.abc import Callable, Iterator
 from typing import Protocol
 
 from flask.testing import FlaskClient
-from flask_socketio import SocketIOTestClient
+from flask_fullstack import check_code
 from pytest import fixture
 from werkzeug.test import TestResponse
 
-from __lib__.flask_fullstack import check_code
-from api import socketio
-from wsgi import ADMIN_EMAIL, ADMIN_PASS, application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
+from common.testing import SocketIOTestClient
+from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
 
 class RedirectedFlaskClient(FlaskClient):
@@ -64,20 +63,6 @@ def full_client() -> FlaskClient:
     return test_client
 
 
-def socketio_client_factory(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
-    return socketio.test_client(app, flask_test_client=client)
-
-
-@fixture
-def socketio_client(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
-    return socketio_client_factory(client)
-
-
-@fixture
-def admin_client() -> FlaskClient:
-    return login(ADMIN_EMAIL, ADMIN_PASS)
-
-
 @fixture
 def multi_client() -> Callable[[str], FlaskClient]:
     def multi_client_inner(user_email: str):
@@ -86,20 +71,44 @@ def multi_client() -> Callable[[str], FlaskClient]:
     return multi_client_inner
 
 
+@fixture
+def socketio_client(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
+    return SocketIOTestClient(client)
+
+
 class ListTesterProtocol(Protocol):
-    def __call__(self, link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
+    def __call__(
+        self,
+        link: str,
+        request_json: dict,
+        page_size: int,
+        status_code: int = 200,
+        use_post: bool = True,
+    ) -> Iterator[dict]:
         pass
 
 
 @fixture
 def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
-    def list_tester_inner(link: str, request_json: dict, page_size: int, status_code: int = 200) -> Iterator[dict]:
+    def list_tester_inner(
+        link: str,
+        request_json: dict,
+        page_size: int,
+        status_code: int = 200,
+        use_post: bool = True,
+    ) -> Iterator[dict]:
         counter = 0
         amount = page_size
         while amount == page_size:
             request_json["counter"] = counter
-            response_json: dict = check_code(full_client.post(link, json=request_json), status_code)
-
+            response_json: dict = check_code(
+                full_client.open(
+                    link,
+                    json=request_json,
+                    method="POST" if use_post else "GET",
+                ),
+                status_code,
+            )
             assert "results" in response_json
             assert isinstance(response_json["results"], list)
             yield from response_json["results"]

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from json import dump as dump_json
 from logging import Logger
 from sys import stderr
 
-from common import app, SocketIO, versions
-from common import db, db_url  # noqa: WPS
+from flask_fullstack import SocketIO
+
+from common import app, db, versions, open_file
 from communities import (
     communities_meta_events,
     communities_namespace,
@@ -36,10 +38,13 @@ from other import (
 from users import (
     emailer_qa_namespace,
     feedback_namespace,
-    invites_namespace,
+    invites_mub_namespace,
+    mub_feedback_namespace,
+    mub_users_namespace,
+    reglog_old_namespace,
     reglog_namespace,
     settings_namespace,
-    users_mub_namespace,
+    users_old_namespace,
     users_namespace,
 )
 from vault import files_namespace, mub_files_namespace
@@ -50,7 +55,7 @@ logger = Logger("flask-fullstack", "WARN")
 def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
     if app.debug:
         print(message, **({"file": stderr} if level == "error" else {}))
-    else:
+    else:  # pragma: no cover
         if level == "status":
             send_discord_message(WebhookURLs.STATUS, message)
         else:
@@ -82,12 +87,14 @@ api = app.configure_restx()
 api.add_namespace(files_namespace)
 api.add_namespace(mub_files_namespace)
 
+api.add_namespace(reglog_old_namespace)
 api.add_namespace(reglog_namespace)
+api.add_namespace(users_old_namespace)
 api.add_namespace(users_namespace)
 
-api.add_namespace(settings_namespace)
 api.add_namespace(feedback_namespace)
-api.add_namespace(invites_namespace)
+api.add_namespace(mub_feedback_namespace)
+api.add_namespace(settings_namespace)
 
 api.add_namespace(education_namespace)
 api.add_namespace(modules_view_namespace)
@@ -113,12 +120,15 @@ api.add_namespace(mub_base_namespace)
 api.add_namespace(mub_super_namespace)
 
 api.add_namespace(emailer_qa_namespace)
-api.add_namespace(users_mub_namespace)
+api.add_namespace(mub_users_namespace)
+api.add_namespace(invites_mub_namespace)
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
+    title="SIO",
     version=versions["SIO"],
+    doc_path="/asyncapi.json",
+    cors_allowed_origins="*",
     logger=True,
     engineio_logger=True,
 )
@@ -130,5 +140,17 @@ socketio.add_namespace(
     news_events,
     protected=True
 )
+
+
+@app.cli.command("form-sio-docs")
+def form_sio_docs():  # TODO pragma: no coverage
+    with open_file("files/async-api.json", "w") as f:
+        dump_json(socketio.docs(), f, ensure_ascii=False)
+
+
+@app.after_request
+def hey(res):
+    db.session.commit()
+    return res
 
 # remove-item alias:\curl

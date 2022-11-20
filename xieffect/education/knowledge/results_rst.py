@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from flask_fullstack import counter_parser
 from flask_restx import Resource
 
-from common import counter_parser, ResourceController, User
+from common import ResourceController, User
 from .results_db import TestResult
 
 controller = ResourceController("result", path="/results/")

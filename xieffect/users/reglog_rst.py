@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from flask import current_app
+from flask_fullstack import password_parser
 from flask_jwt_extended import get_jwt
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
-from common import BlockedToken, password_parser, ResourceController, User
+from common import BlockedToken, ResourceController, User
 from communities import CommunitiesUser
 from other import create_email_confirmer, EmailType, send_code_email
 from .invites_db import Invite
@@ -14,7 +15,7 @@ from .invites_db import Invite
 controller = ResourceController("reglog", path="/")
 
 
-@controller.route("/home/")
+@controller.route("/main/")
 class UserHome(Resource):
     @controller.jwt_authorizer(User)
     @controller.marshal_with(CommunitiesUser.FullModel)
@@ -22,7 +23,7 @@ class UserHome(Resource):
         return CommunitiesUser.find_or_create(user.id)
 
 
-@controller.route("/reg/")
+@controller.route("/signup/")
 class UserRegistration(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
@@ -56,7 +57,7 @@ class UserRegistration(Resource):
 
         if invite is None:
             return {"a": "Invite not found"}, 404
-        if invite.limit == invite.accepted:
+        if invite.limit == invite.accepted:  # TODO pragma: no coverage
             return {"a": "Invite code limit exceeded"}
         invite.accepted += 1
 
@@ -66,7 +67,7 @@ class UserRegistration(Resource):
             password=password,
             invite=invite,
         )
-        if user is None:
+        if user is None:  # TODO pragma: no coverage
             return {"a": "Email already in use"}
         send_code_email(email, EmailType.CONFIRM)
         cu = CommunitiesUser.find_or_create(user.id)
@@ -78,7 +79,7 @@ EmailConfirmer = create_email_confirmer(
 )
 
 
-@controller.route("/auth/")
+@controller.route("/signin/")
 class UserLogin(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="User's email")
@@ -89,17 +90,18 @@ class UserLogin(Resource):
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
     def post(self, email: str, password: str):
         """Tries to log in with credentials given"""
-        if (user := User.find_by_email_address(email)) is None:
+        user = User.find_by_email_address(email)
+        if user is None:  # TODO pragma: no coverage
             return {"a": "User doesn't exist"}
 
         if User.verify_hash(password, user.password):
             cu = CommunitiesUser.find_or_create(user.id)
             return cu, user
-        return {"a": "Wrong password"}
+        return {"a": "Wrong password"}  # TODO pragma: no coverage
 
 
 @controller.route("/go/")
-class Test(Resource):
+class Test(Resource):  # TODO pragma: no coverage
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
     def get(self):
         """Localhost-only endpoint for logging in from the docs"""
@@ -109,7 +111,7 @@ class Test(Resource):
         return CommunitiesUser.find_or_create(1), User.find_by_id(1)
 
 
-@controller.route("/logout/")
+@controller.route("/signout/")
 class UserLogout(Resource):
     @controller.removes_authorization()
     def post(self):
@@ -119,7 +121,7 @@ class UserLogout(Resource):
 
 
 @controller.route("/password-reset/")
-class PasswordResetSender(Resource):
+class PasswordResetSender(Resource):  # TODO pragma: no coverage
     parser: RequestParser = RequestParser()
     parser.add_argument("email", required=True, help="User's email")
 
@@ -128,14 +130,14 @@ class PasswordResetSender(Resource):
     def post(self, email: str) -> bool:
         """First step of resetting password, tries sending a password-reset email by the address given"""
         user = User.find_by_email_address(email)
-        if user is not None and email != "admin@admin.admin":
+        if user is not None:
             send_code_email(email, EmailType.PASSWORD)
             return True
         return False
 
 
 @controller.route("/password-reset/confirm/")
-class PasswordReseter(Resource):
+class PasswordReseter(Resource):  # TODO pragma: no coverage
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True, help="Code sent in the email")
 

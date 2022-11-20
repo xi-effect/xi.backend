@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from flask import Flask
-
-from __lib__.flask_fullstack import (
+from flask_fullstack import (
     EventController as _EventController,
     PydanticModel,
-    SocketIO as _SocketIO,
 )
 
 
@@ -17,14 +14,3 @@ class EventController(_EventController):
 
 class EmptyBody(PydanticModel):
     pass
-
-
-class SocketIO(_SocketIO):
-    def __init__(
-        self,
-        app: Flask = None,
-        title: str = "SIO",
-        version: str = "1.0.0",
-        **kwargs,
-    ):
-        super().__init__(app, title, version, "/asyncapi.json", **kwargs)

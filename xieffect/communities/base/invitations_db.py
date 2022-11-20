@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.sqltypes import Integer, DateTime, String, Enum
 
-from common import PydanticModel, Identifiable, Base, db, app
+from common import Base, db, app
 from .meta_db import Community, ParticipantRole
 
 

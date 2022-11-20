@@ -1,0 +1,25 @@
+{
+  "type": "standard",
+  "name": "Sample Module",
+  "description": "Very cool sample words are also cool but kinda cold sad",
+  "theme": "random",
+  "difficulty": "difficult",
+  "category": "uncategorized",
+  "points": [
+    {
+      "type": "theory",
+      "pages": [
+        1,
+        2
+      ]
+    },
+    {
+      "type": "practice",
+      "pages": [
+        1,
+        2,
+        3
+      ]
+    }
+  ]
+}

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel, Identifiable
 from sqlalchemy import Column, select, ForeignKey, sql
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Text, DateTime
 
-from common import Base, db, User, PydanticModel, Identifiable
-from ..base.meta_db import Community
+from common import Base, db, User
+from ..base import Community
 
 
 class Post(Base, Identifiable):
@@ -37,7 +38,7 @@ class Post(Base, Identifiable):
     BaseModel = PydanticModel.column_model(id)
     CreationBaseModel = PydanticModel.column_model(title, description)
     IndexModel = BaseModel.column_model(
-        deleted, created, changed, community_id, user_id
+        created, changed, community_id, user_id
     ).combine_with(CreationBaseModel)
 
     @classmethod

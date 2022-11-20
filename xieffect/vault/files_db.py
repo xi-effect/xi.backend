@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from flask_fullstack import PydanticModel
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text
 
-from common import db, PydanticModel, Base, User
+from common import db, Base, User
 
 
 class File(Base):
@@ -15,7 +16,7 @@ class File(Base):
     name: str | Column = Column(Text, nullable=False)
 
     uploader_id: int | Column = Column(Integer, ForeignKey(User.id), nullable=False)
-    uploader: User | relationship = relationship(User)
+    uploader: User | relationship = relationship(User, foreign_keys=[uploader_id])
 
     @PydanticModel.include_columns(id)
     class FullModel(PydanticModel):
@@ -32,6 +33,11 @@ class File(Base):
     @classmethod
     def find_by_id(cls, entry_id: int) -> File | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
+
+    @classmethod
+    def find_by_ids(cls, entry_ids: list) -> list[File]:
+        stmt = select(cls).filter(cls.id.in_(entry_ids))
+        return db.session.get_all(stmt)
 
     @property
     def filename(self) -> str:

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from flask_fullstack import DuplexEvent, EventSpace
 from pydantic import BaseModel, Field
 
-from common import DuplexEvent, EventController, EventSpace, User, db
+from common import EventController, User, db
 from .meta_db import Community
 from .users_ext_db import CommunitiesUser
 
@@ -60,7 +61,7 @@ class CommunitiesEventSpace(EventSpace):
         target_index: int,
     ):
         cu = CommunitiesUser.find_or_create(user.id)
-        if not cu.reorder_community_list(community.id, target_index):
+        if not cu.reorder_community_list(community.id, target_index):  # TODO pragma: no coverage
             controller.abort(404, "Community not in the list")
 
         db.session.commit()  # TODO move inside controller's logic!

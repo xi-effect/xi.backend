@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from flask_fullstack import UserRole, PydanticModel, Identifiable
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
+from sqlalchemy.sql.sqltypes import DateTime
 
-from __lib__.flask_fullstack import UserRole, PydanticModel, Identifiable
 from ._core import Base, db  # noqa: WPS436
 
-DEFAULT_AVATAR: dict = {  # noqa: WPS407
+DEFAULT_AVATAR: dict = {  # noqa: WPS407  # TODO remove after front update
     "topType": 0,
     "accessoriesType": 0,
     "hairColor": 0,
@@ -56,16 +57,13 @@ class User(Base, UserRole, Identifiable):
 
     # Settings:
     username = Column(String(100), nullable=False)
-    dark_theme = Column(Boolean, nullable=False, default=True)
-    language = Column(String(20), nullable=False, default="russian")
+    handle = Column(String(100), nullable=True, unique=True, index=True)
 
     # profile:
     name = Column(String(100), nullable=True)
     surname = Column(String(100), nullable=True)
     patronymic = Column(String(100), nullable=True)
-    bio = Column(Text, nullable=True)
-    group = Column(String(100), nullable=True)
-    avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
+    birthday = Column(DateTime, nullable=True)
 
     # Education data:
     theory_level = Column(Float, nullable=False, default=0.5)
@@ -87,11 +85,23 @@ class User(Base, UserRole, Identifiable):
         "Invite", back_populates="invited"
     )  # TODO remove non-common reference
 
+    # TODO remove after front update
+    dark_theme = Column(Boolean, nullable=False, default=True)
+    language = Column(String(20), nullable=False, default="russian")
+    bio = Column(Text, nullable=True)
+    group = Column(String(100), nullable=True)
+    avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
+
+    MainData = PydanticModel.column_model(id, username, handle)
+    ProfileData = MainData.column_model(
+        email, email_confirmed, name, surname, patronymic, birthday, code
+    )
+
+    # TODO remove after front update
     IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
     FullProfile = IndexProfile.column_model(name, surname, patronymic, group)
-
-    MainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
-    FullData = MainData.column_model(
+    OldMainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
+    FullData = OldMainData.column_model(
         email, email_confirmed, avatar, code, name, surname, patronymic, bio, group
     )
 
@@ -99,18 +109,20 @@ class User(Base, UserRole, Identifiable):
         (field, field.replace("_", "-"))
         for field in (
             "username",
-            "dark_theme",
-            "language",
+            "handle",
+            "dark_theme",  # TODO remove after front update
+            "language",  # TODO remove after front update
             "name",
             "surname",
             "patronymic",
-            "bio",
-            "group",
-            "avatar",
+            "birthday",
+            "bio",  # TODO remove after front update
+            "group",  # TODO remove after front update
+            "avatar",  # TODO remove after front update
         )
     )
 
-    class RoleSettings(PydanticModel):
+    class RoleSettings(PydanticModel):  # TODO pragma: no coverage
         author_status: str
         moderator_status: bool
 
@@ -156,12 +168,12 @@ class User(Base, UserRole, Identifiable):
         return new_user
 
     @classmethod
-    def search_by_params(cls, session, offset: int, limit: int, **kwargs: str | None):
+    def search_by_params(cls, offset: int, limit: int, **kwargs: str | None):
         stmt = select(cls)
         for k, v in kwargs.items():
             if v is not None:
                 stmt = stmt.filter(getattr(cls, k).contains(v))
-        return session.get_paginated(stmt, offset, limit)
+        return db.session.get_paginated(stmt, offset, limit)
 
     @classmethod
     def search_by_username(
@@ -179,24 +191,23 @@ class User(Base, UserRole, Identifiable):
     def get_identity(self):
         return self.id
 
-    def change_email(self, new_email: str) -> bool:
+    def change_email(self, new_email: str) -> bool:  # TODO pragma: no coverage
         if User.find_by_email_address(new_email):
             return False
         self.email = new_email
         self.email_confirmed = False
         return True
 
-    def change_password(self, new_password: str) -> None:  # auto-commit
+    def change_password(self, new_password: str) -> None:  # TODO pragma: no coverage
         self.password = User.generate_hash(new_password)
 
     def change_settings(self, new_values: dict[str, str | int | bool]) -> None:
-        # auto-commit
         for attribute, field in self.CHANGEABLE_FIELDS:
             value = new_values.get(field)
             if value is not None:
                 setattr(self, attribute, value)
 
-    def author_status(self) -> str:
+    def author_status(self) -> str:  # TODO pragma: no coverage (with RoleModel)
         if self.author is None:
             return "not-yet"
         return "banned" if self.author.banned else "current"

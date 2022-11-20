@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from os import getenv
 
+from flask_fullstack import PydanticModel
 from itsdangerous.url_safe import URLSafeSerializer
 from sqlalchemy import Column, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String
 
-from common import Base, db, PydanticModel
+from common import Base, db
 
 
 class Invite(Base):

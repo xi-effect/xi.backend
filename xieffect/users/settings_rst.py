@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from flask_fullstack import password_parser
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
 
-from common import password_parser, ResourceController, User
+from common import ResourceController, User
 from other import create_email_confirmer, EmailType, send_code_email
 
 controller = ResourceController("settings", path="/")
@@ -24,7 +25,7 @@ class Settings(Resource):
     )
 
     @controller.jwt_authorizer(User)
-    @controller.marshal_with(User.FullData)
+    @controller.marshal_with(User.ProfileData)
     def get(self, user: User):
         """Loads user's own full settings"""
         return user
@@ -38,7 +39,7 @@ class Settings(Resource):
 
 
 @controller.route("/email-change/")
-class EmailChanger(Resource):
+class EmailChanger(Resource):  # TODO pragma: no coverage
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
         "new-email",
@@ -73,7 +74,7 @@ EmailChangeConfirmer = create_email_confirmer(
 
 
 @controller.route("/password-change/")
-class PasswordChanger(Resource):
+class PasswordChanger(Resource):  # TODO pragma: no coverage
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
         "new-password",

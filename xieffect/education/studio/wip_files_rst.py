@@ -5,10 +5,11 @@ from json import load as load_json
 from os import remove
 
 from flask import redirect, request, send_from_directory
+from flask_fullstack import counter_parser, get_or_pop
 from flask_restx import Model, Resource
 from flask_restx.fields import Integer
 
-from common import counter_parser, get_or_pop, ResourceController, ResponseDoc, User
+from common import ResourceController, ResponseDoc, User, open_file, absolute_path
 from .wip_files_db import JSONFile, WIPModule, WIPPage
 from ..authorship import Author
 from ..knowledge import Module, Page
@@ -29,7 +30,7 @@ class ImageAdder(Resource):
         """Creates a new wip-image, saves it and create a permanent url for it"""
         author_id: int = author.id
         image_id: int = author.get_next_image_id()
-        with open(f"../files/images/{author_id}-{image_id}.png", "wb") as f:
+        with open_file(f"files/images/{author_id}-{image_id}.png", "wb") as f:
             f.write(request.data)
         return {"author-id": author_id, "image-id": image_id}
 
@@ -47,14 +48,14 @@ class ImageProcessor(Resource):
     @wip_images_namespace.a_response()
     def put(self, author: Author, image_id: int) -> None:
         """Overwrites author's wip-image with request's body"""
-        with open(f"../files/images/{author.id}-{image_id}.png", "wb") as f:
+        with open_file(f"files/images/{author.id}-{image_id}.png", "wb") as f:
             f.write(request.data)
 
     @wip_images_namespace.jwt_authorizer(Author)
     @wip_images_namespace.a_response()
     def delete(self, author: Author, image_id: int) -> None:
         """Deletes author's wip-image, removes the permanent url"""
-        remove(f"../files/images/{author.id}-{image_id}.png")
+        remove(absolute_path(f"files/images/{author.id}-{image_id}.png"))
 
 
 @images_view_namespace.route("/<int:author_id>-<int:image_id>/")
@@ -63,7 +64,7 @@ class ImageViewer(Resource):
     @images_view_namespace.jwt_authorizer(User, check_only=True)
     def get(self, author_id: int, image_id: int):
         """Global loader for images uploaded by any author"""
-        return send_from_directory("../files/images/", f"{author_id}-{image_id}.png")
+        return send_from_directory(absolute_path("files/images/"), f"{author_id}-{image_id}.png")
 
 
 wip_json_file_namespace = ResourceController("wip-files", path="/wip/<file_type>/")
@@ -116,8 +117,8 @@ def file_getter(  # TODO # noqa: WPS231
                 if file.owner != (get_or_pop(kwargs, "author", use_author)).id:
                     return {"a": "Access denied"}, 403
                 if not type_only:
-                    return function(file=file, *args, **kwargs)
-            return function(file_type=result, *args, **kwargs)
+                    return function(*args, file=file, **kwargs)
+            return function(*args, file_type=result, **kwargs)
 
         return get_file_or_type
 
@@ -147,7 +148,7 @@ class FileProcessor(Resource):
     @file_getter(type_only=False)
     def get(self, file: JSONFile):
         """Loads author's wip-file's full contents"""
-        with open(file.get_link(), "rb") as f:
+        with open_file(file.get_link()) as f:
             return load_json(f)
 
     @wip_json_file_namespace.doc_file_param("json")
@@ -171,7 +172,7 @@ class FilePublisher(Resource):
     @wip_json_file_namespace.a_response()
     def post(self, file: JSONFile, author: Author) -> str:
         """Validates and then publishes author's wip-file"""
-        with open(file.get_link(), "rb") as f:
+        with open_file(file.get_link()) as f:
             content: dict = load_json(f)
             content["id"] = file.id  # just making sure
             klass = Page if isinstance(file, WIPPage) else Module

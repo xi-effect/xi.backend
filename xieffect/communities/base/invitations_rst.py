@@ -2,24 +2,25 @@ from __future__ import annotations
 
 from functools import wraps
 
+from flask_fullstack import PydanticModel, counter_parser
 from flask_restx import Resource
 
-from common import ResourceController, PydanticModel, counter_parser, User
+from common import ResourceController, User
 from .invitations_db import Invitation
-from .meta_db import Community, Participant
+from .meta_db import Community, Participant, ParticipantRole
 from .meta_sio import CommunitiesEventSpace
+from ..utils import check_participant
 
 controller = ResourceController("communities-invitation", path="/communities/")
 
 
 @controller.route("/<int:community_id>/invitations/index/")
 class InvitationLister(Resource):
-    @controller.jwt_authorizer(User, check_only=True)
+    @check_participant(controller, role=ParticipantRole.OWNER)
     @controller.argument_parser(counter_parser)
-    @controller.database_searcher(Community, check_only=True)
     @controller.lister(20, Invitation.IndexModel)
-    def post(self, community_id: int, start: int, finish: int):
-        return Invitation.find_by_community(community_id, start, finish - start)
+    def post(self, community: Community, start: int, finish: int):
+        return Invitation.find_by_community(community.id, start, finish - start)
 
 
 def check_invitation():  # TODO # noqa: WPS231
@@ -28,12 +29,12 @@ def check_invitation():  # TODO # noqa: WPS231
         @controller.doc_abort("400 ", "Invalid invitation")
         def check_invitation_inner(*args, **kwargs):
             code: str = kwargs.pop("code")
-            user: User = kwargs.get("user", None)
+            user: User = kwargs.get("user")
 
             invitation: Invitation = Invitation.find_by_code(code)
             if invitation is None:
                 controller.abort(400, "Invalid invitation")
-            elif (  # noqa: WPS337
+            if (  # noqa: WPS337
                 user is not None
                 and Participant.find_by_ids(invitation.community_id, user.id)
                 is not None
@@ -41,7 +42,7 @@ def check_invitation():  # TODO # noqa: WPS231
                 return function(
                     *args, invitation=None, community=invitation.community, **kwargs
                 )
-            elif invitation.is_invalid():
+            if invitation.is_invalid():
                 invitation.delete()
                 controller.abort(400, "Invalid invitation")
 

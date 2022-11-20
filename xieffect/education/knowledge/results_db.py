@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from flask_fullstack import JSONWithModel, PydanticModel
 from flask_restx import fields
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import JSONWithModel, Base, PydanticModel
+from common import Base
 from .interaction_db import TestModuleSession
 from .modules_db import Module
 
