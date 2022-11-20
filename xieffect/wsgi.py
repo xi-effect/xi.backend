@@ -46,7 +46,8 @@ if (  # noqa: WPS337
     application.debug = True
     if db_url.endswith("app.db"):
         db.drop_all()
-    db.create_all()
+    if not db_url.startswith("postgresql"):
+        db.create_all()
     with application.app_context():
         init_test_mod()
         db.session.commit()
