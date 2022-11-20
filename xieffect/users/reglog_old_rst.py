@@ -15,15 +15,15 @@ from .invites_db import Invite
 controller = ResourceController("reglog", path="/")
 
 
-@controller.route("/main/")
+@controller.route("/home/")
 class UserHome(Resource):
     @controller.jwt_authorizer(User)
-    @controller.marshal_with(CommunitiesUser.FullModel)
+    @controller.marshal_with(CommunitiesUser.OldFullModel)
     def get(self, user: User):
         return CommunitiesUser.find_or_create(user.id)
 
 
-@controller.route("/signup/")
+@controller.route("/reg/")
 class UserRegistration(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
@@ -47,7 +47,7 @@ class UserRegistration(Resource):
     @controller.doc_abort(400, "Malformed code (BadSignature)")
     @controller.doc_abort(404, "Invite not found")
     @controller.argument_parser(parser)
-    @controller.marshal_with_authorization(CommunitiesUser.TempModel)
+    @controller.marshal_with_authorization(CommunitiesUser.OldTempModel)
     def post(self, email: str, username: str, password: str, code: str):
         """Creates a new user if email is not used already, logs in automatically"""
         try:
@@ -79,7 +79,7 @@ EmailConfirmer = create_email_confirmer(
 )
 
 
-@controller.route("/signin/")
+@controller.route("/auth/")
 class UserLogin(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("email", required=True, help="User's email")
@@ -87,7 +87,7 @@ class UserLogin(Resource):
     @controller.doc_abort("200 ", "User doesn't exist")
     @controller.doc_abort(" 200", "Wrong password")
     @controller.argument_parser(parser)
-    @controller.marshal_with_authorization(CommunitiesUser.TempModel)
+    @controller.marshal_with_authorization(CommunitiesUser.OldTempModel)
     def post(self, email: str, password: str):
         """Tries to log in with credentials given"""
         user = User.find_by_email_address(email)
@@ -102,7 +102,7 @@ class UserLogin(Resource):
 
 @controller.route("/go/")
 class Test(Resource):  # TODO pragma: no coverage
-    @controller.marshal_with_authorization(CommunitiesUser.TempModel)
+    @controller.marshal_with_authorization(CommunitiesUser.OldTempModel)
     def get(self):
         """Localhost-only endpoint for logging in from the docs"""
         if not current_app.debug:
@@ -111,7 +111,7 @@ class Test(Resource):  # TODO pragma: no coverage
         return CommunitiesUser.find_or_create(1), User.find_by_id(1)
 
 
-@controller.route("/signout/")
+@controller.route("/logout/")
 class UserLogout(Resource):
     @controller.removes_authorization()
     def post(self):

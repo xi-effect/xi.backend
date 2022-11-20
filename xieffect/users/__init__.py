@@ -6,3 +6,7 @@ from .profiles_rst import controller as users_namespace
 from .reglog_rst import controller as reglog_namespace
 from .settings_rst import controller as settings_namespace
 from .users_mub import controller as mub_users_namespace
+
+# TODO remove after front update
+from .profiles_rst import controller as users_old_namespace
+from .reglog_old_rst import controller as reglog_old_namespace

@@ -44,7 +44,7 @@ class Feedback(Base, Identifiable):
     FullModel = (
         PydanticModel
         .column_model(id, user_id, type, data)
-        .nest_model(User.FullData, "user")
+        .nest_model(User.ProfileData, "user")
         .nest_model(File.FullModel, "files", as_list=True)
     )
 
