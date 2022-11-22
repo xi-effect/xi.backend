@@ -15,6 +15,7 @@ from communities import (
     invitation_namespace,
     news_namespace,
     news_events,
+    role_namespace,
 )
 from education import (
     authors_namespace,
@@ -118,6 +119,8 @@ api.add_namespace(mub_super_namespace)
 api.add_namespace(emailer_qa_namespace)
 api.add_namespace(mub_users_namespace)
 api.add_namespace(invites_mub_namespace)
+
+api.add_namespace(role_namespace)
 
 socketio = SocketIO(
     app,

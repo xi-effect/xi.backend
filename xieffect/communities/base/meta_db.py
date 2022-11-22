@@ -44,14 +44,16 @@ class ParticipantRole(TypeEnum):
     OWNER = 4
 
 
-class Participant(Base):
+class Participant(Base, Identifiable):
     __tablename__ = "community_participant"
 
-    community_id = Column(Integer, ForeignKey(Community.id), primary_key=True)
-    user_id = Column(Integer, ForeignKey(User.id), primary_key=True)
+    id = Column(Integer, primary_key=True)
+    community_id = Column(Integer, ForeignKey(Community.id))
+    user_id = Column(Integer, ForeignKey(User.id))
     user = relationship("User")
 
     role = Column(Enum(ParticipantRole), nullable=False)
+
 
     @classmethod
     def create(cls, community_id: int, user_id: int, role: ParticipantRole):

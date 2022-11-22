@@ -2,11 +2,11 @@
 -r xieffect/requirements.txt
 
 # Random (dev)
-lorem
-requests
+lorem~=0.1.1
+requests~=2.28.1
 
 # Testing (dev)
-pytest
+pytest~=7.2.0
 pytest-order
 coverage
 pytest-cov
@@ -81,3 +81,10 @@ flake8-print
 # TODO hacking
 # TODO flakehell
 flake8-pylint  # TODO use raw lib, not wrapper? https://github.com/PyCQA/pylint/
+
+Flask~=2.1.3
+Werkzeug~=2.0.2
+itsdangerous~=2.1.2
+SQLAlchemy~=1.4.44
+click~=8.1.3
+pydantic~=1.9.2
