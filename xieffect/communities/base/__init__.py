@@ -6,3 +6,4 @@ from .meta_sio import controller as communities_meta_events
 from .users_ext_db import CommunitiesUser
 from .role_db import Role
 from .role_rst import controller as role_namespace
+from .role_sio import controller as role_events

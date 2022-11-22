@@ -1,6 +1,5 @@
-from flask_fullstack import Identifiable, PydanticModel
-from flask_fullstack import TypeEnum
-from sqlalchemy import Column, ForeignKey, select
+from flask_fullstack import Identifiable, PydanticModel, TypeEnum
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 from typing import TypeVar
