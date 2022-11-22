@@ -1,6 +1,7 @@
 from .base import (
     communities_namespace,
     invitation_namespace,
+    role_namespace,
     communities_meta_events,
     invitation_events,
 )
