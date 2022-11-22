@@ -36,7 +36,7 @@ def test_user_profile(client: FlaskClient):
         "handle": "petrovich",
     }
 
-    check_code(client.post("/settings/", json={"changed": new_settings}))
+    check_code(client.post("/settings/", json=new_settings))
     data: dict = check_code(client.get("/users/1/profile"))
 
     for key, value in new_settings.items():

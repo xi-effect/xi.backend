@@ -15,6 +15,6 @@ def test_missing_module(client: FlaskClient):
     check_code(client.post("/modules/-1/report/", json={"reason": "It's so negative!"}), 404, get_json=False)
 
 
-@mark.order(302)
+@mark.skip
 def test_incomplete_request(client: FlaskClient):
     check_code(client.post("/settings/"), 400, get_json=False)

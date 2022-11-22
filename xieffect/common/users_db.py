@@ -6,8 +6,9 @@ from flask_fullstack import UserRole, PydanticModel, Identifiable
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
-from sqlalchemy.sql.sqltypes import DateTime
+from sqlalchemy.sql.sqltypes import (
+    Integer, String, Boolean, Float, Text, JSON, Date
+)
 
 from ._core import Base, db  # noqa: WPS436
 
@@ -63,7 +64,7 @@ class User(Base, UserRole, Identifiable):
     name = Column(String(100), nullable=True)
     surname = Column(String(100), nullable=True)
     patronymic = Column(String(100), nullable=True)
-    birthday = Column(DateTime, nullable=True)
+    birthday = Column(Date, nullable=True)
 
     # Education data:
     theory_level = Column(Float, nullable=False, default=0.5)
@@ -89,37 +90,17 @@ class User(Base, UserRole, Identifiable):
     dark_theme = Column(Boolean, nullable=False, default=True)
     language = Column(String(20), nullable=False, default="russian")
     bio = Column(Text, nullable=True)
-    group = Column(String(100), nullable=True)
     avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
 
     MainData = PydanticModel.column_model(id, username, handle)
-    ProfileData = MainData.column_model(
-        email, email_confirmed, name, surname, patronymic, birthday, code
-    )
+    SettingData = MainData.column_model(name, surname, patronymic, birthday, code)
+    ProfileData = SettingData.column_model(email, email_confirmed)
 
     # TODO remove after front update
     IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
-    FullProfile = IndexProfile.column_model(name, surname, patronymic, group)
     OldMainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
     FullData = OldMainData.column_model(
-        email, email_confirmed, avatar, code, name, surname, patronymic, bio, group
-    )
-
-    CHANGEABLE_FIELDS = tuple(
-        (field, field.replace("_", "-"))
-        for field in (
-            "username",
-            "handle",
-            "dark_theme",  # TODO remove after front update
-            "language",  # TODO remove after front update
-            "name",
-            "surname",
-            "patronymic",
-            "birthday",
-            "bio",  # TODO remove after front update
-            "group",  # TODO remove after front update
-            "avatar",  # TODO remove after front update
-        )
+        email, email_confirmed, avatar, code, name, surname, patronymic, bio
     )
 
     class RoleSettings(PydanticModel):  # TODO pragma: no coverage
@@ -201,11 +182,10 @@ class User(Base, UserRole, Identifiable):
     def change_password(self, new_password: str) -> None:  # TODO pragma: no coverage
         self.password = User.generate_hash(new_password)
 
-    def change_settings(self, new_values: dict[str, str | int | bool]) -> None:
-        for attribute, field in self.CHANGEABLE_FIELDS:
-            value = new_values.get(field)
+    def change_settings(self, **new_values) -> None:
+        for key, value in new_values.items():
             if value is not None:
-                setattr(self, attribute, value)
+                setattr(self, key, value)
 
     def author_status(self) -> str:  # TODO pragma: no coverage (with RoleModel)
         if self.author is None:
