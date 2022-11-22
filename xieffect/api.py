@@ -17,6 +17,7 @@ from communities import (
     news_namespace,
     news_events,
     role_namespace,
+    role_events,
     tasks_namespace,
     tasks_events,
     videochat_events,
@@ -148,6 +149,7 @@ socketio.add_namespace(
     news_events,
     tasks_events,
     videochat_events,
+    role_events,
     protected=True
 )
 
