@@ -15,7 +15,7 @@ from .invites_db import Invite
 controller = ResourceController("reglog", path="/")
 
 
-@controller.route("/main/")
+@controller.route("/home/")
 class UserHome(Resource):
     @controller.jwt_authorizer(User)
     @controller.marshal_with(CommunitiesUser.FullModel)

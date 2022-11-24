@@ -1,28 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from flask_fullstack import UserRole, PydanticModel, Identifiable
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Text, JSON
-from sqlalchemy.sql.sqltypes import DateTime
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Date
 
 from ._core import Base, db  # noqa: WPS436
-
-DEFAULT_AVATAR: dict = {  # noqa: WPS407  # TODO remove after front update
-    "topType": 0,
-    "accessoriesType": 0,
-    "hairColor": 0,
-    "facialHairType": 0,
-    "clotheType": 0,
-    "eyeType": 0,
-    "eyebrowType": 0,
-    "mouthType": 0,
-    "skinColor": 0,
-    "bgcolor": 0,
-}
 
 
 class BlockedToken(Base):
@@ -63,7 +47,7 @@ class User(Base, UserRole, Identifiable):
     name = Column(String(100), nullable=True)
     surname = Column(String(100), nullable=True)
     patronymic = Column(String(100), nullable=True)
-    birthday = Column(DateTime, nullable=True)
+    birthday = Column(Date, nullable=True)
 
     # Education data:
     theory_level = Column(Float, nullable=False, default=0.5)
@@ -85,53 +69,10 @@ class User(Base, UserRole, Identifiable):
         "Invite", back_populates="invited"
     )  # TODO remove non-common reference
 
-    # TODO remove after front update
-    dark_theme = Column(Boolean, nullable=False, default=True)
-    language = Column(String(20), nullable=False, default="russian")
-    bio = Column(Text, nullable=True)
-    group = Column(String(100), nullable=True)
-    avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
-
     MainData = PydanticModel.column_model(id, username, handle)
     ProfileData = MainData.column_model(
         email, email_confirmed, name, surname, patronymic, birthday, code
     )
-
-    # TODO remove after front update
-    IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
-    FullProfile = IndexProfile.column_model(name, surname, patronymic, group)
-    OldMainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
-    FullData = OldMainData.column_model(
-        email, email_confirmed, avatar, code, name, surname, patronymic, bio, group
-    )
-
-    CHANGEABLE_FIELDS = tuple(
-        (field, field.replace("_", "-"))
-        for field in (
-            "username",
-            "handle",
-            "dark_theme",  # TODO remove after front update
-            "language",  # TODO remove after front update
-            "name",
-            "surname",
-            "patronymic",
-            "birthday",
-            "bio",  # TODO remove after front update
-            "group",  # TODO remove after front update
-            "avatar",  # TODO remove after front update
-        )
-    )
-
-    class RoleSettings(PydanticModel):  # TODO pragma: no coverage
-        author_status: str
-        moderator_status: bool
-
-        @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: User, **_) -> None:
-            callback(
-                author_status=orm_object.author_status(),
-                moderator_status=orm_object.moderator is not None,
-            )
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> User | None:
@@ -140,6 +81,10 @@ class User(Base, UserRole, Identifiable):
     @classmethod
     def find_by_identity(cls, identity: int) -> User | None:
         return cls.find_by_id(identity)
+
+    @classmethod
+    def find_by_handle(cls, handle: str) -> User | None:
+        return db.session.get_first(select(cls).filter_by(handle=handle))
 
     @classmethod
     def find_by_email_address(cls, email) -> User | None:
@@ -191,26 +136,17 @@ class User(Base, UserRole, Identifiable):
     def get_identity(self):
         return self.id
 
-    def change_email(self, new_email: str) -> bool:  # TODO pragma: no coverage
-        if User.find_by_email_address(new_email):
-            return False
+    def change_email(self, new_email: str) -> None:
         self.email = new_email
         self.email_confirmed = False
-        return True
 
-    def change_password(self, new_password: str) -> None:  # TODO pragma: no coverage
+    def change_password(self, new_password: str) -> None:
         self.password = User.generate_hash(new_password)
 
-    def change_settings(self, new_values: dict[str, str | int | bool]) -> None:
-        for attribute, field in self.CHANGEABLE_FIELDS:
-            value = new_values.get(field)
+    def change_settings(self, **new_values) -> None:
+        for key, value in new_values.items():
             if value is not None:
-                setattr(self, attribute, value)
-
-    def author_status(self) -> str:  # TODO pragma: no coverage (with RoleModel)
-        if self.author is None:
-            return "not-yet"
-        return "banned" if self.author.banned else "current"
+                setattr(self, key, value)
 
 
 UserRole.default_role = User

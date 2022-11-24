@@ -1,28 +1,26 @@
 from __future__ import annotations
 
 from flask_fullstack import password_parser
-from flask_restx import Resource
+from flask_restx import Resource, inputs
 from flask_restx.reqparse import RequestParser
 
+from vault import File
 from common import ResourceController, User
 from other import create_email_confirmer, EmailType, send_code_email
+from communities.base.users_ext_db import CommunitiesUser
 
-controller = ResourceController("settings", path="/")
-
-
-def changes(value):
-    return dict(value)
+controller = ResourceController("settings", path="/users/me/")
 
 
-@controller.route("/settings/")
+@controller.route("/profile/")
 class Settings(Resource):
     parser: RequestParser = RequestParser()
-    parser.add_argument(
-        "changed",
-        type=changes,
-        required=True,
-        help="A dict of changed settings",
-    )
+    parser.add_argument("username", type=str, required=False)
+    parser.add_argument("handle", type=str, required=False)
+    parser.add_argument("name", type=str, required=False)
+    parser.add_argument("surname", type=str, required=False)
+    parser.add_argument("patronymic", type=str, required=False)
+    parser.add_argument("birthday", type=inputs.date_from_iso8601, required=False)
 
     @controller.jwt_authorizer(User)
     @controller.marshal_with(User.ProfileData)
@@ -30,16 +28,50 @@ class Settings(Resource):
         """Loads user's own full settings"""
         return user
 
+    @controller.doc_abort(200, "Handle already in use")
     @controller.jwt_authorizer(User)
-    @controller.argument_parser(parser)  # TODO fix with json schema validation
+    @controller.argument_parser(parser)
     @controller.a_response()
-    def post(self, user: User, changed: dict) -> None:
-        """Overwrites values in user's settings with ones form payload"""
-        user.change_settings(changed)
+    def post(
+        self,
+        user: User,
+        birthday: str | None,
+        handle: str | None,
+        **kwargs,
+    ) -> str:
+        if User.find_by_handle(handle) is not None:
+            return "Handle already in use"
+        user.change_settings(birthday=birthday, handle=handle, **kwargs)
+        return "Success"
 
 
-@controller.route("/email-change/")
-class EmailChanger(Resource):  # TODO pragma: no coverage
+@controller.route("/avatar/")
+class AvatarChanger(Resource):
+    parser: RequestParser = RequestParser()
+    parser.add_argument(
+        "avatar-id",
+        dest="avatar_id",
+        required=False,
+        type=int,
+    )
+
+    @controller.jwt_authorizer(User)
+    @controller.argument_parser(parser)
+    @controller.database_searcher(File, input_field_name="avatar_id")
+    @controller.a_response()
+    def post(self, user: User, file: File) -> None:
+        profile = CommunitiesUser.find_by_id(user.id)
+        profile.avatar_id = file.id
+
+    @controller.jwt_authorizer(User)
+    @controller.a_response()
+    def delete(self, user: User) -> None:
+        user = CommunitiesUser.find_by_id(user.id)
+        user.avatar.delete()
+
+
+@controller.route("/email/")
+class EmailChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
         "new-email",
@@ -73,8 +105,8 @@ EmailChangeConfirmer = create_email_confirmer(
 )
 
 
-@controller.route("/password-change/")
-class PasswordChanger(Resource):  # TODO pragma: no coverage
+@controller.route("/password/")
+class PasswordChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
         "new-password",

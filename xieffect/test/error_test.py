@@ -16,5 +16,5 @@ def test_missing_module(client: FlaskClient):
 
 
 @mark.order(302)
-def test_incomplete_request(client: FlaskClient):
-    check_code(client.post("/settings/"), 400, get_json=False)
+def test_incomplete_request(base_client: FlaskClient):
+    check_code(base_client.post("/signup/"), 400, get_json=False)
