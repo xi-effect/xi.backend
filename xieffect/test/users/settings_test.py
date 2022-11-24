@@ -3,12 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from flask.testing import FlaskClient
 from flask_fullstack import check_code
-from flask_mail import Message
-from pytest import mark, skip
+from pytest import mark
 
-from common import mail, mail_initialized
 from .feedback_test import assert_message
-from other import EmailType
 from vault import File
 from ..vault_test import upload
 from wsgi import TEST_EMAIL, BASIC_PASS
@@ -62,78 +59,51 @@ def test_changing_settings(
     result_settings = check_code(client.get("/users/me/profile/"))
     assert all(result_settings[key] == setting for key, setting in old_settings.items())
 
-    # Check changing password
-    data = (
-        ("WRONGPASS", "NEW_PASS", "Wrong password"),
-        (BASIC_PASS, "NEW_PASS", "Success"),
-        ("NEW_PASS", BASIC_PASS, "Success"),
-    )
-    for password, new_pass, message in data:
-        pass_data = {"password": password, "new-password": new_pass}
-        assert_message(client, "/users/me/password/", message, **pass_data)
-
 
 @mark.order(107)
-def test_user_avatar(client: FlaskClient, multi_client: Callable[[str], FlaskClient]):
-    client2 = multi_client(TEST_EMAIL2)
-    user, user2 = [
-        check_code(key.get("/users/me/profile/")) for key in (client, client2)
-    ]
-    for result in (user, user2):
-        assert isinstance(result, dict)
-        assert isinstance(result.get("id"), int)
+def test_user_avatar(client: FlaskClient):
+    user = check_code(client.get("/users/me/profile/"))
+    assert isinstance(user, dict) and isinstance(user.get("id"), int)
 
     file_id = upload(client, "sample-page.json")[0].get("id")
     file = File.find_by_id(file_id)
     assert user.get("id") == file.uploader_id
-    assert user2.get("id") != file.uploader_id
 
-    data = ((client, 200, True), (client2, 404, "File doesn't exist"))
-    avatar = {"avatar-id": file_id}
-    for user, code, message in data:
-        assert_message(user, "/users/me/avatar/", message, code, **avatar)
+    data = ((200, True, file_id), (404, "File not found", file_id+1))
+    for code, message, file in data:
+        avatar = {"avatar-id": file}
+        assert_message(client, "/users/me/avatar/", message, code, **avatar)
 
-    main: dict = check_code(client.get("/main/"))
+    main: dict = check_code(client.get("/home/"))
     assert (main_avatar := main.get("avatar")) is not None
     assert main_avatar.get("id") == file_id
 
     assert_message(
         client, "/users/me/avatar/", message=True, status=200, method="DELETE"
     )
-    assert check_code(client.get("/main/")).get("avatar") is None
+    assert check_code(client.get("/home/")).get("avatar") is None
 
 
 @mark.order(108)
-def test_changing_email(client: FlaskClient):
-    if not mail_initialized:  # TODO pragma: no coverage
-        skip("Email module is not setup")
+def test_changing_pass(client: FlaskClient):
+    pass_data = (
+        ("WRONGPASS", "NEW_PASS", "Wrong password"),
+        (BASIC_PASS, "NEW_PASS", "Success"),
+        ("NEW_PASS", BASIC_PASS, "Success"),
+    )
+    for password, new_pass, message in pass_data:
+        data = {"password": password, "new-password": new_pass}
+        assert_message(client, "/users/me/password/", message, **data)
 
-    with mail.record_messages() as outbox:
-        data = (
-            ("new@test.email", "WRONGPASS", "Wrong password"),
-            (TEST_EMAIL2, BASIC_PASS, "Email in use"),
-            ("new@test.email", BASIC_PASS, None),
-            (TEST_EMAIL, BASIC_PASS, None),
-        )
-        counter = 0
 
-        for email, password, message in data:
-            url, data = "/users/me/email/", {"new-email": email, "password": password}
-
-            if message is None:
-                mailer = check_code(client.post(url, json=data))
-                email_type = EmailType.CHANGE
-                counter += 1
-
-                assert len(mailer.get("a")) != 0
-                assert mail_initialized is not None
-                assert len(outbox) == counter
-
-                mail_message: Message = outbox[counter - 1]
-                assert mail_message.subject == email_type.theme
-
-                recipients = mail_message.recipients
-                assert len(recipients) == 1
-                assert recipients[0] == email
-            else:
-                assert_message(client, url, message, **data)
+@mark.order(109)
+def test_error_email(client: FlaskClient):
+    email_data = (
+        ("new@test.email", "WRONGPASS", "Wrong password"),
+        (TEST_EMAIL2, BASIC_PASS, "Email in use"),
+        ("new@test.email", BASIC_PASS, "Success"),
+        (TEST_EMAIL, BASIC_PASS, "Success"),
+    )
+    for email, password, message in email_data:
+        data = {"new-email": email, "password": password}
+        assert_message(client, "/users/me/email/", message, **data)

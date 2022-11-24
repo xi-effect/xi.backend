@@ -18,7 +18,7 @@ def assert_create_community(socketio_client: SocketIOTestClient, community_data:
 
 
 def get_communities_list(client: FlaskClient) -> list[dict]:
-    result = check_code(client.get("/main/")).get("communities")
+    result = check_code(client.get("/home/")).get("communities")
     assert isinstance(result, list)
     return result
 

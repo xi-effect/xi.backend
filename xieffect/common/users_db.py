@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from flask_fullstack import UserRole, PydanticModel, Identifiable
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
@@ -76,17 +74,6 @@ class User(Base, UserRole, Identifiable):
         email, email_confirmed, name, surname, patronymic, birthday, code
     )
 
-    class RoleSettings(PydanticModel):  # TODO pragma: no coverage
-        author_status: str
-        moderator_status: bool
-
-        @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: User, **_) -> None:
-            callback(
-                author_status=orm_object.author_status(),
-                moderator_status=orm_object.moderator is not None,
-            )
-
     @classmethod
     def find_by_id(cls, entry_id: int) -> User | None:
         return db.session.get_first(select(cls).filter_by(id=entry_id))
@@ -149,12 +136,9 @@ class User(Base, UserRole, Identifiable):
     def get_identity(self):
         return self.id
 
-    def change_email(self, new_email: str) -> bool:
-        if User.find_by_email_address(new_email):
-            return False
+    def change_email(self, new_email: str) -> None:
         self.email = new_email
         self.email_confirmed = False
-        return True
 
     def change_password(self, new_password: str) -> None:
         self.password = User.generate_hash(new_password)
@@ -163,11 +147,6 @@ class User(Base, UserRole, Identifiable):
         for key, value in new_values.items():
             if value is not None:
                 setattr(self, key, value)
-
-    def author_status(self) -> str:  # TODO pragma: no coverage (with RoleModel)
-        if self.author is None:
-            return "not-yet"
-        return "banned" if self.author.banned else "current"
 
 
 UserRole.default_role = User

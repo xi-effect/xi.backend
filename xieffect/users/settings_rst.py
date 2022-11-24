@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from datetime import date
 from flask_fullstack import password_parser
-from flask_restx import Resource
+from flask_restx import Resource, inputs
 from flask_restx.reqparse import RequestParser
 
 from vault import File
@@ -21,7 +20,7 @@ class Settings(Resource):
     parser.add_argument("name", type=str, required=False)
     parser.add_argument("surname", type=str, required=False)
     parser.add_argument("patronymic", type=str, required=False)
-    parser.add_argument("birthday", type=str, required=False)
+    parser.add_argument("birthday", type=inputs.date_from_iso8601, required=False)
 
     @controller.jwt_authorizer(User)
     @controller.marshal_with(User.ProfileData)
@@ -42,8 +41,6 @@ class Settings(Resource):
     ) -> str:
         if User.find_by_handle(handle) is not None:
             return "Handle already in use"
-        if birthday is not None:
-            birthday = date.fromisoformat(birthday)
         user.change_settings(birthday=birthday, handle=handle, **kwargs)
         return "Success"
 
@@ -58,16 +55,13 @@ class AvatarChanger(Resource):
         type=int,
     )
 
-    @controller.doc_abort(404, "File doesn't exist")
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
+    @controller.database_searcher(File, input_field_name="avatar_id")
     @controller.a_response()
-    def post(self, user: User, avatar_id: int) -> None:
-        file = File.find_by_id(avatar_id)
-        if file is None or file.uploader_id != user.id:
-            controller.abort(404, "File doesn't exist")
-        user = CommunitiesUser.find_by_id(user.id)
-        user.avatar_id = avatar_id
+    def post(self, user: User, file: File) -> None:
+        profile = CommunitiesUser.find_by_id(user.id)
+        profile.avatar_id = file.id
 
     @controller.jwt_authorizer(User)
     @controller.a_response()
@@ -101,8 +95,9 @@ class EmailChanger(Resource):
         if User.find_by_email_address(new_email):
             return "Email in use"
 
+        send_code_email(new_email, EmailType.CHANGE)
         user.change_email(new_email)  # close all other JWT sessions
-        return send_code_email(new_email, EmailType.CHANGE)
+        return "Success"
 
 
 EmailChangeConfirmer = create_email_confirmer(

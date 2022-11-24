@@ -77,7 +77,7 @@ def test_signup(base_client: FlaskClient):
     assert cookie[0] == "access_token_cookie"
 
     # Check the /home/ as well
-    response = check_code(base_client.get("/main/"))
+    response = check_code(base_client.get("/home/"))
     assert response == result
 
     check_code(base_client.post("/signout/"))

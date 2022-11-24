@@ -18,7 +18,7 @@ class CommunitiesUser(Base):
     user = relationship("User")
 
     avatar_id = Column(
-        Integer, ForeignKey("files.id", ondelete="cascade"), nullable=True
+        Integer, ForeignKey("files.id", ondelete="SET NULL"), nullable=True
     )
     avatar = relationship("File", foreign_keys=[avatar_id])
 
