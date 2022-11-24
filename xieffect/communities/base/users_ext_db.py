@@ -28,19 +28,6 @@ class CommunitiesUser(Base):
         collection_class=ordering_list("position"),
     )
 
-    @PydanticModel.include_nest_model(User.OldMainData, "user")  # TODO remove after front update
-    class OldFullModel(PydanticModel):
-        communities: list[Community.IndexModel]
-
-        @classmethod
-        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context):
-            callback(
-                communities=[
-                    Community.IndexModel.convert(ci.community, **context)
-                    for ci in orm_object.communities
-                ]
-            )
-
     @PydanticModel.include_flat_nest_model(User.MainData, "user")
     @PydanticModel.include_nest_model(File.FullModel, "avatar")
     class FullModel(PydanticModel):
@@ -54,9 +41,6 @@ class CommunitiesUser(Base):
                     for ci in orm_object.communities
                 ]
             )
-
-    class OldTempModel(OldFullModel):  # TODO remove after front update
-        a: str = "Success"
 
     class TempModel(FullModel):
         a: str = "Success"

@@ -30,7 +30,7 @@ def base_client():
 
 def base_login(client: FlaskClient, account: str, password: str, mub: bool = False) -> None:
     response: TestResponse = client.post(
-        "/mub/sign-in/" if mub else "/auth/",  # TODO change path to "/signin/"
+        "/mub/sign-in/" if mub else "/signin/",
         data={"username" if mub else "email": account, "password": password}
     )
     assert response.status_code == 200

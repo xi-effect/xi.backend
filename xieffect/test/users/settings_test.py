@@ -14,11 +14,12 @@ from ..vault_test import upload
 from wsgi import TEST_EMAIL, BASIC_PASS
 
 TEST_EMAIL2 = "2@user.user"
-TEST_PASS = "NEW_PASS"
 
 
 @mark.order(106)
-def test_changing_settings(client: FlaskClient, multi_client: Callable[[str], FlaskClient]):
+def test_changing_settings(
+    client: FlaskClient, multi_client: Callable[[str], FlaskClient]
+):
 
     # Check getting settings
     old_settings: dict = check_code(client.get("/users/me/profile/"))
@@ -33,7 +34,9 @@ def test_changing_settings(client: FlaskClient, multi_client: Callable[[str], Fl
         "patronymic": "Thebestovich",
         "birthday": "2011-12-19",
     }
-    assert all(old_settings.get(key) != setting for key, setting in new_settings.items())
+    assert all(
+        old_settings.get(key) != setting for key, setting in new_settings.items()
+    )
 
     # Check changing settings
     check_code(client.post("/users/me/profile/", json=new_settings))
@@ -44,20 +47,26 @@ def test_changing_settings(client: FlaskClient, multi_client: Callable[[str], Fl
     # Check handle error
     client2 = multi_client(TEST_EMAIL2)
     assert_message(
-        client2, "/users/me/profile/", "Handle already in use", handle=new_settings["handle"]
+        client2,
+        "/users/me/profile/",
+        "Handle already in use",
+        handle=new_settings["handle"],
     )
 
-    check_code(client.post("/users/me/profile/", json={
-        key: old_settings.get(key) for key in new_settings.keys()
-    }))
+    check_code(
+        client.post(
+            "/users/me/profile/",
+            json={key: old_settings.get(key) for key in new_settings.keys()},
+        )
+    )
     result_settings = check_code(client.get("/users/me/profile/"))
     assert all(result_settings[key] == setting for key, setting in old_settings.items())
 
     # Check changing password
     data = (
-        ("WRONGPASS", TEST_PASS, "Wrong password"),
-        (BASIC_PASS, TEST_PASS, "Success"),
-        (TEST_PASS, BASIC_PASS, "Success"),
+        ("WRONGPASS", "NEW_PASS", "Wrong password"),
+        (BASIC_PASS, "NEW_PASS", "Success"),
+        ("NEW_PASS", BASIC_PASS, "Success"),
     )
     for password, new_pass, message in data:
         pass_data = {"password": password, "new-password": new_pass}
@@ -67,7 +76,9 @@ def test_changing_settings(client: FlaskClient, multi_client: Callable[[str], Fl
 @mark.order(107)
 def test_user_avatar(client: FlaskClient, multi_client: Callable[[str], FlaskClient]):
     client2 = multi_client(TEST_EMAIL2)
-    user, user2 = [check_code(key.get("/users/me/profile/")) for key in (client, client2)]
+    user, user2 = [
+        check_code(key.get("/users/me/profile/")) for key in (client, client2)
+    ]
     for result in (user, user2):
         assert isinstance(result, dict)
         assert isinstance(result.get("id"), int)
@@ -78,20 +89,23 @@ def test_user_avatar(client: FlaskClient, multi_client: Callable[[str], FlaskCli
     assert user2.get("id") != file.uploader_id
 
     data = ((client, 200, True), (client2, 404, "File doesn't exist"))
+    avatar = {"avatar-id": file_id}
     for user, code, message in data:
-        assert_message(user, "/users/me/avatar/", message, code, **{"avatar-id": file_id})
+        assert_message(user, "/users/me/avatar/", message, code, **avatar)
 
     main: dict = check_code(client.get("/main/"))
     assert (main_avatar := main.get("avatar")) is not None
     assert main_avatar.get("id") == file_id
 
-    assert_message(client, "/users/me/avatar/", True, 200, "DELETE")
+    assert_message(
+        client, "/users/me/avatar/", message=True, status=200, method="DELETE"
+    )
     assert check_code(client.get("/main/")).get("avatar") is None
 
 
 @mark.order(108)
 def test_changing_email(client: FlaskClient):
-    if not mail_initialized:
+    if not mail_initialized:  # TODO pragma: no coverage
         skip("Email module is not setup")
 
     with mail.record_messages() as outbox:
@@ -123,39 +137,3 @@ def test_changing_email(client: FlaskClient):
                 assert recipients[0] == email
             else:
                 assert_message(client, url, message, **data)
-
-
-@mark.skip
-def test_old_getting_settings(client: FlaskClient):  # TODO remove after front update
-    data: dict = check_code(client.get("/settings/"))
-    for key in ("email", "email-confirmed", "username", "dark-theme", "language"):
-        assert key in data
-
-
-@mark.skip
-def test_old_changing_settings(client: FlaskClient):  # TODO remove after front update
-    new_settings = {
-        "username": "hey",
-        "dark-theme": False,
-        "avatar": {
-            "cool": "avatar",
-            "hello": "world",
-        },
-    }
-
-    old_settings = check_code(client.get("/settings/"))
-    assert all(old_settings.get(key) != setting for key, setting in new_settings.items())
-
-    check_code(client.post("/settings/", json={"changed": new_settings}))
-
-    result_settings = check_code(client.get("/settings/"))
-    for key, setting in new_settings.items():
-        assert result_settings[key] == setting, key
-
-    check_code(client.post("/settings/", json={
-        "changed": {
-            key: old_settings.get(key) for key in new_settings.keys()
-        }
-    }))
-    result_settings = check_code(client.get("/settings/"))
-    assert all(result_settings[key] == setting for key, setting in old_settings.items())

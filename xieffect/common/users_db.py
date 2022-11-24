@@ -6,24 +6,9 @@ from flask_fullstack import UserRole, PydanticModel, Identifiable
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import (
-    Integer, String, Boolean, Float, Text, JSON, Date
-)
+from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Date
 
 from ._core import Base, db  # noqa: WPS436
-
-DEFAULT_AVATAR: dict = {  # noqa: WPS407  # TODO remove after front update
-    "topType": 0,
-    "accessoriesType": 0,
-    "hairColor": 0,
-    "facialHairType": 0,
-    "clotheType": 0,
-    "eyeType": 0,
-    "eyebrowType": 0,
-    "mouthType": 0,
-    "skinColor": 0,
-    "bgcolor": 0,
-}
 
 
 class BlockedToken(Base):
@@ -86,22 +71,9 @@ class User(Base, UserRole, Identifiable):
         "Invite", back_populates="invited"
     )  # TODO remove non-common reference
 
-    # TODO remove after front update
-    dark_theme = Column(Boolean, nullable=False, default=True)
-    language = Column(String(20), nullable=False, default="russian")
-    bio = Column(Text, nullable=True)
-    avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
-
     MainData = PydanticModel.column_model(id, username, handle)
     ProfileData = MainData.column_model(
         email, email_confirmed, name, surname, patronymic, birthday, code
-    )
-
-    # TODO remove after front update
-    IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
-    OldMainData = PydanticModel.column_model(id, username, dark_theme, language, avatar)
-    FullData = OldMainData.column_model(
-        email, email_confirmed, avatar, code, name, surname, patronymic, bio
     )
 
     class RoleSettings(PydanticModel):  # TODO pragma: no coverage
@@ -177,14 +149,14 @@ class User(Base, UserRole, Identifiable):
     def get_identity(self):
         return self.id
 
-    def change_email(self, new_email: str) -> bool:  # TODO pragma: no coverage
+    def change_email(self, new_email: str) -> bool:
         if User.find_by_email_address(new_email):
             return False
         self.email = new_email
         self.email_confirmed = False
         return True
 
-    def change_password(self, new_password: str) -> None:  # TODO pragma: no coverage
+    def change_password(self, new_password: str) -> None:
         self.password = User.generate_hash(new_password)
 
     def change_settings(self, **new_values) -> None:
