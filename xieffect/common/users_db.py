@@ -93,8 +93,9 @@ class User(Base, UserRole, Identifiable):
     avatar = Column(JSON, nullable=False, default=DEFAULT_AVATAR)
 
     MainData = PydanticModel.column_model(id, username, handle)
-    SettingData = MainData.column_model(name, surname, patronymic, birthday, code)
-    ProfileData = SettingData.column_model(email, email_confirmed)
+    ProfileData = MainData.column_model(
+        email, email_confirmed, name, surname, patronymic, birthday, code
+    )
 
     # TODO remove after front update
     IndexProfile = PydanticModel.column_model(id, username, bio, avatar)
@@ -121,6 +122,10 @@ class User(Base, UserRole, Identifiable):
     @classmethod
     def find_by_identity(cls, identity: int) -> User | None:
         return cls.find_by_id(identity)
+
+    @classmethod
+    def find_by_handle(cls, handle: str) -> User | None:
+        return db.session.get_first(select(cls).filter_by(handle=handle))
 
     @classmethod
     def find_by_email_address(cls, email) -> User | None:

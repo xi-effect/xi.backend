@@ -29,11 +29,3 @@ class ProfileViewer(Resource):
     def get(self, profile_viewer: User):
         """Get profile"""
         return profile_viewer
-
-
-@controller.route("/me/profile/")
-class UserProfile(Resource):
-    @controller.jwt_authorizer(User)
-    @controller.marshal_with(User.ProfileData)
-    def get(self, user: User):
-        return user

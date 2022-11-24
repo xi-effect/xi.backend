@@ -8,9 +8,9 @@ from flask.testing import FlaskClient
 from flask_fullstack import check_code
 
 from common import open_file
-from ..outside_test import TEST_CREDENTIALS
 
 
+@mark.order(100)
 def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     with open_file("static/test/user-bundle.json") as f:
         usernames = [user_data["username"] for user_data in load_json(f)]
@@ -28,6 +28,7 @@ def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
             raise AssertionError(f"{username} not found")
 
 
+@mark.order(101)
 def test_user_profile(client: FlaskClient):
     new_settings: dict[str, str] = {
         "name": "Danila",
@@ -36,18 +37,12 @@ def test_user_profile(client: FlaskClient):
         "handle": "petrovich",
     }
 
-    check_code(client.post("/settings/", json=new_settings))
+    check_code(client.post("/users/me/profile/", json=new_settings))
     data: dict = check_code(client.get("/users/1/profile"))
 
     for key, value in new_settings.items():
         assert key in data
         assert data[key] == value
-
-    login_id = check_code(client.post("/signin/", json=TEST_CREDENTIALS)).get("id")
-    profile_id = check_code(client.get("/users/me/profile/")).get("id")
-    for user_id in (login_id, profile_id):
-        assert isinstance(user_id, int)
-    assert login_id == profile_id
 
 
 @mark.skip

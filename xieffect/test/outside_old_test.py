@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
 from flask_mail import Message
-from pytest import skip
+from pytest import mark, skip
 from werkzeug.test import TestResponse
 
 from common import mail, mail_initialized
@@ -14,6 +14,7 @@ from .conftest import BASIC_PASS, TEST_EMAIL, SocketIOTestClient
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
 
 
+@mark.order(2)
 def test_login(base_client: FlaskClient):
     response: TestResponse = check_code(base_client.post("/auth/", json=TEST_CREDENTIALS), get_json=False)
 
@@ -31,6 +32,7 @@ def test_login(base_client: FlaskClient):
     check_code(base_client.post("/logout/"))
 
 
+@mark.order(3)
 def test_signup(base_client: FlaskClient):
     credentials = {"email": "hey@old.hey", "password": "12345", "username": "hey_old"}
     default_data = {"username": credentials["username"], "dark-theme": True, "language": "russian"}
@@ -74,6 +76,7 @@ def test_signup(base_client: FlaskClient):
     check_code(base_client.post("/logout/"))
 
 
+@mark.order(17)
 def test_email_confirm(base_client: FlaskClient):  # TODO pragma: no coverage (action)
     if not mail_initialized:  # TODO pragma: no coverage
         skip("Email module is not setup")
@@ -105,18 +108,20 @@ def test_email_confirm(base_client: FlaskClient):  # TODO pragma: no coverage (a
         assert len(recipients) == 1
         assert recipients[0] == credentials["email"]
 
-    assert check_code(base_client.get("/users/me/profile")).get("email-confirmed") is False
+    assert check_code(base_client.get("/users/me/profile/")).get("email-confirmed") is False
     assert check_code(base_client.post(f"/email-confirm/{code}/"))["a"] == "Success"
-    assert check_code(base_client.get("/users/me/profile")).get("email-confirmed") is True
+    assert check_code(base_client.get("/users/me/profile/")).get("email-confirmed") is True
 
     check_code(base_client.post("/logout/"))
 
 
+@mark.order(18)
 def test_sio_connection(client: FlaskClient):
     sio_client = SocketIOTestClient(client)
     assert sio_client.connected.get("/") is True
 
 
+@mark.order(19)
 def test_sio_unauthorized(base_client: FlaskClient):
     sio_client = SocketIOTestClient(base_client)
     assert sio_client.connected.get("/") is False

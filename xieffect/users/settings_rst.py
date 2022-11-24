@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date
 from flask_fullstack import password_parser
 from flask_restx import Resource
 from flask_restx.reqparse import RequestParser
@@ -10,10 +10,10 @@ from common import ResourceController, User
 from other import create_email_confirmer, EmailType, send_code_email
 from communities.base.users_ext_db import CommunitiesUser
 
-controller = ResourceController("settings", path="/")
+controller = ResourceController("settings", path="/users/me/")
 
 
-@controller.route("/settings/")
+@controller.route("/profile/")
 class Settings(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("username", type=str, required=False)
@@ -24,34 +24,28 @@ class Settings(Resource):
     parser.add_argument("birthday", type=str, required=False)
 
     @controller.jwt_authorizer(User)
-    @controller.marshal_with(User.SettingData)
+    @controller.marshal_with(User.ProfileData)
     def get(self, user: User):
         """Loads user's own full settings"""
         return user
 
+    @controller.doc_abort(200, "Handle already in use")
     @controller.jwt_authorizer(User)
-    @controller.argument_parser(parser)  # TODO fix with json schema validation
+    @controller.argument_parser(parser)
     @controller.a_response()
     def post(
         self,
         user: User,
-        username: str | None,
-        handle: str | None,
-        name: str | None,
-        surname: str | None,
-        patronymic: str | None,
         birthday: str | None,
-    ) -> None:
+        handle: str | None,
+        **kwargs,
+    ) -> str:
+        if User.find_by_handle(handle) is not None:
+            return "Handle already in use"
         if birthday is not None:
-            birthday = datetime.fromisoformat(birthday)
-        user.change_settings(
-            username=username,
-            handle=handle,
-            name=name,
-            surname=surname,
-            patronymic=patronymic,
-            birthday=birthday,
-        )
+            birthday = date.fromisoformat(birthday)
+        user.change_settings(birthday=birthday, handle=handle, **kwargs)
+        return "Success"
 
 
 @controller.route("/avatar/")
@@ -64,31 +58,26 @@ class AvatarChanger(Resource):
         type=int,
     )
 
-    @controller.doc_abort(200, "Success")
     @controller.doc_abort(404, "File doesn't exist")
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
     @controller.a_response()
-    def post(self, user: User, avatar_id: int):
+    def post(self, user: User, avatar_id: int) -> None:
         file = File.find_by_id(avatar_id)
         if file is None or file.uploader_id != user.id:
             controller.abort(404, "File doesn't exist")
         user = CommunitiesUser.find_by_id(user.id)
         user.avatar_id = avatar_id
-        return "Success"
 
-    @controller.doc_abort(200, "Success")
     @controller.jwt_authorizer(User)
     @controller.a_response()
-    def delete(self, user: User):
+    def delete(self, user: User) -> None:
         user = CommunitiesUser.find_by_id(user.id)
-        file = File.find_by_id(user.avatar_id)
-        file.delete()
-        return "Success"
+        user.avatar.delete()
 
 
-@controller.route("/email-change/")
-class EmailChanger(Resource):  # TODO pragma: no coverage
+@controller.route("/email/")
+class EmailChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
         "new-email",
@@ -112,9 +101,8 @@ class EmailChanger(Resource):  # TODO pragma: no coverage
         if User.find_by_email_address(new_email):
             return "Email in use"
 
-        send_code_email(new_email, EmailType.CHANGE)
         user.change_email(new_email)  # close all other JWT sessions
-        return "Success"
+        return send_code_email(new_email, EmailType.CHANGE)
 
 
 EmailChangeConfirmer = create_email_confirmer(
@@ -122,8 +110,8 @@ EmailChangeConfirmer = create_email_confirmer(
 )
 
 
-@controller.route("/password-change/")
-class PasswordChanger(Resource):  # TODO pragma: no coverage
+@controller.route("/password/")
+class PasswordChanger(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument(
         "new-password",
