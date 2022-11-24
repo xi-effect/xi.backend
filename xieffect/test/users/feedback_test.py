@@ -26,6 +26,7 @@ def test_feedback(
     base_client: FlaskClient,
     client: FlaskClient,
     mod_client: FlaskClient,
+    test_user_id: int,
     list_tester,
 ):
     base_url, jsons = "/mub/feedback/", ("sample-page.json", "sample-page-2.json")
@@ -40,7 +41,7 @@ def test_feedback(
         (None, "Neither the user is authorized, nor the code is provided"),
         ("lol", "Bad code signature"),
         (generate_code(-1), "Code refers to non-existing user"),
-        (generate_code(1), "Success"),
+        (generate_code(test_user_id), "Success"),
     ]
     for code, message in create_data:
         data = dict(feedback, code=code)

@@ -29,7 +29,7 @@ def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
 
 
 @mark.order(101)
-def test_user_profile(client: FlaskClient):
+def test_user_profile(client: FlaskClient, test_user_id: int):
     new_settings: dict[str, str] = {
         "name": "Danila",
         "surname": "Petrov",
@@ -38,7 +38,7 @@ def test_user_profile(client: FlaskClient):
     }
 
     check_code(client.post("/users/me/profile/", json=new_settings))
-    data: dict = check_code(client.get("/users/1/profile"))
+    data: dict = check_code(client.get(f"/users/{test_user_id}/profile"))
 
     for key, value in new_settings.items():
         assert key in data
