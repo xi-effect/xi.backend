@@ -13,12 +13,23 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-from common.users_db import DEFAULT_AVATAR
-
 revision = 'ab118d9db832'
 down_revision = 'af277a67415b'
 branch_labels = None
 depends_on = None
+
+DEFAULT_AVATAR: dict = {  # noqa: WPS407
+    "topType": 0,
+    "accessoriesType": 0,
+    "hairColor": 0,
+    "facialHairType": 0,
+    "clotheType": 0,
+    "eyeType": 0,
+    "eyebrowType": 0,
+    "mouthType": 0,
+    "skinColor": 0,
+    "bgcolor": 0,
+}
 
 
 def upgrade():
