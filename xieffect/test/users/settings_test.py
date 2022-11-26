@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+
 from flask.testing import FlaskClient
 from flask_fullstack import check_code
 from pytest import mark
 
-from .feedback_test import assert_message
 from vault import File
-from ..vault_test import upload
 from wsgi import TEST_EMAIL, BASIC_PASS
+from .feedback_test import assert_message
+from ..vault_test import upload
 
 TEST_EMAIL2 = "2@user.user"
 
@@ -69,7 +70,7 @@ def test_user_avatar(client: FlaskClient):
     file = File.find_by_id(file_id)
     assert user.get("id") == file.uploader_id
 
-    data = ((200, True, file_id), (404, "File not found", file_id+1))
+    data = ((200, True, file_id), (404, "File not found", file_id + 1))
     for code, message, file in data:
         avatar = {"avatar-id": file}
         assert_message(client, "/users/me/avatar/", message, code, **avatar)

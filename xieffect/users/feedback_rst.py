@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from enum import Enum
 from functools import wraps
 from os import getenv
