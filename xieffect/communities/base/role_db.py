@@ -10,7 +10,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Enum
 from common import Base, db
 from communities.base import Community, Participant
 
-LimitingQuantityRoles: int = 50
+LimitingQuantityRoles = 50
 
 
 class PermissionTypes(TypeEnum):
@@ -32,13 +32,11 @@ class Role(Base, Identifiable):
     id = Column(Integer, primary_key=True)
     name = Column(String(32), nullable=False)
     color = Column(String(6), nullable=True)
-    community_id = Column(
-        Integer, ForeignKey(Community.id, ondelete="CASCADE")
-    )
+    community_id = Column(Integer, ForeignKey(Community.id, ondelete="CASCADE"))
 
     BaseModel = PydanticModel.column_model(id)
     CreateModel = PydanticModel.column_model(name, color)
-    IndexModel = BaseModel.column_model(community_id).combine_with(CreateModel)
+    IndexModel = BaseModel.combine_with(CreateModel)
 
     @classmethod
     def create(
@@ -54,15 +52,16 @@ class Role(Base, Identifiable):
         )
 
     @classmethod
-    def get_all(cls: type[r]) -> list[r]:
-        return db.session.execute(select(cls)).all()
+    def find_by_community(cls: type[r], community_id: int) -> list[r]:
+        stmt = select(cls).filter_by(community_id=community_id)
+        return db.session.get_all(stmt)
 
     @classmethod
-    def get_count(cls: type[r], community_id: int) -> int:
+    def get_count_by_community(cls: type[r], community_id: int) -> int:
         return db.session.execute(
             select(func.count())
             .select_from(cls)
-            .where(cls.community_id == community_id)
+            .filter_by(community_id=community_id)
         ).scalar()
 
 

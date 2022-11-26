@@ -3,13 +3,16 @@ from __future__ import annotations
 from flask_restx import Resource
 from common import ResourceController
 from .role_db import Role
+from .meta_db import Community
 
-controller = ResourceController("roles", path="/roles/")
+controller = ResourceController(
+    "communities-roles", path="/communities/<int:community_id>/"
+)
 
 
-@controller.route("/")
+@controller.route("/roles/")
 class RolesLister(Resource):
-    @controller.doc_abort(403, "Not roles")
+    @controller.database_searcher(Community)
     @controller.marshal_list_with(Role.IndexModel)
-    def get(self):
-        return Role.get_all()
+    def get(self, community: Community):
+        return Role.find_by_community(community_id=community.id)
