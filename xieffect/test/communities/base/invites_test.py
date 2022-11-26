@@ -5,20 +5,12 @@ from datetime import datetime, timedelta
 
 from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
-from pytest import mark, fixture
+from pytest import mark
 
 from common.testing import SocketIOTestClient
-from .meta_test import assert_create_community
+from ..conftest import COMMUNITY_DATA
 
 INVITATIONS_PER_REQUEST = 20
-COMMUNITY_DATA = {"name": "test"}
-
-
-@fixture
-def test_community(socketio_client: SocketIOTestClient) -> int:
-    # TODO place more globally
-    # TODO use yield & delete the community after
-    return assert_create_community(socketio_client, COMMUNITY_DATA)
 
 
 class InvitesTester:
