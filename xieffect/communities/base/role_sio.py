@@ -3,16 +3,10 @@ from __future__ import annotations
 from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
 from pydantic import BaseModel
-
 from common import EventController
 from .meta_db import Community, ParticipantRole
 from ..utils import check_participant
-from .role_db import (
-    Role,
-    RolePermission,
-    PermissionTypes,
-    LimitingQuantityRoles as limit,
-)
+from .role_db import Role, RolePermission, PermissionTypes, LimitingQuantityRoles
 
 controller = EventController()
 
@@ -54,19 +48,15 @@ class RolesEventSpace(EventSpace):
         community: Community,
     ):
 
-        if quantity := Role.get_count_by_community(community_id=community.id) > limit:
-            controller.abort(
-                400,
-                f"Quantity exceeded in community now {quantity}, mustn't be more than {limit}",
+        if Role.get_count_by_community(community.id) > LimitingQuantityRoles:
+            return controller.abort(400, "quantity exceeded")
+        role = Role.create(name=name, color=color, community_id=community.id)
+
+        for permission in permissions:
+            RolePermission.create(
+                role_id=role.id,
+                permission_type=PermissionTypes.from_string(permission),
             )
-        else:
-            role = Role.create(name=name, color=color, community_id=community.id)
-            [
-                RolePermission.create(
-                    role_id=role.id,
-                    permission_type=PermissionTypes.from_string(permission),
-                )
-                for permission in permissions
-            ]
-            event.emit_convert(role, self.room_name(community.id))
-            return role
+
+        event.emit_convert(role, self.room_name(community.id))
+        return role

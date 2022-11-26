@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from pytest import fixture
 
 from common.testing import SocketIOTestClient
 from .base.meta_test import assert_create_community
 
 COMMUNITY_DATA = {"name": "test"}
+
 
 @fixture
 def test_community(socketio_client: SocketIOTestClient) -> int:
