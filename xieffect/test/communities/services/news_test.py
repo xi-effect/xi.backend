@@ -1,21 +1,11 @@
 from __future__ import annotations
 
 from flask_fullstack import dict_equal, check_code
-from pytest import mark, fixture
+from pytest import mark
 
 from common.testing import SocketIOTestClient
 from communities.services.news_db import Post
 from ..base.invites_test import create_assert_successful_join
-from ..base.meta_test import assert_create_community
-
-COMMUNITY_DATA = {"name": "test"}
-
-
-@fixture
-def test_community(socketio_client: SocketIOTestClient) -> int:
-    # TODO place more globally (duplicate from invites_test)
-    # TODO use yield & delete the community after
-    return assert_create_community(socketio_client, COMMUNITY_DATA)
 
 
 def get_posts_list(client, community_id: int) -> list[dict]:
