@@ -14,10 +14,13 @@ LimitingQuantityRoles: int = 50
 
 
 class PermissionTypes(TypeEnum):
-    pass
+    CREATE = "create"
+    READ = "read"
+    UPDATE = "update"
+    DELETE = "delete"
 
 
-t = TypeVar("t", bound="Role")
+r = TypeVar("r", bound="Role")
 p = TypeVar("p", bound="RolePermission")
 
 
@@ -30,7 +33,7 @@ class Role(Base, Identifiable):
     name = Column(String(32), nullable=False)
     color = Column(String(6), nullable=True)
     community_id = Column(
-        Integer, ForeignKey(Community.id, ondelete="CASCADE"), primary_key=True
+        Integer, ForeignKey(Community.id, ondelete="CASCADE")
     )
 
     BaseModel = PydanticModel.column_model(id)
@@ -39,11 +42,11 @@ class Role(Base, Identifiable):
 
     @classmethod
     def create(
-        cls,
+        cls: type[r],
         name: str,
         color: str | None,
         community_id: int,
-    ) -> Role:
+    ) -> type[r]:
         return super().create(
             name=name,
             color=color,
@@ -51,16 +54,16 @@ class Role(Base, Identifiable):
         )
 
     @classmethod
-    def get_all(cls: type[t]) -> list[t]:
+    def get_all(cls: type[r]) -> list[r]:
         return db.session.execute(select(cls)).all()
 
     @classmethod
-    def get_count(cls: type[t], community_id: int) -> int:
-        return (
-            db.session.execute(func.count())
+    def get_count(cls: type[r], community_id: int) -> int:
+        return db.session.execute(
+            select(func.count())
             .select_from(cls)
             .where(cls.community_id == community_id)
-        )
+        ).scalar()
 
 
 class RolePermission(Base):
@@ -73,11 +76,12 @@ class RolePermission(Base):
         "Role", cascade="all, delete, delete-orphan", single_parent=True
     )
 
+    @classmethod
     def create(
         cls: type[p],
         role_id,
         permission_type,
-    ) -> p:
+    ) -> type[p]:
         return super().create(
             role_id=role_id,
             permission_type=permission_type,
