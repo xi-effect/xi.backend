@@ -16,8 +16,6 @@ def get_roles_list(client, community_id: int) -> list[dict]:
 
 def test_role_creation(
     client,
-    multi_client,
-    list_tester,
     socketio_client,
     test_community,
 ):

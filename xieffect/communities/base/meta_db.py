@@ -4,7 +4,6 @@ from flask_fullstack import Identifiable, TypeEnum, PydanticModel
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
-
 from common import User, Base, db
 
 
@@ -53,7 +52,6 @@ class Participant(Base, Identifiable):
     user = relationship("User")
 
     role = Column(Enum(ParticipantRole), nullable=False)
-
 
     @classmethod
     def create(cls, community_id: int, user_id: int, role: ParticipantRole):
