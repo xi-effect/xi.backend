@@ -4,7 +4,7 @@ from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
 from pydantic import BaseModel
 
-from common import EventController, db
+from common import EventController
 from .meta_db import Community, ParticipantRole
 from ..utils import check_participant
 from .role_db import (
@@ -53,7 +53,8 @@ class RolesEventSpace(EventSpace):
         permissions: list,
         community: Community,
     ):
-        if quantity := Role.get_count(community.id) > limit:
+
+        if quantity := Role.get_count_by_community(community_id=community.id) > limit:
             controller.abort(
                 400,
                 f"Quantity exceeded in community now {quantity}, mustn't be more than {limit}",
