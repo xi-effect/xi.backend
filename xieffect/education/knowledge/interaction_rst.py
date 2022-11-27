@@ -3,9 +3,9 @@ from __future__ import annotations
 from functools import wraps
 
 from flask import redirect
+from flask_fullstack import RequestParser
 from flask_restx import Resource, Model
 from flask_restx.fields import Integer
-from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, ResponseDoc, User
 from .interaction_db import ModuleProgressSession, TestModuleSession, TestPointSession
