@@ -6,3 +6,4 @@ from .base import (
 )
 from .base import CommunitiesUser
 from .services import news_namespace, news_events
+from .services import tasks_namespace, tasks_events

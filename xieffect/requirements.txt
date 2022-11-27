@@ -1,4 +1,4 @@
-flask-fullstack==0.4.8
+flask-fullstack==0.4.10
 
 # Misc
 discord-webhook~=0.14.0

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from json import load as load_json
-from pytest import mark
 
 from flask.testing import FlaskClient
 from flask_fullstack import check_code
+from pytest import mark
 
 from common import open_file
 

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from flask_fullstack import counter_parser
+from flask_fullstack import counter_parser, RequestParser
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, unite_models, User
 from .modules_db import Module, SortType, ModuleFilterSession, PreferenceOperation
@@ -71,7 +70,8 @@ class ModuleLister(Resource):  # [POST] /modules/
     parser.add_argument(
         "sort",
         required=False,
-        choices=SortType.get_all_field_names(),
+        type=SortType.as_input(),
+        default=SortType.POPULARITY,
         help="Defines item order",
     )
 
@@ -85,14 +85,9 @@ class ModuleLister(Resource):  # [POST] /modules/
         finish: int,
         filters: dict[str, str],
         search: str,
-        sort: str,
+        sort: SortType,
     ):
         """Lists index of modules with metadata & user's relation"""
-        try:
-            sort: SortType = SortType.POPULARITY if sort is None else SortType(sort)
-        except ValueError:
-            controller.abort(400, f"Sorting '{sort}' is not supported")
-
         if filters is None:
             filters = {}
         elif any(not isinstance(value, str) for value in filters.values()):
@@ -138,23 +133,23 @@ class ModulePreferences(Resource):  # [POST] /modules/<int:module_id>/preference
         "a",
         required=True,
         dest="operation",
-        choices=PreferenceOperation.get_all_field_names(),
+        type=PreferenceOperation.as_input(),
     )
 
     @controller.jwt_authorizer(User)
     @controller.database_searcher(Module, check_only=True)
     @controller.argument_parser(parser)
     @controller.a_response()
-    def post(self, module_id: int, user: User, operation: str) -> None:
+    def post(self, module_id: int, user: User, operation: PreferenceOperation) -> None:
         """Changes user relation to some module"""
         module: ModuleFilterSession | None = ModuleFilterSession.find_by_ids(
             user.id, module_id
         )
         if module is None:
-            if operation.startswith("un"):
+            if operation.name.startswith("un"):
                 return
             module = ModuleFilterSession.create(user.id, module_id)
-        module.change_preference(PreferenceOperation.from_string(operation))
+        module.change_preference(operation)
 
 
 @controller.route("/<int:module_id>/report/")

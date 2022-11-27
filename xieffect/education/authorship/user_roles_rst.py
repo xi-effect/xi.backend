@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from flask_fullstack import RequestParser
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, User
 from .user_roles_db import Author

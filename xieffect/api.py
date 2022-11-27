@@ -15,6 +15,8 @@ from communities import (
     invitation_namespace,
     news_namespace,
     news_events,
+    tasks_namespace,
+    tasks_events,
 )
 from education import (
     authors_namespace,
@@ -108,6 +110,7 @@ api.add_namespace(wip_index_namespace)
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
 api.add_namespace(news_namespace)
+api.add_namespace(tasks_namespace)
 
 api.add_namespace(webhook_namespace)
 
@@ -128,6 +131,7 @@ socketio = SocketIO(
     logger=True,
     engineio_logger=True,
     remove_ping_pong_logs=True,
+    restx_models=api.models,
 )
 
 socketio.add_namespace(
@@ -135,6 +139,7 @@ socketio.add_namespace(
     communities_meta_events,
     invitation_events,
     news_events,
+    tasks_events,
     protected=True
 )
 

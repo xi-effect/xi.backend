@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from flask_fullstack import password_parser
+from flask_fullstack import password_parser, RequestParser
 from flask_restx import Resource, inputs
-from flask_restx.reqparse import RequestParser
 
-from vault import File
 from common import ResourceController, User
-from other import create_email_confirmer, EmailType, send_code_email
 from communities.base.users_ext_db import CommunitiesUser
+from other import create_email_confirmer, EmailType, send_code_email
+from vault import File
 
 controller = ResourceController("settings", path="/users/me/")
 

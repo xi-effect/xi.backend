@@ -4,8 +4,8 @@ from contextlib import suppress
 from os import remove
 
 from flask import send_from_directory
+from flask_fullstack import RequestParser
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 from werkzeug.datastructures import FileStorage
 from werkzeug.exceptions import NotFound
 

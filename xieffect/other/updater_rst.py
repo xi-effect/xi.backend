@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from flask import current_app
+from flask_fullstack import RequestParser
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, open_file
 from .discorder import send_message as send_discord_message, WebhookURLs
@@ -73,7 +73,7 @@ class WebhookPassthrough(Resource):
     parser.add_argument(
         "webhook",
         required=True,
-        choices=WebhookURLs.get_all_field_names(),
+        type=WebhookURLs.as_input(),
     )
     parser.add_argument(
         "message",
@@ -81,12 +81,10 @@ class WebhookPassthrough(Resource):
     )
 
     @controller.argument_parser(parser)
-    def post(self, api_key: str, webhook: str, message: str):
+    def post(self, api_key: str, webhook: WebhookURLs, message: str):
         if api_key != current_app.config["API_KEY"]:
             return {"a": "Wrong API_KEY"}, 403
-        if (webhook_url := WebhookURLs.from_string(webhook)) is None:
-            return {"a": f"Unsupported webhook URL: '{webhook}'"}, 400
-        send_discord_message(webhook_url, message)
+        send_discord_message(webhook, message)
         return {"a": "Success"}
 
 

@@ -45,15 +45,11 @@ class InvitationsEventSpace(EventSpace):
         self,
         event: DuplexEvent,
         community: Community,
-        role: str,
+        role: ParticipantRole,
         limit: int | None,
         days: int | None,
     ):
-        enum_role: ParticipantRole = ParticipantRole.from_string(role)
-        if enum_role is None:  # TODO pragma: no coverage
-            controller.abort(400, f"Invalid role: {role}")
-
-        invitation = Invitation.create(community.id, enum_role, limit, days)
+        invitation = Invitation.create(community.id, role, limit, days)
         db.session.commit()
         event.emit_convert(invitation, self.room_name(community.id))
         return invitation
