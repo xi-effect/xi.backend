@@ -4,8 +4,8 @@ from functools import wraps
 
 from flask_fullstack import ResourceController, EventController, get_or_pop
 
-from .base import ParticipantRole, Community, Participant
 from common import User
+from .base.meta_db import ParticipantRole, Community, Participant
 
 
 def check_participant(
@@ -17,10 +17,10 @@ def check_participant(
     use_community: bool = True,
 ):
     def check_participant_role_wrapper(function):
-        @wraps(function)
         @controller.doc_abort(403, "Permission Denied")
         @controller.jwt_authorizer(User)
         @controller.database_searcher(Community)
+        @wraps(function)
         def check_participant_role_inner(*args, **kwargs):
             user = get_or_pop(kwargs, "user", use_user)
             community = get_or_pop(kwargs, "community", use_community)

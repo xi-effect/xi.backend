@@ -112,7 +112,7 @@ def init_users():
                     username=f"user-{i}",
                     password=BASIC_PASS,
                 )
-            user.change_settings(user_settings)
+            user.change_settings(**user_settings)
 
 
 def init_knowledge():

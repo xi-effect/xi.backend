@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from flask_fullstack import RequestParser
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 
 from common import User
 from moderation import MUBController, permission_index
@@ -28,7 +28,7 @@ class EmailQAResource(Resource):  # TODO pragma: no coverage (action)
     parser.add_argument(
         "type",
         dest="email_type",
-        choices=EmailType.get_all_field_names(),
+        type=EmailType.as_input(),
         required=True,
     )
 
@@ -41,12 +41,8 @@ class EmailQAResource(Resource):  # TODO pragma: no coverage (action)
         self,
         user_email: str | None,
         tester_email: str,
-        email_type: str,
+        email_type: EmailType,
     ) -> str:
-        email_type = EmailType.from_string(email_type)
-        if email_type is None:  # TODO pragma: no coverage (and others?)
-            controller.abort(400, "Unsupported type")
-
         if user_email is None:
             user_email = tester_email
         user = User.find_by_email_address(user_email)

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from flask import current_app
-from flask_fullstack import password_parser
+from flask_fullstack import password_parser, RequestParser
 from flask_jwt_extended import get_jwt
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
 from common import BlockedToken, ResourceController, User
@@ -16,6 +15,7 @@ controller = ResourceController("reglog", path="/")
 
 
 @controller.route("/main/")
+@controller.route("/home/")
 class UserHome(Resource):
     @controller.jwt_authorizer(User)
     @controller.marshal_with(CommunitiesUser.FullModel)

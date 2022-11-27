@@ -96,8 +96,8 @@ def file_getter(  # TODO # noqa: WPS231
     use_author: bool = False,
 ):
     def file_getter_wrapper(function):  # TODO # noqa: WPS231
-        @wraps(function)
         @wip_json_file_namespace.jwt_authorizer(Author)
+        @wraps(function)
         def get_file_or_type(*args, **kwargs):
             result: type[JSONFile]
             file_type: str = kwargs.pop("file_type")

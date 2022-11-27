@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from flask_fullstack import counter_parser
+from flask_fullstack import counter_parser, RequestParser
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 
 from moderation import MUBController, permission_index
 from .invites_db import Invite

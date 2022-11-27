@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from flask_fullstack import password_parser, counter_parser, Undefined
+from flask_fullstack import password_parser, counter_parser, Undefined, RequestParser
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 from itsdangerous import BadSignature
 
 from common import User, TEST_INVITE_ID

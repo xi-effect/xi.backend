@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 from enum import Enum
 from functools import wraps
 from os import getenv
 
+from flask_fullstack import RequestParser
 from flask_restx import Resource
 from flask_restx.fields import String as StringField
-from flask_restx.reqparse import RequestParser
 from itsdangerous import URLSafeSerializer, BadSignature
 
 from common import User, ResourceController, ResponseDoc
@@ -41,7 +42,7 @@ class FeedbackSaver(Resource):
     parser.add_argument(
         "type",
         required=True,
-        choices=FeedbackType.get_all_field_names(),
+        type=FeedbackType.as_input(),
         dest="feedback_type",
     )
     parser.add_argument(
@@ -72,7 +73,7 @@ class FeedbackSaver(Resource):
     def post(
         self,
         user: User | None,
-        feedback_type: str,
+        feedback_type: FeedbackType,
         data: dict,
         files: list[int],
         code: str | None,
@@ -80,7 +81,6 @@ class FeedbackSaver(Resource):
         if len(files) > 10:  # TODO pragma: no coverage
             controller.abort(413, "Too much files")
 
-        feedback_type = FeedbackType.from_string(feedback_type)
         feedback_files = File.find_by_ids(files)
 
         if len(feedback_files) != len(files):

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from flask_fullstack import counter_parser
+from flask_fullstack import counter_parser, RequestParser
 from flask_restx import Resource
-from flask_restx.reqparse import RequestParser
 
 from common import ResourceController, User
 
@@ -29,11 +28,3 @@ class ProfileViewer(Resource):
     def get(self, profile_viewer: User):
         """Get profile"""
         return profile_viewer
-
-
-@controller.route("/me/profile/")
-class UserProfile(Resource):
-    @controller.jwt_authorizer(User)
-    @controller.marshal_with(User.ProfileData)
-    def get(self, user: User):
-        return user

@@ -19,7 +19,7 @@ class FeedbackDumper(Resource):
     parser.add_argument(
         "type",
         dest="feedback_type",
-        choices=FeedbackType.get_all_field_names(),
+        type=FeedbackType.as_input(),
         required=False,
     )
 
@@ -31,10 +31,8 @@ class FeedbackDumper(Resource):
         start: int,
         finish: int,
         user_id: int | None,
-        feedback_type: str | None,
+        feedback_type: FeedbackType | None,
     ) -> list[Feedback]:
-        if feedback_type is not None:
-            feedback_type = FeedbackType.from_string(feedback_type)
         return Feedback.search_by_params(start, finish - start, user_id, feedback_type)
 
 

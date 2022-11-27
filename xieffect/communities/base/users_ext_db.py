@@ -17,7 +17,9 @@ class CommunitiesUser(Base):
     id: int | Column = Column(Integer, ForeignKey("users.id"), primary_key=True)
     user = relationship("User")
 
-    avatar_id = Column(Integer, ForeignKey("files.id"), nullable=True)
+    avatar_id = Column(
+        Integer, ForeignKey("files.id", ondelete="SET NULL"), nullable=True
+    )
     avatar = relationship("File", foreign_keys=[avatar_id])
 
     communities = relationship(
@@ -25,19 +27,6 @@ class CommunitiesUser(Base):
         order_by="CommunityListItem.position",
         collection_class=ordering_list("position"),
     )
-
-    @PydanticModel.include_nest_model(User.OldMainData, "user")  # TODO remove after front update
-    class OldFullModel(PydanticModel):
-        communities: list[Community.IndexModel]
-
-        @classmethod
-        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context):
-            callback(
-                communities=[
-                    Community.IndexModel.convert(ci.community, **context)
-                    for ci in orm_object.communities
-                ]
-            )
 
     @PydanticModel.include_flat_nest_model(User.MainData, "user")
     @PydanticModel.include_nest_model(File.FullModel, "avatar")
@@ -52,9 +41,6 @@ class CommunitiesUser(Base):
                     for ci in orm_object.communities
                 ]
             )
-
-    class OldTempModel(OldFullModel):  # TODO remove after front update
-        a: str = "Success"
 
     class TempModel(FullModel):
         a: str = "Success"

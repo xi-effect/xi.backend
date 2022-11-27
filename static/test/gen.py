@@ -48,16 +48,6 @@ def generate_user_bundle():
         "name": lorem_word() if (seed := randint(0, 9)) > 2 else None,
         "surname": lorem_word() if seed > 4 else None,
         "patronymic": lorem_word() if seed > 7 else None,
-        "bio": lorem_paragraph() if seed % 2 == 0 else None,
-        "group": chr(65 + randint(0, 25)) + str(randint(1, 16)),
-        "avatar": {
-            "accessory": randint(0, 9),
-            "body": randint(0, 27),
-            "face": randint(0, 32),
-            "hair": randint(0, 46),
-            "facialHair": randint(0, 16),
-            "bgcolor": randint(0, 12),
-        }
     } for _ in range(10)]
 
     with open("user-bundle.json", "w", encoding="utf-8") as f:

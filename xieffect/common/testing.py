@@ -81,7 +81,6 @@ class SocketIOTestClient(_SocketIOTestClient):
         if with_nop:
             self.assert_nop()
 
-        print(type(ack), ack)
         assert isinstance(ack, dict)
         assert ack.get("code") == code
         if message is not None:

@@ -77,7 +77,7 @@ def test_signup(base_client: FlaskClient):
     assert cookie[0] == "access_token_cookie"
 
     # Check the /home/ as well
-    response = check_code(base_client.get("/main/"))
+    response = check_code(base_client.get("/home/"))
     assert response == result
 
     check_code(base_client.post("/signout/"))
@@ -115,9 +115,9 @@ def test_email_confirm(base_client: FlaskClient):  # TODO pragma: no coverage (a
         assert len(recipients) == 1
         assert recipients[0] == credentials["email"]
 
-    assert check_code(base_client.get("/settings/")).get("email-confirmed") is False
+    assert check_code(base_client.get("/users/me/profile/")).get("email-confirmed") is False
     assert check_code(base_client.post(f"/email-confirm/{code}/"))["a"] == "Success"
-    assert check_code(base_client.get("/settings/")).get("email-confirmed") is True
+    assert check_code(base_client.get("/users/me/profile/")).get("email-confirmed") is True
 
     check_code(base_client.post("/signout/"))
 

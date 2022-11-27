@@ -8,6 +8,7 @@ from flask_fullstack import check_code
 from pytest import fixture
 from werkzeug.test import TestResponse
 
+from common import User
 from common.testing import SocketIOTestClient
 from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
@@ -30,7 +31,7 @@ def base_client():
 
 def base_login(client: FlaskClient, account: str, password: str, mub: bool = False) -> None:
     response: TestResponse = client.post(
-        "/mub/sign-in/" if mub else "/auth/",
+        "/mub/sign-in/" if mub else "/signin/",
         data={"username" if mub else "email": account, "password": password}
     )
     assert response.status_code == 200
@@ -121,3 +122,9 @@ def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
         assert counter > 0
 
     return list_tester_inner
+
+
+@fixture(scope="session")
+def test_user_id() -> int:
+    with app.app_context():
+        return User.find_by_email_address("test@test.test").id
