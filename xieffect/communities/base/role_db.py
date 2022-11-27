@@ -19,6 +19,9 @@ class PermissionTypes(TypeEnum):
     UPDATE = "update"
     DELETE = "delete"
 
+    def __str__(self):
+        return self.value
+
 
 r = TypeVar("r", bound="Role")
 p = TypeVar("p", bound="RolePermission")
@@ -52,6 +55,10 @@ class Role(Base, Identifiable):
         )
 
     @classmethod
+    def find_by_id(cls: type[r], role_id: int) -> r | None:
+        return db.session.get_first(select(cls).filter_by(id=role_id))
+
+    @classmethod
     def find_by_community(cls: type[r], community_id: int) -> list[r]:
         stmt = select(cls).filter_by(community_id=community_id)
         return db.session.get_all(stmt)
@@ -59,9 +66,7 @@ class Role(Base, Identifiable):
     @classmethod
     def get_count_by_community(cls: type[r], community_id: int) -> int:
         return db.session.execute(
-            select(func.count())
-            .select_from(cls)
-            .filter_by(community_id=community_id)
+            select(func.count()).select_from(cls).filter_by(community_id=community_id)
         ).scalar()
 
 
@@ -86,8 +91,12 @@ class RolePermission(Base):
             permission_type=permission_type,
         )
 
+    @classmethod
+    def delete_by_role(cls: type[p], role_id: int) -> None:
+        db.session.execute(db.delete(cls).where(cls.role_id == role_id))
 
-class ParticipantRole(Base):
+
+class ParticipantRole(Base):  # TODO pragma: no cover
     __tablename__ = "cs_participant_roles"
 
     participant_id = Column(Integer, ForeignKey(Participant.id), primary_key=True)
