@@ -43,10 +43,10 @@ class Role(Base, Identifiable):
 
     @classmethod
     def create(
-        cls: type[r],
-        name: str,
-        color: str | None,
-        community_id: int,
+            cls: type[r],
+            name: str,
+            color: str | None,
+            community_id: int,
     ) -> type[r]:
         return super().create(
             name=name,
@@ -82,9 +82,9 @@ class RolePermission(Base):
 
     @classmethod
     def create(
-        cls: type[p],
-        role_id,
-        permission_type,
+            cls: type[p],
+            role_id,
+            permission_type,
     ) -> type[p]:
         return super().create(
             role_id=role_id,
@@ -92,8 +92,13 @@ class RolePermission(Base):
         )
 
     @classmethod
+    def find_by_role(cls: type[p], role_id: int):
+        return db.session.get_all(select(cls).filter_by(role_id=role_id))
+
+    @classmethod
     def delete_by_role(cls: type[p], role_id: int) -> None:
-        db.session.execute(db.delete(cls).where(cls.role_id == role_id))
+        smtp = db.delete(cls).where(cls.role_id == role_id)
+        db.session.execute(smtp)
 
 
 class ParticipantRole(Base):  # TODO pragma: no cover

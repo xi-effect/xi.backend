@@ -3,6 +3,7 @@ from __future__ import annotations
 from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
 from pydantic import BaseModel
+from typing import Union
 from common import EventController, db
 from .meta_db import Community, ParticipantRole
 from ..utils import check_participant
@@ -33,7 +34,7 @@ class RolesEventSpace(EventSpace):
         leave_room(self.room_name(community.id))
 
     class CreateModel(Role.CreateModel, CommunityIdModel):
-        permissions: list[str]
+        permissions: list[str] = []
 
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Role.IndexModel, use_event=True)
@@ -44,7 +45,7 @@ class RolesEventSpace(EventSpace):
         event: DuplexEvent,
         name: str,
         color: str,
-        permissions: list[str],
+        permissions: list[str] | None,
         community: Community,
     ):
 
@@ -52,11 +53,13 @@ class RolesEventSpace(EventSpace):
             return controller.abort(400, "quantity exceeded")
         role = Role.create(name=name, color=color, community_id=community.id)
 
-        for permission in permissions:
-            RolePermission.create(
-                role_id=role.id,
-                permission_type=PermissionTypes.from_string(permission),
-            )
+        if permissions:
+            for permission in permissions:
+                RolePermission.create(
+                    role_id=role.id,
+                    permission_type=PermissionTypes.from_string(permission),
+                )
+
         db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
         return role
