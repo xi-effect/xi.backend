@@ -16,6 +16,10 @@ class ScopedSession(scoped_session, Session):
 
 
 class SQLAlchemy(_SQLAlchemy):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.app.after_request(self.with_autocommit)
+
     def create_scoped_session(self, options=None):
         if options is None:
             options = {}
@@ -25,3 +29,7 @@ class SQLAlchemy(_SQLAlchemy):
         return ScopedSession(
             self.create_session(options), scopefunc=scopefunc
         )
+
+    def with_autocommit(self, result=None):
+        self.session.commit()
+        return result
