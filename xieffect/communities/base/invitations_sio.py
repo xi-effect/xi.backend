@@ -4,7 +4,7 @@ from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
-from common import EventController, db
+from common import EventController
 from .invitations_db import Invitation
 from .meta_db import Community, ParticipantRole
 from ..utils import check_participant
@@ -50,7 +50,6 @@ class InvitationsEventSpace(EventSpace):
         days: int | None,
     ):
         invitation = Invitation.create(community.id, role, limit, days)
-        db.session.commit()
         event.emit_convert(invitation, self.room_name(community.id))
         return invitation
 
@@ -66,7 +65,6 @@ class InvitationsEventSpace(EventSpace):
         self, event: DuplexEvent, community: Community, invitation: Invitation
     ):
         invitation.delete()
-        db.session.commit()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
             community_id=community.id,

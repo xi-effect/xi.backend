@@ -7,7 +7,8 @@ from sys import stderr
 
 from flask_fullstack import SocketIO
 
-from common import app, db, versions, open_file
+from common import app, versions, open_file
+from common import db  # noqa: F401
 from communities import (
     communities_meta_events,
     communities_namespace,
@@ -143,16 +144,12 @@ socketio.add_namespace(
     protected=True
 )
 
+socketio.after_event(db.with_autocommit)
+
 
 @app.cli.command("form-sio-docs")
 def form_sio_docs():  # TODO pragma: no coverage
     with open_file("files/async-api.json", "w") as f:
         dump_json(socketio.docs(), f, ensure_ascii=False)
-
-
-@app.after_request
-def hey(res):
-    db.session.commit()
-    return res
 
 # remove-item alias:\curl

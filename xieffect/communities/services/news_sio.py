@@ -6,7 +6,7 @@ from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
-from common import EventController, User, db
+from common import EventController, User
 from .news_db import Post
 from ..base import ParticipantRole, Community
 from ..utils import check_participant
@@ -51,7 +51,6 @@ class PostEventSpace(EventSpace):
         community: Community,
     ):
         post = Post.create(title, description, user.id, community.id)
-        db.session.commit()
         event.emit_convert(post, self.room_name(community.id))
         return post
 
@@ -77,7 +76,6 @@ class PostEventSpace(EventSpace):
             post.description = description
         if title is not None or description is not None:
             post.changed = datetime.utcnow()
-        db.session.commit()
 
         event.emit_convert(post, self.room_name(community.id))
         return post
@@ -97,7 +95,6 @@ class PostEventSpace(EventSpace):
         post: Post,
     ):
         post.deleted = True
-        db.session.commit()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
             community_id=community.id,
