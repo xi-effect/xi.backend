@@ -6,7 +6,7 @@ from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
-from common import EventController, User, db
+from common import EventController, User
 from vault import File
 from .tasks_db import Task, TaskEmbed
 from ..base import Community, ParticipantRole
@@ -79,7 +79,6 @@ class TasksEventSpace(EventSpace):
         task = Task.create(user.id, community.id, page_id, name, description)
         if len(files) != 0:
             TaskEmbed.add_files(task.id, check_files(files))
-        db.session.commit()
         event.emit_convert(task, self.room_name(community.id))
         return task
 
@@ -119,7 +118,6 @@ class TasksEventSpace(EventSpace):
             TaskEmbed.add_files(task.id, add_files)
 
         Task.update(task.id, **kwargs)
-        db.session.commit()
         event.emit_convert(
             room=self.room_name(community.id),
             community_id=community.id,
@@ -138,7 +136,6 @@ class TasksEventSpace(EventSpace):
         if task.community_id != community.id:  # TODO pragma: no cover | func
             controller.abort(404, Task.not_found_text)
         task.deleted = True
-        db.session.commit()
         event.emit_convert(
             room=self.room_name(community.id),
             community_id=community.id,

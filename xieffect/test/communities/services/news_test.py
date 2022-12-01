@@ -37,7 +37,7 @@ def test_post_creation(
     list_tester,
     socketio_client,
     test_community,
-):
+):  # TODO redo without calls to the database
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
 
@@ -82,6 +82,7 @@ def test_post_creation(
             assert not found
             assert dict_equal(data, post_data, "title", "description")
             assert data.get("created") == data.get("changed")
+            # TODO redo without calls to the database (separate into functional tests)
             assert Post.find_by_id(data.get("id")).deleted is False
             found = True
     assert found
@@ -95,12 +96,17 @@ def test_post_creation(
     post_ids = dict(community_id_json, post_id=post_id)
     for post_upd in post_dict_list:
         post_upd = dict(post_upd, **post_ids)
-        old_data = Post.find_by_id(post_id)
+
+        old_data = Post.find_by_id(post_id)  # TODO redo without calls to the database
+        old_title: str = old_data.title
+        old_description: str = old_data.description
+
         upd_data = socketio_client.assert_emit_ack("update_post", post_upd)
         assert upd_data.get("id") == post_id
-        assert upd_data.get("title") == post_upd.get("title") or old_data.title
-        description = post_upd.get("description") or old_data.description
+        assert upd_data.get("title") == post_upd.get("title") or old_title
+        description = post_upd.get("description") or old_description
         assert upd_data.get("description") == description
+
         for user in (socketio_client2, sio_member):
             user.assert_only_received("update_post", upd_data)
 
