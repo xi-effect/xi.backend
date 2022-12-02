@@ -13,6 +13,6 @@ controller = ResourceController(
 @controller.route("/roles/")
 class RolesLister(Resource):
     @controller.database_searcher(Community)
-    @controller.marshal_list_with(Role.IndexModel)
+    @controller.marshal_list_with(Role.FullModel)
     def get(self, community: Community):
         return Role.find_by_community(community_id=community.id)

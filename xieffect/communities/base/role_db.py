@@ -1,16 +1,24 @@
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import TypeVar, Callable
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, func, select
+from sqlalchemy import Column, ForeignKey, func, select, event
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
+from sqlalchemy.engine import Engine
 
 from common import Base, db
 from communities.base import Community, Participant
 
-LimitingQuantityRoles = 50
+LimitingQuantityRoles = 49
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(*args):
+    cursor = args[0].cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 class PermissionTypes(TypeEnum):
@@ -18,9 +26,6 @@ class PermissionTypes(TypeEnum):
     READ = "read"
     UPDATE = "update"
     DELETE = "delete"
-
-    def __str__(self):
-        return self.value
 
 
 r = TypeVar("r", bound="Role")
@@ -37,16 +42,35 @@ class Role(Base, Identifiable):
     color = Column(String(6), nullable=True)
     community_id = Column(Integer, ForeignKey(Community.id, ondelete="CASCADE"))
 
+    permissions = relationship("RolePermission", passive_deletes=True)
+
     BaseModel = PydanticModel.column_model(id)
     CreateModel = PydanticModel.column_model(name, color)
     IndexModel = BaseModel.combine_with(CreateModel)
 
+    class FullModel(IndexModel):
+        permissions: list[str]
+
+        @classmethod
+        def callback_convert(
+            cls, callback: Callable, orm_object: Role, **context
+        ) -> None:
+            callback(
+                permissions=[
+                    permission.permission_type.to_string()
+                    for permission in orm_object.permissions
+                ]
+            )
+
+    def __repr__(self):
+        return self.name
+
     @classmethod
     def create(
-            cls: type[r],
-            name: str,
-            color: str | None,
-            community_id: int,
+        cls: type[r],
+        name: str,
+        color: str | None,
+        community_id: int,
     ) -> type[r]:
         return super().create(
             name=name,
@@ -73,27 +97,19 @@ class Role(Base, Identifiable):
 class RolePermission(Base):
     __tablename__ = "cs_role_permissions"
 
-    role_id = Column(Integer, ForeignKey(Role.id), primary_key=True)
+    role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)
     permission_type = Column(Enum(PermissionTypes), primary_key=True)
-
-    role = relationship(
-        "Role", cascade="all, delete, delete-orphan", single_parent=True
-    )
 
     @classmethod
     def create(
-            cls: type[p],
-            role_id,
-            permission_type,
+        cls: type[p],
+        role_id,
+        permission_type,
     ) -> type[p]:
         return super().create(
             role_id=role_id,
             permission_type=permission_type,
         )
-
-    @classmethod
-    def find_by_role(cls: type[p], role_id: int):
-        return db.session.get_all(select(cls).filter_by(role_id=role_id))
 
     @classmethod
     def delete_by_role(cls: type[p], role_id: int) -> None:
@@ -104,12 +120,7 @@ class RolePermission(Base):
 class ParticipantRole(Base):  # TODO pragma: no cover
     __tablename__ = "cs_participant_roles"
 
-    participant_id = Column(Integer, ForeignKey(Participant.id), primary_key=True)
-    role_id = Column(Integer, ForeignKey(Role.id), primary_key=True)
-
-    participants = relationship(
-        "Participant", cascade="all, delete, delete-orphan", single_parent=True
+    participant_id = Column(
+        Integer, ForeignKey(Participant.id, ondelete="CASCADE"), primary_key=True
     )
-    role = relationship(
-        "Role", cascade="all, delete, delete-orphan", single_parent=True
-    )
+    role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
-from pydantic import BaseModel
-from typing import Union
+from pydantic import BaseModel, Field
 from common import EventController, db
 from .meta_db import Community, ParticipantRole
 from ..utils import check_participant
@@ -34,7 +33,7 @@ class RolesEventSpace(EventSpace):
         leave_room(self.room_name(community.id))
 
     class CreateModel(Role.CreateModel, CommunityIdModel):
-        permissions: list[str] = []
+        permissions: list[str] = Field(default_factory=list)
 
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Role.IndexModel, use_event=True)
@@ -44,7 +43,7 @@ class RolesEventSpace(EventSpace):
         self,
         event: DuplexEvent,
         name: str,
-        color: str,
+        color: str | None,
         permissions: list[str] | None,
         community: Community,
     ):
