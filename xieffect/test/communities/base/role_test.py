@@ -71,7 +71,7 @@ def test_role_creation(
         socketio_client.assert_emit_success("delete_role", data)
         socketio_client2.assert_only_received("delete_role", data)
 
-    assert (get_roles_list(client, test_community)) == []
+    assert len(get_roles_list(client, test_community)) == 0
 
     # Assert role creation with different data
     second_role_data = role_data.copy()
