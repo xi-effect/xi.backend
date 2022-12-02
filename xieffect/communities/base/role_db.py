@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TypeVar, Callable
+from collections.abc import Callable
+from typing import TypeVar
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
 from sqlalchemy import Column, ForeignKey, func, select, event
@@ -53,7 +54,7 @@ class Role(Base, Identifiable):
 
         @classmethod
         def callback_convert(
-            cls, callback: Callable, orm_object: Role, **context
+            cls, callback: Callable, orm_object: Role, **_
         ) -> None:
             callback(
                 permissions=[
