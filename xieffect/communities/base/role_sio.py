@@ -36,9 +36,9 @@ class RolesEventSpace(EventSpace):
         permissions: list[str] = Field(default_factory=list)
 
     @controller.argument_parser(CreateModel)
-    @controller.mark_duplex(Role.IndexModel, use_event=True)
+    @controller.mark_duplex(Role.FullModel, use_event=True)
     @check_participant(controller, role=ParticipantRole.OWNER)
-    @controller.marshal_ack(Role.IndexModel)
+    @controller.marshal_ack(Role.FullModel)
     def new_role(
         self,
         event: DuplexEvent,
@@ -48,7 +48,7 @@ class RolesEventSpace(EventSpace):
         community: Community,
     ):
 
-        if Role.get_count_by_community(community.id) > LimitingQuantityRoles:
+        if Role.get_count_by_community(community.id) >= LimitingQuantityRoles:
             return controller.abort(400, "quantity exceeded")
         role = Role.create(name=name, color=color, community_id=community.id)
 
@@ -67,10 +67,10 @@ class RolesEventSpace(EventSpace):
         role_id: int
 
     @controller.argument_parser(UpdateModel)
-    @controller.mark_duplex(Role.IndexModel, use_event=True)
+    @controller.mark_duplex(Role.FullModel, use_event=True)
     @check_participant(controller, role=ParticipantRole.OWNER)
     @controller.database_searcher(Role)
-    @controller.marshal_ack(Role.IndexModel)
+    @controller.marshal_ack(Role.FullModel)
     def update_role(
         self,
         event: DuplexEvent,

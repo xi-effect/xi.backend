@@ -11,7 +11,7 @@ from sqlalchemy.engine import Engine
 from common import Base, db
 from communities.base import Community, Participant
 
-LimitingQuantityRoles = 49
+LimitingQuantityRoles = 50
 
 
 @event.listens_for(Engine, "connect")
