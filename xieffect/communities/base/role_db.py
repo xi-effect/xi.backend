@@ -5,9 +5,9 @@ from typing import TypeVar
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
 from sqlalchemy import Column, ForeignKey, func, select, event
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
-from sqlalchemy.engine import Engine
 
 from common import Base, db
 from communities.base import Community, Participant
