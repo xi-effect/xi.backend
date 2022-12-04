@@ -36,7 +36,7 @@ class Community(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Community | None:
-        return db.session.get_first(select(cls).filter_by(id=entry_id))
+        return db.get_first(select(cls).filter_by(id=entry_id))
 
 
 class ParticipantRole(TypeEnum):
@@ -64,6 +64,6 @@ class Participant(Base, Identifiable):
 
     @classmethod
     def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
-        return db.session.get_first(
+        return db.get_first(
             select(cls).filter_by(community_id=community_id, user_id=user_id)
         )

@@ -61,15 +61,15 @@ class Role(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, role_id: int) -> Role | None:
-        return db.session.get_first(select(cls).filter_by(id=role_id))
+        return db.get_first(select(cls).filter_by(id=role_id))
 
     @classmethod
     def find_by_community(cls, community_id: int) -> list[Role]:
-        return db.session.get_all(select(cls).filter_by(community_id=community_id))
+        return db.get_all(select(cls).filter_by(community_id=community_id))
 
     @classmethod
     def get_count_by_community(cls, community_id: int) -> int:
-        return db.session.get_first(
+        return db.get_first(
             select(count(cls.id)).filter_by(community_id=community_id)
         )
 
@@ -105,7 +105,7 @@ class RolePermission(Base):
 
     @classmethod
     def get_all_by_role(cls, role_id: int) -> list[RolePermission]:
-        return db.session.get_all(select(cls).filter_by(role_id=role_id))
+        return db.get_all(select(cls).filter_by(role_id=role_id))
 
 
 class ParticipantRole(Base):  # TODO pragma: no cover

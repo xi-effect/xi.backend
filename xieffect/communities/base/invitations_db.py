@@ -59,19 +59,19 @@ class Invitation(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, invitation_id: int) -> Invitation | None:
-        return db.session.get_first(select(cls).filter_by(id=invitation_id))
+        return db.get_first(select(cls).filter_by(id=invitation_id))
 
     @classmethod
     def find_by_community(
         cls, community_id: int, offset: int, limit: int
     ) -> list[Invitation]:
-        return db.session.get_paginated(
+        return db.get_paginated(
             select(cls).filter_by(community_id=community_id), offset, limit
         )
 
     @classmethod
     def find_by_code(cls, code: str) -> Invitation | None:
-        return db.session.get_first(select(cls).filter_by(code=code))
+        return db.get_first(select(cls).filter_by(code=code))
 
     def generate_code(self):
         return self.serializer.dumps((self.community_id, self.id))

@@ -109,17 +109,17 @@ class Base(db.Model):  # TODO this is just an idea  # TODO pragma: no cover
 
     @classmethod
     def find_first_by_kwargs(cls: type[t], *order_by, **kwargs) -> t | None:
-        return db.session.get_first(cls.select_by_kwargs(*order_by, **kwargs))
+        return db.get_first(cls.select_by_kwargs(*order_by, **kwargs))
 
     @classmethod
     def find_all_by_kwargs(cls: type[t], *order_by, **kwargs) -> list[t]:
-        return db.session.get_all(cls.select_by_kwargs(*order_by, **kwargs))
+        return db.get_all(cls.select_by_kwargs(*order_by, **kwargs))
 
     @classmethod
     def find_paginated_by_kwargs(
         cls: type[t], offset: int, limit: int, *order_by, **kwargs
     ) -> list[t]:
-        return db.session.get_paginated(
+        return db.get_paginated(
             cls.select_by_kwargs(*order_by, **kwargs), offset, limit
         )
 
