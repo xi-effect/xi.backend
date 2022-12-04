@@ -12,7 +12,7 @@ from sqlalchemy.engine import Engine
 from common import Base, db
 from communities.base import Community, Participant
 
-LimitingQuantityRoles = 50
+LIMITING_QUANTITY_ROLES = 50
 
 
 @event.listens_for(Engine, "connect")
@@ -36,7 +36,7 @@ p = TypeVar("p", bound="RolePermission")
 class Role(Base, Identifiable):
     __tablename__ = "cs_roles"
 
-    not_found_text = "role not found"
+    not_found_text = "Role not found"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32), nullable=False)
@@ -45,9 +45,8 @@ class Role(Base, Identifiable):
 
     permissions = relationship("RolePermission", passive_deletes=True)
 
-    BaseModel = PydanticModel.column_model(id)
     CreateModel = PydanticModel.column_model(name, color)
-    IndexModel = BaseModel.combine_with(CreateModel)
+    IndexModel = PydanticModel.column_model(id).combine_with(CreateModel)
 
     class FullModel(IndexModel):
         permissions: list[str]

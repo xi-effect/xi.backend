@@ -4,6 +4,7 @@ from flask_fullstack import Identifiable, TypeEnum, PydanticModel
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
+
 from common import User, Base, db
 
 
