@@ -44,11 +44,11 @@ if (  # noqa: WPS337
     or "form-sio-docs" in argv
 ):  # pragma: no coverage
     application.debug = True
-    if db_url.endswith("app.db"):
-        db.drop_all()
-    if not db_url.startswith("postgresql"):
-        db.create_all()
     with application.app_context():
+        if db_url.endswith("app.db"):
+            db.drop_all()
+        if not db_url.startswith("postgresql"):
+            db.create_all()
         init_test_mod()
         db.session.commit()
 else:  # works on server restart  # pragma: no coverage
@@ -93,7 +93,7 @@ def init_users():
         invite: Invite = Invite.create(id=TEST_INVITE_ID, name="TEST_INVITE")
 
     if (User.find_by_email_address(TEST_EMAIL)) is None:
-        test_user: User = User.create(
+        User.create(
             email=TEST_EMAIL,
             username="test",
             password=BASIC_PASS,

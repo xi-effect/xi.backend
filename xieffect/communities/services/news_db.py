@@ -46,7 +46,7 @@ class Post(Base, Identifiable):
         cls, community_id: int, offset: int, limit: int
     ) -> list[Post]:
         stmt = select(cls).filter_by(community_id=community_id, deleted=False)
-        return db.session.get_paginated(stmt, offset, limit)
+        return db.get_paginated(stmt, offset, limit)
 
     @classmethod
     def create(
@@ -65,4 +65,4 @@ class Post(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Post | None:
-        return db.session.get_first(select(cls).filter_by(id=entry_id, deleted=False))
+        return db.get_first(select(cls).filter_by(id=entry_id, deleted=False))

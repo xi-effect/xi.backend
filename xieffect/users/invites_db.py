@@ -37,7 +37,7 @@ class Invite(Base):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Invite | None:
-        return db.session.get_first(select(cls).filter(cls.id == entry_id))
+        return db.get_first(select(cls).filter(cls.id == entry_id))
 
     @classmethod
     def find_by_code(cls, code: str) -> Invite | None:
@@ -45,7 +45,7 @@ class Invite(Base):
 
     @classmethod
     def find_global(cls, offset: int, limit: int) -> list[Invite]:
-        return db.session.get_paginated(select(cls), offset, limit)
+        return db.get_paginated(select(cls), offset, limit)
 
     def generate_code(self, user_id: int):
         return self.serializer.dumps((self.id, user_id))

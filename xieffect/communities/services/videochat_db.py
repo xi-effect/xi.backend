@@ -38,17 +38,17 @@ class ChatParticipant(Base):  # TODO community to room after channels creating
     def find_by_ids(
         cls, user_id: int, community_id: int
     ) -> ChatParticipant | None:
-        return db.session.get_first(
+        return db.get_first(
             select(cls).filter_by(user_id=user_id, community_id=community_id)
         )
 
     @classmethod
     def find_by_community(cls, community_id: int) -> list[ChatParticipant]:
-        return db.session.get_all(select(cls).filter_by(community_id=community_id))
+        return db.get_all(select(cls).filter_by(community_id=community_id))
 
     @classmethod
     def get_count_by_community(cls, community_id: int) -> int:
-        return db.session.get_first(
+        return db.get_first(
             select(count(cls.user_id)).filter_by(community_id=community_id)
         )
 
@@ -84,11 +84,11 @@ class ChatMessage(Base, Identifiable):  # TODO community to room after channels 
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> ChatMessage | None:
-        return db.session.get_first(select(cls).filter_by(id=entry_id))
+        return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
     def find_by_ids(
         cls, community_id: int, offset: int, limit: int
     ) -> list[ChatMessage]:
         stmt = select(cls).filter_by(community_id=community_id)
-        return db.session.get_paginated(stmt, offset, limit)
+        return db.get_paginated(stmt, offset, limit)

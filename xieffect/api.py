@@ -7,8 +7,7 @@ from sys import stderr
 
 from flask_fullstack import SocketIO
 
-from common import app, versions, open_file
-from common import db  # noqa: F401
+from common import app, db, versions, open_file
 from communities import (
     communities_meta_events,
     communities_namespace,
@@ -129,6 +128,7 @@ socketio.add_namespace(
 )
 
 socketio.after_event(db.with_autocommit)
+app.after_request(db.with_autocommit)
 
 
 @app.cli.command("form-sio-docs")

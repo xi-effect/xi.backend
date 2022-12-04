@@ -56,7 +56,7 @@ class Feedback(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Feedback | None:
-        return db.session.get_first(select(cls).filter_by(id=entry_id))
+        return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
     def search_by_params(
@@ -71,4 +71,4 @@ class Feedback(Base, Identifiable):
             stmt = stmt.filter_by(user_id=user_id)
         if feedback_type is not None:
             stmt = stmt.filter_by(type=feedback_type)
-        return db.session.get_paginated(stmt, offset, limit)
+        return db.get_paginated(stmt, offset, limit)

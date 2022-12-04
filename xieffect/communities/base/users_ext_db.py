@@ -51,7 +51,7 @@ class CommunitiesUser(Base):
 
     @classmethod
     def find_by_id(cls, user_id: int) -> CommunitiesUser | None:
-        return db.session.get_first(select(cls).filter_by(id=user_id))
+        return db.get_first(select(cls).filter_by(id=user_id))
 
     @classmethod
     def find_or_create(cls, user_id: int) -> CommunitiesUser:
@@ -99,6 +99,6 @@ class CommunityListItem(Base):
         user_id: int,
         community_id: int,
     ) -> CommunityListItem | None:
-        return db.session.get_first(
+        return db.get_first(
             select(cls).filter_by(user_id=user_id, community_id=community_id)
         )

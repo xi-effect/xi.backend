@@ -17,7 +17,7 @@ class BlockedToken(Base):
 
     @classmethod
     def find_by_jti(cls, jti: str) -> BlockedToken:
-        return db.session.get_first(select(cls).filter_by(jti=jti))
+        return db.get_first(select(cls).filter_by(jti=jti))
 
 
 class User(Base, UserRole, Identifiable):
@@ -71,7 +71,7 @@ class User(Base, UserRole, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> User | None:
-        return db.session.get_first(select(cls).filter_by(id=entry_id))
+        return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
     def find_by_identity(cls, identity: int) -> User | None:
@@ -84,11 +84,11 @@ class User(Base, UserRole, Identifiable):
         stmt = select(cls).filter_by(handle=handle)
         if exclude_id is not None:
             stmt = stmt.filter(cls.id != exclude_id)
-        return db.session.get_first(stmt)
+        return db.get_first(stmt)
 
     @classmethod
     def find_by_email_address(cls, email) -> User | None:
-        return db.session.get_first(select(cls).filter_by(email=email))
+        return db.get_first(select(cls).filter_by(email=email))
 
     @classmethod  # TODO this class shouldn't know about invites
     def create(
@@ -118,7 +118,7 @@ class User(Base, UserRole, Identifiable):
         for k, v in kwargs.items():
             if v is not None:
                 stmt = stmt.filter(getattr(cls, k).contains(v))
-        return db.session.get_paginated(stmt, offset, limit)
+        return db.get_paginated(stmt, offset, limit)
 
     @classmethod
     def search_by_username(
@@ -131,7 +131,7 @@ class User(Base, UserRole, Identifiable):
         stmt = select(cls).filter(cls.id != exclude_id)
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
-        return db.session.get_paginated(stmt, offset, limit)
+        return db.get_paginated(stmt, offset, limit)
 
     def get_identity(self):
         return self.id
