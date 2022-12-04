@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from common import EventController, db
 from .meta_db import Community, ParticipantRole
 from ..utils import check_participant
-from .role_db import Role, RolePermission, PermissionTypes, LimitingQuantityRoles
+from .role_db import Role, RolePermission, PermissionTypes, LIMITING_QUANTITY_ROLES
 
 controller = EventController()
 
@@ -48,8 +48,8 @@ class RolesEventSpace(EventSpace):
         community: Community,
     ):
 
-        if Role.get_count_by_community(community.id) >= LimitingQuantityRoles:
-            return controller.abort(400, "quantity exceeded")
+        if Role.get_count_by_community(community.id) >= LIMITING_QUANTITY_ROLES:
+            controller.abort(400, "Quantity exceeded")
         role = Role.create(name=name, color=color, community_id=community.id)
 
         if permissions:
