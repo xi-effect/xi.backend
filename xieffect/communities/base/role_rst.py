@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from flask_restx import Resource
+
 from common import ResourceController
-from .role_db import Role
 from .meta_db import Community
+from .role_db import Role
 
 controller = ResourceController(
     "communities-roles", path="/communities/<int:community_id>/"
