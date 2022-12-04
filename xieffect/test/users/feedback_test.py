@@ -29,7 +29,7 @@ def test_feedback(
     test_user_id: int,
     list_tester,
 ):
-    base_url, jsons = "/mub/feedback/", ("sample-page.json", "sample-page-2.json")
+    base_url, jsons = "/mub/feedback/", ("test-1.json", "test-2.json")
     files = [
         upload(client, filename)[0].get("id") for filename in jsons
     ]
