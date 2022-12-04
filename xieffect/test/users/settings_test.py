@@ -78,7 +78,7 @@ def test_user_avatar(client: FlaskClient):
     user = check_code(client.get("/users/me/profile/"))
     assert isinstance(user, dict) and isinstance(user.get("id"), int)
 
-    file_id = upload(client, "sample-page.json")[0].get("id")
+    file_id = upload(client, "test-1.json")[0].get("id")
     file = File.find_by_id(file_id)
     assert user.get("id") == file.uploader_id
 

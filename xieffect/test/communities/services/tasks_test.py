@@ -24,7 +24,7 @@ def community_id(socketio_client: SocketIOTestClient) -> int:
 
 @fixture
 def file_id(client: FlaskClient) -> int:
-    with open_file("xieffect/test/education/json/sample-module.json", "rb") as f:
+    with open_file("xieffect/test/json/test-1.json", "rb") as f:
         contents: bytes = f.read()
     return check_code(
         client.post(
