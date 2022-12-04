@@ -60,17 +60,12 @@ convention = {
 
 db_url: str = getenv("DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db"))
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db_meta = MetaData(naming_convention=convention)
 db = SQLAlchemy(
     app,
     metadata=db_meta,
     model_class=declarative_base(cls=Model, metaclass=ModBaseMeta),
     engine_options={"pool_recycle": 280},  # "echo": True
-)
-index_service: IndexService = configure_whooshee(
-    db.session,
-    absolute_path("files/temp/whoosh")
 )
 
 app.config["TESTING"] = "pytest" in modules

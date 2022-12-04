@@ -53,11 +53,6 @@ class User(Base, UserRole, Identifiable):
     theory_level = Column(Float, nullable=False, default=0.5)
     filter_bind = Column(String(10), nullable=True)
 
-    # Role-related:
-    author = relationship("Author", backref="user", uselist=False)
-    # TODO remove non-common reference
-    # moderator = relationship("Moderator", backref="user", uselist=False)  # TODO DEPRECATED, redo with MUB
-
     # Chat-related
     # chats = relationship("UserToChat", back_populates="user")  # TODO remove non-common reference
 
