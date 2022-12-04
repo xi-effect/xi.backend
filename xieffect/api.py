@@ -23,18 +23,6 @@ from communities import (
     videochat_events,
     videochat_namespace,
 )
-from education import (
-    authors_namespace,
-    education_namespace,
-    images_view_namespace,
-    interaction_namespace,
-    modules_view_namespace,
-    pages_view_namespace,
-    result_namespace,
-    wip_images_namespace,
-    wip_index_namespace,
-    wip_json_file_namespace,
-)
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
 from other import (
     send_discord_message,
@@ -98,19 +86,6 @@ api.add_namespace(users_namespace)
 api.add_namespace(feedback_namespace)
 api.add_namespace(mub_feedback_namespace)
 api.add_namespace(settings_namespace)
-
-api.add_namespace(education_namespace)
-api.add_namespace(modules_view_namespace)
-api.add_namespace(pages_view_namespace)
-api.add_namespace(images_view_namespace)
-
-api.add_namespace(interaction_namespace)
-api.add_namespace(result_namespace)
-
-api.add_namespace(authors_namespace)
-api.add_namespace(wip_images_namespace)
-api.add_namespace(wip_json_file_namespace)
-api.add_namespace(wip_index_namespace)
 
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)

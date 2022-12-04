@@ -1,15 +1,7 @@
-from flask_fullstack.restx import (  # noqa: WPS !DEPRECATED!
-    unite_models,
-    LambdaFieldDef,
-    create_marshal_model,
-    Marshalable,
-)
-
 from ._core import (  # noqa: WPS436
     db_url,
     db,
     Base,
-    index_service,
     versions,
     app,
     mail,
