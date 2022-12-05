@@ -9,10 +9,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
-from common import Base, db
-from communities.base import Community, Participant
+from .meta_db import Base, db, Community, Participant
 
-LIMITING_QUANTITY_ROLES = 50
+LIMITING_QUANTITY_ROLES = 49
 
 
 @event.listens_for(Engine, "connect")
@@ -29,6 +28,17 @@ class PermissionTypes(TypeEnum):
     DELETE = "delete"
 
 
+def validation_permissions(permissions):
+    for permission in permissions:
+        permissions_types = [
+            permission_type.value for permission_type in PermissionTypes
+        ]
+        if permission not in permissions_types:
+            break
+    else:
+        return True
+
+
 r = TypeVar("r", bound="Role")
 p = TypeVar("p", bound="RolePermission")
 
@@ -41,20 +51,20 @@ class Role(Base, Identifiable):
     id = Column(Integer, primary_key=True)
     name = Column(String(32), nullable=False)
     color = Column(String(6), nullable=True)
-    community_id = Column(Integer, ForeignKey(Community.id, ondelete="CASCADE"))
+    community_id = Column(
+        Integer, ForeignKey(Community.id, ondelete="CASCADE"), nullable=False
+    )
 
     permissions = relationship("RolePermission", passive_deletes=True)
 
     CreateModel = PydanticModel.column_model(name, color)
-    IndexModel = PydanticModel.column_model(id).combine_with(CreateModel)
+    IndexModel = CreateModel.column_model(id)
 
     class FullModel(IndexModel):
         permissions: list[str]
 
         @classmethod
-        def callback_convert(
-            cls, callback: Callable, orm_object: Role, **_
-        ) -> None:
+        def callback_convert(cls, callback: Callable, orm_object: Role, **_) -> None:
             callback(
                 permissions=[
                     permission.permission_type.to_string()
@@ -84,8 +94,7 @@ class Role(Base, Identifiable):
 
     @classmethod
     def find_by_community(cls: type[r], community_id: int) -> list[r]:
-        stmt = select(cls).filter_by(community_id=community_id)
-        return db.session.get_all(stmt)
+        return db.session.get_all(select(cls).filter_by(community_id=community_id))
 
     @classmethod
     def get_count_by_community(cls: type[r], community_id: int) -> int:
@@ -113,8 +122,7 @@ class RolePermission(Base):
 
     @classmethod
     def delete_by_role(cls: type[p], role_id: int) -> None:
-        smtp = db.delete(cls).where(cls.role_id == role_id)
-        db.session.execute(smtp)
+        db.session.execute(db.delete(cls).where(cls.role_id == role_id))
 
 
 class ParticipantRole(Base):  # TODO pragma: no cover
