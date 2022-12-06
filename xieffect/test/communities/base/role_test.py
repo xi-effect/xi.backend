@@ -93,8 +93,6 @@ def test_roles(
             socketio_client2.assert_only_received("new_role", result_data)
             role_id = result_data.get("id")
             assert isinstance(role_id, int)
-            data.pop("community_id")
-            assert dict_equal(result_data, data, *data.keys())
 
     assert (
         len(get_roles_list(client, community_id=test_community))
@@ -120,18 +118,10 @@ def test_roles(
                 message="Permissions aren't correct",
             )
         else:
-            # Check correct update role
-            successful_data = {
-                "permissions": PERMISSIONS_LIST[1:3],
-                "name": data_for_update_role["name"],
-                "color": data_for_update_role["color"],
-                "id": role_id,
-            }
             result_data = socketio_client.assert_emit_ack(
                 "update_role", data_for_update_role
             )
             socketio_client2.assert_only_received("update_role", result_data)
-            assert dict_equal(result_data, successful_data, *successful_data.keys())
 
     # Check successfully close roles-room
     for user in (socketio_client, socketio_client2):
