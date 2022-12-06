@@ -59,7 +59,7 @@ def test_roles(
             socketio_client2.assert_only_received("new_role", result_data)
 
     role_data_for_delete = dict(
-        name="test_role", color="FFFF00", permission=PERMISSIONS_LIST
+        name=role_data['name'], color=role_data['color'], permission=PERMISSIONS_LIST
     )
 
     # Assert 50 roles
