@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from flask_fullstack import PydanticModel, Identifiable
-from sqlalchemy import Column, ForeignKey, select
+from sqlalchemy import Column, ForeignKey, select, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text, Boolean
 
@@ -15,17 +15,12 @@ class CommunityParticipant(Base):  # TODO community to room after channels creat
     __tablename__ = "participant_to_community"
 
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    user = relationship("User")
-
     community_id = Column(Integer, ForeignKey("community.id"), primary_key=True)
-    community = relationship("Community")
 
     microphone = Column(Boolean, default=True)
     camera = Column(Boolean, default=True)
 
-    IdModel = PydanticModel.column_model(user_id)
-    CreateModel = IdModel.column_model(community_id)
-    IndexModel = IdModel.column_model(microphone, camera)
+    IndexModel = PydanticModel.column_model(user_id, community_id, microphone, camera)
 
     @classmethod
     def create(cls, user_id: int, community_id: int) -> CommunityParticipant:
@@ -42,8 +37,11 @@ class CommunityParticipant(Base):  # TODO community to room after channels creat
     def find_by_community(cls, community_id: int) -> list[CommunityParticipant]:
         return db.session.get_all(select(cls).filter_by(community_id=community_id))
 
-    def get_by_string(self, target: str) -> bool | None:
-        return getattr(self, target, None)
+    @classmethod
+    def get_count_by_community(cls, community_id: int) -> int:
+        return db.session.execute(
+            select(func.count()).select_from(cls).filter_by(community_id=community_id)
+        ).scalar()
 
     def set_by_string(self, target: str, state: bool) -> bool | None:
         return setattr(self, target, state)
@@ -55,16 +53,14 @@ class CommunityMessage(Base, Identifiable):  # TODO community to room after chan
     id = Column(Integer, primary_key=True)
     text = Column(Text, nullable=False)
 
+    community_id = Column(Integer, ForeignKey("community.id"), nullable=False)
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     creator: User | relationship = relationship("User")
-
-    community_id = Column(Integer, ForeignKey("community.id"))
-    community = relationship("Community")
 
     TextModel = PydanticModel.column_model(text)
     IndexModel = (
         TextModel.column_model(id)
-        .nest_model(User.ProfileData, "username", "username")
+        .nest_model(User.MainData, "creator")
     )
 
     @classmethod

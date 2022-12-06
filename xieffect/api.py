@@ -16,8 +16,11 @@ from communities import (
     invitation_namespace,
     news_namespace,
     news_events,
+    news_namespace,
     tasks_namespace,
     tasks_events,
+    videochat_events,
+    videochat_namespace,
 )
 from education import (
     authors_namespace,
@@ -112,6 +115,7 @@ api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
 api.add_namespace(news_namespace)
 api.add_namespace(tasks_namespace)
+api.add_namespace(videochat_namespace)
 
 api.add_namespace(webhook_namespace)
 
@@ -141,6 +145,7 @@ socketio.add_namespace(
     invitation_events,
     news_events,
     tasks_events,
+    videochat_events,
     protected=True
 )
 
