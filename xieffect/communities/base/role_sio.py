@@ -60,14 +60,13 @@ class RolesEventSpace(EventSpace):
         role = Role.create(name=name, color=color, community_id=community.id)
 
         if permissions is not None:
-            if validation_permissions(permissions) is not None:
-                for permission in permissions:
-                    RolePermission.create(
-                        role_id=role.id,
-                        permission_type=PermissionTypes.from_string(permission),
-                    )
-            else:
+            if validation_permissions(permissions) is None:
                 controller.abort(400, "Permissions aren't correct")
+            for permission in permissions:
+                RolePermission.create(
+                    role_id=role.id,
+                    permission_type=PermissionTypes.from_string(permission),
+                )
 
         db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
@@ -95,15 +94,15 @@ class RolesEventSpace(EventSpace):
         if color is not None:
             role.color = color
         if permissions is not None:
-            if validation_permissions(permissions) is not None:
-                RolePermission.delete_by_role(role_id=role.id)
-                for permission in permissions:
-                    RolePermission.create(
-                        role_id=role.id,
-                        permission_type=PermissionTypes.from_string(permission),
-                    )
-        else:
-            controller.abort(400, "Permissions aren't correct")
+            if validation_permissions(permissions) is None:
+                controller.abort(400, "Permissions aren't correct")
+            RolePermission.delete_by_role(role_id=role.id)
+            for permission in permissions:
+                RolePermission.create(
+                    role_id=role.id,
+                    permission_type=PermissionTypes.from_string(permission),
+                )
+
         db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
         return role

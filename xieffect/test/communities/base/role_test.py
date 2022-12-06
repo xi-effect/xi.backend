@@ -82,8 +82,6 @@ def test_roles(
     fourth_role_data["permissions"] = ["test1", "test2"]
     roles_data_list = [role_data, second_role_data, third_role_data, fourth_role_data]
 
-    global role_id
-
     for index, data in enumerate(roles_data_list, 1):
         print(index, data)
         if index == len(roles_data_list):
@@ -113,7 +111,7 @@ def test_roles(
 
     # Assert update role
     for index in range(2):
-        if index == 2:
+        if index == 1:
             data_for_update_role["permissions"] = ["something", "anything"]
             socketio_client.assert_emit_ack(
                 "update_role",
@@ -124,20 +122,16 @@ def test_roles(
         else:
             # Check correct update role
             successful_data = {
-                "permissions": ["delete", "read"],
-                "name": "update_test_name_role",
-                "color": "00008B",
+                "permissions": PERMISSIONS_LIST[1:3],
+                "name": data_for_update_role["name"],
+                "color": data_for_update_role["color"],
                 "id": role_id,
             }
-
             result_data = socketio_client.assert_emit_ack(
                 "update_role", data_for_update_role
             )
             socketio_client2.assert_only_received("update_role", result_data)
-
-            assert dict_equal(
-                result_data, successful_data, "permissions", "name", "color", "id"
-            )
+            assert dict_equal(result_data, successful_data, *successful_data.keys())
 
     # Check successfully close roles-room
     for user in (socketio_client, socketio_client2):

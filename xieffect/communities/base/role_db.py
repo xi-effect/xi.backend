@@ -11,7 +11,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
 from .meta_db import Base, db, Community, Participant
 
-LIMITING_QUANTITY_ROLES = 49
+LIMITING_QUANTITY_ROLES = 50
 
 
 @event.listens_for(Engine, "connect")
@@ -28,11 +28,11 @@ class PermissionTypes(TypeEnum):
     DELETE = "delete"
 
 
-def validation_permissions(permissions):
+def validation_permissions(permissions: list[PermissionTypes.value]) -> None | True:
+    permissions_types = [
+        permission_type.value for permission_type in PermissionTypes
+    ]
     for permission in permissions:
-        permissions_types = [
-            permission_type.value for permission_type in PermissionTypes
-        ]
         if permission not in permissions_types:
             break
     else:
