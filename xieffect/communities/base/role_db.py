@@ -28,7 +28,7 @@ class PermissionTypes(TypeEnum):
     DELETE = "delete"
 
 
-def validation_permissions(permissions: list[PermissionTypes.value]) -> None | True:
+def validation_permissions(permissions: list[PermissionTypes.value]) -> None | bool:
     permissions_types = [
         permission_type.value for permission_type in PermissionTypes
     ]
