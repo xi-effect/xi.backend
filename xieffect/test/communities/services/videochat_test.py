@@ -69,13 +69,28 @@ def test_videochat_tools(
 
     # Check sending message
     text_data = {"text": "Test message"}
-    message = socketio_client.assert_emit_ack(
-        "send_message", dict(**community_id_json, **text_data)
-    )
+    send_data = dict(**community_id_json, **text_data)
+    owner_message = socketio_client.assert_emit_ack("send_message", send_data)
     user = check_code(client.get("/users/me/profile/"))
     assert user.get("username") is not None
-    assert message.get("creator").get("username") == user.get("username")
+    assert owner_message.get("creator").get("username") == user.get("username")
     sio_member.assert_only_received("send_message", text_data)
+
+    users = [[socketio_client, sio_member], [sio_member, socketio_client]]
+    for user in users:
+        member_message = sio_member.assert_emit_ack("send_message", send_data)
+        socketio_client.assert_only_received("send_message", text_data)
+        user.append(member_message.get("id"))
+
+    # Check deleting message
+    for emitter, receiver, message_id in users:
+        data = dict(community_id_json, message_id=message_id)
+        emitter.assert_emit_success("delete_message", data)
+        receiver.assert_only_received("delete_message", data)
+    check_data = dict(community_id_json, message_id=owner_message.get("id"))
+    sio_member.assert_emit_success(
+        "delete_message", check_data, code=403, message="Access denied"
+    )
 
     # Check changing device status
     change_data = (
