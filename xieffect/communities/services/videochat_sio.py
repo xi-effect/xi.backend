@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from common import EventController, User, db
 from .videochat_db import CommunityMessage, CommunityParticipant, PARTICIPANT_LIMIT
 from ..base import Community
-from ..utils import check_participant
+from ..utils import check_participant, ParticipantRole, Participant
 
 controller = EventController()
 
@@ -71,6 +71,38 @@ class VideochatEventSpace(EventSpace):
         db.session.commit()
         event.emit_convert(message, self.room_name(community.id))
         return message
+
+    class DeleteModel(CommunityIdModel):
+        message_id: int
+
+    @controller.doc_abort(403, "Access denied")
+    @controller.argument_parser(DeleteModel)
+    @controller.mark_duplex(DeleteModel, use_event=True)
+    @check_participant(controller, use_participant=True)
+    @controller.database_searcher(
+        CommunityMessage, input_field_name="message_id", result_field_name="message"
+    )
+    @controller.force_ack()
+    def delete_message(
+        self,
+        event: DuplexEvent,
+        community: Community,
+        message: CommunityMessage,
+        participant: Participant,
+    ):
+        checks = [
+            participant.user_id == message.creator_id,
+            participant.role == ParticipantRole.OWNER
+        ]
+        if not any(checks):
+            controller.abort(403, "Access denied")
+        message.delete()
+        db.session.commit()
+        event.emit_convert(
+            room=self.room_name(community_id=community.id),
+            community_id=community.id,
+            message_id=message.id,
+        )
 
     class DeviceModel(CommunityIdModel):
         target: str
