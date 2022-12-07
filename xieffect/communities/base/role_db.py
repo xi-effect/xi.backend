@@ -4,9 +4,10 @@ from collections.abc import Callable
 from typing import TypeVar
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, func, select, event
+from sqlalchemy import Column, ForeignKey, select, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
 from .meta_db import Base, db, Community, Participant
@@ -28,10 +29,8 @@ class PermissionTypes(TypeEnum):
     DELETE = "delete"
 
 
-def validation_permissions(permissions: list[PermissionTypes.value]) -> None | bool:
-    permissions_types = [
-        permission_type.value for permission_type in PermissionTypes
-    ]
+def validation_permissions(permissions: list[PermissionTypes.value]) -> bool | None:
+    permissions_types = [permission_type.value for permission_type in PermissionTypes]
     for permission in permissions:
         if permission not in permissions_types:
             break
@@ -98,16 +97,21 @@ class Role(Base, Identifiable):
 
     @classmethod
     def get_count_by_community(cls: type[r], community_id: int) -> int:
-        return db.session.execute(
-            select(func.count()).select_from(cls).filter_by(community_id=community_id)
-        ).scalar()
+        return db.session.get_first(
+            select(count()).select_from(cls).filter_by(community_id=community_id)
+        )
 
 
 class RolePermission(Base):
     __tablename__ = "cs_role_permissions"
 
-    role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)
-    permission_type = Column(Enum(PermissionTypes), primary_key=True)
+    role_id = Column(
+        Integer,
+        ForeignKey(Role.id, ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    permission_type = Column(Enum(PermissionTypes), primary_key=True, nullable=False)
 
     @classmethod
     def create(
