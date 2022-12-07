@@ -4,6 +4,5 @@ from .meta_db import Community, Participant, ParticipantRole
 from .meta_rst import controller as communities_namespace
 from .meta_sio import controller as communities_meta_events
 from .users_ext_db import CommunitiesUser
-from .role_db import Role, RolePermission
 from .role_rst import controller as role_namespace
 from .role_sio import controller as role_events

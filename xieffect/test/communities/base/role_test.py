@@ -33,15 +33,18 @@ def test_roles(
     }
     role_data.update(community_id_json)
 
-    second_role_data = role_data.copy()
-
-    second_role_data.pop("permissions")
-
     # Check successfully open roles-room
     for user in (socketio_client, socketio_client2):
         user.assert_emit_success("open_roles", community_id_json)
 
     # Assert limiting quantity creating roles in a community
+
+    successful_role_data = dict(
+        name=role_data["name"],
+        color=role_data["color"],
+        permissions=PERMISSIONS_LIST,
+    )
+
     for i in range(1, LIMITING_QUANTITY_ROLES + 2):
 
         if i == LIMITING_QUANTITY_ROLES + 1:
@@ -55,17 +58,15 @@ def test_roles(
                 is None
             )
         else:
+            successful_role_data['id'] = i
             result_data = socketio_client.assert_emit_ack("new_role", role_data)
-            socketio_client2.assert_only_received("new_role", result_data)
-
-    role_data_for_delete = dict(
-        name=role_data['name'], color=role_data['color'], permission=PERMISSIONS_LIST
-    )
+            assert dict_equal(result_data, successful_role_data, *result_data.keys())
+            socketio_client2.assert_only_received("new_role", successful_role_data)
 
     # Assert 50 roles
     for index, data in enumerate(get_roles_list(client, test_community), 1):
-        role_data_for_delete["id"] = index
-        assert dict_equal(data, role_data_for_delete)
+        successful_role_data["id"] = index
+        assert dict_equal(data, successful_role_data)
 
     # Delete 50 roles
     for pk in range(1, LIMITING_QUANTITY_ROLES + 1):
@@ -76,6 +77,8 @@ def test_roles(
     assert len(get_roles_list(client, test_community)) == 0
 
     # Assert role creation with different data
+    second_role_data = role_data.copy()
+    second_role_data.pop("permissions")
     third_role_data = role_data.copy()
     third_role_data.pop("color")
     fourth_role_data = role_data.copy()
@@ -83,14 +86,16 @@ def test_roles(
     roles_data_list = [role_data, second_role_data, third_role_data, fourth_role_data]
 
     for index, data in enumerate(roles_data_list, 1):
-        print(index, data)
         if index == len(roles_data_list):
             socketio_client.assert_emit_ack(
                 "new_role", data, code=400, message="Permissions aren't correct"
             )
         else:
             result_data = socketio_client.assert_emit_ack("new_role", data)
-            socketio_client2.assert_only_received("new_role", result_data)
+            data["id"] = index
+            data.pop("community_id")
+            assert dict_equal(data, result_data, *data.keys())
+            socketio_client2.assert_only_received("new_role", data)
             role_id = result_data.get("id")
             assert isinstance(role_id, int)
 
@@ -107,6 +112,13 @@ def test_roles(
         "community_id": test_community,
     }
 
+    successful_data_for_update_role = dict(
+        id=role_id,
+        name=data_for_update_role["name"],
+        color=data_for_update_role["color"],
+        permissions=PERMISSIONS_LIST[1:3],
+    )
+
     # Assert update role
     for index in range(2):
         if index == 1:
@@ -121,7 +133,12 @@ def test_roles(
             result_data = socketio_client.assert_emit_ack(
                 "update_role", data_for_update_role
             )
-            socketio_client2.assert_only_received("update_role", result_data)
+            assert dict_equal(
+                result_data,
+                successful_data_for_update_role,
+                *successful_data_for_update_role.keys(),
+            )
+            socketio_client2.assert_only_received("update_role", successful_data_for_update_role)
 
     # Check successfully close roles-room
     for user in (socketio_client, socketio_client2):
