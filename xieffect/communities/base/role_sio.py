@@ -42,6 +42,8 @@ class RolesEventSpace(EventSpace):
     class CreateModel(Role.CreateModel, CommunityIdModel):
         permissions: list[str] = Field(default_factory=list)
 
+    @controller.doc_abort(400, "Quantity exceeded")
+    @controller.doc_abort(400, "Permissions aren't correct")
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Role.FullModel, use_event=True)
     @check_participant(controller, role=ParticipantRole.OWNER)
@@ -75,6 +77,7 @@ class RolesEventSpace(EventSpace):
     class UpdateModel(CreateModel):
         role_id: int
 
+    @controller.doc_abort(400, "Permissions aren't correct")
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Role.FullModel, use_event=True)
     @check_participant(controller, role=ParticipantRole.OWNER)

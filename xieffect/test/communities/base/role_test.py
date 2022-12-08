@@ -21,44 +21,33 @@ def test_roles(
     test_community,
 ):
     # Create second owner & base clients
-
     socketio_client2 = SocketIOTestClient(client)
 
     community_id_json = {"community_id": test_community}
-
     role_data = {
         "name": "test_role",
         "color": "FFFF00",
         "permissions": PERMISSIONS_LIST,
     }
-    role_data.update(community_id_json)
 
     # Check successfully open roles-room
     for user in (socketio_client, socketio_client2):
         user.assert_emit_success("open_roles", community_id_json)
 
     # Assert limiting quantity creating roles in a community
-
-    successful_role_data = dict(
-        name=role_data["name"],
-        color=role_data["color"],
-        permissions=PERMISSIONS_LIST,
-    )
+    successful_role_data = dict(**role_data)
+    role_data.update(community_id_json)
 
     for i in range(1, LIMITING_QUANTITY_ROLES + 2):
-
         if i == LIMITING_QUANTITY_ROLES + 1:
-            assert (
-                socketio_client.assert_emit_ack(
-                    event_name="new_role",
-                    data=role_data,
-                    code=400,
-                    message="Quantity exceeded",
-                )
-                is None
+            socketio_client.assert_emit_success(
+                event_name="new_role",
+                data=role_data,
+                code=400,
+                message="Quantity exceeded",
             )
         else:
-            successful_role_data['id'] = i
+            successful_role_data["id"] = i
             result_data = socketio_client.assert_emit_ack("new_role", role_data)
             assert dict_equal(result_data, successful_role_data, *result_data.keys())
             socketio_client2.assert_only_received("new_role", successful_role_data)
@@ -104,20 +93,15 @@ def test_roles(
         == len(roles_data_list) - 1
     )
 
-    data_for_update_role = {
-        "role_id": role_id,
+    update_data = {
         "name": "update_test_name_role",
         "color": "00008B",
         "permissions": PERMISSIONS_LIST[1:3],
-        "community_id": test_community,
     }
 
-    successful_data_for_update_role = dict(
-        id=role_id,
-        name=data_for_update_role["name"],
-        color=data_for_update_role["color"],
-        permissions=PERMISSIONS_LIST[1:3],
-    )
+    data_for_update_role = dict(**update_data, **community_id_json, role_id=role_id)
+
+    successful_data_for_update_role = dict(**update_data, id=role_id)
 
     # Assert update role
     for index in range(2):
@@ -138,7 +122,9 @@ def test_roles(
                 successful_data_for_update_role,
                 *successful_data_for_update_role.keys(),
             )
-            socketio_client2.assert_only_received("update_role", successful_data_for_update_role)
+            socketio_client2.assert_only_received(
+                "update_role", successful_data_for_update_role
+            )
 
     # Check successfully close roles-room
     for user in (socketio_client, socketio_client2):
