@@ -48,8 +48,8 @@ class Participant(Base, Identifiable):
     __tablename__ = "community_participant"
 
     id = Column(Integer, primary_key=True)
-    community_id = Column(Integer, ForeignKey(Community.id))
-    user_id = Column(Integer, ForeignKey(User.id))
+    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
+    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     user = relationship("User")
 
     role = Column(Enum(ParticipantRole), nullable=False)
