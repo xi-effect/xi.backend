@@ -16,7 +16,6 @@ from communities import (
     invitation_namespace,
     news_namespace,
     news_events,
-    news_namespace,
     tasks_namespace,
     tasks_events,
     videochat_events,
