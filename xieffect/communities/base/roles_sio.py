@@ -24,17 +24,14 @@ def check_permissions(return_difference: bool = False):
         @wraps(function)
         @controller.doc_abort(400, "Permission incorrect")
         def check_permissions_inner(*args, **kwargs):
-            check = (
-                lambda permission: controller.abort(400, "Permission incorrect")
-                if permission is None
-                else permission
-            )
-
+            permissions = []
             if kwargs["permissions"] is not None:
                 permissions = [
-                    check(PermissionTypes.from_string(permission))
+                    PermissionTypes.from_string(permission)
                     for permission in kwargs["permissions"]
                 ]
+                if any(permission is None for permission in permissions):
+                    controller.abort(400, "Incorrect permissions")
 
             if return_difference:
                 verified = set(permissions)

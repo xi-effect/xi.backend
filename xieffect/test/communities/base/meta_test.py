@@ -47,9 +47,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     # Creating
     def assert_double_create(community_data: dict):
         community_id = assert_create_community(socketio_client, community_data)
-        socketio_client2.assert_received(
-            "new_community", dict(community_data, id=community_id)
-        )
+        socketio_client2.assert_received("new_community", dict(community_data, id=community_id))
         return community_id
 
     community_datas: list[dict[str, str | int]] = [
