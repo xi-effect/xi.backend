@@ -5,16 +5,7 @@ from flask_fullstack import check_code, dict_equal
 from pytest import mark
 
 from common.testing import SocketIOTestClient
-
-
-def assert_create_community(socketio_client: SocketIOTestClient, community_data: dict) -> int:
-    result_data = socketio_client.assert_emit_ack("new_community", community_data)
-    assert isinstance(result_data, dict)
-    assert dict_equal(result_data, community_data, *community_data.keys())
-
-    community_id = result_data.get("id")
-    assert isinstance(community_id, int)
-    return community_id
+from ..conftest import assert_create_community
 
 
 def get_communities_list(client: FlaskClient) -> list[dict]:
@@ -56,7 +47,9 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     # Creating
     def assert_double_create(community_data: dict):
         community_id = assert_create_community(socketio_client, community_data)
-        socketio_client2.assert_received("new_community", dict(community_data, id=community_id))
+        socketio_client2.assert_received(
+            "new_community", dict(community_data, id=community_id)
+        )
         return community_id
 
     community_datas: list[dict[str, str | int]] = [

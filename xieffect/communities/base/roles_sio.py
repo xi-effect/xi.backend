@@ -1,21 +1,64 @@
 from __future__ import annotations
 
+from functools import wraps
+
 from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
 from pydantic import BaseModel, Field
 
 from common import EventController, db
 from .meta_db import Community, ParticipantRole
-from .role_db import (
+from .roles_db import (
     Role,
     RolePermission,
     PermissionTypes,
     LIMITING_QUANTITY_ROLES,
-    validation_permissions,
 )
 from ..utils import check_participant
 
 controller = EventController()
+
+
+def check_permissions(return_difference: bool = False):
+    def check_permissions_wrapper(function):
+        @wraps(function)
+        @controller.doc_abort(400, "Permission incorrect")
+        def check_permissions_inner(*args, **kwargs):
+            check = (
+                lambda permission: controller.abort(400, "Permission incorrect")
+                if permission is None
+                else permission
+            )
+
+            if kwargs["permissions"] is not None:
+                permissions = [
+                    check(PermissionTypes.from_string(permission))
+                    for permission in kwargs["permissions"]
+                ]
+
+            if return_difference:
+                verified = set(permissions)
+                permissions_set = {
+                    i.permission_type
+                    for i in RolePermission.get_all_by_role(kwargs["role_id"])
+                }
+
+                for del_permission in permissions_set.difference(verified):
+                    RolePermission.delete_by_role(
+                        role_id=kwargs["role_id"], permission_type=del_permission
+                    )
+
+                for intersect_permission in verified.intersection(permissions_set):
+                    verified.remove(intersect_permission)
+                verified.difference(permissions_set)
+                permissions = [v for v in verified]
+
+            kwargs["permissions"] = permissions
+            return function(*args, **kwargs)
+
+        return check_permissions_inner
+
+    return check_permissions_wrapper
 
 
 @controller.route()
@@ -43,17 +86,17 @@ class RolesEventSpace(EventSpace):
         permissions: list[str] = Field(default_factory=list)
 
     @controller.doc_abort(400, "Quantity exceeded")
-    @controller.doc_abort(400, "Permissions aren't correct")
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Role.FullModel, use_event=True)
     @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permissions()
     @controller.marshal_ack(Role.FullModel)
     def new_role(
         self,
         event: DuplexEvent,
         name: str,
         color: str | None,
-        permissions: list[str] | None,
+        permissions: list[str],
         community: Community,
     ):
 
@@ -62,12 +105,10 @@ class RolesEventSpace(EventSpace):
         role = Role.create(name=name, color=color, community_id=community.id)
 
         if permissions is not None:
-            if validation_permissions(permissions) is None:
-                controller.abort(400, "Permissions aren't correct")
             for permission in permissions:
                 RolePermission.create(
                     role_id=role.id,
-                    permission_type=PermissionTypes.from_string(permission),
+                    permission_type=permission,
                 )
 
         db.session.commit()
@@ -77,10 +118,10 @@ class RolesEventSpace(EventSpace):
     class UpdateModel(CreateModel):
         role_id: int
 
-    @controller.doc_abort(400, "Permissions aren't correct")
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Role.FullModel, use_event=True)
     @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permissions(return_difference=True)
     @controller.database_searcher(Role)
     @controller.marshal_ack(Role.FullModel)
     def update_role(
@@ -88,7 +129,7 @@ class RolesEventSpace(EventSpace):
         event: DuplexEvent,
         name: str | None,
         color: str | None,
-        permissions: list[str] | None,
+        permissions: list[str],
         community: Community,
         role: Role,
     ):
@@ -97,13 +138,10 @@ class RolesEventSpace(EventSpace):
         if color is not None:
             role.color = color
         if permissions is not None:
-            if validation_permissions(permissions) is None:
-                controller.abort(400, "Permissions aren't correct")
-            RolePermission.delete_by_role(role_id=role.id)
             for permission in permissions:
                 RolePermission.create(
                     role_id=role.id,
-                    permission_type=PermissionTypes.from_string(permission),
+                    permission_type=permission,
                 )
 
         db.session.commit()

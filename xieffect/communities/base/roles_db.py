@@ -1,50 +1,27 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TypeVar
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, select, event
-from sqlalchemy.engine import Engine
+from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
 from .meta_db import Base, db, Community, Participant
 
-LIMITING_QUANTITY_ROLES = 50
-
-
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(*args):
-    cursor = args[0].cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+LIMITING_QUANTITY_ROLES: int = 50
 
 
 class PermissionTypes(TypeEnum):
-    CREATE = "create"
-    READ = "read"
-    UPDATE = "update"
-    DELETE = "delete"
-
-
-def validation_permissions(permissions: list[PermissionTypes.value]) -> bool | None:
-    permissions_types = [permission_type.value for permission_type in PermissionTypes]
-    for permission in permissions:
-        if permission not in permissions_types:
-            break
-    else:
-        return True
-
-
-r = TypeVar("r", bound="Role")
-p = TypeVar("p", bound="RolePermission")
+    GUEST = 0
+    STUDENT = 1
+    TEACHER = 2
+    ADMINISTRATOR = 3
 
 
 class Role(Base, Identifiable):
     __tablename__ = "cs_roles"
-
     not_found_text = "Role not found"
 
     id = Column(Integer, primary_key=True)
@@ -71,16 +48,13 @@ class Role(Base, Identifiable):
                 ]
             )
 
-    def __repr__(self):
-        return self.name
-
     @classmethod
     def create(
-        cls: type[r],
+        cls,
         name: str,
         color: str | None,
         community_id: int,
-    ) -> type[r]:
+    ) -> Role:
         return super().create(
             name=name,
             color=color,
@@ -88,17 +62,17 @@ class Role(Base, Identifiable):
         )
 
     @classmethod
-    def find_by_id(cls: type[r], role_id: int) -> r | None:
+    def find_by_id(cls, role_id: int) -> Role | None:
         return db.session.get_first(select(cls).filter_by(id=role_id))
 
     @classmethod
-    def find_by_community(cls: type[r], community_id: int) -> list[r]:
+    def find_by_community(cls, community_id: int) -> list[Role]:
         return db.session.get_all(select(cls).filter_by(community_id=community_id))
 
     @classmethod
-    def get_count_by_community(cls: type[r], community_id: int) -> int:
+    def get_count_by_community(cls, community_id: int) -> int:
         return db.session.get_first(
-            select(count()).select_from(cls).filter_by(community_id=community_id)
+            select(count(cls.id)).filter_by(community_id=community_id)
         )
 
 
@@ -109,24 +83,31 @@ class RolePermission(Base):
         Integer,
         ForeignKey(Role.id, ondelete="CASCADE"),
         primary_key=True,
-        nullable=False,
     )
-    permission_type = Column(Enum(PermissionTypes), primary_key=True, nullable=False)
+    permission_type = Column(Enum(PermissionTypes), primary_key=True)
 
     @classmethod
     def create(
-        cls: type[p],
+        cls,
         role_id,
         permission_type,
-    ) -> type[p]:
+    ) -> RolePermission:
         return super().create(
             role_id=role_id,
             permission_type=permission_type,
         )
 
     @classmethod
-    def delete_by_role(cls: type[p], role_id: int) -> None:
-        db.session.execute(db.delete(cls).where(cls.role_id == role_id))
+    def delete_by_role(cls, role_id: int, permission_type: str) -> None:
+        db.session.execute(
+            db.delete(cls).where(
+                cls.role_id == role_id, cls.permission_type == permission_type
+            )
+        )
+
+    @classmethod
+    def get_all_by_role(cls, role_id: int) -> list[RolePermission]:
+        return db.session.get_all(select(cls).filter_by(role_id=role_id))
 
 
 class ParticipantRole(Base):  # TODO pragma: no cover
