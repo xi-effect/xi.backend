@@ -3,8 +3,6 @@ from __future__ import annotations
 from json import dump as dump_json, load as load_json
 from pathlib import Path
 from sys import argv, modules
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 
 from api import app as application, log_stuff, socketio
 from common import (
@@ -161,6 +159,8 @@ def version_check():  # TODO pragma: no coverage
 
 def sqlite_pragma():
     if db_url.startswith("sqlite"):
+        from sqlalchemy import event
+        from sqlalchemy.engine import Engine
 
         @event.listens_for(Engine, "connect")
         def set_sqlite_pragma(*args):
@@ -177,7 +177,6 @@ with application.app_context():
     version_check()
     sqlite_pragma()
     db.session.commit()
-
 
 if __name__ == "__main__":  # test only
     socketio.run(
