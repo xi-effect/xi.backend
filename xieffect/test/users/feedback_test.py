@@ -81,7 +81,7 @@ def test_feedback(
     assert (feedback_id := feedback.get("id")) is not None
     get_url = f"/mub/feedback/{feedback_id}/"
     feedback_received = check_code(mod_client.get(get_url))
-    assert dict_equal(feedback, feedback_received)
+    assert dict_equal(feedback, feedback_received, *feedback_received.keys())
     assert_message(client, get_url, "Permission denied", 403, method="GET")
 
     # Check deleting feedbacks
