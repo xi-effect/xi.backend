@@ -14,10 +14,8 @@ LIMITING_QUANTITY_ROLES: int = 50
 
 
 class PermissionTypes(TypeEnum):
-    GUEST = 0
-    STUDENT = 1
-    TEACHER = 2
-    ADMINISTRATOR = 3
+    MANAGE_INVITATIONS = 0
+    MANAGE_ROLES = 1
 
 
 class Role(Base, Identifiable):
@@ -89,8 +87,8 @@ class RolePermission(Base):
     @classmethod
     def create(
         cls,
-        role_id,
-        permission_type,
+        role_id: int,
+        permission_type: str,
     ) -> RolePermission:
         return super().create(
             role_id=role_id,

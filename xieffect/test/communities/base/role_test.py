@@ -5,9 +5,6 @@ from flask_fullstack import dict_equal, check_code
 from common.testing import SocketIOTestClient
 from communities.base.roles_db import LIMITING_QUANTITY_ROLES, PermissionTypes
 
-PERMISSIONS_LIST: list = [i.name.lower() for i in PermissionTypes]
-INCORRECT_PERMISSION: str = "test"
-
 
 def get_roles_list(client, community_id: int) -> list[dict]:
     """Check the success of getting the list of roles"""
@@ -24,8 +21,12 @@ def test_roles(
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
 
+    # Create valid & invalid permissions list
+    permissions_list: list = [p.to_string() for p in PermissionTypes]
+    incorrect_permissions: list = ["test"]
+
     role_data = {
-        "permissions": PERMISSIONS_LIST[:2],
+        "permissions": sorted(permissions_list),
         "name": "test_role",
         "color": "FFFF00",
     }
@@ -71,36 +72,31 @@ def test_roles(
     second_role_data.pop("permissions")
     third_role_data = role_data.copy()
     third_role_data.pop("color")
-    fourth_role_data = role_data.copy()
-    fourth_role_data["permissions"] = [INCORRECT_PERMISSION]
-    roles_data_list = [role_data, second_role_data, third_role_data, fourth_role_data]
+    incorrect_role_data = role_data.copy()
+    incorrect_role_data["permissions"] = incorrect_permissions
+    roles_data_list = [role_data, second_role_data, third_role_data]
 
-    for index, data in enumerate(roles_data_list, 1):
-        if index == len(roles_data_list):
-            socketio_client.assert_emit_ack(
-                "new_role",
-                data,
-                code=400,
-                message="Permission incorrect",
-            )
-        else:
-            result_data = socketio_client.assert_emit_ack("new_role", data)
-            data["id"] = index
-            data.pop("community_id")
-            assert dict_equal(data, result_data, *data.keys())
-            socketio_client2.assert_only_received("new_role", data)
-            role_id = result_data.get("id")
-            assert isinstance(role_id, int)
+    socketio_client.assert_emit_ack(
+        "new_role", incorrect_role_data, code=400, message="Incorrect permissions"
+    )
 
-    assert (
-        len(get_roles_list(client, community_id=test_community))
-        == len(roles_data_list) - 1
+    for index, data in enumerate(roles_data_list, start=1):
+        result_data = socketio_client.assert_emit_ack("new_role", data)
+        data["id"] = index
+        data.pop("community_id")
+        assert dict_equal(data, result_data, *data.keys())
+        socketio_client2.assert_only_received("new_role", data)
+        role_id = result_data.get("id")
+        assert isinstance(role_id, int)
+
+    assert len(get_roles_list(client, community_id=test_community)) == len(
+        roles_data_list
     )
 
     update_data = {
         "name": "update_test_name_role",
         "color": "00008B",
-        "permissions": PERMISSIONS_LIST[1:3],
+        "permissions": sorted(permissions_list[1:]),
     }
 
     data_for_update_role = dict(**update_data, **community_id_json, role_id=role_id)
@@ -118,12 +114,12 @@ def test_roles(
         "update_role", successful_data_for_update_role
     )
 
-    data_for_update_role["permissions"] = [INCORRECT_PERMISSION]
+    data_for_update_role["permissions"] = incorrect_permissions
     socketio_client.assert_emit_ack(
         "update_role",
         data_for_update_role,
         code=400,
-        message="Permission incorrect",
+        message="Incorrect permissions",
     )
 
     # Check successfully close roles-room
