@@ -88,7 +88,7 @@ class RolePermission(Base):
     def create(
         cls,
         role_id: int,
-        permission_type: str,
+        permission_type: PermissionTypes,
     ) -> RolePermission:
         return super().create(
             role_id=role_id,

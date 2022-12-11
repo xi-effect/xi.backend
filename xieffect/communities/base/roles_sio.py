@@ -24,20 +24,22 @@ def check_permissions(return_difference: bool = False):
         @wraps(function)
         @controller.doc_abort(400, "Permission incorrect")
         def check_permissions_inner(*args, **kwargs):
-            permissions = []
-            if kwargs["permissions"] is not None:
-                permissions = [
-                    PermissionTypes.from_string(permission)
-                    for permission in kwargs["permissions"]
-                ]
-                if any(permission is None for permission in permissions):
-                    controller.abort(400, "Incorrect permissions")
+            permissions = [
+                PermissionTypes.from_string(permission)
+                for permission in kwargs.get("permissions", [])
+            ]
+            if len(permissions) == 0:
+                kwargs["permissions"] = permissions
+                return function(*args, **kwargs)
+
+            if any(permission is None for permission in permissions):
+                controller.abort(400, "Incorrect permissions")
 
             if return_difference:
                 verified = set(permissions)
                 permissions_set = {
-                    i.permission_type
-                    for i in RolePermission.get_all_by_role(kwargs["role_id"])
+                    p.permission_type
+                    for p in RolePermission.get_all_by_role(kwargs["role_id"])
                 }
 
                 for del_permission in permissions_set.difference(verified):
@@ -93,7 +95,7 @@ class RolesEventSpace(EventSpace):
         event: DuplexEvent,
         name: str,
         color: str | None,
-        permissions: list[str],
+        permissions: list[str] | list,
         community: Community,
     ):
 
@@ -101,12 +103,11 @@ class RolesEventSpace(EventSpace):
             controller.abort(400, "Quantity exceeded")
         role = Role.create(name=name, color=color, community_id=community.id)
 
-        if permissions is not None:
-            for permission in permissions:
-                RolePermission.create(
-                    role_id=role.id,
-                    permission_type=permission,
-                )
+        for permission in permissions:
+            RolePermission.create(
+                role_id=role.id,
+                permission_type=permission,
+            )
 
         db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
@@ -126,7 +127,7 @@ class RolesEventSpace(EventSpace):
         event: DuplexEvent,
         name: str | None,
         color: str | None,
-        permissions: list[str],
+        permissions: list[str] | list,
         community: Community,
         role: Role,
     ):
@@ -134,12 +135,11 @@ class RolesEventSpace(EventSpace):
             role.name = name
         if color is not None:
             role.color = color
-        if permissions is not None:
-            for permission in permissions:
-                RolePermission.create(
-                    role_id=role.id,
-                    permission_type=permission,
-                )
+        for permission in permissions:
+            RolePermission.create(
+                role_id=role.id,
+                permission_type=permission,
+            )
 
         db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
