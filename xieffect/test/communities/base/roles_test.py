@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask_fullstack import dict_equal, check_code
 
 from common.testing import SocketIOTestClient
-from communities.base.roles_db import LIMITING_QUANTITY_ROLES, PermissionTypes
+from communities.base.roles_db import LIMITING_QUANTITY_ROLES, PermissionType
 
 
 def get_roles_list(client, community_id: int) -> list[dict]:
@@ -22,11 +22,11 @@ def test_roles(
     socketio_client2 = SocketIOTestClient(client)
 
     # Create valid & invalid permissions list
-    permissions: list[str] = PermissionTypes.get_all_field_names()
+    permissions: list[str] = sorted(PermissionType.get_all_field_names())
     incorrect_permissions: list[str] = ["test"]
 
     role_data = {
-        "permissions": sorted(permissions),
+        "permissions": permissions,
         "name": "test_role",
         "color": "FFFF00",
     }
@@ -54,7 +54,7 @@ def test_roles(
     )
 
     # Assert 50 roles
-    for index, data in enumerate(get_roles_list(client, test_community), 1):
+    for index, data in enumerate(get_roles_list(client, test_community), start=1):
         successful_role_data["id"] = index
         assert dict_equal(data, successful_role_data)
 
@@ -96,12 +96,13 @@ def test_roles(
     update_data = {
         "name": "update_test_name_role",
         "color": "00008B",
-        "permissions": sorted(permissions[1:]),
+        "permissions": permissions[1:],
     }
 
     update_role_data = dict(**update_data, **community_id_json, role_id=role_id)
     successful_data = dict(**update_data, id=role_id)
     second_update_role_data = update_role_data.copy()
+    second_update_role_data.pop("name")
     second_update_role_data.pop("permissions")
     second_update_role_data.pop("color")
     update_data_list = [update_role_data, second_update_role_data]
@@ -114,6 +115,20 @@ def test_roles(
             *successful_data.keys(),
         )
         socketio_client2.assert_only_received("update_role", successful_data)
+
+    third_update_role_data = update_role_data.copy()
+    third_update_role_data["permissions"] = []
+    successful_data["permissions"] = []
+    result_data = socketio_client.assert_emit_ack("update_role", third_update_role_data)
+    assert dict_equal(result_data, successful_data, *successful_data.keys())
+    socketio_client2.assert_only_received("update_role", successful_data)
+
+    four_update_role_data = update_role_data.copy()
+    four_update_role_data['permissions'] = permissions
+    successful_data['permissions'] = permissions
+    result_data = socketio_client.assert_emit_ack("update_role", four_update_role_data)
+    assert dict_equal(result_data, successful_data, *successful_data.keys())
+    socketio_client2.assert_only_received("update_role", successful_data)
 
     update_role_data["permissions"] = incorrect_permissions
     socketio_client.assert_emit_ack(

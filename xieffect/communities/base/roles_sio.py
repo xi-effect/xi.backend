@@ -11,7 +11,7 @@ from .meta_db import Community, ParticipantRole
 from .roles_db import (
     Role,
     RolePermission,
-    PermissionTypes,
+    PermissionType,
     LIMITING_QUANTITY_ROLES,
 )
 from ..utils import check_participant
@@ -19,43 +19,19 @@ from ..utils import check_participant
 controller = EventController()
 
 
-def check_permissions(return_difference: bool = False):
-    def check_permissions_wrapper(function):
-        @wraps(function)
-        @controller.doc_abort(400, "Permission incorrect")
-        def check_permissions_inner(*args, **kwargs):
+def check_permissions(function):
+    @wraps(function)
+    @controller.doc_abort(400, "Incorrect permissions")
+    def check_permissions_wrapper(*args, permissions: list[str] | None, **kwargs):
+        if permissions is not None:
             permissions = [
-                PermissionTypes.from_string(permission)
-                for permission in kwargs.get("permissions", [])
+                PermissionType.from_string(permission) for permission in permissions
             ]
-            if len(permissions) == 0:
-                kwargs["permissions"] = permissions
-                return function(*args, **kwargs)
 
             if any(permission is None for permission in permissions):
                 controller.abort(400, "Incorrect permissions")
 
-            if return_difference:
-                verified = set(permissions)
-                permissions_set = {
-                    p.permission_type
-                    for p in RolePermission.get_all_by_role(kwargs["role_id"])
-                }
-
-                for del_permission in permissions_set.difference(verified):
-                    RolePermission.delete_by_role(
-                        role_id=kwargs["role_id"], permission_type=del_permission
-                    )
-
-                for intersect_permission in verified.intersection(permissions_set):
-                    verified.remove(intersect_permission)
-                verified.difference(permissions_set)
-                permissions = [v for v in verified]
-
-            kwargs["permissions"] = permissions
-            return function(*args, **kwargs)
-
-        return check_permissions_inner
+        return function(*args, permissions=permissions, **kwargs)
 
     return check_permissions_wrapper
 
@@ -88,17 +64,16 @@ class RolesEventSpace(EventSpace):
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Role.FullModel, use_event=True)
     @check_participant(controller, role=ParticipantRole.OWNER)
-    @check_permissions()
+    @check_permissions
     @controller.marshal_ack(Role.FullModel)
     def new_role(
         self,
         event: DuplexEvent,
         name: str,
         color: str | None,
-        permissions: list[str] | list,
+        permissions: list[str],
         community: Community,
     ):
-
         if Role.get_count_by_community(community.id) >= LIMITING_QUANTITY_ROLES:
             controller.abort(400, "Quantity exceeded")
         role = Role.create(name=name, color=color, community_id=community.id)
@@ -113,13 +88,14 @@ class RolesEventSpace(EventSpace):
         event.emit_convert(role, self.room_name(community.id))
         return role
 
-    class UpdateModel(CreateModel):
+    class UpdateModel(Role.CreateModel, CommunityIdModel):
+        permissions: list[str] = None
         role_id: int
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Role.FullModel, use_event=True)
     @check_participant(controller, role=ParticipantRole.OWNER)
-    @check_permissions(return_difference=True)
+    @check_permissions
     @controller.database_searcher(Role)
     @controller.marshal_ack(Role.FullModel)
     def update_role(
@@ -127,7 +103,7 @@ class RolesEventSpace(EventSpace):
         event: DuplexEvent,
         name: str | None,
         color: str | None,
-        permissions: list[str] | list,
+        permissions: list[str] | None,
         community: Community,
         role: Role,
     ):
@@ -135,11 +111,26 @@ class RolesEventSpace(EventSpace):
             role.name = name
         if color is not None:
             role.color = color
-        for permission in permissions:
-            RolePermission.create(
-                role_id=role.id,
-                permission_type=permission,
-            )
+        if permissions is not None:
+            received_permissions: set[PermissionType] = set(permissions)
+            permissions_from_db: set[PermissionType] = {
+                permission.permission_type
+                for permission in RolePermission.get_all_by_role(role.id)
+            }
+
+            for del_permission in permissions_from_db.difference(received_permissions):
+                RolePermission.delete_by_role(
+                    role_id=role.id, permission_type=del_permission
+                )
+
+            for permission in received_permissions.intersection(permissions_from_db):
+                received_permissions.remove(permission)
+
+            for permission in received_permissions.difference(permissions_from_db):
+                RolePermission.create(
+                    role_id=role.id,
+                    permission_type=permission,
+                )
 
         db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
