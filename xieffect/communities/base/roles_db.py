@@ -13,7 +13,7 @@ from .meta_db import Base, db, Community, Participant
 LIMITING_QUANTITY_ROLES: int = 50
 
 
-class PermissionTypes(TypeEnum):
+class PermissionType(TypeEnum):
     MANAGE_INVITATIONS = 0
     MANAGE_ROLES = 1
 
@@ -82,13 +82,13 @@ class RolePermission(Base):
         ForeignKey(Role.id, ondelete="CASCADE"),
         primary_key=True,
     )
-    permission_type = Column(Enum(PermissionTypes), primary_key=True)
+    permission_type = Column(Enum(PermissionType), primary_key=True)
 
     @classmethod
     def create(
         cls,
         role_id: int,
-        permission_type: PermissionTypes,
+        permission_type: PermissionType,
     ) -> RolePermission:
         return super().create(
             role_id=role_id,
