@@ -158,7 +158,7 @@ def version_check():  # TODO pragma: no coverage
 
 
 def sqlite_pragma():
-    if db_url.startswith("sqlite"):
+    if db_url.startswith("sqlite"):  # pragma: no coverage
         from sqlalchemy import event
         from sqlalchemy.engine import Engine
 
