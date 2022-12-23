@@ -5,13 +5,14 @@ from functools import wraps
 from flask_fullstack import ResourceController, EventController, get_or_pop
 
 from common import User
-from .base.meta_db import ParticipantRole, Community, Participant
+from .base.meta_db import Community, Participant
+from .base.roles_db import ParticipantRole, PermissionType
 
 
 def check_participant(
     controller: ResourceController | EventController,
     *,
-    role: ParticipantRole = ParticipantRole.BASE,
+    permission: PermissionType = None,
     use_user: bool = False,
     use_participant: bool = False,
     use_community: bool = True,
@@ -29,12 +30,19 @@ def check_participant(
             if participant is None:
                 controller.abort(403, "Permission Denied: Participant not found")
 
-            if participant.role.value < role.value:
-                controller.abort(403, "Permission Denied: Low role")
-
             if use_participant:  # TODO pragma: no coverage
                 kwargs["participant"] = participant
 
+            if permission is not None:
+                for per in ParticipantRole.get_permissions_by_participant(
+                    participant_id=participant.id
+                ):
+                    if per is permission:
+                        return function(*args, **kwargs)
+
+                controller.abort(
+                    403, "Permission Denied: Participant doesn't have permission"
+                )
             return function(*args, **kwargs)
 
         return check_participant_role_inner

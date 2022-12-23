@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, select
+from sqlalchemy import Column, ForeignKey, select, distinct
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
@@ -16,6 +16,8 @@ LIMITING_QUANTITY_ROLES: int = 50
 class PermissionType(TypeEnum):
     MANAGE_INVITATIONS = 0
     MANAGE_ROLES = 1
+    MANAGE_TASKS = 2
+    MANAGE_NEWS = 3
 
 
 class Role(Base, Identifiable):
@@ -48,10 +50,10 @@ class Role(Base, Identifiable):
 
     @classmethod
     def create(
-        cls,
-        name: str,
-        color: str | None,
-        community_id: int,
+            cls,
+            name: str,
+            color: str | None,
+            community_id: int,
     ) -> Role:
         return super().create(
             name=name,
@@ -86,9 +88,9 @@ class RolePermission(Base):
 
     @classmethod
     def create(
-        cls,
-        role_id: int,
-        permission_type: PermissionType,
+            cls,
+            role_id: int,
+            permission_type: PermissionType,
     ) -> RolePermission:
         return super().create(
             role_id=role_id,
@@ -115,3 +117,18 @@ class ParticipantRole(Base):  # TODO pragma: no cover
         Integer, ForeignKey(Participant.id, ondelete="CASCADE"), primary_key=True
     )
     role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)
+
+    # @classmethod
+    # def get_permissions_by_participant(cls, participant_id: int) -> list[PermissionType]:
+    #     return db.session.get_all(
+    #         select(Role).join_from(Role, cls).filter_by(participant_id=participant_id)
+    #     )
+
+    @classmethod
+    def get_permissions_by_participant(cls, participant_id: int):
+        return db.session.get_all(
+            select(distinct(RolePermission.permission_type))
+            .join(cls, cls.role_id == Role.id)
+            .filter_by(participant_id=participant_id)
+            .join(Role, Role.id == RolePermission.role_id)
+        )

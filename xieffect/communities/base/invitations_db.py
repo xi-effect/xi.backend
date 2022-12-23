@@ -6,10 +6,10 @@ from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.sql.sqltypes import Integer, DateTime, String, Enum
+from sqlalchemy.sql.sqltypes import Integer, DateTime, String
 
 from common import Base, db, app
-from .meta_db import Community, ParticipantRole
+from .meta_db import Community
 
 
 class Invitation(Base, Identifiable):
@@ -27,24 +27,21 @@ class Invitation(Base, Identifiable):
         backref=backref("invitations", cascade="all, delete, delete-orphan"),
     )
 
-    role = Column(Enum(ParticipantRole), nullable=False)
     deadline = Column(DateTime, nullable=True)
     limit = Column(Integer, nullable=True)
 
     BaseModel = PydanticModel.column_model(id, code)
-    CreationBaseModel = PydanticModel.column_model(role, limit)
+    CreationBaseModel = PydanticModel.column_model(limit)
     IndexModel = BaseModel.column_model(deadline).combine_with(CreationBaseModel)
 
     @classmethod
     def create(
         cls,
         community_id: int,
-        role: ParticipantRole,
         limit: int | None,
         days_to_live: int | None,
     ) -> Invitation:
         entry: cls = super().create(
-            role=role,
             community_id=community_id,
             limit=limit,
             deadline=(

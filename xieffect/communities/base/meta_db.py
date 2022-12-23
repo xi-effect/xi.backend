@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from flask_fullstack import Identifiable, TypeEnum, PydanticModel
+from flask_fullstack import Identifiable, PydanticModel
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
+from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 from common import User, Base, db
 
@@ -27,7 +27,7 @@ class Community(Base, Identifiable):
     def create(cls, name: str, description: str | None, creator: User) -> Community:
         entry: cls = super().create(name=name, description=description)
 
-        participant = Participant(user=creator, role=ParticipantRole.OWNER)
+        participant = Participant(user=creator)
         entry.participants.append(participant)
         db.session.add(participant)
         db.session.flush()
@@ -39,9 +39,9 @@ class Community(Base, Identifiable):
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
 
-class ParticipantRole(TypeEnum):
-    BASE = 0
-    OWNER = 4
+# class ParticipantRole(TypeEnum):
+#     BASE = 0
+#     OWNER = 4
 
 
 class Participant(Base, Identifiable):
@@ -52,14 +52,13 @@ class Participant(Base, Identifiable):
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     user = relationship("User")
 
-    role = Column(Enum(ParticipantRole), nullable=False)
+    # role = Column(Enum(ParticipantRole), nullable=False)
 
     @classmethod
-    def create(cls, community_id: int, user_id: int, role: ParticipantRole):
+    def create(cls, community_id: int, user_id: int):
         return super().create(
             community_id=community_id,
-            user_id=user_id,
-            role=role,
+            user_id=user_id
         )
 
     @classmethod

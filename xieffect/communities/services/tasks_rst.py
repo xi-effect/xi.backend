@@ -5,9 +5,9 @@ from flask_restx import Resource
 
 from common import ResourceController, User
 from .tasks_db import Task
-from ..base import Community, ParticipantRole
+from ..base import Community
 from ..utils import check_participant
-
+from ..base.roles_db import PermissionType
 # Set Tasks behavior here
 TASKS_PER_PAGE = 48
 
@@ -20,7 +20,7 @@ controller = ResourceController(
 class Tasks(Resource):
     @controller.jwt_authorizer(User)
     @controller.argument_parser(counter_parser)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_TASKS)
     @controller.lister(TASKS_PER_PAGE, Task.IndexModel)
     def get(self, community: Community, start: int, finish: int):
         return Task.find_paginated_by_kwargs(
@@ -35,7 +35,7 @@ class Tasks(Resource):
 @controller.route("/tasks/<int:task_id>/")
 class TaskGet(Resource):
     @controller.jwt_authorizer(User)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_TASKS)
     @controller.database_searcher(Task, error_code="404 ")
     @controller.marshal_with(Task.FullModel)
     def get(self, community: Community, task: Task):

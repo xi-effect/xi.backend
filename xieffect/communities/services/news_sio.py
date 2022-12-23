@@ -8,7 +8,8 @@ from pydantic import BaseModel
 
 from common import EventController, User
 from .news_db import Post
-from ..base import ParticipantRole, Community
+from ..base import Community
+from ..base.roles_db import PermissionType
 from ..utils import check_participant
 
 controller = EventController()
@@ -40,7 +41,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER, use_user=True)
+    @check_participant(controller, permission=PermissionType.MANAGE_NEWS, use_user=True)
     @controller.marshal_ack(Post.IndexModel)
     def new_post(
         self,
@@ -59,7 +60,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_NEWS)
     @controller.database_searcher(Post)
     @controller.marshal_ack(Post.IndexModel)
     def update_post(
@@ -85,7 +86,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(DeleteModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_NEWS)
     @controller.database_searcher(Post)
     @controller.force_ack()
     def delete_post(

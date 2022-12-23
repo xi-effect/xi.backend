@@ -7,16 +7,17 @@ from flask_restx import Resource
 
 from common import ResourceController, User
 from .invitations_db import Invitation
-from .meta_db import Community, Participant, ParticipantRole
+from .meta_db import Community, Participant
 from .meta_sio import CommunitiesEventSpace
 from ..utils import check_participant
+from .roles_db import PermissionType
 
 controller = ResourceController("communities-invitation", path="/communities/")
 
 
 @controller.route("/<int:community_id>/invitations/index/")
 class InvitationLister(Resource):
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_INVITATIONS)
     @controller.argument_parser(counter_parser)
     @controller.lister(20, Invitation.IndexModel)
     def post(self, community: Community, start: int, finish: int):

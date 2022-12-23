@@ -6,8 +6,9 @@ from pydantic import BaseModel
 
 from common import EventController
 from .invitations_db import Invitation
-from .meta_db import Community, ParticipantRole
+from .meta_db import Community
 from ..utils import check_participant
+from .roles_db import PermissionType
 
 controller = EventController()
 
@@ -22,13 +23,13 @@ class InvitationsEventSpace(EventSpace):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_INVITATIONS)
     @controller.force_ack()
     def open_invites(self, community: Community):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_INVITATIONS)
     @controller.force_ack()
     def close_invites(self, community: Community):
         leave_room(self.room_name(community.id))
@@ -39,17 +40,16 @@ class InvitationsEventSpace(EventSpace):
     @controller.doc_abort(400, "Invalid role")
     @controller.argument_parser(CreationModel)
     @controller.mark_duplex(Invitation.IndexModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_INVITATIONS)
     @controller.marshal_ack(Invitation.IndexModel)
     def new_invite(
         self,
         event: DuplexEvent,
         community: Community,
-        role: ParticipantRole,
         limit: int | None,
         days: int | None,
     ):
-        invitation = Invitation.create(community.id, role, limit, days)
+        invitation = Invitation.create(community.id, limit, days)
         event.emit_convert(invitation, self.room_name(community.id))
         return invitation
 
@@ -58,7 +58,7 @@ class InvitationsEventSpace(EventSpace):
 
     @controller.argument_parser(InvitationIdsModel)
     @controller.mark_duplex(InvitationIdsModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_INVITATIONS)
     @controller.database_searcher(Invitation)
     @controller.force_ack()
     def delete_invite(

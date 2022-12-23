@@ -7,7 +7,7 @@ from flask_socketio import leave_room, join_room
 from pydantic import BaseModel, Field
 
 from common import EventController, db
-from .meta_db import Community, ParticipantRole
+from .meta_db import Community
 from .roles_db import (
     Role,
     RolePermission,
@@ -63,7 +63,7 @@ class RolesEventSpace(EventSpace):
     @controller.doc_abort(400, "Quantity exceeded")
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Role.FullModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_ROLES)
     @check_permissions
     @controller.marshal_ack(Role.FullModel)
     def new_role(
@@ -94,7 +94,7 @@ class RolesEventSpace(EventSpace):
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Role.FullModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_ROLES)
     @check_permissions
     @controller.database_searcher(Role)
     @controller.marshal_ack(Role.FullModel)
@@ -141,7 +141,7 @@ class RolesEventSpace(EventSpace):
 
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(DeleteModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_participant(controller, permission=PermissionType.MANAGE_ROLES)
     @controller.database_searcher(Role)
     @controller.force_ack()
     def delete_role(
