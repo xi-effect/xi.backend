@@ -39,11 +39,6 @@ class Community(Base, Identifiable):
         return db.session.get_first(select(cls).filter_by(id=entry_id))
 
 
-# class ParticipantRole(TypeEnum):
-#     BASE = 0
-#     OWNER = 4
-
-
 class Participant(Base, Identifiable):
     __tablename__ = "community_participant"
 
@@ -51,8 +46,6 @@ class Participant(Base, Identifiable):
     community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     user = relationship("User")
-
-    # role = Column(Enum(ParticipantRole), nullable=False)
 
     @classmethod
     def create(cls, community_id: int, user_id: int):

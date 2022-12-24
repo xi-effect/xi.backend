@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask_fullstack import dict_equal, check_code
+from pytest import mark
 
 from common.testing import SocketIOTestClient
 from communities.base.roles_db import LIMITING_QUANTITY_ROLES, PermissionType
@@ -13,10 +14,13 @@ def get_roles_list(client, community_id: int) -> list[dict]:
     return result
 
 
+@mark.order(1001)
 def test_roles(
     client,
     socketio_client,
     test_community,
+    create_participant_roles,
+    last_participant_id,
 ):
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
@@ -40,9 +44,16 @@ def test_roles(
     successful_role_data = dict(**role_data)
     role_data.update(community_id_json)
 
-    for _ in range(LIMITING_QUANTITY_ROLES):
+    create_participant_roles(
+        permission_type="MANAGE_ROLES", community_id=last_participant_id()
+    )
+
+    print_participant_communities()
+    for _ in range(LIMITING_QUANTITY_ROLES - 1):
         result_data = socketio_client.assert_emit_ack("new_role", role_data)
-        assert dict_equal(result_data, successful_role_data, *successful_role_data.keys())
+        assert dict_equal(
+            result_data, successful_role_data, *successful_role_data.keys()
+        )
         assert isinstance(result_data.get("id"), int)
         socketio_client2.assert_only_received("new_role", successful_role_data)
 
@@ -53,14 +64,18 @@ def test_roles(
         message="Quantity exceeded",
     )
 
+    print(get_roles_list(client, test_community))
+
     # Delete 50 roles
     for data in get_roles_list(client, test_community):
+        if data["id"] == 1:
+            continue
         assert dict_equal(data, successful_role_data, *successful_role_data)
         data = dict(community_id_json, role_id=data["id"])
         socketio_client.assert_emit_success("delete_role", data)
         socketio_client2.assert_only_received("delete_role", data)
 
-    assert len(get_roles_list(client, test_community)) == 0
+    assert len(get_roles_list(client, test_community)) == 1
 
     # Assert role creation with different data
     second_role_data = role_data.copy()
@@ -83,8 +98,9 @@ def test_roles(
         role_id = result_data.get("id")
         assert isinstance(role_id, int)
 
-    assert len(get_roles_list(client, community_id=test_community)) == len(
-        roles_data_list
+    assert (
+        len(get_roles_list(client, community_id=test_community))
+        == len(roles_data_list) + 1
     )
 
     # Assert role update with different data

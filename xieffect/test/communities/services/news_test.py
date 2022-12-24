@@ -27,7 +27,10 @@ def test_post_creation(
     list_tester,
     socketio_client,
     test_community,
+    create_participant_roles,
+    print_participant_communities
 ):  # TODO redo without calls to the database
+
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
 
@@ -37,6 +40,9 @@ def test_post_creation(
         "limit": 2,
         "days": 10,
     }
+
+    create_participant_roles(permission_type="MANAGE_INVITATIONS", community_id=test_community)
+
     invite = socketio_client.assert_emit_ack("new_invite", invite_data)
     member = multi_client("1@user.user")
     sio_member = SocketIOTestClient(member)
@@ -54,6 +60,8 @@ def test_post_creation(
 
     posts_ids = [d.get("id") for d in get_posts_list(client, test_community)]
     post_data = dict(community_id_json, title="tit", description="desc")
+
+    create_participant_roles(permission_type="MANAGE_NEWS", community_id=test_community)
 
     # Assert post creation
     result_data = socketio_client.assert_emit_ack("new_post", post_data)

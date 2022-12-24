@@ -82,7 +82,7 @@ class InvitationJoin(Resource):
         if invitation is None:
             controller.abort(400, "User has already joined")
 
-        Participant.create(community.id, user.id, invitation.role)
+        Participant.create(community.id, user.id)
         if invitation.limit == 1:
             invitation.delete()
         elif invitation.limit is not None:
