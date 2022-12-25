@@ -18,6 +18,7 @@ class PermissionType(TypeEnum):
     MANAGE_ROLES = 1
     MANAGE_TASKS = 2
     MANAGE_NEWS = 3
+    MANAGE_MESSAGES = 4
 
 
 class Role(Base, Identifiable):

@@ -7,7 +7,8 @@ from pydantic import BaseModel
 from common import EventController, User
 from .videochat_db import ChatMessage, ChatParticipant, PARTICIPANT_LIMIT
 from ..base import Community
-from ..utils import check_participant, ParticipantRole, Participant
+from ..utils import check_participant, Participant, check_permission
+from ..base.roles_db import PermissionType
 
 controller = EventController()
 
@@ -93,8 +94,9 @@ class VideochatEventSpace(EventSpace):
     ):
         checks = [
             participant.user_id == message.sender_id,
-            participant.role == ParticipantRole.OWNER,
+            check_permission(participant, PermissionType.MANAGE_MESSAGES)
         ]
+
         if not any(checks):
             controller.abort(403, "Permission Denied")
         message.delete()

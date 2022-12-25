@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
-from pytest import fixture
+from pytest import fixture, mark
 
 from common import open_file
 from common.testing import SocketIOTestClient
@@ -41,13 +41,16 @@ def assert_create_task(socketio_client: SocketIOTestClient, task_data: dict) -> 
     assert dict_equal(result_data, task_data, "page_id", "name")
     return result_data
 
-
+@mark.order(1001)
 def test_task_crud(
     client: FlaskClient,
     multi_client: Callable[[str], FlaskClient],
     community_id,
     file_id,
+    create_participant_roles,
 ):
+    create_participant_roles(permission_type="MANAGE_TASKS", community_id=community_id)
+
     def assert_permission_check(method):
         assert (
             check_code(
@@ -120,10 +123,14 @@ def test_task_crud(
     ).get("a")
     assert response == "Task not found"
 
-
+@mark.order(1002)
 def test_tasks_pagination(
-    client: FlaskClient, socketio_client: SocketIOTestClient, community_id
+    client: FlaskClient,
+    socketio_client: SocketIOTestClient,
+    community_id,
+    create_participant_roles,
 ):
+    create_participant_roles(permission_type="MANAGE_TASKS", community_id=community_id)
     pagination = {"counter": 0}
     task_data = {
         "community_id": community_id,
@@ -149,10 +156,11 @@ def test_tasks_pagination(
     assert len(tasks) != 0
     assert dict_equal(tasks[0], added_task)
 
-
+@mark.order(1003)
 def test_task_create_with_wrong_files(
-    socketio_client: SocketIOTestClient, community_id
+    socketio_client: SocketIOTestClient, community_id, create_participant_roles
 ):
+    create_participant_roles(permission_type="MANAGE_TASKS", community_id=community_id)
     task_data = {
         "community-id": community_id,
         "page-id": 1,

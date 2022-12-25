@@ -9,6 +9,15 @@ from .base.meta_db import Community, Participant
 from .base.roles_db import ParticipantRole, PermissionType
 
 
+def check_permission(participant: Participant, permission: PermissionType) -> bool:
+    for per in ParticipantRole.get_permissions_by_participant(
+        participant_id=participant.id
+    ):
+        if per is permission:
+            return True
+    return False
+
+
 def check_participant(
     controller: ResourceController | EventController,
     *,
@@ -34,12 +43,8 @@ def check_participant(
                 kwargs["participant"] = participant
 
             if permission is not None:
-                for per in ParticipantRole.get_permissions_by_participant(
-                    participant_id=participant.id
-                ):
-                    if per is permission:
-                        return function(*args, **kwargs)
-
+                if check_permission(participant, permission):
+                    return function(*args, **kwargs)
                 controller.abort(
                     403, "Permission Denied: Participant doesn't have permission"
                 )

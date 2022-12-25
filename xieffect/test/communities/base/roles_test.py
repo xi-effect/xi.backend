@@ -48,7 +48,6 @@ def test_roles(
         permission_type="MANAGE_ROLES", community_id=last_participant_id()
     )
 
-    print_participant_communities()
     for _ in range(LIMITING_QUANTITY_ROLES - 1):
         result_data = socketio_client.assert_emit_ack("new_role", role_data)
         assert dict_equal(

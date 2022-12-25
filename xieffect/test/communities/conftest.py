@@ -39,7 +39,14 @@ def create_participant_roles():
         RolePermission.create(role_id=role.id, permission_type=permission_type)
         db.session.add(ParticipantRole(role_id=role.id, participant_id=role.community_id))
         db.session.commit()
+        return role.id
+    return wrapper
 
+
+@fixture
+def add_permission_by_role():
+    def wrapper(role_id, permission_type):
+        RolePermission.create(role_id=role_id, permission_type=permission_type)
     return wrapper
 
 
