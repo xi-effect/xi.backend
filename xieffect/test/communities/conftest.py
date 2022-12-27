@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from pytest import fixture
+from collections.abc import Callable
+from typing import Optional
 
 from common.testing import SocketIOTestClient, dict_equal
-from communities.base.roles_db import (
-    Role,
-    ParticipantRole,
-    RolePermission
-)
-from communities.base import Participant, Community
+from communities.base.roles_db import Role, RolePermission
+from communities.base import Participant, Community, ParticipantRole, PermissionType
 from common import db
+
 
 COMMUNITY_DATA: dict = {"name": "test"}
 
@@ -34,19 +33,21 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
 
 @fixture
 def create_participant_roles():
-    def wrapper(permission_type, community_id: int):
+    def wrapper(
+        permission_type: PermissionType, community_id: int, add_permission: bool = False
+    ) -> Optional[Callable]:
         role = Role.create(name="test_role", color="123456", community_id=community_id)
         RolePermission.create(role_id=role.id, permission_type=permission_type)
-        db.session.add(ParticipantRole(role_id=role.id, participant_id=role.community_id))
+        db.session.add(
+            ParticipantRole(role_id=role.id, participant_id=role.community_id)
+        )
         db.session.commit()
-        return role.id
-    return wrapper
+        if add_permission:
+            def inner(permission_type: PermissionType):
+                RolePermission.create(role_id=role.id, permission_type=permission_type)
 
+            return inner
 
-@fixture
-def add_permission_by_role():
-    def wrapper(role_id, permission_type):
-        RolePermission.create(role_id=role_id, permission_type=permission_type)
     return wrapper
 
 
@@ -57,22 +58,8 @@ def last_participant_id(socketio_client: SocketIOTestClient):
             community = Community(**COMMUNITY_DATA)
             db.session.add(community)
             db.session.commit()
-            print(f"community_id: {community.id}")
         return db.session.get_first(
             db.select(Participant.id).order_by(Participant.id.desc())
         )
-
-    return wrapper
-
-
-@fixture
-def print_participant_communities():
-    def wrapper():
-        print("model Participant: ")
-        for p in db.session.get_all(db.select(Participant)):
-            print(f"id: {p.id}, community_id: {p.community_id}, user_id: {p.user_id}")
-        print("model Community: ")
-        for c in db.session.get_all(db.select(Community)):
-            print(f"id: {c.id}, name: {c.name}")
 
     return wrapper

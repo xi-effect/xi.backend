@@ -7,8 +7,6 @@ from common.testing import SocketIOTestClient
 from ..base.invites_test import create_assert_successful_join
 from ..base.meta_test import assert_create_community
 
-from communities.base.roles_db import ParticipantRole
-
 COMMUNITY_DATA: dict = {"name": "test"}
 
 
@@ -46,11 +44,15 @@ def test_videochat_tools(
     socketio_client,
     test_community,
     create_participant_roles,
-    print_participant_communities,
-    last_participant_id,
-    add_permission_by_role
+    last_participant_id
 ):
-    role_id = create_participant_roles(permission_type="MANAGE_INVITATIONS", community_id=last_participant_id(create_community=True))
+    create_permission = create_participant_roles(
+        permission_type="MANAGE_INVITATIONS",
+        community_id=last_participant_id(create_community=True),
+        add_permission=True
+    )
+
+    create_permission(permission_type="MANAGE_MESSAGES")
 
     # Create base clients
     invite_data = {
@@ -106,7 +108,7 @@ def test_videochat_tools(
     assert len(message_list) == message_count
     assert dict_equal(owner_message, message_list[0], *owner_message.keys())
 
-    add_permission_by_role(role_id=role_id, permission_type="MANAGE_MESSAGES")
+    # add_permission_by_role(role_id=role_id, permission_type="MANAGE_MESSAGES")
 
     # Check deleting message
     for emitter, receiver, message_id in users:
@@ -123,7 +125,7 @@ def test_videochat_tools(
     # Check changing participant states
     state_data = dict(community_id_json, target="microphone", state=False)
     sio_member.assert_emit_ack("change_state", state_data)
-    member_data["state"][state_data.get("target")] = state_data.get('state')
+    member_data["state"][state_data.get("target")] = state_data.get("state")
     socketio_client.assert_only_received("change_state", dict(member_data))
 
     # Check sending actions

@@ -15,7 +15,6 @@ controller = ResourceController(
 
 @controller.route("/index/")
 class NewsLister(Resource):
-    @controller.doc_abort(403, "Permission Denied")
     @check_participant(controller)
     @controller.argument_parser(counter_parser)
     @controller.lister(20, Post.IndexModel)
@@ -25,7 +24,6 @@ class NewsLister(Resource):
 
 @controller.route("/<int:post_id>/")
 class NewsGetter(Resource):  # TODO pragma: no coverage
-    @controller.doc_abort(403, "Permission Denied")
     @check_participant(controller)
     @controller.database_searcher(Post)
     @controller.marshal_with(Post.IndexModel)

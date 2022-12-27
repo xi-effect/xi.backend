@@ -6,9 +6,8 @@ from pydantic import BaseModel
 
 from common import EventController, User
 from .videochat_db import ChatMessage, ChatParticipant, PARTICIPANT_LIMIT
-from ..base import Community
-from ..utils import check_participant, Participant, check_permission
-from ..base.roles_db import PermissionType
+from ..base import Community, PermissionType, Participant
+from ..utils import check_participant, check_permission
 
 controller = EventController()
 
@@ -28,7 +27,11 @@ class VideochatEventSpace(EventSpace):
     @check_participant(controller, use_user=True)
     @controller.marshal_ack(ChatParticipant.IndexModel)
     def new_participant(
-        self, event: DuplexEvent, user: User, community: Community, state: dict,
+        self,
+        event: DuplexEvent,
+        user: User,
+        community: Community,
+        state: dict,
     ):
         participant_count = ChatParticipant.get_count_by_community(community.id)
         if participant_count >= PARTICIPANT_LIMIT:  # TODO pragma: no cover
@@ -94,7 +97,7 @@ class VideochatEventSpace(EventSpace):
     ):
         checks = [
             participant.user_id == message.sender_id,
-            check_permission(participant, PermissionType.MANAGE_MESSAGES)
+            check_permission(participant, PermissionType.MANAGE_MESSAGES),
         ]
 
         if not any(checks):

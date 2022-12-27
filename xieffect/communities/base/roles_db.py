@@ -8,7 +8,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
-from .meta_db import Base, db, Community, Participant
+from common import Base, db
+from .meta_db import Community, Participant
 
 LIMITING_QUANTITY_ROLES: int = 50
 
@@ -51,10 +52,10 @@ class Role(Base, Identifiable):
 
     @classmethod
     def create(
-            cls,
-            name: str,
-            color: str | None,
-            community_id: int,
+        cls,
+        name: str,
+        color: str | None,
+        community_id: int,
     ) -> Role:
         return super().create(
             name=name,
@@ -89,9 +90,9 @@ class RolePermission(Base):
 
     @classmethod
     def create(
-            cls,
-            role_id: int,
-            permission_type: PermissionType,
+        cls,
+        role_id: int,
+        permission_type: PermissionType,
     ) -> RolePermission:
         return super().create(
             role_id=role_id,
@@ -119,14 +120,10 @@ class ParticipantRole(Base):  # TODO pragma: no cover
     )
     role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)
 
-    # @classmethod
-    # def get_permissions_by_participant(cls, participant_id: int) -> list[PermissionType]:
-    #     return db.session.get_all(
-    #         select(Role).join_from(Role, cls).filter_by(participant_id=participant_id)
-    #     )
-
     @classmethod
-    def get_permissions_by_participant(cls, participant_id: int):
+    def get_permissions_by_participant(
+        cls, participant_id: int
+    ) -> list[PermissionType]:
         return db.session.get_all(
             select(distinct(RolePermission.permission_type))
             .join(cls, cls.role_id == Role.id)

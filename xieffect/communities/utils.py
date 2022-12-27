@@ -5,8 +5,7 @@ from functools import wraps
 from flask_fullstack import ResourceController, EventController, get_or_pop
 
 from common import User
-from .base.meta_db import Community, Participant
-from .base.roles_db import ParticipantRole, PermissionType
+from .base import Community, Participant, ParticipantRole, PermissionType
 
 
 def check_permission(participant: Participant, permission: PermissionType) -> bool:
@@ -15,7 +14,6 @@ def check_permission(participant: Participant, permission: PermissionType) -> bo
     ):
         if per is permission:
             return True
-    return False
 
 
 def check_participant(
@@ -43,11 +41,10 @@ def check_participant(
                 kwargs["participant"] = participant
 
             if permission is not None:
-                if check_permission(participant, permission):
-                    return function(*args, **kwargs)
-                controller.abort(
-                    403, "Permission Denied: Participant doesn't have permission"
-                )
+                if check_permission(participant, permission) is None:
+                    controller.abort(
+                        403, "Permission Denied: Participant haven't permission"
+                    )
             return function(*args, **kwargs)
 
         return check_participant_role_inner

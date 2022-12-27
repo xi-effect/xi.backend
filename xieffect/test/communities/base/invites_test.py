@@ -283,5 +283,5 @@ def test_invites_errors(
     # member joins community & fails connecting to room
     assert_successful_join(member, invite["id"], invite["code"], sio_member)
     assert_fail_event(
-        sio_member, 403, "Permission Denied: Participant doesn't have permission"
+        sio_member, 403, "Permission Denied: Participant haven't permission"
     )

@@ -9,8 +9,7 @@ from pydantic import BaseModel
 from common import EventController, User
 from vault import File
 from .tasks_db import Task, TaskEmbed
-from ..base import Community
-from ..base.roles_db import PermissionType
+from ..base import Community, PermissionType
 from ..utils import check_participant
 
 # Set Tasks behavior here

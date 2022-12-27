@@ -9,8 +9,8 @@ from common import ResourceController, User
 from .invitations_db import Invitation
 from .meta_db import Community, Participant
 from .meta_sio import CommunitiesEventSpace
-from ..utils import check_participant
 from .roles_db import PermissionType
+from ..utils import check_participant
 
 controller = ResourceController("communities-invitation", path="/communities/")
 

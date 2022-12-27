@@ -28,7 +28,6 @@ def test_post_creation(
     socketio_client,
     test_community,
     create_participant_roles,
-    print_participant_communities,
     last_participant_id
 ):  # TODO redo without calls to the database
 
