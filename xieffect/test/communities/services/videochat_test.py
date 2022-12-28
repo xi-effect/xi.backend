@@ -6,8 +6,7 @@ from pytest import mark, fixture
 from common.testing import SocketIOTestClient
 from ..base.invites_test import create_assert_successful_join
 from ..base.meta_test import assert_create_community
-
-COMMUNITY_DATA: dict = {"name": "test"}
+from ..conftest import COMMUNITY_DATA
 
 
 @fixture
@@ -43,16 +42,16 @@ def test_videochat_tools(
     list_tester,
     socketio_client,
     test_community,
-    create_participant_roles,
-    last_participant_id
+    create_participant_role,
+    last_participant_id,
+    create_permission
 ):
-    create_permission = create_participant_roles(
+    role_id = create_participant_role(
         permission_type="MANAGE_INVITATIONS",
-        community_id=last_participant_id(create_community=True),
-        add_permission=True
+        community_participant_id=last_participant_id()
     )
 
-    create_permission(permission_type="MANAGE_MESSAGES")
+    create_permission(permission_type="MANAGE_MESSAGES", role_id=role_id)
 
     # Create base clients
     invite_data = {
@@ -107,8 +106,6 @@ def test_videochat_tools(
     message_list = get_messages_list(client, test_community)
     assert len(message_list) == message_count
     assert dict_equal(owner_message, message_list[0], *owner_message.keys())
-
-    # add_permission_by_role(role_id=role_id, permission_type="MANAGE_MESSAGES")
 
     # Check deleting message
     for emitter, receiver, message_id in users:

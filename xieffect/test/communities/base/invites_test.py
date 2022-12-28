@@ -56,8 +56,8 @@ class InvitesTester:
 
 
 @mark.order(1020)
-def test_invites(client, list_tester, test_community, create_participant_roles):
-    create_participant_roles(permission_type="MANAGE_INVITATIONS", community_id=test_community)
+def test_invites(client, list_tester, test_community, create_participant_role):
+    create_participant_role(permission_type="MANAGE_INVITATIONS", community_participant_id=test_community)
 
     invite_data = {
         "community_id": test_community,
@@ -142,10 +142,10 @@ def test_invite_joins(
     multi_client: Callable[[str], FlaskClient],
     list_tester: Callable[[str, dict, int], Iterator[dict]],
     test_community: int,
-    create_participant_roles,
+    create_participant_role,
     last_participant_id
 ):
-    create_participant_roles(permission_type="MANAGE_INVITATIONS", community_id=test_community)
+    create_participant_role(permission_type="MANAGE_INVITATIONS", community_participant_id=test_community)
 
     # functions
     def create_invite(invite_data, check_auth: bool = True):
@@ -201,9 +201,9 @@ def test_invite_joins(
     assert_successful_join(vasil1, invite_id1, code1, sio5, sio6)
     assert_already_joined(vasil1, code1)
 
-    last_participant_id(create_community=True)
-    create_participant_roles(
-        permission_type="MANAGE_INVITATIONS", community_id=last_participant_id(create_community=True)
+    last_participant_id()
+    create_participant_role(
+        permission_type="MANAGE_INVITATIONS", community_participant_id=last_participant_id()
     )
 
     # testing counter limit
@@ -239,9 +239,9 @@ def test_invites_errors(
     multi_client,
     list_tester,
     test_community,
-    create_participant_roles
+    create_participant_role
 ):
-    create_participant_roles(permission_type="MANAGE_INVITATIONS", community_id=test_community)
+    create_participant_role(permission_type="MANAGE_INVITATIONS", community_participant_id=test_community)
     member = multi_client("1@user.user")
     outsider = multi_client("2@user.user")
 

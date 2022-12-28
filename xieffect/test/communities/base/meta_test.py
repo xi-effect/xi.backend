@@ -32,7 +32,7 @@ def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient)
     assert found
 
 
-@mark.order(1005)
+@mark.order(1001)
 def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient):
     def assert_order():
         for i, data in enumerate(get_communities_list(client)):

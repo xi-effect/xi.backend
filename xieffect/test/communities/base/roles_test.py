@@ -14,13 +14,12 @@ def get_roles_list(client, community_id: int) -> list[dict]:
     return result
 
 
-@mark.order(1001)
+@mark.order(1010)
 def test_roles(
     client,
     socketio_client,
     test_community,
-    create_participant_roles,
-    last_participant_id,
+    create_participant_role,
 ):
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
@@ -44,8 +43,8 @@ def test_roles(
     successful_role_data = dict(**role_data)
     role_data.update(community_id_json)
 
-    create_participant_roles(
-        permission_type="MANAGE_ROLES", community_id=last_participant_id()
+    create_participant_role(
+        permission_type="MANAGE_ROLES", community_participant_id=test_community
     )
 
     for _ in range(LIMITING_QUANTITY_ROLES - 1):
@@ -62,8 +61,6 @@ def test_roles(
         code=400,
         message="Quantity exceeded",
     )
-
-    print(get_roles_list(client, test_community))
 
     # Delete 50 roles
     for data in get_roles_list(client, test_community):

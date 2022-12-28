@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from pytest import fixture
 from collections.abc import Callable
-from typing import Optional
 
-from common.testing import SocketIOTestClient, dict_equal
-from communities.base.roles_db import Role, RolePermission
-from communities.base import Participant, Community, ParticipantRole, PermissionType
+from pytest import fixture
+
 from common import db
-
+from common.testing import SocketIOTestClient, dict_equal
+from communities.base import Participant, Community, ParticipantRole, PermissionType
+from communities.base.roles_db import Role, RolePermission
 
 COMMUNITY_DATA: dict = {"name": "test"}
 
@@ -32,34 +31,39 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
 
 
 @fixture
-def create_participant_roles():
+def create_participant_role() -> Callable:
     def wrapper(
-        permission_type: PermissionType, community_id: int, add_permission: bool = False
-    ) -> Optional[Callable]:
-        role = Role.create(name="test_role", color="123456", community_id=community_id)
+        permission_type: PermissionType,
+        community_participant_id: int,
+    ) -> int:
+        role = Role.create(
+            name="test_name", color="CD5C5C", community_id=community_participant_id
+        )
         RolePermission.create(role_id=role.id, permission_type=permission_type)
         db.session.add(
             ParticipantRole(role_id=role.id, participant_id=role.community_id)
         )
         db.session.commit()
-        if add_permission:
-            def inner(permission_type: PermissionType):
-                RolePermission.create(role_id=role.id, permission_type=permission_type)
-
-            return inner
+        return role.id
 
     return wrapper
 
 
 @fixture
-def last_participant_id(socketio_client: SocketIOTestClient):
-    def wrapper(create_community: bool = False):
-        if create_community:
-            community = Community(**COMMUNITY_DATA)
-            db.session.add(community)
-            db.session.commit()
+def create_permission() -> Callable:
+    def wrapper(permission_type: PermissionType, role_id: int) -> None:
+        RolePermission.create(role_id=role_id, permission_type=permission_type)
+
+    return wrapper
+
+
+@fixture
+def last_participant_id() -> Callable:
+    def wrapper() -> int:
+        community = Community(**COMMUNITY_DATA)
+        db.session.add(community)
+        db.session.commit()
         return db.session.get_first(
             db.select(Participant.id).order_by(Participant.id.desc())
         )
-
     return wrapper

@@ -8,12 +8,11 @@ from common import User
 from .base import Community, Participant, ParticipantRole, PermissionType
 
 
-def check_permission(participant: Participant, permission: PermissionType) -> bool:
-    for per in ParticipantRole.get_permissions_by_participant(
-        participant_id=participant.id
-    ):
-        if per is permission:
-            return True
+def check_permission(participant_id: int, permission: PermissionType) -> bool:
+    return any(
+        per is permission
+        for per in ParticipantRole.get_permissions_by_participant(participant_id)
+    )
 
 
 def check_participant(
@@ -40,11 +39,16 @@ def check_participant(
             if use_participant:  # TODO pragma: no coverage
                 kwargs["participant"] = participant
 
-            if permission is not None:
-                if check_permission(participant, permission) is None:
-                    controller.abort(
-                        403, "Permission Denied: Participant haven't permission"
-                    )
+            checks = (
+                check_permission(participant.id, permission) is False,
+                permission is not None
+            )
+
+            if all(checks):
+                controller.abort(
+                    403, "Permission Denied: Participant haven't permission"
+                )
+
             return function(*args, **kwargs)
 
         return check_participant_role_inner

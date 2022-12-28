@@ -97,7 +97,7 @@ class VideochatEventSpace(EventSpace):
     ):
         checks = [
             participant.user_id == message.sender_id,
-            check_permission(participant, PermissionType.MANAGE_MESSAGES),
+            check_permission(participant.id, PermissionType.MANAGE_MESSAGES),
         ]
 
         if not any(checks):

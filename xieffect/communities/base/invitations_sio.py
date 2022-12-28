@@ -37,7 +37,6 @@ class InvitationsEventSpace(EventSpace):
     class CreationModel(Invitation.CreationBaseModel, CommunityIdModel):
         days: int = None
 
-    @controller.doc_abort(400, "Invalid role")
     @controller.argument_parser(CreationModel)
     @controller.mark_duplex(Invitation.IndexModel, use_event=True)
     @check_participant(controller, permission=PermissionType.MANAGE_INVITATIONS)
