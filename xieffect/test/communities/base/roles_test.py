@@ -44,7 +44,7 @@ def test_roles(
     role_data.update(community_id_json)
 
     create_participant_role(
-        permission_type="MANAGE_ROLES", community_participant_id=test_community
+        permission_type="MANAGE_ROLES", community_id=test_community
     )
 
     for _ in range(LIMITING_QUANTITY_ROLES - 1):
