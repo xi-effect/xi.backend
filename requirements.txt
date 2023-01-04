@@ -18,6 +18,7 @@ black
 # Linters:Basics
 flake8~=4.0.1
 wemake-python-styleguide
+isort
 
 # Linters:Bugs
 flake8-2020
