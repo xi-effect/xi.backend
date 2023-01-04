@@ -8,12 +8,7 @@ from pydantic import BaseModel, Field
 
 from common import EventController, db
 from .meta_db import Community, ParticipantRole
-from .roles_db import (
-    Role,
-    RolePermission,
-    PermissionType,
-    LIMITING_QUANTITY_ROLES,
-)
+from .roles_db import Role, RolePermission, PermissionType, LIMITING_QUANTITY_ROLES
 from ..utils import check_participant
 
 controller = EventController()
