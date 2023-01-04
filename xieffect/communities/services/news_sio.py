@@ -8,8 +8,7 @@ from pydantic import BaseModel
 
 from common import EventController, User
 from .news_db import Post
-from ..base import Community, PermissionType
-from ..utils import check_participant
+from ..base import Community, PermissionType, check_participant
 
 controller = EventController()
 

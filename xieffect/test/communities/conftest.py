@@ -6,8 +6,13 @@ from pytest import fixture
 
 from common import db
 from common.testing import SocketIOTestClient, dict_equal
-from communities.base import Participant, ParticipantRole, PermissionType
-from communities.base.roles_db import Role, RolePermission
+from communities.base import (
+    Participant,
+    PermissionType,
+    ParticipantRole,
+    Role,
+    RolePermission,
+)
 
 COMMUNITY_DATA: dict = {"name": "test"}
 
@@ -32,7 +37,9 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
 
 @fixture
 def create_participant_role() -> Callable:
-    def wrapper(permission_type: PermissionType, community_id: int) -> int:
+    def create_participant_role_wrapper(
+        permission_type: PermissionType, community_id: int
+    ) -> int:
         role = Role.create(name="test_name", color="CD5C5C", community_id=community_id)
         RolePermission.create(role_id=role.id, permission_type=permission_type)
         participant_id = db.session.get_first(
@@ -44,12 +51,14 @@ def create_participant_role() -> Callable:
         db.session.commit()
         return role.id
 
-    return wrapper
+    return create_participant_role_wrapper
 
 
 @fixture
 def create_permission() -> Callable:
-    def wrapper(permission_type: PermissionType, role_id: int) -> None:
+    def create_permission_wrapper(
+        permission_type: PermissionType, role_id: int
+    ) -> None:
         RolePermission.create(role_id=role_id, permission_type=permission_type)
 
-    return wrapper
+    return create_permission_wrapper

@@ -9,8 +9,7 @@ from pydantic import BaseModel
 from common import EventController, User
 from vault import File
 from .tasks_db import Task, TaskEmbed
-from ..base import Community, PermissionType
-from ..utils import check_participant
+from ..base import Community, PermissionType, check_participant
 
 # Set Tasks behavior here
 FILES_LIMIT = 10

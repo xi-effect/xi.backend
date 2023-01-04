@@ -5,8 +5,7 @@ from flask_restx import Resource
 
 from common import ResourceController
 from .videochat_db import ChatParticipant, ChatMessage
-from ..base import Community
-from ..utils import check_participant
+from ..base import Community, check_participant
 
 controller = ResourceController(
     "cs-videochat", path="/communities/<int:community_id>/videochat/"

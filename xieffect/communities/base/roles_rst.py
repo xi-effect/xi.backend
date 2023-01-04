@@ -5,7 +5,7 @@ from flask_restx import Resource
 from common import ResourceController
 from .meta_db import Community
 from .roles_db import Role
-from ..utils import check_participant
+from .utils import check_participant
 
 controller = ResourceController(
     "communities-roles", path="/communities/<int:community_id>/roles/"

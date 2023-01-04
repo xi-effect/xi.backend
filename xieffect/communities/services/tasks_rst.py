@@ -5,8 +5,7 @@ from flask_restx import Resource
 
 from common import ResourceController, User
 from .tasks_db import Task
-from ..base import Community, PermissionType
-from ..utils import check_participant
+from ..base import Community, PermissionType, check_participant
 
 # Set Tasks behavior here
 TASKS_PER_PAGE = 48

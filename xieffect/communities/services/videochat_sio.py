@@ -6,8 +6,7 @@ from pydantic import BaseModel
 
 from common import EventController, User
 from .videochat_db import ChatMessage, ChatParticipant, PARTICIPANT_LIMIT
-from ..base import Community, PermissionType, Participant
-from ..utils import check_participant, check_permission
+from ..base import Community, PermissionType, Participant, check_participant, check_permission
 
 controller = EventController()
 

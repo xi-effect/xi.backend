@@ -14,7 +14,7 @@ from .roles_db import (
     PermissionType,
     LIMITING_QUANTITY_ROLES,
 )
-from ..utils import check_participant
+from .utils import check_participant
 
 controller = EventController()
 

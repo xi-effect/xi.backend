@@ -5,8 +5,7 @@ from flask_restx import Resource
 
 from common import ResourceController
 from .news_db import Post
-from ..base import Community
-from ..utils import check_participant
+from ..base import Community, check_participant
 
 controller = ResourceController(
     "communities-news", path="/communities/<int:community_id>/news/"

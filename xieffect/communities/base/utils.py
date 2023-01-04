@@ -5,7 +5,8 @@ from functools import wraps
 from flask_fullstack import ResourceController, EventController, get_or_pop
 
 from common import User
-from .base import Community, Participant, ParticipantRole, PermissionType
+from .meta_db import Community, Participant
+from .roles_db import PermissionType, ParticipantRole
 
 
 def check_permission(participant_id: int, permission: PermissionType) -> bool:
@@ -41,7 +42,7 @@ def check_participant(
 
             checks = (
                 check_permission(participant.id, permission) is False,
-                permission is not None
+                permission is not None,
             )
 
             if all(checks):

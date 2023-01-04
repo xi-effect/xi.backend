@@ -4,7 +4,7 @@ from flask_restx import Resource
 
 from common import ResourceController
 from .meta_db import Community
-from ..utils import check_participant
+from .utils import check_participant
 
 controller = ResourceController("communities-meta", path="/communities/")
 
