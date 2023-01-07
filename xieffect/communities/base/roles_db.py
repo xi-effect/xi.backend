@@ -112,7 +112,7 @@ class RolePermission(Base):
         return db.session.get_all(select(cls).filter_by(role_id=role_id))
 
 
-class ParticipantRole(Base):  # TODO pragma: no cover
+class ParticipantRole(Base):
     __tablename__ = "cs_participant_roles"
 
     participant_id = Column(

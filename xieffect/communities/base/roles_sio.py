@@ -6,7 +6,7 @@ from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
 from pydantic import BaseModel, Field
 
-from common import EventController, db
+from common import EventController
 from .meta_db import Community
 from .roles_db import (
     Role,
@@ -84,7 +84,6 @@ class RolesEventSpace(EventSpace):
                 permission_type=permission,
             )
 
-        db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
         return role
 
@@ -118,21 +117,20 @@ class RolesEventSpace(EventSpace):
                 for permission in RolePermission.get_all_by_role(role.id)
             }
 
-            for del_permission in permissions_from_db.difference(received_permissions):
+            for del_permission in permissions_from_db - received_permissions:
                 RolePermission.delete_by_role(
                     role_id=role.id, permission_type=del_permission
                 )
 
-            for permission in received_permissions.intersection(permissions_from_db):
+            for permission in received_permissions & permissions_from_db:
                 received_permissions.remove(permission)
 
-            for permission in received_permissions.difference(permissions_from_db):
+            for permission in received_permissions - permissions_from_db:
                 RolePermission.create(
                     role_id=role.id,
                     permission_type=permission,
                 )
 
-        db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
         return role
 
@@ -151,7 +149,6 @@ class RolesEventSpace(EventSpace):
         community: Community,
     ):
         role.delete()
-        db.session.commit()
         event.emit_convert(
             room=self.room_name(community.id),
             community_id=community.id,
