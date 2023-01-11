@@ -51,7 +51,7 @@ class Participant(Base, Identifiable):
     def create(cls, community_id: int, user_id: int):
         return super().create(
             community_id=community_id,
-            user_id=user_id
+            user_id=user_id,
         )
 
     @classmethod

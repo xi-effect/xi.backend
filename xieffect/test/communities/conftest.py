@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from flask.testing import FlaskClient
+from flask_fullstack import check_code
 from pytest import fixture
 
 from common import db
@@ -38,16 +40,18 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
 @fixture
 def create_participant_role() -> Callable:
     def create_participant_role_wrapper(
-        permission_type: PermissionType, community_id: int
+        permission_type: PermissionType, community_id: int, client: FlaskClient
     ) -> int:
+        response = client.get("/home/")
+        user_id = check_code(response, get_json=True)["id"]
         role = Role.create(name="test_name", color="CD5C5C", community_id=community_id)
         RolePermission.create(role_id=role.id, permission_type=permission_type)
-        participant_id = db.session.get_first(
-            db.select(Participant.id).order_by(Participant.id.desc())
+
+        participant = Participant.find_by_ids(
+            community_id=community_id, user_id=user_id
         )
-        if permission_type == "MANAGE_NEWS":
-            participant_id -= 1
-        db.session.add(ParticipantRole(role_id=role.id, participant_id=participant_id))
+        assert participant is not None
+        ParticipantRole.create(role_id=role.id, participant_id=participant.id)
         db.session.commit()
         return role.id
 

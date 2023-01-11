@@ -43,7 +43,11 @@ def test_roles(
     successful_role_data = {**role_data}
     role_data.update(community_id_json)
 
-    create_participant_role(permission_type="MANAGE_ROLES", community_id=test_community)
+    create_participant_role(
+        permission_type="MANAGE_ROLES",
+        community_id=test_community,
+        client=socketio_client.flask_test_client,
+    )
 
     for _ in range(LIMITING_QUANTITY_ROLES - 1):
         result_data = socketio_client.assert_emit_ack("new_role", role_data)

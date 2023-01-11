@@ -43,11 +43,12 @@ def test_videochat_tools(
     socketio_client,
     test_community,
     create_participant_role,
-    create_permission
+    create_permission,
 ):
     role_id = create_participant_role(
         permission_type="MANAGE_INVITATIONS",
-        community_id=test_community
+        community_id=test_community,
+        client=socketio_client.flask_test_client,
     )
 
     create_permission(permission_type="MANAGE_MESSAGES", role_id=role_id)

@@ -27,7 +27,7 @@ def test_post_creation(
     list_tester,
     socketio_client,
     test_community,
-    create_participant_role
+    create_participant_role,
 ):  # TODO redo without calls to the database
 
     # Create second owner & base clients
@@ -42,6 +42,7 @@ def test_post_creation(
     create_participant_role(
         permission_type="MANAGE_INVITATIONS",
         community_id=test_community,
+        client=socketio_client.flask_test_client,
     )
 
     invite = socketio_client.assert_emit_ack("new_invite", invite_data)
@@ -65,6 +66,7 @@ def test_post_creation(
     create_participant_role(
         permission_type="MANAGE_NEWS",
         community_id=test_community,
+        client=socketio_client.flask_test_client,
     )
 
     # Assert post creation

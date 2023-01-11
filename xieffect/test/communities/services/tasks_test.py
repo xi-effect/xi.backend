@@ -48,9 +48,11 @@ def test_task_crud(
     multi_client: Callable[[str], FlaskClient],
     community_id,
     file_id,
-    create_participant_role
+    create_participant_role,
 ):
-    create_participant_role(permission_type="MANAGE_TASKS", community_id=community_id)
+    create_participant_role(
+        permission_type="MANAGE_TASKS", community_id=community_id, client=client
+    )
 
     def assert_permission_check(method):
         assert (
@@ -132,7 +134,11 @@ def test_tasks_pagination(
     community_id,
     create_participant_role,
 ):
-    create_participant_role(permission_type="MANAGE_TASKS", community_id=community_id)
+    create_participant_role(
+        permission_type="MANAGE_TASKS",
+        community_id=community_id,
+        client=socketio_client.flask_test_client,
+    )
     pagination = {"counter": 0}
     task_data = {
         "community_id": community_id,
@@ -163,7 +169,11 @@ def test_tasks_pagination(
 def test_task_create_with_wrong_files(
     socketio_client: SocketIOTestClient, community_id, create_participant_role
 ):
-    create_participant_role(permission_type="MANAGE_TASKS", community_id=community_id)
+    create_participant_role(
+        permission_type="MANAGE_TASKS",
+        community_id=community_id,
+        client=socketio_client.flask_test_client,
+    )
     task_data = {
         "community-id": community_id,
         "page-id": 1,
