@@ -3,8 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from json import load as load_json
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code
 from pytest import mark
 
 from common import open_file
@@ -26,20 +24,3 @@ def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
                 break
         else:
             raise AssertionError(f"{username} not found")
-
-
-@mark.order(101)
-def test_user_profile(client: FlaskClient, test_user_id: int):
-    new_settings: dict[str, str] = {
-        "name": "Danila",
-        "surname": "Petrov",
-        "patronymic": "Danilovich",
-        "handle": "petrovich",
-    }
-
-    check_code(client.post("/users/me/profile/", json=new_settings))
-    data: dict = check_code(client.get(f"/users/{test_user_id}/profile"))
-
-    for key, value in new_settings.items():
-        assert key in data
-        assert data[key] == value

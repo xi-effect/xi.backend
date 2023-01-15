@@ -38,7 +38,7 @@ class Settings(Resource):
         handle: str | None,
         **kwargs,
     ) -> str:
-        if User.find_by_handle(handle) is not None:
+        if User.find_by_handle(handle, user.id) is not None:
             return "Handle already in use"
         user.change_settings(birthday=birthday, handle=handle, **kwargs)
         return "Success"

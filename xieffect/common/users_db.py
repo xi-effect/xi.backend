@@ -83,8 +83,13 @@ class User(Base, UserRole, Identifiable):
         return cls.find_by_id(identity)
 
     @classmethod
-    def find_by_handle(cls, handle: str) -> User | None:
-        return db.session.get_first(select(cls).filter_by(handle=handle))
+    def find_by_handle(cls, handle: str | None, exclude_id: int = None) -> User | None:
+        if handle is None:
+            return None
+        stmt = select(cls).filter_by(handle=handle)
+        if exclude_id is not None:
+            stmt = stmt.filter(cls.id != exclude_id)
+        return db.session.get_first(stmt)
 
     @classmethod
     def find_by_email_address(cls, email) -> User | None:
