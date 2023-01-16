@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from flask.testing import FlaskClient
-from flask_fullstack import check_code
+from flask_fullstack import check_code, dict_equal
 from pytest import mark
 
 from vault import File
@@ -16,17 +16,24 @@ TEST_EMAIL2 = "2@user.user"
 
 @mark.order(106)
 def test_changing_settings(
-    client: FlaskClient, multi_client: Callable[[str], FlaskClient]
+    client: FlaskClient,
+    multi_client: Callable[[str], FlaskClient],
+    test_user_id: int,
 ):
+    client2 = multi_client(TEST_EMAIL2)
 
     # Check getting settings
     old_settings: dict = check_code(client.get("/users/me/profile/"))
+    assert old_settings.get("handle") is None
     for key in ("email", "email-confirmed", "username", "code"):
         assert key in old_settings
 
+    public_profile = check_code(client2.get(f"/users/{test_user_id}/profile/"))
+    assert dict_equal(public_profile, old_settings, *public_profile.keys())
+
+    # Check changing settings
     new_settings = {
         "username": "hey",
-        "handle": "igorthebest",
         "name": "Igor",
         "surname": "Bestov",
         "patronymic": "Thebestovich",
@@ -36,27 +43,30 @@ def test_changing_settings(
         old_settings.get(key) != setting for key, setting in new_settings.items()
     )
 
-    # Check changing settings
     check_code(client.post("/users/me/profile/", json=new_settings))
     result_settings = check_code(client.get("/users/me/profile/"))
     for key, setting in new_settings.items():
         assert result_settings[key] == setting, key
 
+    public_profile = check_code(client2.get(f"/users/{test_user_id}/profile/"))
+    assert dict_equal(public_profile, result_settings, *public_profile.keys())
+
     # Check handle error
-    client2 = multi_client(TEST_EMAIL2)
+    handle: str = "igor_the_best"
+    check_code(client.post("/users/me/profile/", json={"handle": handle}))
+    result_settings = check_code(client.get("/users/me/profile/"))
+    for key, setting in new_settings.items():
+        assert result_settings[key] == setting, key
+    assert result_settings["handle"] == handle
+
     assert_message(
         client2,
         "/users/me/profile/",
         "Handle already in use",
-        handle=new_settings["handle"],
+        handle=handle,
     )
 
-    check_code(
-        client.post(
-            "/users/me/profile/",
-            json={key: old_settings.get(key) for key in new_settings.keys()},
-        )
-    )
+    check_code(client.post("/users/me/profile/", json=old_settings))
     result_settings = check_code(client.get("/users/me/profile/"))
     assert all(result_settings[key] == setting for key, setting in old_settings.items())
 
@@ -79,9 +89,7 @@ def test_user_avatar(client: FlaskClient):
     assert (main_avatar := main.get("avatar")) is not None
     assert main_avatar.get("id") == file_id
 
-    assert_message(
-        client, "/users/me/avatar/", message=True, status=200, method="DELETE"
-    )
+    assert_message(client, "/users/me/avatar/", message=True, method="DELETE")
     assert check_code(client.get("/home/")).get("avatar") is None
 
 
