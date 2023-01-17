@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
-from smtplib import SMTPDataError
 from typing import Protocol
 
 from flask.testing import FlaskClient
@@ -130,19 +129,9 @@ def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
 def mock_mail(mocker: MockerFixture):
     with mail.record_messages() as outbox:
         if not mail_initialized:
-            mocker.patch("other.emailer.mail_initialized", True)  # noqa: WPS425
+            mocker.patch("other.emailer.mail_initialized", side_effect=True)
             mocker.patch("common._core.mail.send", lambda params: outbox.append(params))
         yield outbox
-
-
-@fixture
-def mock_smtp(mocker: MockerFixture):
-    outbox = []
-    if not mail_initialized:
-        mocker.patch("other.emailer.mail_initialized", True)  # noqa: WPS425
-        mocker.patch("common._core.mail.send", side_effect=SMTPDataError(554, "No SMTP service here"))
-        mocker.patch("other.emailer.send_discord_message", lambda hook, text: outbox.append(text))  # noqa: U100
-    yield outbox
 
 
 @fixture(scope="session")

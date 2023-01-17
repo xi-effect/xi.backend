@@ -31,10 +31,10 @@ class EmailTypeData:
     def generate_code(self, payload: str) -> str:
         return self.serializer.dumps(payload, salt=SALT)
 
-    def parse_code(self, code: str) -> str | None:  # TODO pragma: no coverage (action)
+    def parse_code(self, code: str) -> str | None:
         try:
             return self.serializer.loads(code, salt=SALT)
-        except BadSignature:  # TODO pragma: no coverage
+        except BadSignature:
             return None
 
 
@@ -53,20 +53,19 @@ class EmailType(EmailTypeData, TypeEnum):
     )
 
 
-def generate_email(receiver: str, code: str, filename: str, theme: str) -> Message:  # TODO pragma: no coverage (action)
+def generate_email(receiver: str, code: str, filename: str, theme: str) -> Message:
     with open_file(EMAIL_FOLDER + filename) as f:
         html: str = f.read().replace("&code", code)
 
     return Message(theme, recipients=[receiver], html=html)
 
 
-def send_email(receiver: str, code: str, filename: str, theme: str):  # TODO pragma: no coverage (action)
-    if not mail_initialized:  # TODO pragma: no coverage
+def send_email(receiver: str, code: str, filename: str, theme: str):
+    if not mail_initialized:  # TODO pragma: no coverage (action)
         return
     try:
         mail.send(generate_email(receiver, code, filename, theme))
-    except SMTPDataError as e:  # TODO pragma: no coverage
-        print(e)
+    except SMTPDataError as e:
         send_discord_message(
             WebhookURLs.MAILBT, f"Email for {receiver} not sent:\n```{e}```"
         )
@@ -80,13 +79,13 @@ def send_code_email(receiver: str, email_type: EmailType) -> str:
 
 def create_email_confirmer(controller, route: str, email_type: EmailType):
     @controller.route(route + "<code>/")
-    class EmailConfirmer(Resource):  # TODO pragma: no coverage (action)
+    class EmailConfirmer(Resource):
         @controller.doc_abort(400, "Invalid code")
         @controller.a_response()
         def post(self, code: str) -> str:
             email = email_type.parse_code(code)
             user = None if email is None else User.find_by_email_address(email)
-            if user is None:  # TODO pragma: no coverage
+            if user is None:
                 controller.abort(400, "Invalid code")
             user.email_confirmed = True
             return "Success"

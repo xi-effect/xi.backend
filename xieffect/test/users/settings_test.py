@@ -4,8 +4,10 @@ from collections.abc import Callable
 
 from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
+from flask_mail import Message
 from pytest import mark
 
+from other import EmailType
 from vault import File
 from wsgi import TEST_EMAIL, BASIC_PASS
 from .feedback_test import assert_message
@@ -89,14 +91,16 @@ def test_user_avatar(client: FlaskClient):
     assert (main_avatar := main.get("avatar")) is not None
     assert main_avatar.get("id") == file_id
 
-    assert_message(client, "/users/me/avatar/", message=True, method="DELETE")
+    assert_message(
+        client, "/users/me/avatar/", message=True, status=200, method="DELETE"
+    )
     assert check_code(client.get("/home/")).get("avatar") is None
 
 
 @mark.order(108)
 def test_changing_pass(client: FlaskClient):
     pass_data = (
-        ("WRONGPASS", "NEW_PASS", "Wrong password"),
+        ("WRONG_PASS", "NEW_PASS", "Wrong password"),
         (BASIC_PASS, "NEW_PASS", "Success"),
         ("NEW_PASS", BASIC_PASS, "Success"),
     )
@@ -106,13 +110,30 @@ def test_changing_pass(client: FlaskClient):
 
 
 @mark.order(109)
-def test_error_email(client: FlaskClient):
+def test_changing_email(client: FlaskClient, mock_mail):
+    link_start, new_mail = "https://xieffect.ru/email-change/", "new@test.email"
     email_data = (
-        ("new@test.email", "WRONGPASS", "Wrong password"),
+        (new_mail, "WRONG_PASS", "Wrong password"),
         (TEST_EMAIL2, BASIC_PASS, "Email in use"),
-        ("new@test.email", BASIC_PASS, "Success"),
-        (TEST_EMAIL, BASIC_PASS, "Success"),
+        (new_mail, BASIC_PASS, "Success"),
     )
     for email, password, message in email_data:
         data = {"new-email": email, "password": password}
         assert_message(client, "/users/me/email/", message, **data)
+        if message == "Success":
+            assert check_code(client.get("/users/me/profile/")).get("email") == email
+
+    assert len(mock_mail) == 1
+    mail_message: Message = mock_mail[0]
+    assert mail_message.subject == EmailType.CHANGE.theme
+
+    code = mail_message.html.partition(link_start)[2].partition('/"')[0]
+    assert code != ""
+
+    recipients = mail_message.recipients
+    assert len(recipients) == 1
+    assert recipients[0] == new_mail
+
+    # Reset user's settings
+    reset_data = {"new-email": TEST_EMAIL, "password": BASIC_PASS}
+    assert_message(client, "/users/me/email/", "Success", **reset_data)
