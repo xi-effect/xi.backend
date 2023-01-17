@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from random import choice
+from smtplib import SMTPDataError
+
 from flask.testing import FlaskClient
 from flask_fullstack import dict_equal, check_code
 from flask_mail import Message
-from pytest import skip, mark, param
+from pytest import mark, param
+from pytest_mock import MockerFixture
 
-from common import mail, mail_initialized
-from other import EmailType
+from other import EmailType, WebhookURLs
 from wsgi import Invite
 
 
@@ -24,9 +27,9 @@ def assert_error(
 
 def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
     # Check getting list of users
-    url, base_status, base_message = "/mub/users/", 403, "Permission denied"
-    counter = len(list(list_tester(url, {}, 50, use_post=False)))
-    assert_error(client, url, base_status, base_message, method="GET", offset=0)
+    base_url, base_status, base_message = "/mub/users/", 403, "Permission denied"
+    counter = len(list(list_tester(base_url, {}, 50, use_post=False)))
+    assert_error(client, base_url, base_status, base_message, method="GET", offset=0)
 
     # Check creating
     invite_code = Invite.serializer.dumps((-1, 0))
@@ -40,20 +43,20 @@ def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
     for i, code, status, message in create_data:
         data = dict(user_data, code=code, email=f"{i}@test.mub")
         if message is None:
-            new_user = check_code(mod_client.post(url, json=data))
+            new_user = check_code(mod_client.post(base_url, json=data))
             assert dict_equal(new_user, data, "username", "email")
             counter += 1
         else:
-            assert_error(mod_client, url, status, message, **data)
+            assert_error(mod_client, base_url, status, message, **data)
     base_data = dict(user_data, email="fo@test.mub")
-    assert_error(client, url, base_status, base_message, **base_data)
-    assert counter == len(list(list_tester("/mub/users/", {}, 50, use_post=False)))
+    assert_error(client, base_url, base_status, base_message, **base_data)
+    assert counter == len(list(list_tester(base_url, {}, 50, use_post=False)))
 
     # Check email-confirmed update
     old_date = list(
-        list_tester(url, {"username": new_user["username"]}, 50, use_post=False)
+        list_tester(base_url, {"username": new_user["username"]}, 50, use_post=False)
     )
-    url = f"/mub/users/{new_user['id']}/"
+    url = f"{base_url}{new_user['id']}/"
     for conf in (True, False):
         result = check_code(mod_client.put(url, json={"email-confirmed": conf}))
         assert isinstance(old_date[0], dict)
@@ -82,30 +85,45 @@ def test_mub_emailer(
     user_email: str | None,
     status: int,
     message: str | None,
-):  # TODO pragma: no coverage (action)
-    if not mail_initialized:  # TODO pragma: no coverage
-        skip("Email module is not setup")
-
+    mock_mail,
+):
     url = "/mub/emailer/send/"
     tester_email = "test@test.test"
+    data = {
+        "type": email_type.to_string(),
+        "user-email": user_email,
+        "tester-email": tester_email
+    }
 
-    with mail.record_messages() as outbox:
-        data = {
-            "type": email_type.to_string(),
-            "user-email": user_email,
-            "tester-email": tester_email
-        }
+    if status == 200:  # Check successful sending
+        response = check_code(mod_client.post(url, json=data))
+        assert isinstance(response.get("a"), str)
 
-        if status == 200:  # Check successful sending
-            response = check_code(mod_client.post(url, json=data))
-            assert isinstance(response.get("a"), str)
+        assert len(mock_mail) == 1
+        mail_message: Message = mock_mail[0]
+        assert mail_message.subject == email_type.theme
 
-            assert len(outbox) == 1
-            mail_message: Message = outbox[0]
-            assert mail_message.subject == email_type.theme
+        recipients = mail_message.recipients
+        assert len(recipients) == 1
+        assert recipients[0] == tester_email
+    else:
+        assert_error(mod_client, url, status, message, **data)
 
-            recipients = mail_message.recipients
-            assert len(recipients) == 1
-            assert recipients[0] == tester_email
-        else:
-            assert_error(mod_client, url, status, message, **data)
+
+def test_smtp_data_error(mod_client: FlaskClient, mocker: MockerFixture, mock_mail):
+    data = {
+        "type": choice(EmailType.get_all_field_names()),
+        "tester-email": "test@test.test",
+    }
+    mocker.patch(
+        "common._core.mail.send",
+        side_effect=SMTPDataError(554, "No SMTP service here"),
+    )
+    mock_discorder = mocker.patch("other.emailer.send_discord_message")
+    mock_discorder.side_effect = lambda *_: None
+
+    check_code(mod_client.post("/mub/emailer/send/", json=data))
+    assert len(mock_mail) == 0
+
+    message = "Email for test@test.test not sent:\n```(554, 'No SMTP service here')```"
+    mock_discorder.assert_called_with(WebhookURLs.MAILBT, message)
