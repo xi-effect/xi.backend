@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from common import EventController, User
 from .videochat_db import ChatMessage, ChatParticipant, PARTICIPANT_LIMIT
-from ..base import Community, PermissionType, Participant, check_participant, check_permission
+from ..base import Community, ParticipantRole, PermissionType, Participant, check_participant
 
 controller = EventController()
 
@@ -96,7 +96,7 @@ class VideochatEventSpace(EventSpace):
     ):
         checks = [
             participant.user_id == message.sender_id,
-            check_permission(participant.id, PermissionType.MANAGE_MESSAGES),
+            ParticipantRole.has_permission(participant.id, PermissionType.MANAGE_MESSAGES),
         ]
 
         if not any(checks):

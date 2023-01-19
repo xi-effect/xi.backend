@@ -29,7 +29,6 @@ def test_post_creation(
     test_community,
     create_participant_role,
 ):  # TODO redo without calls to the database
-
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
 

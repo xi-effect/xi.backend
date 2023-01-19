@@ -10,14 +10,14 @@ from .invitations_db import Invitation
 from .meta_db import Community, Participant
 from .meta_sio import CommunitiesEventSpace
 from .roles_db import PermissionType
-from .utils import check_participant
+from .utils import check_permission
 
 controller = ResourceController("communities-invitation", path="/communities/")
 
 
 @controller.route("/<int:community_id>/invitations/index/")
 class InvitationLister(Resource):
-    @check_participant(controller, permission=PermissionType.MANAGE_INVITATIONS)
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS, )
     @controller.argument_parser(counter_parser)
     @controller.lister(20, Invitation.IndexModel)
     def post(self, community: Community, start: int, finish: int):

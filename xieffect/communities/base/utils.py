@@ -9,19 +9,12 @@ from .meta_db import Community, Participant
 from .roles_db import PermissionType, ParticipantRole
 
 
-def check_permission(participant_id: int, permission: PermissionType) -> bool:
-    return any(
-        per is permission
-        for per in ParticipantRole.get_permissions_by_participant(participant_id)
-    )
-
-
 def check_participant(
     controller: ResourceController | EventController,
     *,
-    permission: PermissionType = None,
     use_user: bool = False,
     use_participant: bool = False,
+    use_participant_id: bool = False,
     use_community: bool = True,
 ):
     def check_participant_role_wrapper(function):
@@ -40,18 +33,35 @@ def check_participant(
             if use_participant:  # TODO pragma: no coverage
                 kwargs["participant"] = participant
 
-            checks = (
-                check_permission(participant.id, permission) is False,
-                permission is not None,
-            )
-
-            if all(checks):
-                controller.abort(
-                    403, "Permission Denied: Participant haven't permission"
-                )
+            if use_participant_id:
+                kwargs["participant_id"] = participant.id
 
             return function(*args, **kwargs)
 
         return check_participant_role_inner
 
     return check_participant_role_wrapper
+
+
+def check_permission(
+    controller: ResourceController | EventController,
+    permission_type: PermissionType,
+    *,
+    use_user: bool = False,
+):
+    @controller.doc_abort(403, "Permission Denied")
+    def check_permission_wrapper(function):
+        @check_participant(controller, use_participant_id=True, use_user=use_user)
+        @wraps(function)
+        def check_permission_inner(*args, **kwargs):
+            result = ParticipantRole.has_permission(
+                kwargs.pop("participant_id"), permission_type
+            )
+            if result is False:
+                controller.abort(403, "Permission Denied: Not sufficient permissions")
+
+            return function(*args, **kwargs)
+
+        return check_permission_inner
+
+    return check_permission_wrapper

@@ -37,7 +37,7 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
     return assert_create_community(socketio_client, COMMUNITY_DATA)
 
 
-@fixture
+@fixture(scope="session")
 def create_participant_role() -> Callable:
     def create_participant_role_wrapper(
         permission_type: PermissionType, community_id: int, client: FlaskClient
@@ -46,23 +46,11 @@ def create_participant_role() -> Callable:
         user_id = check_code(response, get_json=True)["id"]
         role = Role.create(name="test_name", color="CD5C5C", community_id=community_id)
         RolePermission.create(role_id=role.id, permission_type=permission_type)
-
         participant = Participant.find_by_ids(
             community_id=community_id, user_id=user_id
         )
         assert participant is not None
         ParticipantRole.create(role_id=role.id, participant_id=participant.id)
         db.session.commit()
-        return role.id
 
     return create_participant_role_wrapper
-
-
-@fixture
-def create_permission() -> Callable:
-    def create_permission_wrapper(
-        permission_type: PermissionType, role_id: int
-    ) -> None:
-        RolePermission.create(role_id=role_id, permission_type=permission_type)
-
-    return create_permission_wrapper

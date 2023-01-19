@@ -5,6 +5,7 @@ from collections.abc import Callable
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
 from sqlalchemy import Column, ForeignKey, select, distinct
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.expression import and_
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
@@ -121,12 +122,14 @@ class ParticipantRole(Base):
     role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)
 
     @classmethod
-    def get_permissions_by_participant(
-        cls, participant_id: int
-    ) -> list[PermissionType]:
-        return db.session.get_all(
+    def has_permission(
+        cls, participant_id: int, permission: PermissionType
+    ) -> bool:
+        return db.session.get_first(
             select(distinct(RolePermission.permission_type))
-            .join(cls, cls.role_id == Role.id)
-            .filter_by(participant_id=participant_id)
             .join(Role, Role.id == RolePermission.role_id)
-        )
+            .join(
+                cls, and_(cls.role_id == Role.id, cls.participant_id == participant_id)
+            )
+            .filter(RolePermission.permission_type == permission)
+        ) is not None

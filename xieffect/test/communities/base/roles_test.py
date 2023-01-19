@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from flask_fullstack import dict_equal, check_code
-from pytest import mark
 
 from common.testing import SocketIOTestClient
 from communities.base.roles_db import LIMITING_QUANTITY_ROLES, PermissionType
@@ -14,7 +13,6 @@ def get_roles_list(client, community_id: int) -> list[dict]:
     return result
 
 
-@mark.order(1010)
 def test_roles(
     client,
     socketio_client,
@@ -65,8 +63,8 @@ def test_roles(
     )
 
     # Delete 50 roles
-    for data in get_roles_list(client, test_community):
-        if data["id"] == 1:
+    for index, data in enumerate(get_roles_list(client, test_community)):
+        if index == 0:
             continue
         assert dict_equal(data, successful_role_data, *successful_role_data)
         data = {**community_id_json, "role_id": data["id"]}

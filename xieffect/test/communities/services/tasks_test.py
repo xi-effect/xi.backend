@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
-from pytest import fixture, mark
+from pytest import fixture
 
 from common import open_file
 from common.testing import SocketIOTestClient
@@ -42,7 +42,6 @@ def assert_create_task(socketio_client: SocketIOTestClient, task_data: dict) -> 
     return result_data
 
 
-@mark.order(1011)
 def test_task_crud(
     client: FlaskClient,
     multi_client: Callable[[str], FlaskClient],
@@ -127,7 +126,6 @@ def test_task_crud(
     assert response == "Task not found"
 
 
-@mark.order(1012)
 def test_tasks_pagination(
     client: FlaskClient,
     socketio_client: SocketIOTestClient,
@@ -165,7 +163,6 @@ def test_tasks_pagination(
     assert dict_equal(tasks[0], added_task)
 
 
-@mark.order(1013)
 def test_task_create_with_wrong_files(
     socketio_client: SocketIOTestClient, community_id, create_participant_role
 ):
