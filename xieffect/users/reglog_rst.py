@@ -121,7 +121,7 @@ class UserLogout(Resource):
 
 
 @controller.route("/password-reset/")
-class PasswordResetSender(Resource):  # TODO pragma: no coverage
+class PasswordResetSender(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("email", required=True, help="User's email")
 
@@ -137,7 +137,7 @@ class PasswordResetSender(Resource):  # TODO pragma: no coverage
 
 
 @controller.route("/password-reset/confirm/")
-class PasswordReseter(Resource):  # TODO pragma: no coverage
+class PasswordReseter(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True, help="Code sent in the email")
 
