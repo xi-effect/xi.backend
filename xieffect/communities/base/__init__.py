@@ -1,3 +1,4 @@
+from .invitations_db import InvitationRoles, Invitation
 from .invitations_rst import controller as invitation_namespace
 from .invitations_sio import controller as invitation_events
 from .meta_db import Community, Participant
