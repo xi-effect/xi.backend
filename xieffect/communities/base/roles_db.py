@@ -133,3 +133,7 @@ class ParticipantRole(Base):
             )
             .filter(RolePermission.permission_type == permission)
         ) is not None
+
+    @classmethod
+    def create(cls, participant_id: int, role_id: int) -> ParticipantRole:
+        super().create(participant_id=participant_id, role_id=role_id)

@@ -5,7 +5,6 @@ from pytest import mark
 
 from common.testing import SocketIOTestClient
 from communities.services.news_db import Post
-from ..base.invites_test import create_assert_successful_join
 
 
 def get_posts_list(client, community_id: int) -> list[dict]:
@@ -28,6 +27,7 @@ def test_post_creation(
     socketio_client,
     test_community,
     create_participant_role,
+    create_assert_successful_join,
 ):  # TODO redo without calls to the database
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)

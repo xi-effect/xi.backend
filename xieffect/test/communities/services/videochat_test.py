@@ -4,7 +4,6 @@ from flask_fullstack import check_code, dict_equal
 from pytest import mark, fixture
 
 from common.testing import SocketIOTestClient
-from ..base.invites_test import create_assert_successful_join
 from ..base.meta_test import assert_create_community
 from ..conftest import COMMUNITY_DATA
 
@@ -43,6 +42,7 @@ def test_videochat_tools(
     socketio_client,
     test_community,
     create_participant_role,
+    create_assert_successful_join,
 ):
     create_participant_role(
         permission_type="MANAGE_INVITATIONS",

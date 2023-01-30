@@ -9,7 +9,7 @@ from common import ResourceController, User
 from .invitations_db import Invitation
 from .meta_db import Community, Participant
 from .meta_sio import CommunitiesEventSpace
-from .roles_db import PermissionType
+from .roles_db import PermissionType, ParticipantRole
 from .utils import check_permission
 
 controller = ResourceController("communities-invitation", path="/communities/")
@@ -17,9 +17,9 @@ controller = ResourceController("communities-invitation", path="/communities/")
 
 @controller.route("/<int:community_id>/invitations/index/")
 class InvitationLister(Resource):
-    @check_permission(controller, PermissionType.MANAGE_INVITATIONS, )
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
     @controller.argument_parser(counter_parser)
-    @controller.lister(20, Invitation.IndexModel)
+    @controller.lister(20, Invitation.FullModel)
     def post(self, community: Community, start: int, finish: int):
         return Invitation.find_by_community(community.id, start, finish - start)
 
@@ -81,8 +81,9 @@ class InvitationJoin(Resource):
     def post(self, user: User, invitation: Invitation | None, community: Community):
         if invitation is None:
             controller.abort(400, "User has already joined")
-
-        Participant.create(community.id, user.id)
+        participant = Participant.create(community.id, user.id)
+        for role in invitation.roles:
+            ParticipantRole.create(participant_id=participant.id, role_id=role.id)
         if invitation.limit == 1:
             invitation.delete()
         elif invitation.limit is not None:
