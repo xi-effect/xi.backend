@@ -11,9 +11,9 @@ from common.testing import SocketIOTestClient
 from ..conftest import COMMUNITY_DATA, INVITATIONS_PER_REQUEST
 
 
-@fixture
+@fixture(scope="module")
 def get_role_ids(create_participant_role):
-    def get_role_ids_wrapper(client: FlaskClient, community_id: int):
+    def wrapper_get_role_ids(client: FlaskClient, community_id: int):
         return [
             create_participant_role(
                 permission_type="MANAGE_INVITATIONS",
@@ -23,7 +23,7 @@ def get_role_ids(create_participant_role):
             for _ in range(3)
         ]
 
-    return get_role_ids_wrapper
+    return wrapper_get_role_ids
 
 
 class InvitesTester:

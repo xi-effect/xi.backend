@@ -78,11 +78,8 @@ class RolesEventSpace(EventSpace):
             controller.abort(400, "Quantity exceeded")
         role = Role.create(name=name, color=color, community_id=community.id)
 
-        for permission in permissions:
-            RolePermission.create(
-                role_id=role.id,
-                permission_type=permission,
-            )
+        if len(permissions) > 0:
+            RolePermission.create(role_id=role.id, permissions=permissions)
 
         event.emit_convert(role, self.room_name(community.id))
         return role
@@ -125,10 +122,10 @@ class RolesEventSpace(EventSpace):
             for permission in received_permissions & permissions_from_db:
                 received_permissions.remove(permission)
 
-            for permission in received_permissions - permissions_from_db:
+            if len(permissions := (received_permissions - permissions_from_db)) > 0:
                 RolePermission.create(
                     role_id=role.id,
-                    permission_type=permission,
+                    permissions=permissions
                 )
 
         event.emit_convert(role, self.room_name(community.id))

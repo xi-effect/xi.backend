@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 
 from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
-from sqlalchemy import Column, select, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, select, ForeignKey, insert
+from sqlalchemy.orm import relationship, backref, selectinload
 from sqlalchemy.sql.sqltypes import Integer, DateTime, String
 
 from common import Base, db, app
@@ -19,11 +19,20 @@ class InvitationRoles(Base):
     invitation_id = Column(
         Integer, ForeignKey("cs_invitations.id", ondelete="CASCADE"), primary_key=True
     )
-    role_id = Column(Integer, ForeignKey("cs_roles.id"), primary_key=True)
+    role_id = Column(
+        Integer, ForeignKey("cs_roles.id", ondelete="CASCADE"), primary_key=True
+    )
 
     @classmethod
-    def create(cls, invitation_id: int, role_id: int) -> None:
-        super().create(invitation_id=invitation_id, role_id=role_id)
+    def create(cls, invitation_id: int, role_ids: list[int]) -> None:
+        db.session.execute(
+            insert(cls).values(
+                [
+                    {"role_id": role_id, "invitation_id": invitation_id}
+                    for role_id in role_ids
+                ]
+            )
+        )
 
 
 class Invitation(Base, Identifiable):
@@ -44,10 +53,12 @@ class Invitation(Base, Identifiable):
     deadline = Column(DateTime, nullable=True)
     limit = Column(Integer, nullable=True)
 
-    BaseModel = PydanticModel.column_model(id, code)
     CreationBaseModel = PydanticModel.column_model(limit)
-    IndexModel = BaseModel.column_model(deadline).combine_with(CreationBaseModel)
-    FullModel = IndexModel.nest_model(Role.IndexModel, "roles", as_list=True)
+    FullModel = (
+        PydanticModel.column_model(id, code, deadline)
+        .combine_with(CreationBaseModel)
+        .nest_model(Role.IndexModel, "roles", as_list=True)
+    )
 
     @classmethod
     def create(
@@ -78,7 +89,11 @@ class Invitation(Base, Identifiable):
         cls, community_id: int, offset: int, limit: int
     ) -> list[Invitation]:
         return db.session.get_paginated(
-            select(cls).filter_by(community_id=community_id), offset, limit
+            select(cls)
+            .options(selectinload(cls.roles))
+            .filter_by(community_id=community_id),
+            offset,
+            limit,
         )
 
     @classmethod

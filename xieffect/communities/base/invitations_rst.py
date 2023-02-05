@@ -82,8 +82,11 @@ class InvitationJoin(Resource):
         if invitation is None:
             controller.abort(400, "User has already joined")
         participant = Participant.create(community.id, user.id)
-        for role in invitation.roles:
-            ParticipantRole.create(participant_id=participant.id, role_id=role.id)
+
+        if len(roles := invitation.roles) > 0:
+            ParticipantRole.create(
+                participant_id=participant.id, role_ids=[role.id for role in roles]
+            )
         if invitation.limit == 1:
             invitation.delete()
         elif invitation.limit is not None:
