@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Callable
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from flask.testing import FlaskClient
@@ -8,10 +8,11 @@ from flask_fullstack import check_code, dict_equal
 from pytest import mark, fixture
 
 from common.testing import SocketIOTestClient
-from ..conftest import COMMUNITY_DATA, INVITATIONS_PER_REQUEST
+from communities.base import INVITATIONS_PER_REQUEST
+from ..conftest import COMMUNITY_DATA
 
 
-@fixture(scope="module")
+@fixture(scope="session")
 def get_role_ids(create_participant_role):
     def wrapper_get_role_ids(client: FlaskClient, community_id: int):
         return [
@@ -106,7 +107,6 @@ def test_invite_joins(
     base_client: FlaskClient,
     client: FlaskClient,
     multi_client: Callable[[str], FlaskClient],
-    list_tester: Callable[[str, dict, int], Iterator[dict]],
     test_community: int,
     create_assert_successful_join,
     assert_successful_get,
@@ -133,7 +133,7 @@ def test_invite_joins(
 
         return invite["id"], invite["code"]
 
-    assert_successful_join = create_assert_successful_join(list_tester, test_community)
+    assert_successful_join = create_assert_successful_join(test_community)
 
     def assert_invalid_invite(client: FlaskClient, code: str):
         assert (
@@ -204,7 +204,6 @@ def test_invite_joins(
 def test_invites_errors(
     client,
     multi_client,
-    list_tester,
     test_community,
     create_participant_role,
     create_assert_successful_join,
@@ -224,7 +223,7 @@ def test_invites_errors(
     }
     room_data = {"community_id": test_community}
 
-    assert_successful_join = create_assert_successful_join(list_tester, test_community)
+    assert_successful_join = create_assert_successful_join(test_community)
 
     # init sio, join rooms & set up the invite
     sio_member = SocketIOTestClient(member)

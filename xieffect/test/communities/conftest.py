@@ -14,10 +14,10 @@ from communities.base import (
     ParticipantRole,
     Role,
     RolePermission,
+    INVITATIONS_PER_REQUEST
 )
 
 COMMUNITY_DATA: dict = {"name": "test"}
-INVITATIONS_PER_REQUEST = 20
 
 
 def assert_create_community(
@@ -47,7 +47,7 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
     return assert_create_community(socketio_client, COMMUNITY_DATA)
 
 
-@fixture(scope="package")
+@fixture(scope="session")
 def create_participant_role() -> Callable:
     def create_participant_role_wrapper(
         permission_type: PermissionType, community_id: int, client: FlaskClient
@@ -55,19 +55,19 @@ def create_participant_role() -> Callable:
         response = client.get("/home/")
         user_id = check_code(response, get_json=True)["id"]
         role = Role.create(name="test_name", color="CD5C5C", community_id=community_id)
-        RolePermission.create(role_id=role.id, permissions=[permission_type])
+        RolePermission.create_bulk(role_id=role.id, permissions=[permission_type])
         participant = Participant.find_by_ids(
             community_id=community_id, user_id=user_id
         )
         assert participant is not None
-        ParticipantRole.create(role_ids=[role.id], participant_id=participant.id)
+        ParticipantRole.create_bulk(role_ids=[role.id], participant_id=participant.id)
         db.session.commit()
         return role.id
 
     return create_participant_role_wrapper
 
 
-@fixture(scope="package")
+@fixture(scope="session")
 def assert_successful_get() -> Callable:
     def assert_successful_get_wrapper(client: FlaskClient, code, joined: bool) -> None:
         data = check_code(client.get(f"/communities/join/{code}/"))
@@ -81,9 +81,9 @@ def assert_successful_get() -> Callable:
     return assert_successful_get_wrapper
 
 
-@fixture(scope="package")
-def create_assert_successful_join(assert_successful_get) -> Callable:
-    def assert_successful_join_wrapper(list_tester, community_id):
+@fixture
+def create_assert_successful_join(assert_successful_get, list_tester) -> Callable:
+    def assert_successful_join_wrapper(community_id):
         def assert_successful_join_inner(
             client: FlaskClient,
             invite_id: int,

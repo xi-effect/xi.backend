@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, select, distinct, insert
+from sqlalchemy import Column, ForeignKey, select, distinct
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import and_
 from sqlalchemy.sql.functions import count
@@ -90,15 +90,9 @@ class RolePermission(Base):
     permission_type = Column(Enum(PermissionType), primary_key=True)
 
     @classmethod
-    def create(cls, role_id: int, permissions: list[PermissionType]) -> None:
-        db.session.execute(
-            insert(cls).values(
-                [
-                    {"role_id": role_id, "permission_type": permission}
-                    for permission in permissions
-                ]
-            )
-        )
+    def create_bulk(cls, role_id: int, permissions: list[PermissionType]) -> None:
+        db.session.add_all(cls(role_id=role_id, permission_type=permission) for permission in permissions)
+        db.session.flush()
 
     @classmethod
     def delete_by_role(cls, role_id: int, permission_type: str) -> None:
@@ -137,12 +131,8 @@ class ParticipantRole(Base):
         )
 
     @classmethod
-    def create(cls, participant_id: int, role_ids: list[int]) -> None:
-        db.session.execute(
-            insert(cls).values(
-                [
-                    {"participant_id": participant_id, "role_id": role_id}
-                    for role_id in role_ids
-                ]
-            )
+    def create_bulk(cls, participant_id: int, role_ids: list[int]) -> None:
+        db.session.add_all(
+            cls(participant_id=participant_id, role_id=role_id) for role_id in role_ids
         )
+        db.session.flush()

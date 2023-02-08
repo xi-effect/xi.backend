@@ -51,8 +51,7 @@ class InvitationsEventSpace(EventSpace):
         role_ids: list[int],
     ):
         invitation = Invitation.create(community.id, limit, days)
-        if len(role_ids) > 0:
-            InvitationRoles.create(invitation_id=invitation.id, role_ids=role_ids)
+        InvitationRoles.create_bulk(invitation_id=invitation.id, role_ids=role_ids)
         event.emit_convert(invitation, self.room_name(community.id))
         return invitation
 

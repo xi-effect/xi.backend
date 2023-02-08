@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
-from sqlalchemy import Column, select, ForeignKey, insert
+from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship, backref, selectinload
 from sqlalchemy.sql.sqltypes import Integer, DateTime, String
 
@@ -24,15 +24,9 @@ class InvitationRoles(Base):
     )
 
     @classmethod
-    def create(cls, invitation_id: int, role_ids: list[int]) -> None:
-        db.session.execute(
-            insert(cls).values(
-                [
-                    {"role_id": role_id, "invitation_id": invitation_id}
-                    for role_id in role_ids
-                ]
-            )
-        )
+    def create_bulk(cls, invitation_id: int, role_ids: list[int]) -> None:
+        db.session.add_all(cls(invitation_id=invitation_id, role_id=role_id) for role_id in role_ids)
+        db.session.flush()
 
 
 class Invitation(Base, Identifiable):
