@@ -14,7 +14,6 @@ from common import open_file
 def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
     with open_file("static/test/user-bundle.json") as f:
         usernames = [user_data["username"] for user_data in load_json(f)]
-    usernames.append("hey")  # TODO add user deleting & use it in test_signup + remove this line
 
     for user in list_tester("/users/", {}, 10):
         assert user["username"] != "test"

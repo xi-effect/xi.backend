@@ -56,9 +56,8 @@ class UserIndexResource(Resource):
 
             if invite is None:
                 return {"a": "Invite not found"}, 404
-            if invite.limit == invite.accepted:  # TODO pragma: no coverage
+            if invite.limit == invite.accepted:
                 return {"a": "Invite code limit exceeded"}
-        invite.accepted += 1
 
         user = User.create(
             email=email,
@@ -66,8 +65,10 @@ class UserIndexResource(Resource):
             password=password,
             invite=invite,
         )
-        message = {"a": "Email already in use"}
-        return message if user is None else controller.marshal(user, User.ProfileData)
+        if user is None:
+            return {"a": "Email already in use"}
+        invite.accepted += 1
+        return controller.marshal(user, User.ProfileData)
 
 
 @controller.route("/<int:user_id>/")

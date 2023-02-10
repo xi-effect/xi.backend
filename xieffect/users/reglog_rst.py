@@ -57,9 +57,8 @@ class UserRegistration(Resource):
 
         if invite is None:
             return {"a": "Invite not found"}, 404
-        if invite.limit == invite.accepted:  # TODO pragma: no coverage
+        if invite.limit == invite.accepted:
             return {"a": "Invite code limit exceeded"}
-        invite.accepted += 1
 
         user = User.create(
             email=email,
@@ -67,8 +66,9 @@ class UserRegistration(Resource):
             password=password,
             invite=invite,
         )
-        if user is None:  # TODO pragma: no coverage
+        if user is None:
             return {"a": "Email already in use"}
+        invite.accepted += 1
         send_code_email(email, EmailType.CONFIRM)
         cu = CommunitiesUser.find_or_create(user.id)
         return cu, user
@@ -91,24 +91,25 @@ class UserLogin(Resource):
     def post(self, email: str, password: str):
         """Tries to log in with credentials given"""
         user = User.find_by_email_address(email)
-        if user is None:  # TODO pragma: no coverage
+        if user is None:
             return {"a": "User doesn't exist"}
 
         if User.verify_hash(password, user.password):
             cu = CommunitiesUser.find_or_create(user.id)
             return cu, user
-        return {"a": "Wrong password"}  # TODO pragma: no coverage
+        return {"a": "Wrong password"}
 
 
 @controller.route("/go/")
-class Test(Resource):  # TODO pragma: no coverage
+class Test(Resource):
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
     def get(self):
         """Localhost-only endpoint for logging in from the docs"""
         if not current_app.debug:
             return {"a": False}
-
-        return CommunitiesUser.find_or_create(1), User.find_by_id(1)
+        user = User.find_by_id(1)
+        cu = CommunitiesUser.find_or_create(1)
+        return cu, user
 
 
 @controller.route("/signout/")
