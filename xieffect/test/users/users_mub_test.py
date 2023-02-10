@@ -52,6 +52,16 @@ def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
     assert_error(client, base_url, base_status, base_message, **base_data)
     assert counter == len(list(list_tester(base_url, {}, 50, use_post=False)))
 
+    # Checking invite limit exception
+    invite_data = {"name": "test", "limit": 1}
+    invite_id = check_code(mod_client.post("/mub/invites/", json=invite_data)).get("id")
+    assert isinstance(invite_id, int)
+
+    code = Invite.serializer.dumps((invite_id, 0))
+    credentials = dict(user_data, email="limit@invite.mub", code=code)
+    for message in (None, "Invite code limit exceeded"):
+        assert_error(mod_client, base_url, 200, message, **credentials)
+
     # Check email-confirmed update
     old_date = list(
         list_tester(base_url, {"username": new_user["username"]}, 50, use_post=False)
