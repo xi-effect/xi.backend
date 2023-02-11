@@ -90,15 +90,9 @@ class RolePermission(Base):
     permission_type = Column(Enum(PermissionType), primary_key=True)
 
     @classmethod
-    def create(
-        cls,
-        role_id: int,
-        permission_type: PermissionType,
-    ) -> RolePermission:
-        return super().create(
-            role_id=role_id,
-            permission_type=permission_type,
-        )
+    def create_bulk(cls, role_id: int, permissions: list[PermissionType]) -> None:
+        db.session.add_all(cls(role_id=role_id, permission_type=permission) for permission in permissions)
+        db.session.flush()
 
     @classmethod
     def delete_by_role(cls, role_id: int, permission_type: str) -> None:
@@ -122,14 +116,23 @@ class ParticipantRole(Base):
     role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)
 
     @classmethod
-    def has_permission(
-        cls, participant_id: int, permission: PermissionType
-    ) -> bool:
-        return db.session.get_first(
-            select(distinct(RolePermission.permission_type))
-            .join(Role, Role.id == RolePermission.role_id)
-            .join(
-                cls, and_(cls.role_id == Role.id, cls.participant_id == participant_id)
+    def has_permission(cls, participant_id: int, permission: PermissionType) -> bool:
+        return (
+            db.session.get_first(
+                select(distinct(RolePermission.permission_type))
+                .join(Role, Role.id == RolePermission.role_id)
+                .join(
+                    cls,
+                    and_(cls.role_id == Role.id, cls.participant_id == participant_id),
+                )
+                .filter(RolePermission.permission_type == permission)
             )
-            .filter(RolePermission.permission_type == permission)
-        ) is not None
+            is not None
+        )
+
+    @classmethod
+    def create_bulk(cls, participant_id: int, role_ids: list[int]) -> None:
+        db.session.add_all(
+            cls(participant_id=participant_id, role_id=role_id) for role_id in role_ids
+        )
+        db.session.flush()

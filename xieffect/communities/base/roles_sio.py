@@ -77,13 +77,7 @@ class RolesEventSpace(EventSpace):
         if Role.get_count_by_community(community.id) >= LIMITING_QUANTITY_ROLES:
             controller.abort(400, "Quantity exceeded")
         role = Role.create(name=name, color=color, community_id=community.id)
-
-        for permission in permissions:
-            RolePermission.create(
-                role_id=role.id,
-                permission_type=permission,
-            )
-
+        RolePermission.create_bulk(role_id=role.id, permissions=permissions)
         event.emit_convert(role, self.room_name(community.id))
         return role
 
@@ -125,11 +119,9 @@ class RolesEventSpace(EventSpace):
             for permission in received_permissions & permissions_from_db:
                 received_permissions.remove(permission)
 
-            for permission in received_permissions - permissions_from_db:
-                RolePermission.create(
-                    role_id=role.id,
-                    permission_type=permission,
-                )
+            RolePermission.create_bulk(
+                role_id=role.id, permissions=received_permissions - permissions_from_db
+            )
 
         event.emit_convert(role, self.room_name(community.id))
         return role

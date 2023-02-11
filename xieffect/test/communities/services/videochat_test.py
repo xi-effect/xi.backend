@@ -4,7 +4,6 @@ from flask_fullstack import check_code, dict_equal
 from pytest import mark, fixture
 
 from common.testing import SocketIOTestClient
-from ..base.invites_test import create_assert_successful_join
 from ..base.meta_test import assert_create_community
 from ..conftest import COMMUNITY_DATA
 
@@ -39,10 +38,10 @@ def get_messages_list(client, community_id: int) -> list[dict]:
 def test_videochat_tools(
     client,
     multi_client,
-    list_tester,
     socketio_client,
     test_community,
     create_participant_role,
+    create_assert_successful_join,
 ):
     create_participant_role(
         permission_type="MANAGE_INVITATIONS",
@@ -65,10 +64,7 @@ def test_videochat_tools(
     invite = socketio_client.assert_emit_ack("new_invite", invite_data)
     member = multi_client("1@user.user")
     sio_member = SocketIOTestClient(member)
-    assert_successful_join = create_assert_successful_join(
-        list_tester,
-        test_community,
-    )
+    assert_successful_join = create_assert_successful_join(test_community)
     assert_successful_join(member, invite["id"], invite["code"], sio_member)
 
     community_id_json = {"community_id": test_community}

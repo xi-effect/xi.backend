@@ -5,7 +5,6 @@ from pytest import mark
 
 from common.testing import SocketIOTestClient
 from communities.services.news_db import Post
-from ..base.invites_test import create_assert_successful_join
 
 
 def get_posts_list(client, community_id: int) -> list[dict]:
@@ -24,10 +23,10 @@ def get_posts_list(client, community_id: int) -> list[dict]:
 def test_post_creation(
     client,
     multi_client,
-    list_tester,
     socketio_client,
     test_community,
     create_participant_role,
+    create_assert_successful_join,
 ):  # TODO redo without calls to the database
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
@@ -47,10 +46,7 @@ def test_post_creation(
     invite = socketio_client.assert_emit_ack("new_invite", invite_data)
     member = multi_client("1@user.user")
     sio_member = SocketIOTestClient(member)
-    assert_successful_join = create_assert_successful_join(
-        list_tester,
-        test_community,
-    )
+    assert_successful_join = create_assert_successful_join(test_community)
     assert_successful_join(member, invite["id"], invite["code"], sio_member)
 
     community_id_json = {"community_id": test_community}
