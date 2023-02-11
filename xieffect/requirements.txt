@@ -1,4 +1,4 @@
-flask-fullstack==0.4.11
+flask-fullstack==0.4.12
 
 # Misc
 discord-webhook~=0.14.0
@@ -9,7 +9,6 @@ python-dotenv
 # Database-related
 alembic  # TODO move to -dev deps
 psycopg2-binary
-flask-sqlalchemy
 
 # Server stuff (do not change!)
 eventlet==0.30.2

@@ -6,11 +6,10 @@ from sys import modules
 
 from dotenv import load_dotenv
 from flask import Response
-from flask_fullstack import Flask as _Flask
+from flask_fullstack import Flask as _Flask, SQLAlchemy
 from flask_mail import Mail
 
 from ._files import absolute_path, open_file  # noqa: WPS436
-from ._fsqla import SQLAlchemy  # noqa: WPS436
 
 
 class Flask(_Flask):
@@ -40,13 +39,15 @@ app: Flask = Flask(
     versions=versions,
 )
 
-db_url: str = getenv("DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db"))
-db = SQLAlchemy(app, db_url)  # echo=True
-
 app.config["TESTING"] = "pytest" in modules
+app.config["RESTX_INCLUDE_ALL_MODELS"] = True
 app.secrets_from_env("hope it's local")
 # TODO DI to use secrets in `URLSafeSerializer`s
 app.configure_cors()
+
+db_url: str = getenv("DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db"))
+db = SQLAlchemy(app, db_url)  # echo=True
+Base = db.Model
 
 mail_hostname: str | None = getenv("MAIL_HOSTNAME")
 mail_username: str | None = getenv("MAIL_USERNAME")
@@ -60,9 +61,4 @@ if mail_initialized:  # TODO pragma: no coverage (action)
     app.config["MAIL_PASSWORD"] = mail_password
     app.config["MAIL_USE_TLS"] = True
     app.config["MAIL_USE_SSL"] = False
-
 mail: Mail = Mail(app)
-
-Base = db.Model
-
-app.config["RESTX_INCLUDE_ALL_MODELS"] = True
