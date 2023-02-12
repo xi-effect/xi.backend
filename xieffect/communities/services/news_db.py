@@ -19,7 +19,8 @@ class Post(Base, Identifiable):
     description = Column(Text, nullable=True)
     created = Column(DateTime, server_default=sql.func.now(), nullable=False)
     changed = Column(
-        DateTime, server_default=sql.func.now(),
+        DateTime,
+        server_default=sql.func.now(),
         server_onupdate=sql.func.now(),
         nullable=False,
     )

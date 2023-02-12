@@ -35,9 +35,7 @@ class ChatParticipant(Base):  # TODO community to room after channels creating
         )
 
     @classmethod
-    def find_by_ids(
-        cls, user_id: int, community_id: int
-    ) -> ChatParticipant | None:
+    def find_by_ids(cls, user_id: int, community_id: int) -> ChatParticipant | None:
         return db.get_first(
             select(cls).filter_by(user_id=user_id, community_id=community_id)
         )
@@ -69,10 +67,7 @@ class ChatMessage(Base, Identifiable):  # TODO community to room after channels 
     sender: User | relationship = relationship("User")
 
     CreateModel = PydanticModel.column_model(content)
-    IndexModel = (
-        CreateModel.column_model(id)
-        .nest_model(User.MainData, "sender")
-    )
+    IndexModel = CreateModel.column_model(id).nest_model(User.MainData, "sender")
 
     @classmethod
     def create(cls, sender: User, community_id: int, content: str) -> ChatMessage:

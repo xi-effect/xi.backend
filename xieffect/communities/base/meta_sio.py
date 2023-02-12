@@ -58,8 +58,10 @@ class CommunitiesEventSpace(EventSpace):
         target_index: int,
     ):
         cu = CommunitiesUser.find_or_create(user.id)
-        if not cu.reorder_community_list(community.id, target_index):  # TODO pragma: no coverage
-            controller.abort(404, "Community not in the list")
+        if not cu.reorder_community_list(community.id, target_index):
+            controller.abort(
+                404, "Community not in the list"
+            )  # TODO pragma: no coverage
         event.emit_convert(
             user_id=user.id,
             community_id=community.id,

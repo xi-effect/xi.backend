@@ -49,11 +49,13 @@ class NetlifyBuildWebhook(Resource):
             else f"__**Netlify build is {state}!**__\n"
         )
 
-        result += "\n".join([
-            f"{message}: `{arg}`"
-            for name, message in self.arguments.items()
-            if (arg := kwargs.get(name)) is not None and arg != ""
-        ])
+        result += "\n".join(
+            [
+                f"{message}: `{arg}`"
+                for name, message in self.arguments.items()
+                if (arg := kwargs.get(name)) is not None and arg != ""
+            ]
+        )
 
         if commit_url is not None:
             result += f"\n{commit_url}"
