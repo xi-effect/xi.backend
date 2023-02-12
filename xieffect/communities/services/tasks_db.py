@@ -35,7 +35,7 @@ class TaskEmbed(Base):
     @classmethod
     def get_task_files(cls, task_id: int) -> list[int]:
         stmt = select(cls.file_id).filter_by(task_id=task_id)
-        return db.session.get_all(stmt)
+        return db.get_all(stmt)
 
 
 class Task(Base, Identifiable):
@@ -77,7 +77,7 @@ class Task(Base, Identifiable):
     @classmethod
     def find_by_id(cls, task_id: int) -> Task | None:
         """Find only not deleted task (deleted=False)"""
-        return db.session.get_first(select(cls).filter_by(id=task_id, deleted=False))
+        return db.get_first(select(cls).filter_by(id=task_id, deleted=False))
 
     @classmethod
     def create(

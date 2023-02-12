@@ -33,7 +33,7 @@ def create_file(filename: str, contents: bytes):
 
 
 def upload(client: FlaskClient, filename: str):
-    with open_file(f"xieffect/test/education/json/{filename}", "rb") as f:
+    with open_file(f"xieffect/test/json/{filename}", "rb") as f:
         contents: bytes = f.read()
     data = check_code(client.post(
         "/files/",
@@ -53,7 +53,7 @@ def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client:
 
     # upload a file
     new_files: list[tuple[dict, bytes]] = [
-        upload(client, filename) for filename in ("sample-page.json", "sample-page-2.json")
+        upload(client, filename) for filename in ("test-1.json", "test-2.json")
     ]
     new_files.reverse()
 

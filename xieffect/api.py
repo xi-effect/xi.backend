@@ -7,8 +7,7 @@ from sys import stderr
 
 from flask_fullstack import SocketIO
 
-from common import app, versions, open_file
-from common import db  # noqa: F401
+from common import app, db, versions, open_file
 from communities import (
     communities_meta_events,
     communities_namespace,
@@ -22,18 +21,6 @@ from communities import (
     tasks_events,
     videochat_events,
     videochat_namespace,
-)
-from education import (
-    authors_namespace,
-    education_namespace,
-    images_view_namespace,
-    interaction_namespace,
-    modules_view_namespace,
-    pages_view_namespace,
-    result_namespace,
-    wip_images_namespace,
-    wip_index_namespace,
-    wip_json_file_namespace,
 )
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
 from other import (
@@ -99,19 +86,6 @@ api.add_namespace(feedback_namespace)
 api.add_namespace(mub_feedback_namespace)
 api.add_namespace(settings_namespace)
 
-api.add_namespace(education_namespace)
-api.add_namespace(modules_view_namespace)
-api.add_namespace(pages_view_namespace)
-api.add_namespace(images_view_namespace)
-
-api.add_namespace(interaction_namespace)
-api.add_namespace(result_namespace)
-
-api.add_namespace(authors_namespace)
-api.add_namespace(wip_images_namespace)
-api.add_namespace(wip_json_file_namespace)
-api.add_namespace(wip_index_namespace)
-
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
 api.add_namespace(news_namespace)
@@ -154,6 +128,7 @@ socketio.add_namespace(
 )
 
 socketio.after_event(db.with_autocommit)
+app.after_request(db.with_autocommit)
 
 
 @app.cli.command("form-sio-docs")

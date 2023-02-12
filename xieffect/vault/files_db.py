@@ -32,12 +32,12 @@ class File(Base):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> File | None:
-        return db.session.get_first(select(cls).filter_by(id=entry_id))
+        return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
     def find_by_ids(cls, entry_ids: list) -> list[File]:
         stmt = select(cls).filter(cls.id.in_(entry_ids))
-        return db.session.get_all(stmt)
+        return db.get_all(stmt)
 
     @property
     def filename(self) -> str:
@@ -45,6 +45,6 @@ class File(Base):
 
     @classmethod
     def get_for_mub(cls, offset: int, limit: int) -> list[File]:
-        return db.session.get_paginated(
+        return db.get_paginated(
             select(File).order_by(cls.id.desc()), offset, limit
         )

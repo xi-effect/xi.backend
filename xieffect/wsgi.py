@@ -44,11 +44,11 @@ if (  # noqa: WPS337
     or "form-sio-docs" in argv
 ):  # pragma: no coverage
     application.debug = True
-    if db_url.endswith("app.db"):
-        db.drop_all()
-    if not db_url.startswith("postgresql"):
-        db.create_all()
     with application.app_context():
+        if db_url.endswith("app.db"):
+            db.drop_all()
+        if not db_url.startswith("postgresql"):
+            db.create_all()
         init_test_mod()
         db.session.commit()
 else:  # works on server restart  # pragma: no coverage
@@ -92,16 +92,13 @@ def init_users():
         log_stuff("status", "Database has been reset")
         invite: Invite = Invite.create(id=TEST_INVITE_ID, name="TEST_INVITE")
 
-    from education.authorship import Author
-
     if (User.find_by_email_address(TEST_EMAIL)) is None:
-        test_user: User = User.create(
+        User.create(
             email=TEST_EMAIL,
             username="test",
             password=BASIC_PASS,
             invite=invite,
         )
-        test_user.author = Author.create(test_user)
 
     with open_file("static/test/user-bundle.json") as f:
         for i, user_settings in enumerate(load_json(f)):
@@ -113,26 +110,6 @@ def init_users():
                     password=BASIC_PASS,
                 )
             user.change_settings(**user_settings)
-
-
-def init_knowledge():
-    from education.authorship import Author
-    from education.knowledge import Module, Page
-    from education.studio import WIPPage, WIPModule
-
-    test_author: Author = User.find_by_email_address(TEST_EMAIL).author
-
-    with open_file("static/test/page-bundle.json") as f:
-        for page_data in load_json(f):
-            WIPPage.create_from_json(test_author, page_data)
-            Page.find_or_create(page_data, test_author)
-
-    with open_file("static/test/module-bundle.json") as f:
-        for module_data in load_json(f):
-            module = WIPModule.create_from_json(test_author, module_data)
-            module.id = module_data["id"]
-            db.session.flush()
-            Module.create(module_data, test_author, force=True)
 
 
 def version_check():  # TODO pragma: no coverage
@@ -173,7 +150,6 @@ with application.app_context():
     permission_index.initialize()
     init_folder_structure()
     init_users()
-    init_knowledge()
     version_check()
     sqlite_pragma()
     db.session.commit()
