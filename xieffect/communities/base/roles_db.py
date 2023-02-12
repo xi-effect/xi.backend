@@ -69,9 +69,7 @@ class Role(Base, Identifiable):
 
     @classmethod
     def get_count_by_community(cls, community_id: int) -> int:
-        return db.get_first(
-            select(count(cls.id)).filter_by(community_id=community_id)
-        )
+        return db.get_first(select(count(cls.id)).filter_by(community_id=community_id))
 
 
 class RolePermission(Base):

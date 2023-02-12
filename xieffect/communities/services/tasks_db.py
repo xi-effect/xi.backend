@@ -98,6 +98,4 @@ class Task(Base, Identifiable):
 
     @classmethod
     def update(cls, task_id: int, **kwargs) -> None:
-        db.session.execute(
-            update(cls).where(cls.id == task_id).values(**kwargs)
-        )
+        db.session.execute(update(cls).where(cls.id == task_id).values(**kwargs))

@@ -22,8 +22,7 @@ def _kebabify(data: ..., reverse: bool) -> ...:
         return [_kebabify(entry, reverse) for entry in data]
     if isinstance(data, dict):
         return {
-            _kebabify_key(k, reverse): _kebabify(v, reverse)
-            for k, v in data.items()
+            _kebabify_key(k, reverse): _kebabify(v, reverse) for k, v in data.items()
         }
     return data
 
@@ -111,14 +110,17 @@ class SocketIOTestClient(_SocketIOTestClient):
         :param kwargs: kwargs to pass to normal emit
         :return: None
         """
-        assert self.assert_emit_ack(
-            event_name,
-            *args,
-            code=code,
-            message=message,
-            with_nop=with_nop,
-            **kwargs,
-        ) is None
+        assert (
+            self.assert_emit_ack(
+                event_name,
+                *args,
+                code=code,
+                message=message,
+                with_nop=with_nop,
+                **kwargs,
+            )
+            is None
+        )
 
     def assert_received(self, event_name: str, data: dict, *, pop: bool = True) -> dict:
         """

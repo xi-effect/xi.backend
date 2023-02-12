@@ -124,7 +124,7 @@ socketio.add_namespace(
     tasks_events,
     videochat_events,
     role_events,
-    protected=True
+    protected=True,
 )
 
 socketio.after_event(db.with_autocommit)
@@ -135,5 +135,3 @@ app.after_request(db.with_autocommit)
 def form_sio_docs():  # TODO pragma: no coverage
     with open_file("files/async-api.json", "w") as f:
         dump_json(socketio.docs(), f, ensure_ascii=False)
-
-# remove-item alias:\curl

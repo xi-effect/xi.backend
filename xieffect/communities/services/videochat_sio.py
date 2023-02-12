@@ -27,7 +27,11 @@ class VideochatEventSpace(EventSpace):
     @check_participant(controller, use_user=True)
     @controller.marshal_ack(ChatParticipant.IndexModel)
     def new_participant(
-        self, event: DuplexEvent, user: User, community: Community, state: dict,
+        self,
+        event: DuplexEvent,
+        user: User,
+        community: Community,
+        state: dict,
     ):
         participant_count = ChatParticipant.get_count_by_community(community.id)
         if participant_count >= PARTICIPANT_LIMIT:  # TODO pragma: no cover
