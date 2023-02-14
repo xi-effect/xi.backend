@@ -5,6 +5,9 @@
 lorem
 requests
 
+# Pre-commit
+pre-commit~=3.0.4
+
 # Testing (dev)
 pytest
 pytest-mock
