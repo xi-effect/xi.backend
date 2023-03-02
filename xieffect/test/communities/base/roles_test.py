@@ -2,11 +2,18 @@ from __future__ import annotations
 
 from flask_fullstack import dict_equal, check_code
 
-from common.testing import SocketIOTestClient
-from communities.base.roles_db import LIMITING_QUANTITY_ROLES, PermissionType
+from common.testing import SocketIOTestClient, FlaskClient
+from communities.base import Community
+from communities.base.roles_db import (
+    LIMITING_QUANTITY_ROLES,
+    PermissionType,
+    Role,
+    RolePermission,
+)
+from test.conftest import delete_by_id
 
 
-def get_roles_list(client, community_id: int) -> list[dict]:
+def get_roles_list(client: FlaskClient, community_id: int) -> list[dict]:
     """Check the success of getting the list of roles"""
     result = check_code(client.get(f"/communities/{community_id}/roles/"))
     assert isinstance(result, list)
@@ -14,9 +21,9 @@ def get_roles_list(client, community_id: int) -> list[dict]:
 
 
 def test_roles(
-    client,
-    socketio_client,
-    test_community,
+    client: FlaskClient,
+    socketio_client: SocketIOTestClient,
+    test_community: int,
 ):
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
@@ -137,3 +144,16 @@ def test_roles(
     # Check successfully close roles-room
     for user in (socketio_client, socketio_client2):
         user.assert_emit_success("close_roles", community_id_json)
+
+
+def test_role_constraints(
+    community_id: int,
+):
+    role_id = Role.create("test", "FFFF00", community_id).id
+    RolePermission.create(role_id, PermissionType.MANAGE_ROLES)
+    assert Role.find_by_id(role_id) is not None
+    assert len(RolePermission.get_all_by_role(role_id)) == 1
+
+    delete_by_id(community_id, Community)
+    assert Role.find_by_id(role_id) is None
+    assert len(RolePermission.get_all_by_role(role_id)) == 0

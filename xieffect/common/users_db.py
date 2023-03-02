@@ -58,8 +58,11 @@ class User(Base, UserRole, Identifiable):
 
     # Invite-related
     code = Column(String(100), nullable=True)
-    invite_id = Column(Integer, ForeignKey("invites.id"), nullable=True)
-    # TODO remove non-common reference
+    invite_id = Column(
+        Integer,
+        ForeignKey("invites.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
+    )  # TODO remove non-common reference
     invite = relationship(
         "Invite", back_populates="invited"
     )  # TODO remove non-common reference

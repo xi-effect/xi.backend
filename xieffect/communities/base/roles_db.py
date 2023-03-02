@@ -26,10 +26,14 @@ class Role(Base, Identifiable):
     name = Column(String(32), nullable=False)
     color = Column(String(6), nullable=True)
     community_id = Column(
-        Integer, ForeignKey(Community.id, ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey(Community.id, ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
     )
 
-    permissions = relationship("RolePermission", passive_deletes=True)
+    permissions = relationship(
+        "RolePermission", cascade="all, delete", passive_deletes=True
+    )
 
     CreateModel = PydanticModel.column_model(name, color)
     IndexModel = CreateModel.column_model(id)
@@ -77,7 +81,7 @@ class RolePermission(Base):
 
     role_id = Column(
         Integer,
-        ForeignKey(Role.id, ondelete="CASCADE"),
+        ForeignKey(Role.id, ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
     permission_type = Column(Enum(PermissionType), primary_key=True)
@@ -110,6 +114,12 @@ class ParticipantRole(Base):  # TODO pragma: no cover
     __tablename__ = "cs_participant_roles"
 
     participant_id = Column(
-        Integer, ForeignKey(Participant.id, ondelete="CASCADE"), primary_key=True
+        Integer,
+        ForeignKey(Participant.id, ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
     )
-    role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)
+    role_id = Column(
+        Integer,
+        ForeignKey(Role.id, ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )

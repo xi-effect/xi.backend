@@ -4,8 +4,12 @@ from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
 from pytest import mark
 
+from common import User
 from common.testing import SocketIOTestClient
-from ..conftest import assert_create_community
+from communities.base import Participant
+from communities.base.users_ext_db import Community, CommunityListItem
+from test.communities.conftest import assert_create_community
+from test.conftest import delete_by_id
 
 
 def get_communities_list(client: FlaskClient) -> list[dict]:
@@ -77,3 +81,13 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     community_ids.remove(leave_data["community_id"])
     # assert_order
+
+
+def test_participant_constraints(
+    table: type[User | Community],
+    base_user_id: int,
+    community_id: int,
+):
+    delete_by_id(base_user_id if (table == User) else community_id, table)
+    assert Participant.find_by_ids(community_id, base_user_id) is None
+    assert CommunityListItem.find_by_ids(base_user_id, community_id) is None

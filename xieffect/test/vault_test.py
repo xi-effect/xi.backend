@@ -11,7 +11,7 @@ from pytest import mark
 from werkzeug.datastructures import FileStorage
 
 from common import open_file, absolute_path
-from .conftest import BASIC_PASS, login
+from test.conftest import BASIC_PASS, login, ListTesterProtocol
 
 k = TypeVar("k")
 v = TypeVar("v")
@@ -47,7 +47,12 @@ def upload(client: FlaskClient, filename: str):
 
 
 @mark.order(70)
-def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client: FlaskClient, list_tester):
+def test_files_normal(
+    client: FlaskClient,
+    mod_client: FlaskClient,
+    base_client: FlaskClient,
+    list_tester: ListTesterProtocol,
+):
     # saving file list for future checks
     previous_file_list = list(list_tester("/mub/files/index/", {}, 20))
 

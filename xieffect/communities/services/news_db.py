@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from flask_fullstack import PydanticModel, Identifiable
 from sqlalchemy import Column, select, ForeignKey, sql
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Text, DateTime
 
 from common import Base, db, User
@@ -27,14 +27,20 @@ class Post(Base, Identifiable):
     deleted = Column(Boolean, default=False, nullable=False)
 
     # User-related
-    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    user = relationship("User", backref="posts")
+    user_id = Column(
+        Integer,
+        ForeignKey(User.id, ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
+    user = relationship("User")
 
     # Community-related
-    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
-    community = relationship(
-        "Community", backref=backref("Post", cascade="all, delete, delete-orphan")
+    community_id = Column(
+        Integer,
+        ForeignKey(Community.id, ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
     )
+    community = relationship("Community")
 
     BaseModel = PydanticModel.column_model(id)
     CreationBaseModel = PydanticModel.column_model(title, description)

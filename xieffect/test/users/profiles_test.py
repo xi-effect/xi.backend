@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
 from json import load as load_json
 
 from pytest import mark
 
 from common import open_file
+from test.conftest import ListTesterProtocol
 
 
 @mark.order(100)
-def test_user_search(list_tester: Callable[[str, dict, int], Iterator[dict]]):
+def test_user_search(list_tester: ListTesterProtocol):
     with open_file("static/test/user-bundle.json") as f:
         usernames = [user_data["username"] for user_data in load_json(f)]
 

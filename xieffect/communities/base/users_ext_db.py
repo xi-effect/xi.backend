@@ -14,11 +14,17 @@ from .meta_db import Community
 class CommunitiesUser(Base):
     __tablename__ = "communities_users"
 
-    id: int | Column = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    id: int | Column = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )
     user = relationship("User")
 
     avatar_id = Column(
-        Integer, ForeignKey("files.id", ondelete="SET NULL"), nullable=True
+        Integer,
+        ForeignKey("files.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
     )
     avatar = relationship("File", foreign_keys=[avatar_id])
 
@@ -87,10 +93,18 @@ class CommunityListItem(Base):
     __tablename__ = "community_lists"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("communities_users.id"))
+    user_id = Column(
+        Integer,
+        ForeignKey("communities_users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=True,
+    )
     position = Column(Integer)
 
-    community_id = Column(Integer, ForeignKey("community.id"), nullable=False)
+    community_id = Column(
+        Integer,
+        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
     community = relationship("Community")
 
     @classmethod

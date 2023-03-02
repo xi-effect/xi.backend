@@ -4,12 +4,16 @@ from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
 from pytest import mark
 
+from common import User, open_file
+from test.conftest import delete_by_id, ListTesterProtocol
+from test.vault_test import create_file, upload
 from users import generate_code
-from ..vault_test import upload
+from users.feedback_db import Feedback, FeedbackType
+from vault import File
 
 
 def assert_message(
-    client,
+    client: FlaskClient,
     url: str,
     message: str | bool,
     status=200,
@@ -26,8 +30,8 @@ def test_feedback(
     base_client: FlaskClient,
     client: FlaskClient,
     mod_client: FlaskClient,
+    list_tester: ListTesterProtocol,
     test_user_id: int,
-    list_tester,
 ):
     base_url, jsons = "/mub/feedback/", ("test-1.json", "test-2.json")
     files = [
@@ -93,3 +97,25 @@ def test_feedback(
         assert_message(mod_client, id_url, "Feedback does not exist", 404, method="GET")
         counter -= 1
     assert len(list(list_tester(base_url, {}, 50, use_post=False))) == counter
+
+
+def test_feedback_constraints(
+    base_user_id: int,
+):
+    with open_file("xieffect/test/json/test-1.json", "rb") as f:
+        contents: bytes = f.read()
+    file_storage = create_file("test-1.json", contents)
+    user = User.find_by_id(base_user_id)
+    file_id = File.create(user, file_storage.filename).id
+    feedback_id = Feedback.create(
+        user_id=base_user_id,
+        type=FeedbackType.GENERAL,
+        data={"lol": "hey"}
+    ).id
+    assert isinstance(feedback_id, int) and isinstance(file_id, int)
+    assert File.find_by_id(file_id) is not None
+    assert Feedback.find_by_id(feedback_id) is not None
+
+    delete_by_id(base_user_id, User)
+    assert File.find_by_id(file_id) is None
+    assert Feedback.find_by_id(feedback_id) is None

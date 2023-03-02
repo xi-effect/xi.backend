@@ -16,10 +16,14 @@ class ChatParticipant(Base):  # TODO community to room after channels creating
     __tablename__ = "cs_chat_participants"
 
     user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
     )
     community_id = Column(
-        Integer, ForeignKey("community.id", ondelete="CASCADE"), primary_key=True
+        Integer,
+        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
     )
     state = Column(MutableDict.as_mutable(JSON), nullable=False)
 
@@ -59,10 +63,14 @@ class ChatMessage(Base, Identifiable):  # TODO community to room after channels 
     content = Column(Text, nullable=False)
 
     community_id = Column(
-        Integer, ForeignKey("community.id", ondelete="CASCADE"), nullable=False
+        Integer,
+        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
     )
     sender_id = Column(
-        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
     )
     sender: User | relationship = relationship("User")
 
