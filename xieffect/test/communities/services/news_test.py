@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from flask_fullstack import dict_equal, check_code
 from pytest import mark
 
-from common.testing import SocketIOTestClient
+from common import User
+from common.testing import SocketIOTestClient, FlaskClient
+from communities.base import Community
 from communities.services.news_db import Post
-from ..base.invites_test import create_assert_successful_join
+from test.communities.base.invites_test import create_assert_successful_join
+from test.conftest import delete_by_id, ListTesterProtocol
 
 
 def get_posts_list(client, community_id: int) -> list[dict]:
@@ -22,11 +27,11 @@ def get_posts_list(client, community_id: int) -> list[dict]:
 
 @mark.order(1100)
 def test_post_creation(
-    client,
-    multi_client,
-    list_tester,
-    socketio_client,
-    test_community,
+    client: FlaskClient,
+    multi_client: Callable[[str], FlaskClient],
+    list_tester: ListTesterProtocol,
+    socketio_client: SocketIOTestClient,
+    test_community: int,
 ):  # TODO redo without calls to the database
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
@@ -111,3 +116,16 @@ def test_post_creation(
     # Check successfully close news-room
     for user in (socketio_client, socketio_client2, sio_member):
         user.assert_emit_success("close_news", community_id_json)
+
+
+def test_news_constraints(
+    table: type[User | Community],
+    base_user_id: int,
+    community_id: int,
+):
+    post_id = Post.create("title", "description", base_user_id, community_id).id
+    assert isinstance(post_id, int)
+    assert Post.find_by_id(post_id) is not None
+
+    delete_by_id(base_user_id if (table == User) else community_id, table)
+    assert Post.find_by_id(post_id) is None

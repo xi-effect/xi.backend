@@ -17,7 +17,11 @@ class Community(Base, Identifiable):
     description = Column(Text, nullable=True)
     invite_count = Column(Integer, nullable=False, default=0)
 
-    participants = relationship("Participant", cascade="all, delete, delete-orphan")
+    participants = relationship(
+        "Participant",
+        cascade="all, delete, delete-orphan",
+        passive_deletes=True,
+    )
 
     BaseModel = PydanticModel.column_model(id)
     CreateModel = PydanticModel.column_model(name, description)
@@ -48,8 +52,16 @@ class Participant(Base, Identifiable):
     __tablename__ = "community_participant"
 
     id = Column(Integer, primary_key=True)
-    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
-    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
+    community_id = Column(
+        Integer,
+        ForeignKey(Community.id, ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
+    user_id = Column(
+        Integer,
+        ForeignKey(User.id, ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
     user = relationship("User")
 
     role = Column(Enum(ParticipantRole), nullable=False)

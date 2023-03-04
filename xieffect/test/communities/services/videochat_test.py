@@ -1,23 +1,19 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from flask_fullstack import check_code, dict_equal
-from pytest import mark, fixture
+from pytest import mark
 
-from common.testing import SocketIOTestClient
-from ..base.invites_test import create_assert_successful_join
-from ..base.meta_test import assert_create_community
-
-COMMUNITY_DATA: dict = {"name": "test"}
-
-
-@fixture
-def test_community(socketio_client: SocketIOTestClient) -> int:
-    # TODO place more globally (duplicate from invites_test)
-    # TODO use yield & delete the community after
-    return assert_create_community(socketio_client, COMMUNITY_DATA)
+from common import User
+from common.testing import SocketIOTestClient, FlaskClient
+from communities.base import Community
+from communities.services.videochat_db import ChatParticipant, ChatMessage
+from test.communities.base.invites_test import create_assert_successful_join
+from test.conftest import delete_by_id, ListTesterProtocol
 
 
-def get_participant_list(client, community_id: int):
+def get_participant_list(client: FlaskClient, community_id: int):
     result = check_code(
         client.get(f"/communities/{community_id}/videochat/participants/")
     )
@@ -25,7 +21,7 @@ def get_participant_list(client, community_id: int):
     return result
 
 
-def get_messages_list(client, community_id: int) -> list[dict]:
+def get_messages_list(client: FlaskClient, community_id: int) -> list[dict]:
     result = check_code(
         client.get(
             f"/communities/{community_id}/videochat/messages/",
@@ -38,11 +34,11 @@ def get_messages_list(client, community_id: int) -> list[dict]:
 
 @mark.order(1200)
 def test_videochat_tools(
-    client,
-    multi_client,
-    list_tester,
-    socketio_client,
-    test_community,
+    client: FlaskClient,
+    multi_client: Callable[[str], FlaskClient],
+    list_tester: ListTesterProtocol,
+    socketio_client: SocketIOTestClient,
+    test_community: int,
 ):
     # Create base clients
     invite_data = {
@@ -131,3 +127,23 @@ def test_videochat_tools(
         participant_list = get_participant_list(client, test_community)
         assert len(participant_list) == len(participants_ids) - 1
     socketio_client.assert_only_received("delete_participant", data)
+
+
+def test_videochat_constraints(
+    table: type[User | Community],
+    base_user_id: int,
+    community_id: int,
+):
+    state = {"microphone": True, "camera": True}
+    participant_id = ChatParticipant.create(base_user_id, community_id, state).user_id
+    message_id = ChatMessage.create(User.find_by_id(base_user_id), community_id, "test").id
+    assert isinstance(participant_id, int) and isinstance(message_id, int)
+
+    delete_by_id(base_user_id if (table == User) else community_id, table)
+    if table == User:
+        result_message = ChatMessage.find_by_id(message_id)
+        assert result_message is not None
+        assert result_message.sender is None
+    else:
+        assert ChatMessage.find_by_id(message_id) is None
+    assert ChatParticipant.find_by_ids(participant_id, community_id) is None

@@ -9,7 +9,7 @@ from pytest import fixture
 from pytest_mock import MockerFixture
 from werkzeug.test import TestResponse
 
-from common import User, mail, mail_initialized
+from common import User, mail, mail_initialized, Base, db
 from common.testing import SocketIOTestClient
 from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
@@ -21,6 +21,12 @@ class RedirectedFlaskClient(FlaskClient):
 
 
 app.test_client_class = RedirectedFlaskClient
+
+
+@fixture(scope="session", autouse=True)
+def application_context() -> None:
+    with app.app_context():
+        yield
 
 
 @fixture(scope="session", autouse=True)
@@ -136,5 +142,24 @@ def mock_mail(mocker: MockerFixture):
 
 @fixture(scope="session")
 def test_user_id() -> int:
-    with app.app_context():
-        return User.find_by_email_address("test@test.test").id
+    return User.find_by_email_address("test@test.test").id
+
+
+def delete_by_id(entry_id: int, table: type[Base]) -> None:
+    orm_object = table.find_by_id(entry_id)
+    if orm_object is not None:
+        orm_object.delete()
+        db.session.commit()
+    assert table.find_by_id(entry_id) is None
+
+
+@fixture
+def base_user_id() -> int:
+    user_id = User.create(
+        email="hey@hey.hey",
+        password="12345",
+        username="hey",
+    ).id
+    db.session.commit()
+    yield user_id
+    delete_by_id(user_id, User)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Callable
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from flask.testing import FlaskClient
@@ -8,7 +8,10 @@ from flask_fullstack import check_code, dict_equal
 from pytest import mark
 
 from common.testing import SocketIOTestClient
-from ..conftest import COMMUNITY_DATA
+from communities.base import Community
+from communities.base.invitations_db import Invitation
+from test.communities.conftest import COMMUNITY_DATA, assert_create_community
+from test.conftest import delete_by_id, ListTesterProtocol
 
 INVITATIONS_PER_REQUEST = 20
 
@@ -56,7 +59,12 @@ class InvitesTester:
 
 
 @mark.order(1020)
-def test_invites(client, list_tester, test_community):
+def test_invites(
+    client: FlaskClient,
+    socketio_client: SocketIOTestClient,
+    list_tester: ListTesterProtocol,
+    test_community: int,
+):
     invite_data = {
         "community_id": test_community,
         "role": "base",
@@ -84,8 +92,23 @@ def test_invites(client, list_tester, test_community):
     })
     assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 0
 
+    # check constraints
+    community_data = {"name": "invite_test"}
+    community_id = assert_create_community(socketio_client, community_data)
+    index_url = f"/communities/{community_id}/invitations/index/"
+    invite_tester = InvitesTester(client, {"community_id": community_id})
+    invite = invite_tester.assert_create_invite(dict(invite_data, community_id=community_id))
+    assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 1
 
-def find_invite(list_tester, community_id: int, invite_id: int) -> dict | None:
+    delete_by_id(community_id, Community)
+    assert Invitation.find_by_id(invite.get("id")) is None
+
+
+def find_invite(
+    list_tester: ListTesterProtocol,
+    community_id: int,
+    invite_id: int,
+) -> dict | None:
     index_url = f"/communities/{community_id}/invitations/index/"
 
     for data in list_tester(index_url, {}, INVITATIONS_PER_REQUEST):
@@ -94,7 +117,7 @@ def find_invite(list_tester, community_id: int, invite_id: int) -> dict | None:
     return None
 
 
-def assert_successful_get(client: FlaskClient, code, joined: bool):
+def assert_successful_get(client: FlaskClient, code: str, joined: bool):
     data = check_code(client.get(f"/communities/join/{code}/"))
     assert data.get("joined") is joined
     assert data.get("authorized") is True
@@ -104,7 +127,7 @@ def assert_successful_get(client: FlaskClient, code, joined: bool):
     assert dict_equal(community, COMMUNITY_DATA, *COMMUNITY_DATA.keys())
 
 
-def create_assert_successful_join(list_tester, community_id):
+def create_assert_successful_join(list_tester: ListTesterProtocol, community_id: int):
     def assert_successful_join(client: FlaskClient, invite_id: int, code: str, *sio_clients: SocketIOTestClient):
         invite = find_invite(list_tester, community_id, invite_id)
         assert invite is not None, "Invitation not found inside assert_successful_join"
@@ -131,7 +154,7 @@ def test_invite_joins(
     base_client: FlaskClient,
     client: FlaskClient,
     multi_client: Callable[[str], FlaskClient],
-    list_tester: Callable[[str, dict, int], Iterator[dict]],
+    list_tester: ListTesterProtocol,
     test_community: int,
 ):
     # functions
@@ -205,7 +228,12 @@ def test_invite_joins(
 
 
 @mark.order(1024)
-def test_invites_errors(client, multi_client, list_tester, test_community):
+def test_invites_errors(
+    client: FlaskClient,
+    multi_client: Callable[[str], FlaskClient],
+    list_tester: ListTesterProtocol,
+    test_community: int,
+):
     member = multi_client("1@user.user")
     outsider = multi_client("2@user.user")
 

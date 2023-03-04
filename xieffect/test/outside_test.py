@@ -10,8 +10,8 @@ from werkzeug.test import TestResponse
 from common import User
 from communities import CommunitiesUser
 from other import EmailType
-from wsgi import application as app, Invite, TEST_INVITE_ID, socketio, db
-from .conftest import BASIC_PASS, TEST_EMAIL, SocketIOTestClient
+from test.conftest import BASIC_PASS, TEST_EMAIL, SocketIOTestClient, delete_by_id
+from wsgi import Invite, TEST_INVITE_ID, socketio
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
 BASE_CREDENTIALS = {
@@ -57,12 +57,6 @@ def test_login(base_client: FlaskClient):
     check_code(base_client.post("/signout/"))
 
 
-def delete_user(user_id: int):
-    for table in (CommunitiesUser, User):  # TODO remove CU after cascade's fix
-        user = table.find_by_id(user_id)
-        user.delete()
-
-
 @mark.order(11)
 def test_signup(
     mod_client: FlaskClient,
@@ -95,6 +89,13 @@ def test_signup(
         if a_message == "Success":
             user_collection.append(response.get("id"))
 
+    # Checking invite constraint
+    assert (user := User.find_by_id(user_collection[-1])) is not None
+    assert user.invite_id == invite_id
+    delete_by_id(invite_id, Invite)
+    assert (user := User.find_by_id(user_collection[-1])) is not None
+    assert user.invite_id is None
+
     # Checking successful sing up
     response = check_code(base_client.post("/signup/", json=BASE_CREDENTIALS), get_json=False)
     assert_with_code(Invite.serializer.dumps((TEST_INVITE_ID, 0)), 200, "Email already in use")
@@ -126,11 +127,8 @@ def test_signup(
 
     # Clearing database after test
     for user_id in user_collection:
-        delete_user(user_id)
-    invite = Invite.find_by_id(invite_id)
-    invite.delete()
-
-    db.session.commit()
+        delete_by_id(user_id, User)
+        assert CommunitiesUser.find_by_id(user_id) is None
 
 
 @mark.order(12)
@@ -160,8 +158,7 @@ def test_email_confirm(base_client: FlaskClient, mock_mail):
 
     check_code(base_client.post("/signout/"))
 
-    delete_user(response.get("id"))
-    db.session.commit()
+    delete_by_id(response.get("id"), User)
 
 
 @mark.order(13)
@@ -198,8 +195,7 @@ def test_password_reset(base_client: FlaskClient, mock_mail):
 
     check_code(base_client.post("/signout/"))
 
-    delete_user(response.get("id"))
-    db.session.commit()
+    delete_by_id(response.get("id"), User)
 
 
 @mark.order(15)
@@ -228,10 +224,9 @@ def test_go(
     debug: bool,
     key: str,
     value: bool | None,
-    test_user_id,
+    test_user_id: int,
 ):
-    with app.app_context():
-        mock = mocker.patch("users.reglog_rst.current_app")
-        mock.debug = debug
-        response = check_code(client.get("/go/"))
-        assert response.get(key) == (test_user_id if value is None else value)
+    mock = mocker.patch("users.reglog_rst.current_app")
+    mock.debug = debug
+    response = check_code(client.get("/go/"))
+    assert response.get(key) == (test_user_id if value is None else value)

@@ -14,8 +14,16 @@ from vault.files_db import File
 class TaskEmbed(Base):
     __tablename__ = "cs_embeds"
 
-    task_id = Column(Integer, ForeignKey("cs_tasks.id"), primary_key=True)
-    file_id = Column(Integer, ForeignKey("files.id"), primary_key=True)
+    task_id = Column(
+        Integer,
+        ForeignKey("cs_tasks.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )
+    file_id = Column(
+        Integer,
+        ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )
     file = relationship("File")
 
     FileModel = PydanticModel.nest_flat_model(File.FullModel, "file")
@@ -44,10 +52,18 @@ class Task(Base, Identifiable):
 
     id = Column(Integer, primary_key=True)
 
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
     user = relationship("User")
 
-    community_id = Column(Integer, ForeignKey("community.id"), nullable=False)
+    community_id = Column(
+        Integer,
+        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
     community = relationship("Community")
 
     # TODO recheck the argument name after information pages will be added
@@ -60,7 +76,7 @@ class Task(Base, Identifiable):
     )
     deleted = Column(Boolean, nullable=False, default=False)
 
-    files = relationship("TaskEmbed")
+    files = relationship("TaskEmbed", cascade="all, delete", passive_deletes=True)
 
     BaseModel = PydanticModel.column_model(id, updated)
     CreationBaseModel = PydanticModel.column_model(page_id, name, description)

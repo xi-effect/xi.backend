@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, select, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, DateTime, String, Enum
 
 from common import Base, db, app
@@ -21,11 +21,12 @@ class Invitation(Base, Identifiable):
     id = Column(Integer, primary_key=True)
     code = Column(String(100), default="")
 
-    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
-    community = relationship(
-        "Community",
-        backref=backref("invitations", cascade="all, delete, delete-orphan"),
+    community_id = Column(
+        Integer,
+        ForeignKey(Community.id, ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
     )
+    community = relationship("Community")
 
     role = Column(Enum(ParticipantRole), nullable=False)
     deadline = Column(DateTime, nullable=True)

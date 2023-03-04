@@ -12,8 +12,16 @@ from vault import File
 class FeedbackImage(Base):
     __tablename__ = "feedback_images"
 
-    feedback_id = Column(Integer, ForeignKey("feedbacks.id"), primary_key=True)
-    file_id = Column(Integer, ForeignKey("files.id"), primary_key=True)
+    feedback_id = Column(
+        Integer,
+        ForeignKey("feedbacks.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )
+    file_id = Column(
+        Integer,
+        ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )
 
 
 class FeedbackType(TypeEnum):
@@ -30,13 +38,16 @@ class Feedback(Base, Identifiable):
     type = Column(Enum(FeedbackType), nullable=False)
     data = Column(JSON, nullable=False)
 
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
     user = relationship(User)
 
     files = relationship(
         "File",
         secondary=FeedbackImage.__table__,
-        backref="feedbacks",
     )
 
     # fmt: off

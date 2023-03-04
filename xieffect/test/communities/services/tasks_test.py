@@ -6,20 +6,12 @@ from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
 from pytest import fixture
 
-from common import open_file
+from common import open_file, User
 from common.testing import SocketIOTestClient
-from ..base.meta_test import assert_create_community
-from ...vault_test import create_file
-
-COMMUNITY_DATA = {
-    "name": "New community",
-    "description": "Community for tasks",
-}
-
-
-@fixture
-def community_id(socketio_client: SocketIOTestClient) -> int:
-    return assert_create_community(socketio_client, COMMUNITY_DATA)
+from communities.base import Community
+from communities.services.tasks_db import Task
+from test.conftest import delete_by_id
+from test.vault_test import create_file
 
 
 @fixture
@@ -45,8 +37,8 @@ def assert_create_task(socketio_client: SocketIOTestClient, task_data: dict) -> 
 def test_task_crud(
     client: FlaskClient,
     multi_client: Callable[[str], FlaskClient],
-    community_id,
-    file_id,
+    test_community: int,
+    file_id: int,
 ):
     def assert_permission_check(method):
         assert (
@@ -58,7 +50,7 @@ def test_task_crud(
         )
 
     task_data = {
-        "community_id": community_id,
+        "community_id": test_community,
         "page_id": 1,
         "name": "test task",
         "files": [file_id],
@@ -75,10 +67,10 @@ def test_task_crud(
     )
     added_task = assert_create_task(owner_sio, task_data)
     task_id = added_task.get("id")
-    assert_permission_check(guest.get(f"/communities/{community_id}/tasks/{task_id}"))
+    assert_permission_check(guest.get(f"/communities/{test_community}/tasks/{task_id}"))
 
     updated_task_data = {
-        "community_id": community_id,
+        "community_id": test_community,
         "task_id": task_id,
         "name": "updated name",
         "description": "added description",
@@ -90,7 +82,7 @@ def test_task_crud(
         message="Permission Denied: Participant not found",
     )
     owner_sio.assert_emit_success("update_task", updated_task_data)
-    response = check_code(client.get(f"/communities/{community_id}/tasks/{task_id}/"))
+    response = check_code(client.get(f"/communities/{test_community}/tasks/{task_id}/"))
     assert isinstance(response, dict)
     assert dict_equal(response, updated_task_data, "name", "description")
     files = response.get("files")
@@ -102,12 +94,12 @@ def test_task_crud(
 
     updated_task_data["files"] = []
     owner_sio.assert_emit_success("update_task", updated_task_data)
-    response = check_code(client.get(f"/communities/{community_id}/tasks/{task_id}/"))
+    response = check_code(client.get(f"/communities/{test_community}/tasks/{task_id}/"))
     files = response.get("files")
     assert isinstance(files, list)
     assert len(files) == 0
 
-    delete_task_data = {"community_id": community_id, "task_id": task_id}
+    delete_task_data = {"community_id": test_community, "task_id": task_id}
     guest_sio.assert_emit_ack(
         "delete_task",
         delete_task_data,
@@ -116,23 +108,23 @@ def test_task_crud(
     )
     owner_sio.assert_emit_success("delete_task", delete_task_data)
     response = check_code(
-        client.get(f"/communities/{community_id}/tasks/{task_id}/"), status_code=404
+        client.get(f"/communities/{test_community}/tasks/{task_id}/"), status_code=404
     ).get("a")
     assert response == "Task not found"
 
 
 def test_tasks_pagination(
-    client: FlaskClient, socketio_client: SocketIOTestClient, community_id
+    client: FlaskClient, socketio_client: SocketIOTestClient, test_community: int
 ):
     pagination = {"counter": 0}
     task_data = {
-        "community_id": community_id,
+        "community_id": test_community,
         "page_id": 1,
         "name": "New task name",
     }
 
     response = check_code(
-        client.get(f"/communities/{community_id}/tasks/", json=pagination)
+        client.get(f"/communities/{test_community}/tasks/", json=pagination)
     )
     assert isinstance(response, dict)
     assert isinstance(response.get("results"), list)
@@ -141,7 +133,7 @@ def test_tasks_pagination(
     added_task = assert_create_task(socketio_client, task_data)
 
     response = check_code(
-        client.get(f"/communities/{community_id}/tasks/", json=pagination)
+        client.get(f"/communities/{test_community}/tasks/", json=pagination)
     )
     assert isinstance(response, dict)
     tasks = response.get("results")
@@ -151,10 +143,10 @@ def test_tasks_pagination(
 
 
 def test_task_create_with_wrong_files(
-    socketio_client: SocketIOTestClient, community_id
+    socketio_client: SocketIOTestClient, test_community: int
 ):
     task_data = {
-        "community-id": community_id,
+        "community-id": test_community,
         "page-id": 1,
         "name": "test task",
         "files": [12354],
@@ -167,3 +159,16 @@ def test_task_create_with_wrong_files(
     socketio_client.assert_emit_ack(
         "new_task", task_data, code=400, message="Too many files"
     )
+
+
+def test_task_constraints(
+    table: type[User | Community],
+    base_user_id: int,
+    community_id: int,
+):
+    task_id = Task.create(base_user_id, community_id, 1, "test", "description").id
+    assert isinstance(task_id, int)
+    assert Task.find_by_id(task_id) is not None
+
+    delete_by_id(base_user_id if (table == User) else community_id, table)
+    assert Task.find_by_id(task_id) is None
