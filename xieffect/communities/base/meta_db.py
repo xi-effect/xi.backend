@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from flask_fullstack import Identifiable, PydanticModel
 from sqlalchemy import Column, ForeignKey, select
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 from common import User, Base, db
+from .roles_db import ParticipantRole, Role
 
 
 class Community(Base, Identifiable):
@@ -43,9 +44,17 @@ class Participant(Base, Identifiable):
     __tablename__ = "community_participant"
 
     id = Column(Integer, primary_key=True)
-    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
+    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
     user = relationship("User")
+    roles = relationship("Role", secondary=ParticipantRole.__table__)
+
+    UpdateModel = PydanticModel.column_model(community_id)
+    FullModel = (
+        PydanticModel.column_model(id, user_id)
+        .combine_with(UpdateModel)
+        .nest_model(Role.IndexModel, "roles", as_list=True)
+    )
 
     @classmethod
     def create(cls, community_id: int, user_id: int):
@@ -55,7 +64,29 @@ class Participant(Base, Identifiable):
         )
 
     @classmethod
+    def find_by_id(cls, participant_id: int) -> Role | None:
+        return db.session.get_first(select(cls).filter_by(id=participant_id))
+
+    @classmethod
     def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
         return db.session.get_first(
             select(cls).filter_by(community_id=community_id, user_id=user_id)
+        )
+
+    @classmethod
+    def search_by_username(
+        cls,
+        search: str | None,
+        offset: int,
+        limit: int,
+    ) -> list[Participant]:
+        stmt = select(cls).options(selectinload(cls.roles))
+        if search is None:
+            return db.session.get_paginated(stmt, offset, limit)
+        return db.session.get_paginated(
+            stmt.join(User, User.id == cls.id).where(
+                User.username.ilike(f"%{search}%")
+            ),
+            offset,
+            limit,
         )

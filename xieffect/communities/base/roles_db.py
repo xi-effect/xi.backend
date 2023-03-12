@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
 from sqlalchemy import Column, ForeignKey, select, distinct
@@ -10,7 +10,6 @@ from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
 from common import Base, db
-from .meta_db import Community, Participant
 
 LIMITING_QUANTITY_ROLES: int = 50
 
@@ -21,6 +20,7 @@ class PermissionType(TypeEnum):
     MANAGE_TASKS = 2
     MANAGE_NEWS = 3
     MANAGE_MESSAGES = 4
+    MANAGE_PARTICIPANT = 5
 
 
 class Role(Base, Identifiable):
@@ -31,7 +31,7 @@ class Role(Base, Identifiable):
     name = Column(String(32), nullable=False)
     color = Column(String(6), nullable=True)
     community_id = Column(
-        Integer, ForeignKey(Community.id, ondelete="CASCADE"), nullable=False
+        Integer, ForeignKey("community.id", ondelete="CASCADE"), nullable=False
     )
 
     permissions = relationship("RolePermission", passive_deletes=True)
@@ -91,7 +91,10 @@ class RolePermission(Base):
 
     @classmethod
     def create_bulk(cls, role_id: int, permissions: list[PermissionType]) -> None:
-        db.session.add_all(cls(role_id=role_id, permission_type=permission) for permission in permissions)
+        db.session.add_all(
+            cls(role_id=role_id, permission_type=permission)
+            for permission in permissions
+        )
         db.session.flush()
 
     @classmethod
@@ -111,7 +114,9 @@ class ParticipantRole(Base):
     __tablename__ = "cs_participant_roles"
 
     participant_id = Column(
-        Integer, ForeignKey(Participant.id, ondelete="CASCADE"), primary_key=True
+        Integer,
+        ForeignKey("community_participant.id", ondelete="CASCADE"),
+        primary_key=True,
     )
     role_id = Column(Integer, ForeignKey(Role.id, ondelete="CASCADE"), primary_key=True)
 
@@ -131,8 +136,20 @@ class ParticipantRole(Base):
         )
 
     @classmethod
-    def create_bulk(cls, participant_id: int, role_ids: list[int]) -> None:
+    def get_role_ids(cls, participant_id: int) -> list[int]:
+        return db.session.get_all(select(cls.role_id).filter_by(participant_id=participant_id))
+
+    @classmethod
+    def create_bulk(cls, participant_id: int, role_ids: Iterable[int]) -> None:
         db.session.add_all(
             cls(participant_id=participant_id, role_id=role_id) for role_id in role_ids
         )
         db.session.flush()
+
+    @classmethod
+    def delete_by_participant(cls, participant_id: int, role_id) -> None:
+        db.session.execute(
+            db.delete(cls).where(
+                cls.participant_id == participant_id, cls.role_id == role_id
+            )
+        )

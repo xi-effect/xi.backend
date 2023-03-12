@@ -34,7 +34,7 @@ def check_participant(
                 kwargs["participant"] = participant
 
             if use_participant_id:
-                kwargs["participant_id"] = participant.id
+                kwargs["id_participant"] = participant.id
 
             return function(*args, **kwargs)
 
@@ -47,15 +47,19 @@ def check_permission(
     controller: ResourceController | EventController,
     permission_type: PermissionType,
     *,
-    use_user: bool = False,
+    use_user: bool = False
 ):
     @controller.doc_abort(403, "Permission Denied")
     def check_permission_wrapper(function):
-        @check_participant(controller, use_participant_id=True, use_user=use_user)
+        @check_participant(
+            controller,
+            use_participant_id=True,
+            use_user=use_user,
+        )
         @wraps(function)
         def check_permission_inner(*args, **kwargs):
             result = ParticipantRole.has_permission(
-                kwargs.pop("participant_id"), permission_type
+                kwargs.pop("id_participant"), permission_type
             )
             if result is False:
                 controller.abort(403, "Permission Denied: Not sufficient permissions")

@@ -5,26 +5,11 @@ from datetime import datetime, timedelta
 
 from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
-from pytest import mark, fixture
+from pytest import mark
 
 from common.testing import SocketIOTestClient
 from communities.base import INVITATIONS_PER_REQUEST
 from ..conftest import COMMUNITY_DATA
-
-
-@fixture(scope="session")
-def get_role_ids(create_participant_role):
-    def wrapper_get_role_ids(client: FlaskClient, community_id: int):
-        return [
-            create_participant_role(
-                permission_type="MANAGE_INVITATIONS",
-                community_id=community_id,
-                client=client,
-            )
-            for _ in range(3)
-        ]
-
-    return wrapper_get_role_ids
 
 
 class InvitesTester:
