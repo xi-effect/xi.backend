@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from flask_fullstack import PydanticModel
 from sqlalchemy import Column, ForeignKey, select
-from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer
 
 from common import Base, User, db
+from communities.base.meta_db import Community, Participant
 from vault import File
-from .meta_db import Community
 
 
 class CommunitiesUser(Base):
@@ -19,7 +18,7 @@ class CommunitiesUser(Base):
         ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[id])
 
     avatar_id = Column(
         Integer,
@@ -29,9 +28,9 @@ class CommunitiesUser(Base):
     avatar = relationship("File", foreign_keys=[avatar_id])
 
     communities = relationship(
-        "CommunityListItem",
-        order_by="CommunityListItem.position",
-        collection_class=ordering_list("position"),
+        "Participant",
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     @PydanticModel.include_flat_nest_model(User.MainData, "user")
@@ -43,8 +42,8 @@ class CommunitiesUser(Base):
         def callback_convert(cls, callback, orm_object: CommunitiesUser, **context):
             callback(
                 communities=[
-                    Community.IndexModel.convert(ci.community, **context)
-                    for ci in orm_object.communities
+                    Community.IndexModel.convert(community, **context)
+                    for community in Participant.get_communities_list(orm_object.id)
                 ]
             )
 
@@ -68,51 +67,15 @@ class CommunitiesUser(Base):
         source_id: int,
         target_index: int,
     ) -> bool:
-        # TODO target_index might change after deletion?
-        list_item = CommunityListItem.find_by_ids(self.id, source_id)
+        list_item = Participant.find_by_ids(source_id, self.id)
         if list_item is None:  # TODO pragma: no coverage
             return False
-        self.communities.remove(list_item)
-        self.communities.insert(target_index, list_item)
+        list_item.move(target_index)
         return True
-
-    def join_community(self, community_id: int) -> None:
-        # autocommit  # TODO find a way to reverse the list
-        new_item = CommunityListItem(user_id=self.id, community_id=community_id)
-        self.communities.insert(0, new_item)
 
     def leave_community(self, community_id: int) -> bool:
-        list_item = CommunityListItem.find_by_ids(self.id, community_id)
+        list_item = Participant.find_by_ids(community_id, self.id)
         if list_item is None:  # TODO pragma: no coverage
             return False
-        self.communities.remove(list_item)
+        list_item.delete()
         return True
-
-
-class CommunityListItem(Base):
-    __tablename__ = "community_lists"
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(
-        Integer,
-        ForeignKey("communities_users.id", ondelete="CASCADE", onupdate="CASCADE"),
-        nullable=True,
-    )
-    position = Column(Integer)
-
-    community_id = Column(
-        Integer,
-        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
-        nullable=False,
-    )
-    community = relationship("Community")
-
-    @classmethod
-    def find_by_ids(
-        cls,
-        user_id: int,
-        community_id: int,
-    ) -> CommunityListItem | None:
-        return db.get_first(
-            select(cls).filter_by(user_id=user_id, community_id=community_id)
-        )

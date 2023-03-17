@@ -3,9 +3,9 @@ from __future__ import annotations
 from flask_restx import Resource
 
 from common import ResourceController
-from .meta_db import Community
-from .roles_db import Role
-from ..utils import check_participant
+from communities.base.meta_db import Community
+from communities.base.roles_db import Role
+from communities.utils import check_participant
 
 controller = ResourceController(
     "communities-roles", path="/communities/<int:community_id>/roles/"

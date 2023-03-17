@@ -33,7 +33,7 @@ def community_id(base_user_id) -> int:
     community_id = Community.create(
         name="test_community",
         description="description",
-        creator=User.find_by_id(base_user_id),
+        creator_id=base_user_id,
     ).id
     assert Participant.find_by_ids(community_id, base_user_id) is not None
     yield community_id
