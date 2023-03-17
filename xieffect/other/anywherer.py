@@ -13,7 +13,7 @@ dev_domain: str = "qwert45hi.pythonanywhere.com"
 
 def execute_in_console(line: str, console_id: int = None) -> bool:
     if console_id is None:
-        res = get(f"{base_url}/consoles/", headers=headers)
+        res = get(f"{base_url}/consoles/", headers=headers, timeout=10)
         if res.status_code != 200:
             raise ValueError("Console execution did not return 200")
         console_id = res.json()[0]["id"]
@@ -21,6 +21,7 @@ def execute_in_console(line: str, console_id: int = None) -> bool:
         base_url + f"/consoles/{console_id}/send_input/",
         json={"input": f"{line}\n"},
         headers=headers,
+        timeout=10,
     )
     return response.status_code == 200
 
@@ -31,7 +32,7 @@ def execute_script_in_console(script_name: str, console_id: int = None) -> bool:
 
 def webapp_action(action: str, domain_name: str = dev_domain) -> bool:
     response: Response = post(
-        base_url + f"/webapps/{domain_name}/{action}/", headers=headers
+        base_url + f"/webapps/{domain_name}/{action}/", headers=headers, timeout=10
     )
     return 200 <= response.status_code <= 299
 
