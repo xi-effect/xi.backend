@@ -82,7 +82,6 @@ class InvitationJoin(Resource):
             controller.abort(400, "User has already joined")
 
         Participant.add(
-            next_id=None,
             community_id=community.id,
             user_id=user.id,
             role=invitation.role,

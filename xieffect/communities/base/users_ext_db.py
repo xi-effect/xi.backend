@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from flask_fullstack import PydanticModel
-from sqlalchemy import Column, ForeignKey, select
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import Base, User, db
+from common import Base, User
 from communities.base.meta_db import Community, Participant
 from vault import File
 
@@ -56,7 +56,7 @@ class CommunitiesUser(Base):
 
     @classmethod
     def find_by_id(cls, user_id: int) -> CommunitiesUser | None:
-        return db.get_first(select(cls).filter_by(id=user_id))
+        return cls.find_first_by_kwargs(id=user_id)
 
     @classmethod
     def find_or_create(cls, user_id: int) -> CommunitiesUser:
@@ -65,7 +65,7 @@ class CommunitiesUser(Base):
     def reorder_community_list(
         self,
         source_id: int,
-        target_index: int,
+        target_index: int | None,
     ) -> bool:
         list_item = Participant.find_by_ids(source_id, self.id)
         if list_item is None:  # TODO pragma: no coverage

@@ -43,7 +43,7 @@ class CommunitiesEventSpace(EventSpace):
 
     class ReorderModel(BaseModel):
         community_id: int = Field(alias="source-id")
-        target_index: int
+        target_index: int = None
 
     @controller.argument_parser(ReorderModel)
     @controller.mark_duplex(use_event=True)
@@ -53,7 +53,7 @@ class CommunitiesEventSpace(EventSpace):
         event: DuplexEvent,
         user: User,
         community: Community,
-        target_index: int,
+        target_index: int | None,
     ):
         cu = CommunitiesUser.find_or_create(user.id)
         if not cu.reorder_community_list(community.id, target_index):

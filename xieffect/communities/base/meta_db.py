@@ -45,7 +45,7 @@ class Community(Base, Identifiable):
         description: str | None,
     ) -> Community:
         entry: cls = super().create(name=name, description=description)
-        participant = Participant(
+        participant = Participant.add(
             user_id=creator_id,
             community_id=entry.id,
             role=ParticipantRole.OWNER,
@@ -57,7 +57,7 @@ class Community(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Community | None:
-        return db.get_first(select(cls).filter_by(id=entry_id, deleted=False))
+        return cls.find_first_by_kwargs(id=entry_id, deleted=False)
 
 
 class ParticipantRole(TypeEnum):
@@ -86,7 +86,7 @@ class Participant(LinkedListNode, Identifiable):
 
     prev_id = Column(
         Integer,
-        ForeignKey("community_participant.id"),
+        ForeignKey("community_participant.id", ondelete="SET NULL"),
         nullable=True,
     )
     prev = relationship(
@@ -97,7 +97,7 @@ class Participant(LinkedListNode, Identifiable):
 
     next_id = Column(
         Integer,
-        ForeignKey("community_participant.id"),
+        ForeignKey("community_participant.id", ondelete="SET NULL"),
         nullable=True,
     )
     next = relationship(
@@ -116,9 +116,7 @@ class Participant(LinkedListNode, Identifiable):
 
     @classmethod
     def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
-        return db.get_first(
-            select(cls).filter_by(community_id=community_id, user_id=user_id)
-        )
+        return cls.find_first_by_kwargs(community_id=community_id, user_id=user_id)
 
     @classmethod
     def get_communities_list(cls, user_id: int) -> list[Community]:

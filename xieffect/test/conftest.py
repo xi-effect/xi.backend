@@ -7,7 +7,6 @@ from flask.testing import FlaskClient
 from flask_fullstack import check_code
 from pytest import fixture
 from pytest_mock import MockerFixture
-from sqlalchemy import select
 from werkzeug.test import TestResponse
 
 from common import User, mail, mail_initialized, Base, db
@@ -148,11 +147,11 @@ def test_user_id() -> int:
 
 
 def delete_by_id(entry_id: int, table: type[Base]) -> None:
-    orm_object = db.get_first(select(table).filter_by(id=entry_id))
+    orm_object = table.find_first_by_kwargs(id=entry_id)
     if orm_object is not None:
         orm_object.delete()
         db.session.commit()
-    assert db.get_first(select(table).filter_by(id=entry_id)) is None
+    assert table.find_first_by_kwargs(id=entry_id) is None
 
 
 @fixture

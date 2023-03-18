@@ -83,21 +83,24 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     for community_data in community_datas:
         community_data["id"] = assert_double_create(community_data)
-        community_ids.insert(0, community_data["id"])
+        community_ids.append(community_data["id"])
 
     user_id = check_code(client.get("/home/")).get("id")
     community_list = Participant.get_communities_list(user_id)
-    check_list = [value == community_list[num].id for num, value in enumerate(community_ids[::-1])]
+    check_list = [value == community_list[num].id for num, value in enumerate(community_ids)]
     assert all(check_list)
     # assert_order
 
     # Reordering
-    reorder_data = {"source_id": community_datas[0]["id"], "target_index": 0}
+    reorder_data = {
+        "source_id": community_datas[0]["id"],
+        "target_index": community_datas[-1]["id"],
+    }
     socketio_client.assert_emit_success("reorder_community", reorder_data)
     socketio_client2.assert_only_received("reorder_community", reorder_data)
 
     community_ids.remove(reorder_data["source_id"])
-    community_ids.insert(reorder_data["target_index"], reorder_data["source_id"])
+    community_ids.insert(reorder_data["target_index"] - 1, reorder_data["source_id"])
     # assert_order
 
     # Leaving
@@ -107,7 +110,7 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     community_ids.remove(leave_data["community_id"])
     community_list = check_code(client.get("/home/")).get("communities")
-    check_list = [value == community_list[num].get("id") for num, value in enumerate(community_ids[::-1])]
+    check_list = [value == community_list[num].get("id") for num, value in enumerate(community_ids)]
     assert all(check_list)
     # assert_order
 
