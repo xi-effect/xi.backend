@@ -8,8 +8,6 @@ Create Date: 2022-12-15 15:38:43.339679
 from alembic import op
 import sqlalchemy as sa
 
-from communities.base import Participant
-
 # revision identifiers, used by Alembic.
 revision = 'bf5f81e3a878'
 down_revision = '217fa30f86eb'
@@ -32,6 +30,9 @@ def upgrade():
 
     conn = op.get_bind()
     i = 0
+
+    metadata = sa.MetaData(bind=conn)
+    Participant = sa.Table('community_participant', metadata, autoload=True, autoload_with=conn)
     for i, data in enumerate(conn.execute(sa.select(Participant)).all()):
         op.execute(
             sa.update(Participant)

@@ -21,6 +21,7 @@ def send_message(webhook_url: WebhookURLs, message: str) -> Response:
     return post(
         f"https://discord.com/api/webhooks/{webhook_url.value}",
         json={"content": message},
+        timeout=10,
     )
 
 

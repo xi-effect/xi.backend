@@ -76,7 +76,7 @@ class Task(Base, Identifiable):
     )
     deleted = Column(Boolean, nullable=False, default=False)
 
-    files = relationship("TaskEmbed", cascade="all, delete", passive_deletes=True)
+    files = relationship("TaskEmbed", passive_deletes=True)
 
     BaseModel = PydanticModel.column_model(id, updated)
     CreationBaseModel = PydanticModel.column_model(page_id, name, description)

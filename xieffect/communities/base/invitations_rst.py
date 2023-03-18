@@ -6,10 +6,10 @@ from flask_fullstack import PydanticModel, counter_parser
 from flask_restx import Resource
 
 from common import ResourceController, User
-from .invitations_db import Invitation
-from .meta_db import Community, Participant, ParticipantRole
-from .meta_sio import CommunitiesEventSpace
-from ..utils import check_participant
+from communities.base.invitations_db import Invitation
+from communities.base.meta_db import Community, Participant, ParticipantRole
+from communities.base.meta_sio import CommunitiesEventSpace
+from communities.utils import check_participant
 
 controller = ResourceController("communities-invitation", path="/communities/")
 
@@ -81,7 +81,11 @@ class InvitationJoin(Resource):
         if invitation is None:
             controller.abort(400, "User has already joined")
 
-        Participant.create(community.id, user.id, invitation.role)
+        Participant.add(
+            community_id=community.id,
+            user_id=user.id,
+            role=invitation.role,
+        )
         if invitation.limit == 1:
             invitation.delete()
         elif invitation.limit is not None:

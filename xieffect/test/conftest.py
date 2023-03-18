@@ -11,6 +11,7 @@ from werkzeug.test import TestResponse
 
 from common import User, mail, mail_initialized, Base, db
 from common.testing import SocketIOTestClient
+from communities.base import CommunitiesUser
 from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
 
@@ -146,11 +147,11 @@ def test_user_id() -> int:
 
 
 def delete_by_id(entry_id: int, table: type[Base]) -> None:
-    orm_object = table.find_by_id(entry_id)
+    orm_object = table.find_first_by_kwargs(id=entry_id)
     if orm_object is not None:
         orm_object.delete()
         db.session.commit()
-    assert table.find_by_id(entry_id) is None
+    assert table.find_first_by_kwargs(id=entry_id) is None
 
 
 @fixture
@@ -160,6 +161,7 @@ def base_user_id() -> int:
         password="12345",
         username="hey",
     ).id
+    CommunitiesUser.find_or_create(user_id)  # TODO remove after CU removal
     db.session.commit()
     yield user_id
     delete_by_id(user_id, User)

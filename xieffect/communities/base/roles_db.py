@@ -31,9 +31,7 @@ class Role(Base, Identifiable):
         nullable=False,
     )
 
-    permissions = relationship(
-        "RolePermission", cascade="all, delete", passive_deletes=True
-    )
+    permissions = relationship("RolePermission", passive_deletes=True)
 
     CreateModel = PydanticModel.column_model(name, color)
     IndexModel = CreateModel.column_model(id)
