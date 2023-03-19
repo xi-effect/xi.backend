@@ -12,7 +12,13 @@ controller = MUBController("invites")
 
 
 @controller.route("/")
-class InviteCreator(Resource):
+class Invites(Resource):
+    @controller.require_permission(manage_invites, use_moderator=False)
+    @controller.argument_parser(counter_parser)
+    @controller.lister(50, Invite.IndexModel)
+    def get(self, start: int, finish: int):
+        return Invite.find_global(start, finish - start)
+
     parser: RequestParser = RequestParser()
     parser.add_argument("name", type=str, required=True)
     parser.add_argument("limit", type=int, required=False)
@@ -25,7 +31,7 @@ class InviteCreator(Resource):
 
 
 @controller.route("/index/")
-class GlobalInviteManager(Resource):
+class GlobalInviteManager(Resource):  # pragma: no coverage  # TODO remove
     @controller.require_permission(manage_invites, use_moderator=False)
     @controller.argument_parser(counter_parser)
     @controller.lister(50, Invite.IndexModel)

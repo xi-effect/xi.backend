@@ -6,24 +6,22 @@ from pytest import mark
 
 from .users_mub_test import assert_error
 
-base_url = "/mub/invites/"
-
 
 @mark.order(50)
 def test_mub_invites(client: FlaskClient, mod_client: FlaskClient, list_tester):
     invite_data = {"name": "test", "limit": -1, "accepted": 0}
 
     # Check getting list of invites
-    url, base_status, base_message = f"{base_url}index/", 403, "Permission denied"
-    counter = len(list(list_tester(url, {}, 50, use_post=False)))
-    assert_error(client, url, base_status, base_message, method="GET", offset=0)
+    base_url, base_status, base_message = "/mub/invites/", 403, "Permission denied"
+    counter = len(list(list_tester(base_url, {}, 50)))
+    assert_error(client, base_url, base_status, base_message, method="GET", offset=0)
 
     # Check creating
     new_invite = check_code(mod_client.post(base_url, json=invite_data))
     assert (invite_id := new_invite.get("id")) is not None
     counter += 1
     assert_error(client, base_url, base_status, base_message, **invite_data)
-    assert counter == len(list(list_tester(url, {}, 50, use_post=False)))
+    assert counter == len(list(list_tester(base_url, {}, 50)))
 
     # Check getting by id
     id_url = f"{base_url}{invite_id}/"
@@ -50,4 +48,4 @@ def test_mub_invites(client: FlaskClient, mod_client: FlaskClient, list_tester):
     assert check_code(mod_client.delete(id_url))["a"] is True
     counter -= 1
     assert_error(mod_client, id_url, 404, "Invite not found", method="GET")
-    assert counter == len(list(list_tester(url, {}, 50, use_post=False)))
+    assert counter == len(list(list_tester(base_url, {}, 50)))

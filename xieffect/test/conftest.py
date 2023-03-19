@@ -92,7 +92,7 @@ class ListTesterProtocol(Protocol):
         request_json: dict,
         page_size: int,
         status_code: int = 200,
-        use_post: bool = True,
+        use_post: bool = False,
     ) -> Iterator[dict]:
         pass
 
@@ -104,7 +104,7 @@ def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
         request_json: dict,
         page_size: int,
         status_code: int = 200,
-        use_post: bool = True,
+        use_post: bool = False,
     ) -> Iterator[dict]:
         counter = 0
         amount = page_size

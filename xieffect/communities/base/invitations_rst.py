@@ -14,8 +14,17 @@ from communities.utils import check_participant
 controller = ResourceController("communities-invitation", path="/communities/")
 
 
-@controller.route("/<int:community_id>/invitations/index/")
+@controller.route("/<int:community_id>/invitations/")
 class InvitationLister(Resource):
+    @check_participant(controller, role=ParticipantRole.OWNER)
+    @controller.argument_parser(counter_parser)
+    @controller.lister(20, Invitation.IndexModel)
+    def get(self, community: Community, start: int, finish: int):
+        return Invitation.find_by_community(community.id, start, finish - start)
+
+
+@controller.route("/<int:community_id>/invitations/index/")
+class OldInvitationLister(Resource):  # pragma: no coverage  # TODO remove
     @check_participant(controller, role=ParticipantRole.OWNER)
     @controller.argument_parser(counter_parser)
     @controller.lister(20, Invitation.IndexModel)

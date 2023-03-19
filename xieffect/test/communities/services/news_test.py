@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from flask_fullstack import dict_equal, check_code
+from flask_fullstack import dict_equal
 from pytest import mark
 
 from common import User
@@ -11,18 +11,6 @@ from communities.base import Community
 from communities.services.news_db import Post
 from test.communities.base.invites_test import create_assert_successful_join
 from test.conftest import delete_by_id, ListTesterProtocol
-
-
-def get_posts_list(client, community_id: int) -> list[dict]:
-    """Check the success of getting the list of posts"""
-    result = check_code(
-        client.get(
-            f"/communities/{community_id}/news/index/",
-            json={"counter": 20, "offset": 0},
-        )
-    ).get("results")
-    assert isinstance(result, list)
-    return result
 
 
 @mark.order(1100)
@@ -57,8 +45,9 @@ def test_post_creation(
     for user in (socketio_client, socketio_client2, sio_member):
         user.assert_emit_success("open_news", community_id_json)
 
-    posts_ids = [d.get("id") for d in get_posts_list(client, test_community)]
-    post_data = dict(community_id_json, title="tit", description="desc")
+    index_url = f"/communities/{test_community}/news/"
+    posts_ids = [d.get("id") for d in list(list_tester(index_url, {}, 20))]
+    post_data = dict(**community_id_json, title="tit", description="desc")
 
     # Assert post creation
     result_data = socketio_client.assert_emit_ack("new_post", post_data)
@@ -71,7 +60,7 @@ def test_post_creation(
 
     # Check successfully post creation
     found = False
-    for data in get_posts_list(client, test_community):
+    for data in list(list_tester(index_url, {}, 20)):
         assert data.get("id") in posts_ids
         if data.get("id") == post_id:
             assert not found
@@ -107,8 +96,8 @@ def test_post_creation(
 
     # Check successfully post delete
     socketio_client.assert_emit_success("delete_post", post_ids)
-    for user, sio_user in ((client, socketio_client2), (member, sio_member)):
-        posts_list = get_posts_list(user, test_community)
+    for sio_user in (socketio_client2, sio_member):
+        posts_list = list(list_tester(index_url, {}, 20))
         assert isinstance(posts_list, list)
         assert len(posts_list) == 0
         sio_user.assert_only_received("delete_post", post_ids)

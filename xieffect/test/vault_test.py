@@ -54,7 +54,7 @@ def test_files_normal(
     list_tester: ListTesterProtocol,
 ):
     # saving file list for future checks
-    previous_file_list = list(list_tester("/mub/files/index/", {}, 20))
+    previous_file_list = list(list_tester("/mub/files/", {}, 20))
 
     # upload a file
     new_files: list[tuple[dict, bytes]] = [
@@ -68,7 +68,7 @@ def test_files_normal(
         assert check_code(mod_client.get(f"/files/{server_filename}/"), get_json=False).data == real_data
         assert check_code(base_client.get(f"/files/{server_filename}/"), get_json=False).data == real_data
 
-    new_file_list = list(list_tester("/mub/files/index/", {}, 20))
+    new_file_list = list(list_tester("/mub/files/", {}, 20))
     for data, contents in new_files:
         assert new_file_list.pop(0) == data
         assert_file_data(data["filename"], contents)

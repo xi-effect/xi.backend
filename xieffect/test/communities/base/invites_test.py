@@ -71,7 +71,7 @@ def test_invites(
         "limit": 2,
         "days": 10,
     }
-    index_url = f"/communities/{test_community}/invitations/index/"
+    index_url = f"/communities/{test_community}/invitations/"
 
     # check that the invite list is empty
     assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 0
@@ -95,7 +95,7 @@ def test_invites(
     # check constraints
     community_data = {"name": "invite_test"}
     community_id = assert_create_community(socketio_client, community_data)
-    index_url = f"/communities/{community_id}/invitations/index/"
+    index_url = f"/communities/{community_id}/invitations/"
     invite_tester = InvitesTester(client, {"community_id": community_id})
     invite = invite_tester.assert_create_invite(dict(invite_data, community_id=community_id))
     assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 1
@@ -109,7 +109,7 @@ def find_invite(
     community_id: int,
     invite_id: int,
 ) -> dict | None:
-    index_url = f"/communities/{community_id}/invitations/index/"
+    index_url = f"/communities/{community_id}/invitations/"
 
     for data in list_tester(index_url, {}, INVITATIONS_PER_REQUEST):
         if data["id"] == invite_id:

@@ -12,11 +12,11 @@ from ..utils import check_participant
 TASKS_PER_PAGE = 48
 
 controller = ResourceController(
-    "communities-tasks", path="/communities/<int:community_id>/"
+    "communities-tasks", path="/communities/<int:community_id>/tasks/"
 )
 
 
-@controller.route("/tasks/")
+@controller.route("/")
 class Tasks(Resource):
     @controller.jwt_authorizer(User)
     @controller.argument_parser(counter_parser)
@@ -32,7 +32,7 @@ class Tasks(Resource):
         )
 
 
-@controller.route("/tasks/<int:task_id>/")
+@controller.route("/<int:task_id>/")
 class TaskGet(Resource):
     @controller.jwt_authorizer(User)
     @check_participant(controller, role=ParticipantRole.OWNER)

@@ -28,7 +28,7 @@ def assert_error(
 def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
     # Check getting list of users
     base_url, base_status, base_message = "/mub/users/", 403, "Permission denied"
-    counter = len(list(list_tester(base_url, {}, 50, use_post=False)))
+    counter = len(list(list_tester(base_url, {}, 50)))
     assert_error(client, base_url, base_status, base_message, method="GET", offset=0)
 
     # Check creating
@@ -50,7 +50,7 @@ def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
             assert_error(mod_client, base_url, status, message, **data)
     base_data = dict(user_data, email="fo@test.mub")
     assert_error(client, base_url, base_status, base_message, **base_data)
-    assert counter == len(list(list_tester(base_url, {}, 50, use_post=False)))
+    assert counter == len(list(list_tester(base_url, {}, 50)))
 
     # Checking invite limit exception
     invite_data = {"name": "test", "limit": 1}
@@ -64,7 +64,7 @@ def test_mub_users(client: FlaskClient, mod_client: FlaskClient, list_tester):
 
     # Check email-confirmed update
     old_date = list(
-        list_tester(base_url, {"username": new_user["username"]}, 50, use_post=False)
+        list_tester(base_url, {"username": new_user["username"]}, 50)
     )
     url = f"{base_url}{new_user['id']}/"
     for conf in (True, False):
