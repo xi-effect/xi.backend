@@ -16,7 +16,15 @@ class UserFinder(Resource):
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
     @controller.lister(10, User.MainData)
-    def post(self, user: User, search: str | None, start: int, finish: int):
+    def get(self, user: User, search: str | None, start: int, finish: int):
+        return User.search_by_username(user.id, search, start, finish - start)
+
+    @controller.jwt_authorizer(User)
+    @controller.argument_parser(parser)
+    @controller.lister(10, User.MainData)
+    def post(
+        self, user: User, search: str | None, start: int, finish: int
+    ):  # pragma: no coverage  # TODO remove
         return User.search_by_username(user.id, search, start, finish - start)
 
 

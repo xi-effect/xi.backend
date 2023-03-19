@@ -38,7 +38,7 @@ def test_feedback(
         upload(client, filename)[0].get("id") for filename in jsons
     ]
     feedback = {"type": "general", "data": {"lol": "hey"}, "files": files}
-    counter: int = len(list(list_tester(base_url, {}, 50, use_post=False)))
+    counter: int = len(list(list_tester(base_url, {}, 50)))
 
     # Check create feedback
     create_data = [
@@ -59,7 +59,7 @@ def test_feedback(
         counter += 1
     wrong_data = dict(feedback, files=[1, 3, 4])
     assert_message(client, "/feedback/", "Files don't exist", 404, **wrong_data)
-    new_list = list(list_tester(base_url, {}, 50, use_post=False))
+    new_list = list(list_tester(base_url, {}, 50))
     assert len(new_list) == counter
 
     # Check getting feedback list
@@ -75,7 +75,7 @@ def test_feedback(
         data = {"user-id": user_id}
         if feedback_type is not None:
             data = dict(data, type=feedback_type)
-        feedback_list = list(list_tester(base_url, data, 50, use_post=False))
+        feedback_list = list(list_tester(base_url, data, 50))
         result_counter = counter if feedback_type is None else 1
         assert len(feedback_list) == result_counter
     assert_message(client, base_url, "Permission denied", 403, method="GET")
@@ -96,7 +96,7 @@ def test_feedback(
         assert_message(mod_client, id_url, message=True, method="DELETE")
         assert_message(mod_client, id_url, "Feedback does not exist", 404, method="GET")
         counter -= 1
-    assert len(list(list_tester(base_url, {}, 50, use_post=False))) == counter
+    assert len(list(list_tester(base_url, {}, 50))) == counter
 
 
 def test_feedback_constraints(
