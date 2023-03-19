@@ -1,26 +1,22 @@
 from __future__ import annotations
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code, dict_equal
+from flask_fullstack import SocketIOTestClient, dict_rekey, assert_contains
 from pytest import mark
 
 from common import User
-from common.testing import SocketIOTestClient
 from communities.base import Participant, Community
 from test.communities.conftest import assert_create_community
-from test.conftest import delete_by_id
+from test.conftest import delete_by_id, FlaskTestClient
 from test.vault_test import upload
 from vault import File
 
 
-def get_communities_list(client: FlaskClient) -> list[dict]:
-    result = check_code(client.get("/home/")).get("communities")
-    assert isinstance(result, list)
-    return result
+def get_communities_list(client: FlaskTestClient) -> list[dict]:
+    return client.get("/home/", expected_json={"communities": list})["communities"]
 
 
 @mark.order(1000)
-def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient):
+def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestClient):
     community_ids = [d["id"] for d in get_communities_list(client)]
 
     community_data = {"name": "12345", "description": "test"}
@@ -33,32 +29,39 @@ def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient)
         assert data["id"] in community_ids
         if data["id"] == community_id:
             assert not found
-            assert dict_equal(data, community_data, *community_data.keys())
+            assert_contains(data, community_data)
             found = True
     assert found
 
     # Update metadata
     update_data = dict(**community_id_json, name="new_name", description="upd")
     for data in (update_data, dict(community_data, **community_id_json)):
-        new_meta = socketio_client.assert_emit_ack("update_community", data)
-        dict_equal(new_meta, data, *data.keys())
+        socketio_client.assert_emit_ack(
+            event_name="update_community",
+            data=data,
+            expected_data=dict_rekey(data, community_id="id"),
+        )
 
     # Set and delete avatar
     file_id = upload(client, "test-1.json")[0].get("id")
     assert File.find_by_id(file_id) is not None
 
-    url = f"/communities/{community_id}/"
-    check_code(client.post(f"{url}avatar/", json={"avatar-id": file_id}))
-    community_avatar = check_code(client.get(url)).get("avatar")
-    assert community_avatar is not None
-    assert community_avatar.get("id") == file_id
+    client.post(
+        f"/communities/{community_id}/avatar/",
+        json={"avatar-id": file_id},
+        expected_a=True,
+    )
+    client.get(
+        f"/communities/{community_id}/",
+        expected_json={"avatar": {"id": file_id}},
+    )
 
-    check_code(client.delete(f"{url}avatar/"))
-    assert check_code(client.get(url)).get("avatar") is None
+    client.delete(f"/communities/{community_id}/avatar/", expected_a=True)
+    client.get(f"/communities/{community_id}/", expected_json={"avatar": None})
 
 
 @mark.order(1005)
-def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient):
+def test_community_list(client: FlaskTestClient, socketio_client: SocketIOTestClient):
     def assert_order():
         for i, data in enumerate(get_communities_list(client)):
             assert data["id"] == community_ids[i]
@@ -66,8 +69,6 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     socketio_client2 = SocketIOTestClient(client)
     community_ids = [d["id"] for d in get_communities_list(client)]
     assert_order()
-
-    # TODO check order with new community listing
 
     # Creating
     def assert_double_create(data: dict):
@@ -85,11 +86,10 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
         community_data["id"] = assert_double_create(community_data)
         community_ids.append(community_data["id"])
 
-    user_id = check_code(client.get("/home/")).get("id")
-    community_list = Participant.get_communities_list(user_id)
-    check_list = [value == community_list[num].id for num, value in enumerate(community_ids)]
-    assert all(check_list)
-    # assert_order
+    user_id = client.get("/home/", expected_json={"id": int})["id"]
+    real_ids = [community.id for community in Participant.get_communities_list(user_id)]
+    assert len(real_ids) == len(community_ids)
+    assert real_ids == community_ids
 
     # Reordering
     reorder_data = {
@@ -109,20 +109,25 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     socketio_client2.assert_only_received("leave_community", leave_data)
 
     community_ids.remove(leave_data["community_id"])
-    community_list = check_code(client.get("/home/")).get("communities")
-    check_list = [value == community_list[num].get("id") for num, value in enumerate(community_ids)]
-    assert all(check_list)
-    # assert_order
+    client.get(
+        "/home/",
+        expected_json={"communities": [{"id": value} for value in community_ids]},
+    )
 
 
 def test_community_delete(
-    client: FlaskClient,
+    client: FlaskTestClient,
     socketio_client: SocketIOTestClient,
 ):
     community_id = assert_create_community(socketio_client, {"name": "test"})
-    socketio_client.assert_emit_success("delete_community", {"community_id": community_id})
-    assert check_code(client.get(f"/communities/{community_id}/"), 404).get("a") == "Community not found"
-
+    socketio_client.assert_emit_success(
+        "delete_community", {"community_id": community_id}
+    )
+    client.get(
+        f"/communities/{community_id}/",
+        expected_status=404,
+        expected_a="Community not found",
+    )
     delete_by_id(community_id, Community)
 
 

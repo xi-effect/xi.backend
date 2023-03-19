@@ -1,27 +1,66 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
-from typing import Protocol
+import re
+from collections.abc import Callable
+from typing import Protocol, Any
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code
+from flask_fullstack import (
+    FlaskTestClient as _FlaskTestClient,
+    SocketIOTestClient,
+    TypeChecker,
+)
+from flask_fullstack.restx.testing import HeaderChecker
+from pydantic import constr
 from pytest import fixture
 from pytest_mock import MockerFixture
 from werkzeug.test import TestResponse
 
 from common import User, mail, mail_initialized, Base, db
-from common.testing import SocketIOTestClient
 from communities.base import CommunitiesUser
 from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
 
-class RedirectedFlaskClient(FlaskClient):
-    def open(self, *args, **kwargs):  # noqa: A003
-        kwargs["follow_redirects"] = True
+class OpenProtocol(Protocol):
+    def __call__(  # copied form ffs!  # noqa: WPS211
+        self,
+        path: str = "/",
+        *args: Any,
+        json: Any | None = None,
+        headers: dict[str, str] | None = None,
+        expected_status: int = 200,
+        expected_data: Any | None = None,
+        expected_text: str | None = None,
+        expected_json: TypeChecker | None = None,
+        expected_a: int | str | type | re.Pattern | None = None,
+        expected_headers: HeaderChecker | None = None,
+        get_json: bool = True,
+        **kwargs: Any,
+    ) -> None | dict | list | TestResponse:
+        pass
+
+
+class FlaskTestClient(_FlaskTestClient):
+    head: OpenProtocol
+    post: OpenProtocol
+    get: OpenProtocol
+    put: OpenProtocol
+    patch: OpenProtocol
+    delete: OpenProtocol
+    options: OpenProtocol
+    trace: OpenProtocol
+
+    def open(  # noqa: A003
+        self,
+        *args: Any,
+        expected_a: TypeChecker | None = None,
+        **kwargs: Any,
+    ) -> None | dict | list | TestResponse:
+        if expected_a is not None:
+            kwargs.setdefault("expected_json", {})["a"] = expected_a
         return super().open(*args, **kwargs)
 
 
-app.test_client_class = RedirectedFlaskClient
+app.test_client_class = FlaskTestClient
 
 
 @fixture(scope="session", autouse=True)
@@ -30,50 +69,53 @@ def application_context() -> None:
         yield
 
 
-@fixture(scope="session", autouse=True)
+@fixture
 def base_client():
     app.debug = True
     with app.test_client() as client:
         yield client
 
 
-def base_login(client: FlaskClient, account: str, password: str, mub: bool = False) -> None:
+def base_login(
+    client: FlaskTestClient, account: str, password: str, mub: bool = False
+) -> None:
     response: TestResponse = client.post(
         "/mub/sign-in/" if mub else "/signin/",
-        data={"username" if mub else "email": account, "password": password}
+        data={"username" if mub else "email": account, "password": password},
+        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        get_json=False,
     )
-    assert response.status_code == 200
-    assert "Set-Cookie" in response.headers
-    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
-    assert cookie[0] == "access_token_cookie"
-    client.set_cookie("test", "access_token_cookie", cookie[1])
+    client.set_cookie(
+        "test", "access_token_cookie", response.headers["Set-Cookie"].partition("=")[1]
+    )
 
 
-def login(account: str, password: str, mub: bool = False) -> FlaskClient:
+def login(account: str, password: str, mub: bool = False) -> FlaskTestClient:
+    client: FlaskTestClient
     with app.test_client() as client:
         base_login(client, account, password, mub)
         return client
 
 
 @fixture
-def client() -> FlaskClient:
+def client() -> FlaskTestClient:
     return login(TEST_EMAIL, BASIC_PASS)
 
 
 @fixture
-def mod_client() -> FlaskClient:
+def mod_client() -> FlaskTestClient:
     return login(TEST_MOD_NAME, TEST_PASS, mub=True)
 
 
 @fixture
-def full_client() -> FlaskClient:
+def full_client() -> FlaskTestClient:
     test_client = login(TEST_EMAIL, BASIC_PASS)
     base_login(test_client, TEST_MOD_NAME, TEST_PASS, mub=True)
     return test_client
 
 
 @fixture
-def multi_client() -> Callable[[str], FlaskClient]:
+def multi_client() -> Callable[[str], FlaskTestClient]:
     def multi_client_inner(user_email: str):
         return login(user_email, BASIC_PASS)
 
@@ -81,55 +123,8 @@ def multi_client() -> Callable[[str], FlaskClient]:
 
 
 @fixture
-def socketio_client(client: FlaskClient) -> SocketIOTestClient:  # noqa: WPS442
+def socketio_client(client: FlaskTestClient) -> SocketIOTestClient:  # noqa: WPS442
     return SocketIOTestClient(client)
-
-
-class ListTesterProtocol(Protocol):
-    def __call__(
-        self,
-        link: str,
-        request_json: dict,
-        page_size: int,
-        status_code: int = 200,
-        use_post: bool = False,
-    ) -> Iterator[dict]:
-        pass
-
-
-@fixture
-def list_tester(full_client: FlaskClient) -> ListTesterProtocol:  # noqa: WPS442
-    def list_tester_inner(
-        link: str,
-        request_json: dict,
-        page_size: int,
-        status_code: int = 200,
-        use_post: bool = False,
-    ) -> Iterator[dict]:
-        counter = 0
-        amount = page_size
-        while amount == page_size:
-            request_json["counter"] = counter
-            response_json: dict = check_code(
-                full_client.open(
-                    link,
-                    json=request_json,
-                    method="POST" if use_post else "GET",
-                ),
-                status_code,
-            )
-            assert "results" in response_json
-            assert isinstance(response_json["results"], list)
-            yield from response_json["results"]
-
-            amount = len(response_json["results"])
-            assert amount <= page_size
-
-            counter += 1
-
-        assert counter > 0
-
-    return list_tester_inner
 
 
 @fixture
@@ -147,21 +142,29 @@ def test_user_id() -> int:
 
 
 def delete_by_id(entry_id: int, table: type[Base]) -> None:
-    orm_object = table.find_first_by_kwargs(id=entry_id)
-    if orm_object is not None:
-        orm_object.delete()
-        db.session.commit()
+    table.delete_by_kwargs(id=entry_id)
+    db.session.commit()
     assert table.find_first_by_kwargs(id=entry_id) is None
 
 
 @fixture
-def base_user_id() -> int:
+def base_user_data() -> tuple[str, str]:
+    return "hey@hey.hey", BASIC_PASS
+
+
+@fixture
+def base_user_id(base_user_data) -> int:
     user_id = User.create(
-        email="hey@hey.hey",
-        password="12345",
+        email=base_user_data[0],
+        password=base_user_data[1],
         username="hey",
     ).id
     CommunitiesUser.find_or_create(user_id)  # TODO remove after CU removal
     db.session.commit()
     yield user_id
     delete_by_id(user_id, User)
+
+
+@fixture
+def fresh_client(base_user_data, base_user_id) -> FlaskTestClient:  # noqa: U100
+    return login(*base_user_data)

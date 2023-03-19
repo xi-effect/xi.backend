@@ -1,13 +1,13 @@
 from flask import Flask
-from flask.testing import FlaskClient
+from flask_fullstack import SocketIOTestClient
 
 from common import SocketIO
-from common.testing import SocketIOTestClient
+from test.conftest import FlaskTestClient
 
 
 class DoubleClient:
-    def __init__(self, rst_client: FlaskClient, sio_client: SocketIOTestClient):
-        self.rst: FlaskClient = rst_client
+    def __init__(self, rst_client: FlaskTestClient, sio_client: SocketIOTestClient):
+        self.rst: FlaskTestClient = rst_client
         self.sio: SocketIOTestClient = sio_client
 
     @classmethod
@@ -17,7 +17,7 @@ class DoubleClient:
         return cls(rst_client, sio_client)
 
     @classmethod
-    def from_flask(cls, flask_client: FlaskClient):
+    def from_flask(cls, flask_client: FlaskTestClient):
         return cls(flask_client, SocketIOTestClient(flask_client))
 
     def __enter__(self):
@@ -37,7 +37,7 @@ class MultiClient:
     def __enter__(self):
         return self
 
-    def connect_user(self, flask_client: FlaskClient = None) -> DoubleClient:
+    def connect_user(self, flask_client: FlaskTestClient = None) -> DoubleClient:
         if flask_client is None:
             return DoubleClient.from_app(self.app)
         return DoubleClient.from_flask(flask_client)

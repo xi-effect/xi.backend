@@ -1,69 +1,85 @@
 from __future__ import annotations
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code, dict_equal
-from pytest import mark
+from pytest import mark, fixture, param
 
 from common import User, open_file
-from test.conftest import delete_by_id, ListTesterProtocol
+from test.conftest import delete_by_id, FlaskTestClient
 from test.vault_test import create_file, upload
 from users import generate_code
 from users.feedback_db import Feedback, FeedbackType
 from vault import File
 
 
-def assert_message(
-    client: FlaskClient,
-    url: str,
-    message: str | bool,
-    status=200,
-    method="POST",
-    **kwargs,
+@fixture()
+def feedback_files(client: FlaskTestClient) -> list[tuple[dict, bytes]]:
+    return [
+        upload(client, filename)[0].get("id")
+        for filename in ("test-1.json", "test-2.json")
+    ]
+
+
+@fixture()
+def default_feedback(feedback_files) -> dict:
+    return {"type": "general", "data": {"lol": "hey"}, "files": feedback_files}
+
+
+@mark.parametrize(
+    ("code", "message"),
+    [
+        param(
+            None,
+            "Neither the user is authorized, nor the code is provided",
+            id="no_code",
+        ),
+        param("lol", "Bad code signature", id="bad_signature"),
+        param(generate_code(-1), "Code refers to non-existing user", id="bad_user"),
+    ],
+)
+def test_fail_creating_feedback(
+    base_client: FlaskTestClient,
+    default_feedback: dict,
+    code: str | None,
+    message: str,
 ):
-    assert check_code(
-        client.open(url, json=kwargs, method=method), status
-    )["a"] == message
+    data = dict(default_feedback, code=code)
+    base_client.post("/feedback/", expected_a=message, json=data)
 
 
 @mark.order(30)
 def test_feedback(
-    base_client: FlaskClient,
-    client: FlaskClient,
-    mod_client: FlaskClient,
-    list_tester: ListTesterProtocol,
+    base_client: FlaskTestClient,
+    client: FlaskTestClient,
+    mod_client: FlaskTestClient,
+    default_feedback: dict,
     test_user_id: int,
 ):
-    base_url, jsons = "/mub/feedback/", ("test-1.json", "test-2.json")
-    files = [
-        upload(client, filename)[0].get("id") for filename in jsons
-    ]
-    feedback = {"type": "general", "data": {"lol": "hey"}, "files": files}
-    counter: int = len(list(list_tester(base_url, {}, 50)))
+    base_url = "/mub/feedback/"
+    counter: int = len(list(mod_client.paginate(base_url)))
 
     # Check create feedback
-    create_data = [
-        (None, "Neither the user is authorized, nor the code is provided"),
-        ("lol", "Bad code signature"),
-        (generate_code(-1), "Code refers to non-existing user"),
-        (generate_code(test_user_id), "Success"),
-    ]
-    for code, message in create_data:
-        data = dict(feedback, code=code)
-        assert_message(base_client, "/feedback/", message, **data)
-        counter += 1 if message == "Success" else 0
+    data = dict(default_feedback, code=generate_code(test_user_id))
+    base_client.post("/feedback/", expected_a="Success", json=data)
+    counter += 1
 
-    client_data = ["content-report", "bug-report"]
-    for feedback_type in client_data:
-        data = dict(feedback, type=feedback_type)
-        assert_message(client, "/feedback/", "Success", **data)
+    for feedback_type in ("content-report", "bug-report"):
+        data = dict(default_feedback, type=feedback_type)
+        client.post("/feedback/", expected_a="Success", json=data)
         counter += 1
-    wrong_data = dict(feedback, files=[1, 3, 4])
-    assert_message(client, "/feedback/", "Files don't exist", 404, **wrong_data)
-    new_list = list(list_tester(base_url, {}, 50))
+
+    wrong_data = dict(default_feedback, files=[1, 3, 4])
+    client.post(
+        "/feedback/",
+        expected_a="Files don't exist",
+        expected_status=404,
+        json=wrong_data,
+    )
+
+    new_list = list(mod_client.paginate(base_url))
     assert len(new_list) == counter
 
     # Check getting feedback list
-    base_id, client_id = new_list[0].get("user-id"), new_list[-1].get("user-id")
+    base_id = new_list[0].get("user-id")
+    client_id = new_list[-1].get("user-id")
     dump_data = [
         (base_id, None),
         (client_id, None),
@@ -75,42 +91,41 @@ def test_feedback(
         data = {"user-id": user_id}
         if feedback_type is not None:
             data = dict(data, type=feedback_type)
-        feedback_list = list(list_tester(base_url, data, 50))
+        feedback_list = list(mod_client.paginate(base_url, json=data))
         result_counter = counter if feedback_type is None else 1
         assert len(feedback_list) == result_counter
-    assert_message(client, base_url, "Permission denied", 403, method="GET")
+    client.get(base_url, expected_a="Permission denied", expected_status=403)
 
     # Check getting feedback by id
     feedback = new_list[-1]
     assert (feedback_id := feedback.get("id")) is not None
     get_url = f"/mub/feedback/{feedback_id}/"
-    feedback_received = check_code(mod_client.get(get_url))
-    assert dict_equal(feedback, feedback_received, *feedback_received.keys())
-    assert_message(client, get_url, "Permission denied", 403, method="GET")
+    mod_client.get(get_url, expected_json=feedback)
+    client.get(get_url, expected_a="Permission denied", expected_status=403)
 
     # Check deleting feedbacks
     for feedback in new_list:
         assert (feedback_id := feedback.get("id")) is not None
         id_url = f"/mub/feedback/{feedback_id}/"
-        assert_message(client, id_url, "Permission denied", 403, method="DELETE")
-        assert_message(mod_client, id_url, message=True, method="DELETE")
-        assert_message(mod_client, id_url, "Feedback does not exist", 404, method="GET")
+        client.delete(id_url, expected_a="Permission denied", expected_status=403)
+        mod_client.delete(id_url, expected_a=True)
+        mod_client.delete(
+            id_url, expected_a="Feedback does not exist", expected_status=404
+        )
         counter -= 1
-    assert len(list(list_tester(base_url, {}, 50))) == counter
+
+    assert counter == 0
+    assert len(list(mod_client.paginate(base_url))) == 0
 
 
-def test_feedback_constraints(
-    base_user_id: int,
-):
+def test_feedback_constraints(base_user_id: int):
     with open_file("xieffect/test/json/test-1.json", "rb") as f:
         contents: bytes = f.read()
     file_storage = create_file("test-1.json", contents)
     user = User.find_by_id(base_user_id)
     file_id = File.create(user, file_storage.filename).id
     feedback_id = Feedback.create(
-        user_id=base_user_id,
-        type=FeedbackType.GENERAL,
-        data={"lol": "hey"}
+        user_id=base_user_id, type=FeedbackType.GENERAL, data={"lol": "hey"}
     ).id
     assert isinstance(feedback_id, int) and isinstance(file_id, int)
     assert File.find_by_id(file_id) is not None

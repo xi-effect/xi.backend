@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code, dict_equal
 from flask_mail import Message
-from pytest import mark
+from pydantic import constr
+from pytest import mark, param
 from pytest_mock import MockerFixture
-from werkzeug.test import TestResponse
 
 from common import User
 from communities import CommunitiesUser
 from other import EmailType
-from test.conftest import BASIC_PASS, TEST_EMAIL, SocketIOTestClient, delete_by_id
+from test.conftest import (
+    BASIC_PASS,
+    TEST_EMAIL,
+    FlaskTestClient,
+    SocketIOTestClient,
+    delete_by_id,
+)
 from wsgi import Invite, TEST_INVITE_ID, socketio
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
@@ -23,189 +27,228 @@ BASE_CREDENTIALS = {
 
 
 @mark.order(0)
-def test_rest_docs(base_client: FlaskClient):
-    result = check_code(base_client.get("/doc/"), get_json=False)
+def test_rest_docs(base_client: FlaskTestClient):
+    result = base_client.get("/doc/", get_json=False)
     assert "text/html" in result.content_type
 
 
 @mark.order(1)
-def test_sio_docs(base_client: FlaskClient):
-    result = check_code(base_client.get("/asyncapi.json"))
-    assert result == socketio.docs()
+def test_sio_docs(base_client: FlaskTestClient):
+    base_client.get("/asyncapi.json", expected_json=socketio.docs())
 
 
 @mark.order(10)
-def test_login(base_client: FlaskClient):
-    response: TestResponse = check_code(base_client.post("/signin/", json=TEST_CREDENTIALS), get_json=False)
-
-    result: dict[str, ...] = response.json
-    assert result.pop("a", None) == "Success"
-    for key in ("communities", "id", "username"):
-        assert key in result
-    assert "Set-Cookie" in response.headers
-    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
-    assert cookie[0] == "access_token_cookie"
-
-    # Checking fails
-    credentials = (
-        (dict(TEST_CREDENTIALS, password="wrong_password"), "Wrong password"),
-        (dict(TEST_CREDENTIALS, email="wrong@user.mail"), "User doesn't exist"),
+def test_login(base_client: FlaskTestClient):
+    base_client.post(
+        "/signin/",
+        json=TEST_CREDENTIALS,
+        expected_json={"a": "Success", "communities": list, "id": int, "username": str},
+        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
     )
-    for data, message in credentials:
-        assert check_code(base_client.post("/signin/", json=data))["a"] == message
-
-    check_code(base_client.post("/signout/"))
+    base_client.post("/signout/")
 
 
-@mark.order(11)
-def test_signup(
-    mod_client: FlaskClient,
-    base_client: FlaskClient,
-    mock_mail,
+@mark.parametrize(
+    ("json", "message"),
+    [
+        param(
+            dict(TEST_CREDENTIALS, email="wrong@user.mail"),
+            "User doesn't exist",
+            id="email",
+        ),
+        param(
+            dict(TEST_CREDENTIALS, password="wrong_password"),
+            "Wrong password",
+            id="password",
+        ),
+    ],
+)
+def test_login_fails(base_client: FlaskTestClient, json: dict, message: str) -> None:
+    base_client.post("/signin/", json=json, expected_a=message)
+
+
+@mark.parametrize(
+    ("code", "status", "message"),
+    [
+        param("hey", 400, "Malformed code (BadSignature)", id="bad_signature"),
+        param(
+            Invite.serializer.dumps((-1, 0)), 404, "Invite not found", id="bad_invite"
+        ),
+    ],
+)
+def test_signup_fails(
+    base_client: FlaskTestClient, mock_mail, code: str, status: int, message: str
 ):
-    user_collection = list()
-
-    def assert_with_code(code: str, status: int, message: str):
-        assert check_code(
-            base_client.post("/signup/", json=dict(BASE_CREDENTIALS, code=code)), status
-        )["a"] == message
-
-    # Checking fails
-    assert_with_code("hey", 400, "Malformed code (BadSignature)")
-    assert_with_code(Invite.serializer.dumps((-1, 0)), 404, "Invite not found")
+    base_client.post(
+        "/signup/",
+        json=dict(BASE_CREDENTIALS, code=code),
+        expected_status=status,
+        expected_a=message,
+    )
     assert len(mock_mail) == 0
 
-    invite_data = {"name": "test", "limit": 1}
-    invite_id = check_code(mod_client.post("/mub/invites/", json=invite_data)).get("id")
-    assert isinstance(invite_id, int)
 
-    # Checking invite limit exception
-    invite_code = Invite.serializer.dumps((invite_id, 0))
-    sign_up_data = dict(BASE_CREDENTIALS, email="limit@test.inv", code=invite_code)
-    for a_message in ("Success", "Invite code limit exceeded"):
-        response = check_code(base_client.post("/signup/", json=sign_up_data))
-        assert response["a"] == a_message
+@mark.order(15)
+def test_signup(base_client: FlaskTestClient, mock_mail):
+    # Check successful signup
+    result = base_client.post(
+        "/signup/",
+        json=BASE_CREDENTIALS,
+        expected_json={
+            "a": "Success",
+            "communities": [],
+            "username": BASE_CREDENTIALS["username"],
+            "id": int,
+        },
+        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+    )
 
-        if a_message == "Success":
-            user_collection.append(response.get("id"))
-
-    # Checking invite constraint
-    assert (user := User.find_by_id(user_collection[-1])) is not None
-    assert user.invite_id == invite_id
-    delete_by_id(invite_id, Invite)
-    assert (user := User.find_by_id(user_collection[-1])) is not None
-    assert user.invite_id is None
-
-    # Checking successful sing up
-    response = check_code(base_client.post("/signup/", json=BASE_CREDENTIALS), get_json=False)
-    assert_with_code(Invite.serializer.dumps((TEST_INVITE_ID, 0)), 200, "Email already in use")
-    assert len(mock_mail) == 2
-
-    # Checking the returned data
-    result: dict[str, ...] = response.json
-    assert result.pop("a", None) == "Success"
-
-    communities = result.get("communities")
-    assert isinstance(communities, list)
-    assert len(communities) == 0
-
-    assert isinstance(result, dict)
-    assert dict_equal(result, BASE_CREDENTIALS, "username")
-    assert isinstance(result.get("id"), int)
-    user_collection.append(result.get("id"))
-
-    # Checking for cookies
-    assert "Set-Cookie" in response.headers
-    cookie: tuple[str, str] = response.headers["Set-Cookie"].partition("=")[::2]
-    assert cookie[0] == "access_token_cookie"
-
-    # Check the /home/ as well
-    response = check_code(base_client.get("/home/"))
-    assert response == result
-
-    check_code(base_client.post("/signout/"))
-
-    # Clearing database after test
-    for user_id in user_collection:
-        delete_by_id(user_id, User)
-        assert CommunitiesUser.find_by_id(user_id) is None
-
-
-@mark.order(12)
-def test_email_confirm(base_client: FlaskClient, mock_mail):
-    link_start = "https://xieffect.ru/email/"
-
-    response = check_code(base_client.post("/signup/", json=BASE_CREDENTIALS))
-    assert response["a"] == "Success"
-    assert isinstance(response.get("id"), int)
-
+    # Check the email
     assert len(mock_mail) == 1
-    message: Message = mock_mail[0]
+    message: Message = mock_mail.pop()
     assert message.subject == EmailType.CONFIRM.theme
-    assert link_start in message.html
-
-    code = message.html.partition(link_start)[2].partition('/"')[0]
-    assert code != ""
 
     recipients = message.recipients
     assert len(recipients) == 1
     assert recipients[0] == BASE_CREDENTIALS["email"]
 
-    assert check_code(base_client.get("/users/me/profile/")).get("email-confirmed") is False
-    assert check_code(base_client.post(f"/email-confirm/{code}/"))["a"] == "Success"
-    assert check_code(base_client.post("/email-confirm/wrong_code/"), 400)["a"] == "Invalid code"
-    assert check_code(base_client.get("/users/me/profile/")).get("email-confirmed") is True
+    link_start: str = "https://xieffect.ru/email/"
+    assert link_start in message.html
+    code = message.html.partition(link_start)[2].partition('/"')[0]
+    assert code
 
-    check_code(base_client.post("/signout/"))
+    # Check email verification
+    base_client.get("/users/me/profile/", expected_json={"email-confirmed": False})
+    base_client.post(f"/email-confirm/{code}/", expected_a="Success")
+    base_client.post(
+        "/email-confirm/wrong_code/",
+        expected_status=400,
+        expected_a="Invalid code",
+    )
+    base_client.get("/users/me/profile/", expected_json={"email-confirmed": True})
 
-    delete_by_id(response.get("id"), User)
+    # Check the /home/ as well
+    result.pop("a")
+    base_client.get("/home/", expected_json=result)
+
+    # Check email in use error
+    base_client.post(
+        "/signup/",
+        json=BASE_CREDENTIALS,
+        expected_a="Email already in use",
+    )
+
+    # Clearing database after test
+    delete_by_id(result["id"], User)
+    assert CommunitiesUser.find_by_id(result["id"]) is None
+    assert len(mock_mail) == 0
 
 
-@mark.order(13)
-def test_password_reset(base_client: FlaskClient, mock_mail):
-    link_start, url = "https://xieffect.ru/resetpassword/", "/password-reset/"
+def test_signup_invites(
+    mod_client: FlaskTestClient,
+    base_client: FlaskTestClient,
+    mock_mail,
+):
+    # Create a new invite (temp functional)
+    invite_id = mod_client.post(
+        "/mub/invites/",
+        json={"name": "test", "limit": 1},
+        expected_json={"id": int},
+    )["id"]
+    invite_code = Invite.serializer.dumps((invite_id, 0))
 
-    response = check_code(base_client.post("/signup/", json=BASE_CREDENTIALS))
-    assert response["a"] == "Success"
-    assert isinstance(response.get("id"), int)
+    # Checking invite limit exception
+    sign_up_data = dict(BASE_CREDENTIALS, email="limit@test.inv", code=invite_code)
+    user_id = base_client.post(
+        "/signup/",
+        json=sign_up_data,
+        expected_json={"a": "Success", "id": int},
+        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+    )["id"]
+    base_client.post(
+        "/signup/",
+        json=sign_up_data,
+        expected_a="Invite code limit exceeded",
+        expected_headers={"Set-Cookie": None},
+    )
+    assert len(mock_mail) == 1
 
-    reset_data = ((BASE_CREDENTIALS.get("email"), True), ("wrong@email.test", False))
-    for email, message in reset_data:
-        data = {"email": email}
-        assert check_code(base_client.post(url, json=data))["a"] is message
+    # Checking invite constraint
+    assert (user := User.find_by_id(user_id)) is not None
+    assert user.invite_id == invite_id
+    delete_by_id(invite_id, Invite)
+    assert (user := User.find_by_id(user_id)) is not None
+    assert user.invite_id is None
+
+    # Clearing database after test
+    delete_by_id(user_id, User)
+    assert CommunitiesUser.find_by_id(user_id) is None
+
+
+@mark.order(20)
+def test_password_reset(base_client: FlaskTestClient, mock_mail):
+    user_id = base_client.post(
+        "/signup/",
+        json=BASE_CREDENTIALS,
+        expected_json={"a": "Success", "id": int},
+    )["id"]
+
+    base_client.post(
+        "/password-reset/",
+        json={"email": BASE_CREDENTIALS.get("email")},
+        expected_a=True,
+    )
+    base_client.post(
+        "/password-reset/",
+        json={"email": "wrong@email.test"},
+        expected_a=False,
+    )
 
     assert len(mock_mail) == 2
     mail_message: Message = mock_mail[-1]
     assert mail_message.subject == EmailType.PASSWORD.theme
 
+    link_start = "https://xieffect.ru/resetpassword/"
+    assert link_start in mail_message.html
     code = mail_message.html.partition(link_start)[2].partition('/"')[0]
-    wrong_code = EmailType.PASSWORD.generate_code("wrong@email.test")
 
-    confirm_data = (
-        (code, "Success"),
-        ("Wrong code", "Code error"),
-        (wrong_code, "User doesn't exist"),
+    base_client.post(
+        "password-reset/confirm/",
+        json={"code": code, "password": "54321"},
+        expected_a="Success",
     )
 
-    for confirm, message in confirm_data:
-        pass_data = {"code": confirm, "password": "54321"}
-        assert check_code(
-            base_client.post(f"{url}confirm/", json=pass_data)
-        )["a"] == message
-
-    check_code(base_client.post("/signout/"))
-
-    delete_by_id(response.get("id"), User)
+    # Clearing database after test
+    delete_by_id(user_id, User)
 
 
-@mark.order(15)
-def test_sio_connection(client: FlaskClient):
+@mark.parametrize(
+    ("code", "message"),
+    [
+        param("Wrong code", "Code error", id="wrong_code"),
+        param(
+            EmailType.PASSWORD.generate_code("wrong@email.test"),
+            "User doesn't exist",
+            id="bad_email",
+        ),
+    ],
+)
+def test_password_reset_fails(base_client: FlaskTestClient, code: str, message: str):
+    base_client.post(
+        "password-reset/confirm/",
+        json={"code": code, "password": "54321"},
+        expected_a=message,
+    )
+
+
+@mark.order(30)
+def test_sio_connection(client: FlaskTestClient):
     sio_client = SocketIOTestClient(client)
     assert sio_client.connected.get("/") is True
 
 
-@mark.order(16)
-def test_sio_unauthorized(base_client: FlaskClient):
+@mark.order(32)
+def test_sio_unauthorized(base_client: FlaskTestClient):
     sio_client = SocketIOTestClient(base_client)
     assert sio_client.connected.get("/") is False
 
@@ -219,7 +262,7 @@ def test_sio_unauthorized(base_client: FlaskClient):
     ids=["debug", "production"],
 )
 def test_go(
-    client: FlaskClient,
+    client: FlaskTestClient,
     mocker: MockerFixture,
     debug: bool,
     key: str,
@@ -228,5 +271,4 @@ def test_go(
 ):
     mock = mocker.patch("users.reglog_rst.current_app")
     mock.debug = debug
-    response = check_code(client.get("/go/"))
-    assert response.get(key) == (test_user_id if value is None else value)
+    client.get("/go/", expected_json={key: test_user_id if value is None else value})
