@@ -136,11 +136,12 @@ def test_roles(
     four_update_role_data = update_role_data.copy()
     four_update_role_data["permissions"] = permissions
     successful_data.pop("permissions")
-    socketio_client.assert_emit_ack(
+    real_permissions = socketio_client.assert_emit_ack(
         event_name="update_role",
         data=four_update_role_data,
-        expected_data={"permissions": permissions, **successful_data},
-    )
+        expected_data={"permissions": list, **successful_data},
+    )["permissions"]
+    assert set(real_permissions) == set(permissions)
     socketio_client2.assert_only_received("update_role", successful_data)
 
     update_role_data["permissions"] = incorrect_permissions
