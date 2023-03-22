@@ -2,53 +2,43 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code, dict_equal
+from flask_fullstack import dict_cut, SocketIOTestClient, assert_contains
+from flask_fullstack.utils.kebabs import dekebabify
 from pytest import fixture
 
 from common import open_file, User
-from common.testing import SocketIOTestClient
 from communities.base import Community
 from communities.services.tasks_db import Task
-from test.conftest import delete_by_id
+from test.conftest import delete_by_id, FlaskTestClient
 from test.vault_test import create_file
 
 
 @fixture
-def file_id(client: FlaskClient) -> int:
+def file_id(client: FlaskTestClient) -> int:
     with open_file("xieffect/test/json/test-1.json", "rb") as f:
         contents: bytes = f.read()
-    return check_code(
-        client.post(
-            "/files/",
-            content_type="multipart/form-data",
-            data={"file": create_file("task-file", contents)},
-        )
-    ).get("id")
+    return client.post(
+        "/files/",
+        content_type="multipart/form-data",
+        data={"file": create_file("task-file", contents)},
+        expected_json={"id": int},
+    )["id"]
 
 
 def assert_create_task(socketio_client: SocketIOTestClient, task_data: dict) -> dict:
-    result_data = socketio_client.assert_emit_ack("new_task", task_data)
-    assert isinstance(result_data, dict)
-    assert dict_equal(result_data, task_data, "page_id", "name")
-    return result_data
+    return socketio_client.assert_emit_ack(
+        event_name="new_task",
+        data=task_data,
+        expected_data=dict_cut(task_data, "page_id", "name"),
+    )
 
 
 def test_task_crud(
-    client: FlaskClient,
-    multi_client: Callable[[str], FlaskClient],
+    client: FlaskTestClient,
+    multi_client: Callable[[str], FlaskTestClient],
     test_community: int,
     file_id: int,
 ):
-    def assert_permission_check(method):
-        assert (
-            check_code(
-                method,
-                status_code=403,
-            ).get("a")
-            == "Permission Denied: Participant not found"
-        )
-
     task_data = {
         "community_id": test_community,
         "page_id": 1,
@@ -60,14 +50,18 @@ def test_task_crud(
     guest_sio = SocketIOTestClient(guest)
 
     guest_sio.assert_emit_ack(
-        "new_task",
-        task_data,
-        code=403,
-        message="Permission Denied: Participant not found",
+        event_name="new_task",
+        data=task_data,
+        expected_code=403,
+        expected_message="Permission Denied: Participant not found",
     )
     added_task = assert_create_task(owner_sio, task_data)
     task_id = added_task.get("id")
-    assert_permission_check(guest.get(f"/communities/{test_community}/tasks/{task_id}"))
+    guest.get(
+        f"/communities/{test_community}/tasks/{task_id}/",
+        expected_a="Permission Denied: Participant not found",
+        expected_status=403,
+    )
 
     updated_task_data = {
         "community_id": test_community,
@@ -76,74 +70,65 @@ def test_task_crud(
         "description": "added description",
     }
     guest_sio.assert_emit_ack(
-        "update_task",
-        updated_task_data,
-        code=403,
-        message="Permission Denied: Participant not found",
+        event_name="update_task",
+        data=updated_task_data,
+        expected_code=403,
+        expected_message="Permission Denied: Participant not found",
     )
     owner_sio.assert_emit_success("update_task", updated_task_data)
-    response = check_code(client.get(f"/communities/{test_community}/tasks/{task_id}/"))
-    assert isinstance(response, dict)
-    assert dict_equal(response, updated_task_data, "name", "description")
-    files = response.get("files")
-    assert isinstance(files, list)
-    assert len(files) != 0
-    file = files[0]
-    assert isinstance(file, dict)
-    assert file.get("id") == file_id
+    client.get(
+        f"/communities/{test_community}/tasks/{task_id}/",
+        expected_json={
+            "name": updated_task_data["name"],
+            "description": updated_task_data["description"],
+            "files": [{"id": file_id}],
+        },
+    )
 
     updated_task_data["files"] = []
     owner_sio.assert_emit_success("update_task", updated_task_data)
-    response = check_code(client.get(f"/communities/{test_community}/tasks/{task_id}/"))
-    files = response.get("files")
-    assert isinstance(files, list)
-    assert len(files) == 0
+    client.get(
+        f"/communities/{test_community}/tasks/{task_id}/",
+        expected_json={"files": []},
+    )
 
     delete_task_data = {"community_id": test_community, "task_id": task_id}
     guest_sio.assert_emit_ack(
-        "delete_task",
-        delete_task_data,
-        code=403,
-        message="Permission Denied: Participant not found",
+        event_name="delete_task",
+        data=delete_task_data,
+        expected_code=403,
+        expected_message="Permission Denied: Participant not found",
     )
     owner_sio.assert_emit_success("delete_task", delete_task_data)
-    response = check_code(
-        client.get(f"/communities/{test_community}/tasks/{task_id}/"), status_code=404
-    ).get("a")
-    assert response == "Task not found"
+    client.get(
+        f"/communities/{test_community}/tasks/{task_id}/",
+        expected_status=404,
+        expected_a="Task not found",
+    )
 
 
 def test_tasks_pagination(
-    client: FlaskClient, socketio_client: SocketIOTestClient, test_community: int
+    client: FlaskTestClient, socketio_client: SocketIOTestClient, test_community: int
 ):
-    pagination = {"counter": 0}
+    assert len(list(client.paginate(f"/communities/{test_community}/tasks/"))) == 0
+
     task_data = {
-        "community_id": test_community,
         "page_id": 1,
         "name": "New task name",
     }
-
-    response = check_code(
-        client.get(f"/communities/{test_community}/tasks/", json=pagination)
+    added_task = assert_create_task(
+        socketio_client, dict(task_data, community_id=test_community)
     )
-    assert isinstance(response, dict)
-    assert isinstance(response.get("results"), list)
-    assert len(response.get("results")) == 0
+    assert_contains(added_task, task_data)
 
-    added_task = assert_create_task(socketio_client, task_data)
-
-    response = check_code(
-        client.get(f"/communities/{test_community}/tasks/", json=pagination)
-    )
-    assert isinstance(response, dict)
-    tasks = response.get("results")
-    assert isinstance(tasks, list)
-    assert len(tasks) != 0
-    assert dict_equal(tasks[0], added_task)
+    tasks = list(client.paginate(f"/communities/{test_community}/tasks/"))
+    assert len(tasks) == 1
+    assert_contains(dekebabify(tasks[0]), task_data)
 
 
 def test_task_create_with_wrong_files(
-    socketio_client: SocketIOTestClient, test_community: int
+    socketio_client: SocketIOTestClient,
+    test_community: int,
 ):
     task_data = {
         "community-id": test_community,
@@ -152,12 +137,18 @@ def test_task_create_with_wrong_files(
         "files": [12354],
     }
     socketio_client.assert_emit_ack(
-        "new_task", task_data, code=404, message="File not found"
+        event_name="new_task",
+        data=task_data,
+        expected_code=404,
+        expected_message="File not found",
     )
 
     task_data["files"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     socketio_client.assert_emit_ack(
-        "new_task", task_data, code=400, message="Too many files"
+        event_name="new_task",
+        data=task_data,
+        expected_code=400,
+        expected_message="Too many files",
     )
 
 

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from flask_fullstack import SocketIOTestClient
 from pytest import fixture
 
 from common import User
-from common.testing import SocketIOTestClient, dict_equal
 from communities.base import Community, Participant
 from test.conftest import delete_by_id
 
@@ -13,13 +13,11 @@ COMMUNITY_DATA: dict = {"name": "test"}
 def assert_create_community(
     socketio_client: SocketIOTestClient, community_data: dict
 ) -> int:
-    result_data = socketio_client.assert_emit_ack("new_community", community_data)
-    assert isinstance(result_data, dict)
-    assert dict_equal(result_data, community_data, *community_data.keys())
-
-    community_id = result_data.get("id")
-    assert isinstance(community_id, int)
-    return community_id
+    return socketio_client.assert_emit_ack(
+        event_name="new_community",
+        data=community_data,
+        expected_data=dict(community_data, id=int),
+    )["id"]
 
 
 @fixture

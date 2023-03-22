@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from flask_fullstack import dict_equal, check_code
+from flask_fullstack import SocketIOTestClient, assert_contains, dict_reduce
 
-from common.testing import SocketIOTestClient, FlaskClient
 from communities.base import Community
 from communities.base.roles_db import (
     LIMITING_QUANTITY_ROLES,
@@ -10,18 +9,16 @@ from communities.base.roles_db import (
     Role,
     RolePermission,
 )
-from test.conftest import delete_by_id
+from test.conftest import delete_by_id, FlaskTestClient
 
 
-def get_roles_list(client: FlaskClient, community_id: int) -> list[dict]:
+def get_roles_list(client: FlaskTestClient, community_id: int) -> list[dict]:
     """Check the success of getting the list of roles"""
-    result = check_code(client.get(f"/communities/{community_id}/roles/"))
-    assert isinstance(result, list)
-    return result
+    return client.get(f"/communities/{community_id}/roles/", expected_json=list)
 
 
 def test_roles(
-    client: FlaskClient,
+    client: FlaskTestClient,
     socketio_client: SocketIOTestClient,
     test_community: int,
 ):
@@ -48,9 +45,11 @@ def test_roles(
     role_data.update(community_id_json)
 
     for _ in range(LIMITING_QUANTITY_ROLES):
-        result_data = socketio_client.assert_emit_ack("new_role", role_data)
-        assert dict_equal(result_data, successful_role_data, *successful_role_data.keys())
-        assert isinstance(result_data.get("id"), int)
+        socketio_client.assert_emit_ack(
+            event_name="new_role",
+            data=role_data,
+            expected_data=dict(successful_role_data, id=int),
+        )
         socketio_client2.assert_only_received("new_role", successful_role_data)
 
     socketio_client.assert_emit_success(
@@ -62,7 +61,7 @@ def test_roles(
 
     # Delete 50 roles
     for data in get_roles_list(client, test_community):
-        assert dict_equal(data, successful_role_data, *successful_role_data)
+        assert_contains(data, successful_role_data)
         data = dict(community_id_json, role_id=data["id"])
         socketio_client.assert_emit_success("delete_role", data)
         socketio_client2.assert_only_received("delete_role", data)
@@ -79,16 +78,23 @@ def test_roles(
     roles_data_list = [role_data, second_role_data, third_role_data]
 
     socketio_client.assert_emit_ack(
-        "new_role", incorrect_role_data, code=400, message="Incorrect permissions"
+        event_name="new_role",
+        data=incorrect_role_data,
+        expected_code=400,
+        expected_message="Incorrect permissions",
     )
 
     for data in roles_data_list:
-        result_data = socketio_client.assert_emit_ack("new_role", data)
-        data.pop("community_id")
-        assert dict_equal(data, result_data, *data.keys())
-        socketio_client2.assert_only_received("new_role", data)
-        role_id = result_data.get("id")
-        assert isinstance(role_id, int)
+        expected_data = {
+            **dict_reduce(data, "community_id"),
+            "id": int,
+        }
+        role_id: int = socketio_client.assert_emit_ack(
+            event_name="new_role",
+            data=data,
+            expected_data=expected_data,
+        )["id"]
+        socketio_client2.assert_only_received("new_role", expected_data)
 
     assert len(get_roles_list(client, community_id=test_community)) == len(
         roles_data_list
@@ -110,35 +116,39 @@ def test_roles(
     update_data_list = [update_role_data, second_update_role_data]
 
     for data in update_data_list:
-        result_data = socketio_client.assert_emit_ack("update_role", data)
-        assert dict_equal(
-            result_data,
-            successful_data,
-            *successful_data.keys(),
+        socketio_client.assert_emit_ack(
+            event_name="update_role",
+            data=data,
+            expected_data=successful_data,
         )
         socketio_client2.assert_only_received("update_role", successful_data)
 
     third_update_role_data = update_role_data.copy()
     third_update_role_data["permissions"] = []
     successful_data["permissions"] = []
-    result_data = socketio_client.assert_emit_ack("update_role", third_update_role_data)
-    assert dict_equal(result_data, successful_data, *successful_data.keys())
+    socketio_client.assert_emit_ack(
+        event_name="update_role",
+        data=third_update_role_data,
+        expected_data=successful_data,
+    )
     socketio_client2.assert_only_received("update_role", successful_data)
 
     four_update_role_data = update_role_data.copy()
     four_update_role_data["permissions"] = permissions
     successful_data.pop("permissions")
-    result_data = socketio_client.assert_emit_ack("update_role", four_update_role_data)
-    assert dict_equal(result_data, successful_data, *successful_data.keys())
-    assert set(result_data["permissions"]) == set(permissions)
+    socketio_client.assert_emit_ack(
+        event_name="update_role",
+        data=four_update_role_data,
+        expected_data={"permissions": permissions, **successful_data},
+    )
     socketio_client2.assert_only_received("update_role", successful_data)
 
     update_role_data["permissions"] = incorrect_permissions
     socketio_client.assert_emit_ack(
-        "update_role",
-        update_role_data,
-        code=400,
-        message="Incorrect permissions",
+        event_name="update_role",
+        data=update_role_data,
+        expected_code=400,
+        expected_message="Incorrect permissions",
     )
 
     # Check successfully close roles-room
