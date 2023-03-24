@@ -98,5 +98,5 @@ class CommunitiesEventSpace(EventSpace):
         community: Community,
         user: User,
     ):
-        community.deleted = True
+        community.soft_delete()
         event.emit_convert(user_id=user.id, community_id=community.id)

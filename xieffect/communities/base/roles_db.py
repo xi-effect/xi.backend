@@ -9,7 +9,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
-from .meta_db import Base, db, Community, Participant
+from common import Base, db
+from common.abstract import SoftDeletable
+from communities.base.meta_db import Community, Participant
 
 LIMITING_QUANTITY_ROLES: int = 50
 
@@ -19,7 +21,7 @@ class PermissionType(TypeEnum):
     MANAGE_ROLES = 1
 
 
-class Role(Base, Identifiable):
+class Role(SoftDeletable, Identifiable):
     __tablename__ = "cs_roles"
     not_found_text = "Role not found"
 
@@ -63,16 +65,18 @@ class Role(Base, Identifiable):
         )
 
     @classmethod
-    def find_by_id(cls, role_id: int) -> Self | None:
-        return db.get_first(select(cls).filter_by(id=role_id))
+    def find_by_id(cls, entry_id: int) -> Self | None:
+        return cls.find_first_not_deleted(id=entry_id)
 
     @classmethod
     def find_by_community(cls, community_id: int) -> list[Self]:
-        return db.get_all(select(cls).filter_by(community_id=community_id))
+        return cls.find_all_not_deleted(community_id=community_id)
 
     @classmethod
     def get_count_by_community(cls, community_id: int) -> int:
-        return db.get_first(select(count(cls.id)).filter_by(community_id=community_id))
+        return db.get_first(
+            select(count(cls.id)).filter_by(community_id=community_id, deleted=None)
+        )
 
 
 class RolePermission(Base):

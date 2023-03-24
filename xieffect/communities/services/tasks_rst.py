@@ -28,7 +28,7 @@ class Tasks(Resource):
             finish - start,
             Task.updated,
             community_id=community.id,
-            deleted=False,
+            deleted=None,
         )
 
 

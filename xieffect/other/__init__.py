@@ -1,3 +1,4 @@
+from .database_cli import remove_stale_blueprint
 from .discorder import (
     send_file_message as send_file_discord_message,
     send_message as send_discord_message,

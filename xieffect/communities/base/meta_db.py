@@ -3,16 +3,16 @@ from __future__ import annotations
 from typing import Self
 
 from flask_fullstack import Identifiable, TypeEnum, PydanticModel
-from sqlalchemy import Column, ForeignKey, select, Boolean, literal
+from sqlalchemy import Column, ForeignKey, select, literal
 from sqlalchemy.orm import relationship, aliased
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Enum
 
-from common import Base, db
-from common.abstract import LinkedListNode
+from common import db
+from common.abstract import SoftDeletable, LinkedListNode
 from vault.files_db import File
 
 
-class Community(Base, Identifiable):
+class Community(SoftDeletable, Identifiable):
     __tablename__ = "community"
     not_found_text = "Community not found"
 
@@ -20,7 +20,6 @@ class Community(Base, Identifiable):
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     invite_count = Column(Integer, nullable=False, default=0)
-    deleted = Column(Boolean, nullable=False, default=False)
 
     avatar_id = Column(
         Integer,
@@ -59,7 +58,7 @@ class Community(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
-        return cls.find_first_by_kwargs(id=entry_id, deleted=False)
+        return cls.find_first_not_deleted(id=entry_id)
 
 
 class ParticipantRole(TypeEnum):
@@ -121,7 +120,7 @@ class Participant(LinkedListNode, Identifiable):
         return cls.find_first_by_kwargs(community_id=community_id, user_id=user_id)
 
     @classmethod
-    def get_communities_list(cls, user_id: int) -> list[Self]:
+    def get_communities_list(cls, user_id: int) -> list[Community]:
         root = aliased(cls)
         node = aliased(cls)
 
@@ -138,8 +137,7 @@ class Participant(LinkedListNode, Identifiable):
         )
 
         return db.get_all(
-            select(Community)
-            .filter_by(deleted=False)
+            Community.select_not_deleted()
             .join(result, Community.id == result.c.community_id)
             .order_by(cte.c.level)
         )

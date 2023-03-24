@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from os import remove
 
 from flask import send_from_directory, Response
 from flask_fullstack import RequestParser
@@ -9,8 +8,8 @@ from flask_restx import Resource
 from werkzeug.datastructures import FileStorage
 from werkzeug.exceptions import NotFound
 
-from common import ResourceController, User, app, absolute_path
-from vault import File
+from common import ResourceController, User, app
+from vault.files_db import File, FILES_PATH
 
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 4  # 4 MiB max file size
 controller = ResourceController("files")
@@ -32,7 +31,7 @@ class FileUploader(Resource):
     @controller.marshal_with(File.FullModel)
     def post(self, user: User, file_storage: FileStorage) -> File:
         file = File.create(user, file_storage.filename)
-        file_storage.save(absolute_path(f"files/vault/{file.filename}"))
+        file_storage.save(FILES_PATH + file.filename)
         return file
 
 
@@ -40,7 +39,7 @@ class FileUploader(Resource):
 class FileAccessor(Resource):
     def get(self, filename: str) -> Response:
         try:
-            return send_from_directory(absolute_path("files/vault/"), filename)
+            return send_from_directory(FILES_PATH, filename)
         except NotFound:  # TODO pragma: no coverage
             with suppress(ValueError):
                 file = File.find_by_id(int(filename.partition("-")[0]))
@@ -58,5 +57,4 @@ class FileManager(Resource):
     def delete(self, user: User, file: File) -> None:
         if file.uploader_id != user.id:
             controller.abort(403, "Not your file")
-        remove(absolute_path(f"files/vault/{file.filename}"))
-        file.delete()
+        file.soft_delete()
