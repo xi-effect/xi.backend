@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import Identifiable, TypeEnum, PydanticModel
 from sqlalchemy import Column, ForeignKey, select, Boolean, literal
 from sqlalchemy.orm import relationship, aliased
@@ -43,7 +45,7 @@ class Community(Base, Identifiable):
         name: str,
         creator_id: int,
         description: str | None,
-    ) -> Community:
+    ) -> Self:
         entry: cls = super().create(name=name, description=description)
         participant = Participant.add(
             user_id=creator_id,
@@ -56,7 +58,7 @@ class Community(Base, Identifiable):
         return entry
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> Community | None:
+    def find_by_id(cls, entry_id: int) -> Self | None:
         return cls.find_first_by_kwargs(id=entry_id, deleted=False)
 
 
@@ -107,7 +109,7 @@ class Participant(LinkedListNode, Identifiable):
     )
 
     @classmethod
-    def create(cls, community_id: int, user_id: int, role: ParticipantRole):
+    def create(cls, community_id: int, user_id: int, role: ParticipantRole) -> Self:
         return super().create(
             community_id=community_id,
             user_id=user_id,
@@ -115,11 +117,11 @@ class Participant(LinkedListNode, Identifiable):
         )
 
     @classmethod
-    def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
+    def find_by_ids(cls, community_id: int, user_id: int) -> Self | None:
         return cls.find_first_by_kwargs(community_id=community_id, user_id=user_id)
 
     @classmethod
-    def get_communities_list(cls, user_id: int) -> list[Community]:
+    def get_communities_list(cls, user_id: int) -> list[Self]:
         root = aliased(cls)
         node = aliased(cls)
 

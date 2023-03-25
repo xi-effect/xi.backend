@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import PydanticModel
 from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
@@ -31,15 +33,15 @@ class File(Base):
             callback(filename=orm_object.filename)  # TODO allow this in FFS simpler!
 
     @classmethod
-    def create(cls, uploader: User, name: str) -> File:
+    def create(cls, uploader: User, name: str) -> Self:
         return super().create(name=name, uploader=uploader)
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> File | None:
+    def find_by_id(cls, entry_id: int) -> Self | None:
         return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_ids(cls, entry_ids: list) -> list[File]:
+    def find_by_ids(cls, entry_ids: list) -> list[Self]:
         stmt = select(cls).filter(cls.id.in_(entry_ids))
         return db.get_all(stmt)
 
@@ -48,5 +50,5 @@ class File(Base):
         return f"{self.id}-{self.name}"
 
     @classmethod
-    def get_for_mub(cls, offset: int, limit: int) -> list[File]:
+    def get_for_mub(cls, offset: int, limit: int) -> list[Self]:
         return db.get_paginated(select(File).order_by(cls.id.desc()), offset, limit)

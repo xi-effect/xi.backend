@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import PydanticModel
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
@@ -53,15 +55,15 @@ class CommunitiesUser(Base):
         a: str = "Success"
 
     @classmethod
-    def _create_empty(cls, user_id: int) -> CommunitiesUser:
+    def _create_empty(cls, user_id: int) -> Self:
         return cls.create(id=user_id)
 
     @classmethod
-    def find_by_id(cls, user_id: int) -> CommunitiesUser | None:
+    def find_by_id(cls, user_id: int) -> Self | None:
         return cls.find_first_by_kwargs(id=user_id)
 
     @classmethod
-    def find_or_create(cls, user_id: int) -> CommunitiesUser:
+    def find_or_create(cls, user_id: int) -> Self:
         return cls.find_by_id(user_id) or cls._create_empty(user_id)
 
     def reorder_community_list(

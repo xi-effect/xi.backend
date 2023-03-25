@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import PydanticModel, Identifiable
 from sqlalchemy import Column, select, ForeignKey, sql
 from sqlalchemy.orm import relationship
@@ -51,7 +53,7 @@ class Post(Base, Identifiable):
     @classmethod
     def find_by_community(
         cls, community_id: int, offset: int, limit: int
-    ) -> list[Post]:
+    ) -> list[Self]:
         stmt = select(cls).filter_by(community_id=community_id, deleted=False)
         return db.get_paginated(stmt, offset, limit)
 
@@ -62,7 +64,7 @@ class Post(Base, Identifiable):
         description: str | None,
         user_id: int,
         community_id: int,
-    ) -> Post:
+    ) -> Self:
         return super().create(
             title=title,
             description=description,
@@ -71,5 +73,5 @@ class Post(Base, Identifiable):
         )
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> Post | None:
+    def find_by_id(cls, entry_id: int) -> Self | None:
         return db.get_first(select(cls).filter_by(id=entry_id, deleted=False))

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import PydanticModel, TypeEnum, Identifiable
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
@@ -66,7 +68,7 @@ class Feedback(Base, Identifiable):
         db.session.flush()
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> Feedback | None:
+    def find_by_id(cls, entry_id: int) -> Self | None:
         return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
@@ -76,7 +78,7 @@ class Feedback(Base, Identifiable):
         limit: int,
         user_id: int | None,
         feedback_type: FeedbackType | None,
-    ) -> list[Feedback]:
+    ) -> list[Self]:
         stmt = select(cls)
         if user_id is not None:
             stmt = stmt.filter_by(user_id=user_id)

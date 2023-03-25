@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import UserRole, PydanticModel, Identifiable
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
@@ -70,15 +72,15 @@ class User(Base, UserRole, Identifiable):
     )
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> User | None:
+    def find_by_id(cls, entry_id: int) -> Self | None:
         return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_identity(cls, identity: int) -> User | None:
+    def find_by_identity(cls, identity: int) -> Self | None:
         return cls.find_by_id(identity)
 
     @classmethod
-    def find_by_handle(cls, handle: str | None, exclude_id: int = None) -> User | None:
+    def find_by_handle(cls, handle: str | None, exclude_id: int = None) -> Self | None:
         if handle is None:
             return None
         stmt = select(cls).filter_by(handle=handle)
@@ -87,7 +89,7 @@ class User(Base, UserRole, Identifiable):
         return db.get_first(stmt)
 
     @classmethod
-    def find_by_email_address(cls, email) -> User | None:
+    def find_by_email_address(cls, email) -> Self | None:
         return db.get_first(select(cls).filter_by(email=email))
 
     @classmethod  # TODO this class shouldn't know about invites
@@ -115,7 +117,7 @@ class User(Base, UserRole, Identifiable):
     @classmethod
     def search_by_params(
         cls, offset: int, limit: int, **kwargs: str | None
-    ) -> list[User]:
+    ) -> list[Self]:
         stmt = select(cls)
         for key, value in kwargs.items():
             if value is not None:
@@ -129,13 +131,13 @@ class User(Base, UserRole, Identifiable):
         search: str | None,
         offset: int,
         limit: int,
-    ) -> list[User]:
+    ) -> list[Self]:
         stmt = select(cls).filter(cls.id != exclude_id)
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
         return db.get_paginated(stmt, offset, limit)
 
-    def get_identity(self):
+    def get_identity(self) -> int:
         return self.id
 
     def change_email(self, new_email: str) -> None:
