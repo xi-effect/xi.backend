@@ -90,7 +90,7 @@ class CommunitiesEventSpace(EventSpace):
         participant_id: int
 
     @controller.argument_parser(UpdateModel)
-    @controller.mark_duplex(use_event=True)
+    @controller.mark_duplex(Participant.FullModel, use_event=True)
     @check_permission(controller, PermissionType.MANAGE_PARTICIPANT)
     @controller.database_searcher(Participant)
     @controller.marshal_ack(Participant.FullModel)
@@ -101,6 +101,7 @@ class CommunitiesEventSpace(EventSpace):
         community: Community,
         role_ids: list[int],
     ):
+        participant.community_id = community.id
         role_ids_from_db = set(
             ParticipantRole.get_role_ids(participant_id=participant.id)
         )
@@ -120,7 +121,6 @@ class CommunitiesEventSpace(EventSpace):
             participant_id=participant.id, role_ids=received_role_ids - role_ids_from_db
         )
         event.emit_convert(participant, self.room_name(community.id))
-
         return participant
 
     class DeleteModel(CommunityIdModel):

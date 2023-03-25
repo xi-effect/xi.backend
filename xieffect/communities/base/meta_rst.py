@@ -26,5 +26,5 @@ class ParticipantSearcher(Resource):
     @controller.jwt_authorizer(User, check_only=True)
     @controller.argument_parser(parser)
     @controller.lister(10, Participant.FullModel)
-    def get(self, search: str | None, start: int, finish: int):
+    def get(self, search: str, start: int, finish: int):
         return Participant.search_by_username(search, start, finish - start)

@@ -76,12 +76,12 @@ class Participant(Base, Identifiable):
     @classmethod
     def search_by_username(
         cls,
-        search: str | None,
+        search: str,
         offset: int,
         limit: int,
     ) -> list[Participant]:
         stmt = select(cls).options(selectinload(cls.roles))
-        if search is None:
+        if len(search) == 0:
             return db.session.get_paginated(stmt, offset, limit)
         return db.session.get_paginated(
             stmt.join(User, User.id == cls.id).where(

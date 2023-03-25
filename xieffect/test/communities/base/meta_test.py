@@ -97,9 +97,8 @@ def test_participant(
     socketio_client: SocketIOTestClient,
     test_community: int,
     create_participant_role,
-    full_client,
     get_role_ids,
-    get_roles_list_by_ids
+    get_roles_list_by_ids,
 ):
     socketio_client2 = SocketIOTestClient(client)
     community_id_json = {"community_id": test_community}
@@ -113,8 +112,11 @@ def test_participant(
         community_id=test_community,
         client=socketio_client.flask_test_client,
     )
-
+    response = client.get("/home/")
+    user_id = check_code(response, get_json=True)["id"]
+    username = check_code(response, get_json=True)["username"]
     participant_id = get_participants_list(client, "")[0].get("id")
+    assert len(get_participants_list(client, username)) != 0
     role_ids = get_role_ids(client, test_community)
     assert isinstance(participant_id, int)
     participant_data = {
@@ -122,17 +124,59 @@ def test_participant(
         "participant_id": participant_id,
         **community_id_json,
     }
-    # print(participant_data)
 
-    response = client.get("/home/")
-    user_id = check_code(response, get_json=True)["id"]
     roles = get_roles_list_by_ids(client, test_community, role_ids)
-    successful_participant_data = {**community_id_json, "id": participant_id, "user_id": user_id, "roles": roles}
-    participant_result = socketio_client.assert_emit_ack("update_participant_role", participant_data)
+    successful_participant_data = {
+        **community_id_json,
+        "id": participant_id,
+        "user_id": user_id,
+        "roles": roles,
+    }
+    participant_result = socketio_client.assert_emit_ack(
+        "update_participant_role", participant_data
+    )
+
+    assert dict_equal(
+        participant_result,
+        successful_participant_data,
+        *successful_participant_data.keys()
+    )
+
     socketio_client2.assert_only_received("update_participant_role", successful_participant_data)
 
-    for role in participant_result['roles']:
-        assert role in roles
+    create_participant_role(
+        permission_type="MANAGE_PARTICIPANT",
+        community_id=test_community,
+        client=socketio_client.flask_test_client,
+    )
+
+    participant_data['role_ids'] = role_ids[1:]
+    second_participant_result = socketio_client.assert_emit_ack(
+        "update_participant_role", participant_data
+    )
+
+    successful_participant_data['roles'] = get_roles_list_by_ids(client, test_community, role_ids[1:])
+
+    assert dict_equal(
+        second_participant_result,
+        successful_participant_data,
+        *successful_participant_data.keys()
+    )
+
+    socketio_client2.assert_only_received("update_participant_role", successful_participant_data)
+
+    # delete participant data
+
+    delete_data = {**community_id_json, "participant_id": participant_id}
+
+    create_participant_role(
+        permission_type="MANAGE_PARTICIPANT",
+        community_id=test_community,
+        client=socketio_client.flask_test_client,
+    )
+
+    socketio_client2.assert_emit_success("delete_participant_role", delete_data)
+    socketio_client.assert_only_received("delete_participant_role", delete_data)
 
     # Check successfully close participants-room
     for user in (socketio_client, socketio_client2):
