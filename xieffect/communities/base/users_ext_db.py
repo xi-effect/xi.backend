@@ -39,7 +39,9 @@ class CommunitiesUser(Base):
         communities: list[Community.IndexModel]
 
         @classmethod
-        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context):
+        def callback_convert(
+            cls, callback, orm_object: CommunitiesUser, **context
+        ) -> None:
             callback(
                 communities=[
                     Community.IndexModel.convert(community, **context)

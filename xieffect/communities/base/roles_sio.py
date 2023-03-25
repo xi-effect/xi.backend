@@ -34,7 +34,7 @@ def check_permissions(function):
 @controller.route()
 class RolesEventSpace(EventSpace):
     @classmethod
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-roles-{community_id}"
 
     class CommunityIdModel(BaseModel):

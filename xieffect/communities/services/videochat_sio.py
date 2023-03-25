@@ -15,7 +15,7 @@ controller = EventController()
 @controller.route()
 class VideochatEventSpace(EventSpace):
     @classmethod
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-videochat-{community_id}"
 
     class CommunityIdModel(BaseModel):

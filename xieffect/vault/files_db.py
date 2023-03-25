@@ -27,7 +27,7 @@ class File(Base):
         filename: str
 
         @classmethod
-        def callback_convert(cls, callback, orm_object: File, **_):
+        def callback_convert(cls, callback, orm_object: File, **_) -> None:
             callback(filename=orm_object.filename)  # TODO allow this in FFS simpler!
 
     @classmethod

@@ -17,7 +17,7 @@ controller = EventController()
 @controller.route()
 class PostEventSpace(EventSpace):
     @classmethod
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-news-{community_id}"
 
     class CommunityIdModel(BaseModel):

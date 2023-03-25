@@ -116,7 +116,9 @@ class User(Base, UserRole, Identifiable):
         return new_user
 
     @classmethod
-    def search_by_params(cls, offset: int, limit: int, **kwargs: str | None):
+    def search_by_params(
+        cls, offset: int, limit: int, **kwargs: str | None
+    ) -> list[User]:
         stmt = select(cls)
         for k, v in kwargs.items():
             if v is not None:

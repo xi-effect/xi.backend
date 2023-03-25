@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import suppress
 from os import remove
 
-from flask import send_from_directory
+from flask import send_from_directory, Response
 from flask_fullstack import RequestParser
 from flask_restx import Resource
 from werkzeug.datastructures import FileStorage
@@ -30,7 +30,7 @@ class FileUploader(Resource):
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
     @controller.marshal_with(File.FullModel)
-    def post(self, user: User, file_storage: FileStorage):
+    def post(self, user: User, file_storage: FileStorage) -> File:
         file = File.create(user, file_storage.filename)
         file_storage.save(absolute_path(f"files/vault/{file.filename}"))
         return file
@@ -38,7 +38,7 @@ class FileUploader(Resource):
 
 @controller.route("/<filename>/")
 class FileAccessor(Resource):
-    def get(self, filename: str):
+    def get(self, filename: str) -> Response:
         try:
             return send_from_directory(absolute_path("files/vault/"), filename)
         except NotFound:  # TODO pragma: no coverage

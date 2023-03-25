@@ -44,7 +44,7 @@ from vault import files_namespace, mub_files_namespace
 logger = Logger("flask-fullstack", "WARN")
 
 
-def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
+def log_stuff(level: str, message: str) -> None:  # TODO # noqa: WPS231
     if app.debug:
         print(message, **({"file": stderr} if level == "error" else {}))
     else:  # pragma: no cover
@@ -132,6 +132,6 @@ app.after_request(db.with_autocommit)
 
 
 @app.cli.command("form-sio-docs")
-def form_sio_docs():  # TODO pragma: no coverage
+def form_sio_docs() -> None:  # TODO pragma: no coverage
     with open_file("files/async-api.json", "w") as f:
         dump_json(socketio.docs(), f, ensure_ascii=False)

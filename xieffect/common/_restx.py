@@ -9,12 +9,12 @@ from ._marshals import success_response, message_response, ResponseDoc  # noqa: 
 
 
 class ResourceController(_ResourceController):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         success_response.register_model(self)
         message_response.register_model(self)
 
-    def abort(self, code: int, message: str = None, **kwargs):
+    def abort(self, code: int, message: str = None, **kwargs) -> None:
         default_abort(code, a=message, **kwargs)
 
     def a_response(self):

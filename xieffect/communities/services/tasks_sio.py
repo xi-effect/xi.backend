@@ -38,7 +38,7 @@ def check_files(files: list[int]) -> list[int]:
 @controller.route()
 class TasksEventSpace(EventSpace):
     @classmethod
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-tasks-{community_id}"
 
     class CommunityIdModel(BaseModel):
