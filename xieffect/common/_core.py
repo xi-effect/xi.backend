@@ -46,8 +46,8 @@ app.secrets_from_env("hope it's local")
 app.configure_cors()
 
 db_url: str = getenv(
-    "DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db")
-)  # noqa: WPS336 E501
+    "DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db")  # noqa: WPS336
+)
 db = SQLAlchemy(app, db_url)  # echo=True
 Base = db.Model
 

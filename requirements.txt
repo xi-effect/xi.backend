@@ -23,61 +23,60 @@ flake8~=4.0.1
 wemake-python-styleguide~=0.17.0
 isort~=5.12.0
 
+# Linters:Random
+flake8-2020==1.6.1  # sys.version vs sys.version_info
+flake8-pie==0.16.0  # misc lints
+
 # Linters:Bugs
-flake8-2020==1.6.1
-flake8-alfred==1.1.1
-flake8-debugger==4.1.2
-flake8-encodings==0.5.0.post1
-flake8-secure-coding-standard==1.4.0
-flake8-unused-arguments==0.0.13
+dlint==0.14.0  # security ricks
+flake8-coding==1.3.2  # use utf-8
+# flake8-encodings==0.5.0.post1  # shadowed by flake8-coding
+flake8-secure-coding-standard==1.4.0  # security ricks
+flake8-unused-arguments==0.0.13  # unused arguments
+
+# Linters:Tests
+flake8-pytest-style==1.7.2
+flake8-test-name==0.1.5
 flake8-useless-assert==0.4.4
 
 # Linters:Simplifications
-dlint==0.14.0
-flake8-pie==0.16.0
 flake8-simplify==0.19.3
 
 # Linters:Imports
 flake8-future-import==0.4.7
-flake8-obey-import-goat==0.1.1
-flake8-tidy-imports==4.8.0
 
 # Linters:Style
-flake8-multiline-containers==0.0.19
-flake8-return==1.2.0
-flake8-scream==0.1.0
+# flake8-multiline-containers==0.0.19  shadowed by black
+# flake8-return==1.2.0  # shadowed by WPS
+# flake8-scream==0.1.0  # shadowed by WPS
 # flake8-sql
 
 # Linters:Naming
-flake8-builtins==2.1.0
+# flake8-builtins==2.1.0  # shadowed by WPS
 flake8-functions-names==0.4.0
-flake8-test-name==0.1.5
 flake8-variables-names==0.0.5
+# TODO flake8-spellcheck==0.28.0
 
 # Linters:Comments
-flake8-coding==1.3.2
 flake8-comments==0.1.2
-flake8-executable==2.1.3
-flake8-noqa==1.3.1
+# flake8-noqa==1.3.1  # shadowed by WPS
 
 # Linters:Typing
 flake8-annotations==2.9.1
-flake8-annotations-coverage==0.0.6
-flake8-future-annotations==1.1.0
+# flake8-future-annotations==1.1.0  # shadowed by flake8-future-import
 flake8-new-union-types==0.4.1
 flake8-pep585==0.1.7
-flake8-pep604==1.1.0
+# flake8-pep604==1.1.0  # shadowed by flake8-new-union-types
 flake8-type-checking==2.3.1
-flake8-typing-imports==1.12.0
+# flake8-typing-imports==1.12.0  # support only 3.11, no looking back
 
 # Linters:Complexity
-flake8-annotations-complexity==0.0.7
-flake8-cognitive-complexity==0.1.0
-flake8-expression-complexity==0.0.11
-flake8-functions==0.0.7
+# flake8-cognitive-complexity==0.1.0  # IDC for now
+# flake8-expression-complexity==0.0.11  # IDC for now
+# flake8-functions==0.0.7  # seems useless and underdocumented
 
 # Linters:Random
-flake8_implicit_str_concat==0.4.0
+# flake8-implicit-str-concat==0.4.0  # shadowed by WPS326
 flake8-print==5.0.0
 flake8-use-fstring==1.4
 flake8-use-pathlib==0.3.0
@@ -85,4 +84,4 @@ flake8-use-pathlib==0.3.0
 # Linters:Tools
 # TODO hacking
 # TODO flakehell
-flake8-pylint==0.2.0  # TODO use raw lib, not wrapper? https://github.com/PyCQA/pylint/
+# flake8-pylint==0.2.0  # TODO use raw lib, not wrapper? https://github.com/PyCQA/pylint/

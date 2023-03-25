@@ -150,7 +150,8 @@ def test_videochat_constraints(
     message_id = ChatMessage.create(
         User.find_by_id(base_user_id), community_id, "test"
     ).id
-    assert isinstance(participant_id, int) and isinstance(message_id, int)
+    assert isinstance(participant_id, int)
+    assert isinstance(message_id, int)
 
     delete_by_id(base_user_id if (table == User) else community_id, table)
     if table == User:

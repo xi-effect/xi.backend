@@ -129,7 +129,8 @@ def test_feedback_constraints(base_user_id: int):
     feedback_id = Feedback.create(
         user_id=base_user_id, type=FeedbackType.GENERAL, data={"lol": "hey"}
     ).id
-    assert isinstance(feedback_id, int) and isinstance(file_id, int)
+    assert isinstance(feedback_id, int)
+    assert isinstance(file_id, int)
     assert File.find_by_id(file_id) is not None
     assert Feedback.find_by_id(feedback_id) is not None
 
