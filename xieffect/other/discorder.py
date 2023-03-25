@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from discord_webhook import DiscordWebhook
 from flask_fullstack import TypeEnum
-from requests import post, Response
+from requests import Response
 
 
 class WebhookURLs(TypeEnum):
@@ -17,23 +17,20 @@ class WebhookURLs(TypeEnum):
     LOLBOT = "1005549141730009108/saLOYG8mQXtUk8yLnD-9Vh4Sagr63sgy7SvYSHzmc1-0gjdyqPvqOdapNP0cYW3VvBgg"
 
 
-def send_message(webhook_url: WebhookURLs, message: str) -> Response:
-    return post(
-        f"https://discord.com/api/webhooks/{webhook_url.value}",
-        json={"content": message},
-        timeout=10,
-    )
-
-
 def send_file_message(
     webhook_url: WebhookURLs,
-    file_content: str,
-    file_name: str,
     message: str,
+    file_content: str | None = None,
+    file_name: str = "attachment.txt",
 ) -> Response:
     webhook = DiscordWebhook(
         url=f"https://discord.com/api/webhooks/{webhook_url.value}"
     )
-    webhook.add_file(file=file_content, filename=file_name)
+    if file_content is not None:
+        webhook.add_file(file=file_content, filename=file_name)
     webhook.set_content(message)
     return webhook.execute()
+
+
+def send_message(webhook_url: WebhookURLs, message: str) -> Response:
+    return send_file_message(webhook_url, message=message)

@@ -93,6 +93,7 @@ class WebhookPassthrough(Resource):
 @controller.route("/lol-bot/")
 class LolBot(Resource):
     def get(self):
+        message: str | None = None
         try:
             with open_file("files/lol-counter.txt") as f:
                 count = str(int(f.read()) + 1)
@@ -102,6 +103,7 @@ class LolBot(Resource):
             message = "Reset happened... Got the first one!"
             count = 1
 
-        send_discord_message(WebhookURLs.LOLBOT, message)
+        if message is not None:
+            send_discord_message(WebhookURLs.LOLBOT, message)
         with open_file("files/lol-counter.txt", "w") as f:
             f.write(str(count))

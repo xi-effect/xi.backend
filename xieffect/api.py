@@ -56,9 +56,9 @@ def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
             else:
                 response = send_file_discord_message(
                     WebhookURLs.ERRORS,
-                    message,
-                    "error_message.txt",
-                    "Server error appeared!",
+                    file_content=message,
+                    file_name="error_message.txt",
+                    message="Server error appeared!",
                 )
             if response.status_code < 200 or response.status_code > 299:
                 send_discord_message(
