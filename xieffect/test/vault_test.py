@@ -40,7 +40,7 @@ def upload(client: FlaskTestClient, filename: str) -> tuple[dict, bytes]:
     )
 
     file_id, server_filename = assert_spread(data, "id", "filename")
-    assert server_filename == str(file_id) + "-" + filename
+    assert server_filename == f"{file_id}-{filename}"
     return data, contents
 
 

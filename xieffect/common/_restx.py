@@ -19,8 +19,9 @@ class ResourceController(_ResourceController):
 
     def a_response(self):
         """
-        - Wraps Resource's method return with ``{"a": <something>}`` response and updates documentation.
-        - Defines response type automatically by looking at method's return type annotation.
+        - Wraps Resource's method return with ``{"a": <something>}``
+          response and updates documentation
+        - Defines response type automatically by looking at method's return type
         - If the return type is not specified, assumes None!
         """
 

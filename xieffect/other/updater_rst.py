@@ -43,24 +43,22 @@ class NetlifyBuildWebhook(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, state: str, commit_url: str, **kwargs) -> None:
-        result: str = (
-            "__**Netlify build failed!**__\n"
+        result: list[str] = [
+            "__**Netlify build failed!**__"
             if state == "error"
-            else f"__**Netlify build is {state}!**__\n"
-        )
+            else f"__**Netlify build is {state}!**__"
+        ]
 
-        result += "\n".join(
-            [
-                f"{message}: `{arg}`"
-                for name, message in self.arguments.items()
-                if (arg := kwargs.get(name)) is not None and arg != ""
-            ]
+        result.extend(
+            f"{message}: `{arg}`"
+            for name, message in self.arguments.items()
+            if (arg := kwargs.get(name)) is not None and arg != ""
         )
 
         if commit_url is not None:
-            result += f"\n{commit_url}"
+            result.append(f"{commit_url}")
 
-        send_discord_message(WebhookURLs.NETLIF, result)
+        send_discord_message(WebhookURLs.NETLIF, "\n".join(result))
 
 
 @controller.route("/pass-through/")

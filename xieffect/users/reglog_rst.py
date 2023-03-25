@@ -129,7 +129,10 @@ class PasswordResetSender(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, email: str) -> bool:
-        """First step of resetting password, tries sending a password-reset email by the address given"""
+        """
+        First step of resetting password, tries sending a password-reset email
+        by the address given
+        """
         user = User.find_by_email_address(email)
         if user is not None:
             send_code_email(email, EmailType.PASSWORD)
@@ -148,13 +151,16 @@ class PasswordReseter(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, code: str, password: str) -> str:
-        """Second step of resetting password, sets the new password if code is correct"""
+        """
+        Second step of resetting password, sets the new password if code is correct
+        """
 
         email = EmailType.PASSWORD.parse_code(code)
         if email is None:
             return "Code error"
 
-        if (user := User.find_by_email_address(email)) is None:
+        user: User = User.find_by_email_address(email)
+        if user is None:
             return "User doesn't exist"
         user.change_password(password)
         return "Success"

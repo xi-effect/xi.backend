@@ -18,7 +18,7 @@ def execute_in_console(line: str, console_id: int = None) -> bool:
             raise ValueError("Console execution did not return 200")
         console_id = res.json()[0]["id"]
     response: Response = post(
-        base_url + f"/consoles/{console_id}/send_input/",
+        f"{base_url}/consoles/{console_id}/send_input/",
         json={"input": f"{line}\n"},
         headers=headers,
         timeout=10,
@@ -27,12 +27,12 @@ def execute_in_console(line: str, console_id: int = None) -> bool:
 
 
 def execute_script_in_console(script_name: str, console_id: int = None) -> bool:
-    return execute_in_console("python " + script_name, console_id)
+    return execute_in_console(f"python {script_name}", console_id)
 
 
 def webapp_action(action: str, domain_name: str = dev_domain) -> bool:
     response: Response = post(
-        base_url + f"/webapps/{domain_name}/{action}/", headers=headers, timeout=10
+        f"{base_url}/webapps/{domain_name}/{action}/", headers=headers, timeout=10
     )
     return 200 <= response.status_code <= 299
 

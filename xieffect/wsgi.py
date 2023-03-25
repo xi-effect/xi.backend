@@ -88,7 +88,8 @@ def init_folder_structure() -> None:
 
 
 def init_users() -> None:
-    if (invite := Invite.find_by_id(TEST_INVITE_ID)) is None:
+    invite: Invite = Invite.find_by_id(TEST_INVITE_ID)
+    if invite is None:
         log_stuff("status", "Database has been reset")
         invite: Invite = Invite.create(id=TEST_INVITE_ID, name="TEST_INVITE")
 
@@ -103,7 +104,8 @@ def init_users() -> None:
     with open_file("static/test/user-bundle.json") as f:
         for i, user_settings in enumerate(load_json(f)):
             email: str = f"{i}@user.user"
-            if (user := User.find_by_email_address(email)) is None:
+            user: User = User.find_by_email_address(email)
+            if user is None:
                 user = User.create(
                     email=email,
                     username=f"user-{i}",

@@ -49,12 +49,9 @@ class User(Base, UserRole, Identifiable):
     patronymic = Column(String(100), nullable=True)
     birthday = Column(Date, nullable=True)
 
-    # Education data:
+    # Education data:  # TODO delete
     theory_level = Column(Float, nullable=False, default=0.5)
     filter_bind = Column(String(10), nullable=True)
-
-    # Chat-related
-    # chats = relationship("UserToChat", back_populates="user")  # TODO remove non-common reference
 
     # Invite-related
     code = Column(String(100), nullable=True)
@@ -120,9 +117,9 @@ class User(Base, UserRole, Identifiable):
         cls, offset: int, limit: int, **kwargs: str | None
     ) -> list[User]:
         stmt = select(cls)
-        for k, v in kwargs.items():
-            if v is not None:
-                stmt = stmt.filter(getattr(cls, k).contains(v))
+        for key, value in kwargs.items():
+            if value is not None:
+                stmt = stmt.filter(getattr(cls, key).contains(value))
         return db.get_paginated(stmt, offset, limit)
 
     @classmethod

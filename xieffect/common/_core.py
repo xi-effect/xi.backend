@@ -45,7 +45,9 @@ app.secrets_from_env("hope it's local")
 # TODO DI to use secrets in `URLSafeSerializer`s
 app.configure_cors()
 
-db_url: str = getenv("DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db"))
+db_url: str = getenv(
+    "DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db")
+)  # noqa: WPS336 E501
 db = SQLAlchemy(app, db_url)  # echo=True
 Base = db.Model
 
