@@ -149,7 +149,7 @@ class ParticipantRole(Base):
     @classmethod
     def delete_by_participant(cls, participant_id: int, role_id) -> None:
         db.session.execute(
-            db.delete(cls).where(
+            db.delete(cls).filter(
                 cls.participant_id == participant_id, cls.role_id == role_id
             )
         )

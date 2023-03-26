@@ -80,19 +80,19 @@ class CommunitiesEventSpace(EventSpace):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @controller.jwt_authorizer(User, check_only=True)
+    @controller.database_searcher(Community)
     @controller.force_ack()
     def close_participants(self, community: Community):
         leave_room(self.room_name(community.id))
 
-    class UpdateModel(Participant.UpdateModel):
+    class UpdateModel(CommunityIdModel):
         role_ids: list[int] = Field(default_factory=list)
         participant_id: int
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Participant.FullModel, use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_PARTICIPANT)
-    @controller.database_searcher(Participant)
+    @check_permission(controller, PermissionType.MANAGE_PARTICIPANT, use_participant=True)
     @controller.marshal_ack(Participant.FullModel)
     def update_participant_role(
         self,
@@ -101,7 +101,6 @@ class CommunitiesEventSpace(EventSpace):
         community: Community,
         role_ids: list[int],
     ):
-        participant.community_id = community.id
         role_ids_from_db = set(
             ParticipantRole.get_role_ids(participant_id=participant.id)
         )
@@ -118,7 +117,7 @@ class CommunitiesEventSpace(EventSpace):
             received_role_ids.remove(role_id)
 
         ParticipantRole.create_bulk(
-            participant_id=participant.id, role_ids=received_role_ids - role_ids_from_db
+            participant_id=participant.id, role_ids=received_role_ids
         )
         event.emit_convert(participant, self.room_name(community.id))
         return participant
@@ -128,8 +127,7 @@ class CommunitiesEventSpace(EventSpace):
 
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_PARTICIPANT)
-    @controller.database_searcher(Participant)
+    @check_permission(controller, PermissionType.MANAGE_PARTICIPANT, use_participant=True)
     @controller.force_ack()
     def delete_participant_role(
         self, event: DuplexEvent, participant: Participant, community: Community

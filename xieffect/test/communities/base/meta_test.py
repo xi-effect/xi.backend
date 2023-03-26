@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from flask.testing import FlaskClient
 from flask_fullstack import check_code, dict_equal
 from pytest import mark
@@ -14,10 +16,15 @@ def get_communities_list(client: FlaskClient) -> list[dict]:
     return result
 
 
-def get_participants_list(client: FlaskClient, username: str) -> list[dict]:
+def get_participants_list(
+    client: FlaskClient, community_id: int, username: str | None = None
+) -> list[dict]:
+    link = f"/communities/{community_id}/participants/"
+    if username is not None:
+        link += f"?search={username}"
     result = check_code(
         client.get(
-            f"/communities/?search={username}",
+            link,
             json={"counter": 20, "offset": 0},
         )
     ).get("results")
@@ -96,9 +103,9 @@ def test_participant(
     client: FlaskClient,
     socketio_client: SocketIOTestClient,
     test_community: int,
-    create_participant_role,
-    get_role_ids,
-    get_roles_list_by_ids,
+    create_participant_role: Callable[str, int, FlaskClient],
+    get_role_ids: Callable[FlaskClient, int],
+    get_roles_list_by_ids: Callable[FlaskClient, int, list[int]],
 ):
     socketio_client2 = SocketIOTestClient(client)
     community_id_json = {"community_id": test_community}
@@ -112,26 +119,30 @@ def test_participant(
         community_id=test_community,
         client=socketio_client.flask_test_client,
     )
-    response = client.get("/home/")
-    user_id = check_code(response, get_json=True)["id"]
-    username = check_code(response, get_json=True)["username"]
-    participant_id = get_participants_list(client, "")[0].get("id")
-    assert len(get_participants_list(client, username)) != 0
+
+    user = check_code(client.get("/home/"))
+    username, user_id = user.get("username"), user.get("id")
+    participant = get_participants_list(client, test_community)[0]
+    participant_id, community_id = participant.get("id"), participant.get("community-id")
+    assert len(get_participants_list(client, test_community, username)) != 0
     role_ids = get_role_ids(client, test_community)
     assert isinstance(participant_id, int)
+
+    # Participant update data
     participant_data = {
         "role_ids": role_ids,
         "participant_id": participant_id,
         **community_id_json,
     }
-
     roles = get_roles_list_by_ids(client, test_community, role_ids)
     successful_participant_data = {
-        **community_id_json,
+        "community_id": community_id,
         "id": participant_id,
         "user_id": user_id,
         "roles": roles,
     }
+
+    # Assert participant update with different data
     participant_result = socketio_client.assert_emit_ack(
         "update_participant_role", participant_data
     )
@@ -139,10 +150,12 @@ def test_participant(
     assert dict_equal(
         participant_result,
         successful_participant_data,
-        *successful_participant_data.keys()
+        *successful_participant_data.keys(),
     )
 
-    socketio_client2.assert_only_received("update_participant_role", successful_participant_data)
+    socketio_client2.assert_only_received(
+        "update_participant_role", successful_participant_data
+    )
 
     create_participant_role(
         permission_type="MANAGE_PARTICIPANT",
@@ -150,23 +163,26 @@ def test_participant(
         client=socketio_client.flask_test_client,
     )
 
-    participant_data['role_ids'] = role_ids[1:]
+    participant_data["role_ids"] = role_ids[1:]
     second_participant_result = socketio_client.assert_emit_ack(
         "update_participant_role", participant_data
     )
 
-    successful_participant_data['roles'] = get_roles_list_by_ids(client, test_community, role_ids[1:])
+    successful_participant_data["roles"] = get_roles_list_by_ids(
+        client, test_community, role_ids[1:]
+    )
 
     assert dict_equal(
         second_participant_result,
         successful_participant_data,
-        *successful_participant_data.keys()
+        *successful_participant_data.keys(),
     )
 
-    socketio_client2.assert_only_received("update_participant_role", successful_participant_data)
+    socketio_client2.assert_only_received(
+        "update_participant_role", successful_participant_data
+    )
 
     # delete participant data
-
     delete_data = {**community_id_json, "participant_id": participant_id}
 
     create_participant_role(

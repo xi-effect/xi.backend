@@ -49,11 +49,8 @@ class Participant(Base, Identifiable):
     user = relationship("User")
     roles = relationship("Role", secondary=ParticipantRole.__table__)
 
-    UpdateModel = PydanticModel.column_model(community_id)
-    FullModel = (
-        PydanticModel.column_model(id, user_id)
-        .combine_with(UpdateModel)
-        .nest_model(Role.IndexModel, "roles", as_list=True)
+    FullModel = PydanticModel.column_model(id, user_id, community_id).nest_model(
+        Role.IndexModel, "roles", as_list=True
     )
 
     @classmethod
@@ -64,27 +61,24 @@ class Participant(Base, Identifiable):
         )
 
     @classmethod
-    def find_by_id(cls, participant_id: int) -> Role | None:
-        return db.session.get_first(select(cls).filter_by(id=participant_id))
-
-    @classmethod
     def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
-        return db.session.get_first(
-            select(cls).filter_by(community_id=community_id, user_id=user_id)
+        return cls.find_first_by_kwargs(
+            community_id=community_id, user_id=user_id
         )
 
     @classmethod
     def search_by_username(
         cls,
-        search: str,
+        search: str | None,
+        community_id: int,
         offset: int,
         limit: int,
     ) -> list[Participant]:
-        stmt = select(cls).options(selectinload(cls.roles))
-        if len(search) == 0:
+        stmt = select(cls).options(selectinload(cls.roles)).filter_by(community_id=community_id)
+        if search is None:
             return db.session.get_paginated(stmt, offset, limit)
         return db.session.get_paginated(
-            stmt.join(User, User.id == cls.id).where(
+            stmt.join(User, User.id == cls.user_id).filter(
                 User.username.ilike(f"%{search}%")
             ),
             offset,

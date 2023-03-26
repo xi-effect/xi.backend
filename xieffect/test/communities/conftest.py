@@ -137,11 +137,10 @@ def get_roles_list_by_ids():
     def wrapper_get_roles_list(client, community_id: int, role_ids: list) -> list[dict]:
         """Check the success of getting the list of roles"""
         result = check_code(client.get(f"/communities/{community_id}/roles/"))
-        roles = []
+        roles: list = []
         for role in result:
             if role['id'] in role_ids:
                 role.pop("permissions")
                 roles.append(role)
-        assert isinstance(roles, list)
         return roles
     return wrapper_get_roles_list
