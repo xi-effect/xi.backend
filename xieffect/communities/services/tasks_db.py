@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Self
 
 from flask_fullstack import Identifiable, PydanticModel
 from sqlalchemy import Column, ForeignKey, select, update
@@ -91,7 +92,7 @@ class Task(Base, Identifiable):
     FullModel = IndexModel.nest_model(TaskEmbed.FileModel, "files", as_list=True)
 
     @classmethod
-    def find_by_id(cls, task_id: int) -> Task | None:
+    def find_by_id(cls, task_id: int) -> Self | None:
         """Find only not deleted task (deleted=False)"""
         return db.get_first(select(cls).filter_by(id=task_id, deleted=False))
 
@@ -103,7 +104,7 @@ class Task(Base, Identifiable):
         page_id: int,
         name: str,
         description: str,
-    ) -> Task:
+    ) -> Self:
         return super().create(
             user_id=user_id,
             community_id=community_id,

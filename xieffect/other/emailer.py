@@ -78,7 +78,7 @@ def send_code_email(receiver: str, email_type: EmailType) -> str:
 
 
 def create_email_confirmer(controller, route: str, email_type: EmailType):
-    @controller.route(route + "<code>/")
+    @controller.route(f"{route}<code>/")
     class EmailConfirmer(Resource):
         @controller.doc_abort(400, "Invalid code")
         @controller.a_response()

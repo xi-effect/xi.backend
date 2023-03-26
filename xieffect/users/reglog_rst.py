@@ -88,7 +88,7 @@ class UserLogin(Resource):
     @controller.doc_abort(" 200", "Wrong password")
     @controller.argument_parser(parser)
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
-    def post(self, email: str, password: str):
+    def post(self, email: str, password: str) -> tuple[CommunitiesUser, User] | dict:
         """Tries to log in with credentials given"""
         user = User.find_by_email_address(email)
         if user is None:
@@ -103,7 +103,7 @@ class UserLogin(Resource):
 @controller.route("/go/")
 class Test(Resource):
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
-    def get(self):
+    def get(self) -> tuple[CommunitiesUser, User] | dict:
         """Localhost-only endpoint for logging in from the docs"""
         if not current_app.debug:
             return {"a": False}
@@ -115,7 +115,7 @@ class Test(Resource):
 @controller.route("/signout/")
 class UserLogout(Resource):
     @controller.removes_authorization()
-    def post(self):
+    def post(self) -> dict:
         """Logs the user out, blocks the token"""
         BlockedToken.create(jti=get_jwt()["jti"])
         return {"a": True}
@@ -129,7 +129,10 @@ class PasswordResetSender(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, email: str) -> bool:
-        """First step of resetting password, tries sending a password-reset email by the address given"""
+        """
+        First step of resetting password, tries sending a password-reset email
+        by the address given
+        """
         user = User.find_by_email_address(email)
         if user is not None:
             send_code_email(email, EmailType.PASSWORD)
@@ -148,13 +151,16 @@ class PasswordReseter(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, code: str, password: str) -> str:
-        """Second step of resetting password, sets the new password if code is correct"""
+        """
+        Second step of resetting password, sets the new password if code is correct
+        """
 
         email = EmailType.PASSWORD.parse_code(code)
         if email is None:
             return "Code error"
 
-        if (user := User.find_by_email_address(email)) is None:
+        user: User = User.find_by_email_address(email)
+        if user is None:
             return "User doesn't exist"
         user.change_password(password)
         return "Success"

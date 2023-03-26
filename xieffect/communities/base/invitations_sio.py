@@ -15,7 +15,7 @@ controller = EventController()
 @controller.route()
 class InvitationsEventSpace(EventSpace):
     @classmethod  # TODO fix in ffs
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-invites-{community_id}"
 
     class CommunityIdModel(BaseModel):

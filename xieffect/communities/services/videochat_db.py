@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import PydanticModel, Identifiable
 from sqlalchemy import Column, ForeignKey, JSON, select
 from sqlalchemy.ext.mutable import MutableDict
@@ -31,7 +33,7 @@ class ChatParticipant(Base):  # TODO community to room after channels creating
     IndexModel = CreateModel.column_model(user_id)
 
     @classmethod
-    def create(cls, user_id: int, community_id: int, state: dict) -> ChatParticipant:
+    def create(cls, user_id: int, community_id: int, state: dict) -> Self:
         return super().create(
             user_id=user_id,
             community_id=community_id,
@@ -39,13 +41,13 @@ class ChatParticipant(Base):  # TODO community to room after channels creating
         )
 
     @classmethod
-    def find_by_ids(cls, user_id: int, community_id: int) -> ChatParticipant | None:
+    def find_by_ids(cls, user_id: int, community_id: int) -> Self | None:
         return db.get_first(
             select(cls).filter_by(user_id=user_id, community_id=community_id)
         )
 
     @classmethod
-    def find_by_community(cls, community_id: int) -> list[ChatParticipant]:
+    def find_by_community(cls, community_id: int) -> list[Self]:
         return db.get_all(select(cls).filter_by(community_id=community_id))
 
     @classmethod
@@ -78,7 +80,7 @@ class ChatMessage(Base, Identifiable):  # TODO community to room after channels 
     IndexModel = CreateModel.column_model(id).nest_model(User.MainData, "sender")
 
     @classmethod
-    def create(cls, sender: User, community_id: int, content: str) -> ChatMessage:
+    def create(cls, sender: User, community_id: int, content: str) -> Self:
         return super().create(
             sender=sender,
             community_id=community_id,
@@ -86,12 +88,10 @@ class ChatMessage(Base, Identifiable):  # TODO community to room after channels 
         )
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> ChatMessage | None:
+    def find_by_id(cls, entry_id: int) -> Self | None:
         return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
-    def find_by_ids(
-        cls, community_id: int, offset: int, limit: int
-    ) -> list[ChatMessage]:
+    def find_by_ids(cls, community_id: int, offset: int, limit: int) -> list[Self]:
         stmt = select(cls).filter_by(community_id=community_id)
         return db.get_paginated(stmt, offset, limit)

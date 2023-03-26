@@ -44,7 +44,9 @@ class UserIndexResource(Resource):
 
     @controller.require_permission(manage_users, use_moderator=False)
     @controller.argument_parser(parser)
-    def post(self, email: str, password: str, username: str, code: str | None):
+    def post(
+        self, email: str, password: str, username: str, code: str | None
+    ) -> dict | tuple[dict, int]:
         # TODO check password length and hash
         if code is None:
             invite = Invite.find_by_id(TEST_INVITE_ID)
@@ -85,7 +87,7 @@ class UserManagerResource(Resource):
     @controller.argument_parser(parser, use_undefined=True)
     @controller.database_searcher(User)
     @controller.marshal_with(User.ProfileData)
-    def put(self, user: User, email_confirmed: bool | Undefined):
+    def put(self, user: User, email_confirmed: bool | Undefined) -> User:
         if email_confirmed is not Undefined:
             user.email_confirmed = email_confirmed
         return user

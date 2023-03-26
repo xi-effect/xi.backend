@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from typing import Self
 
 from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
@@ -43,7 +44,7 @@ class Invitation(Base, Identifiable):
         role: ParticipantRole,
         limit: int | None,
         days_to_live: int | None,
-    ) -> Invitation:
+    ) -> Self:
         entry: cls = super().create(
             role=role,
             community_id=community_id,
@@ -59,22 +60,22 @@ class Invitation(Base, Identifiable):
         return entry
 
     @classmethod
-    def find_by_id(cls, invitation_id: int) -> Invitation | None:
+    def find_by_id(cls, invitation_id: int) -> Self | None:
         return db.get_first(select(cls).filter_by(id=invitation_id))
 
     @classmethod
     def find_by_community(
         cls, community_id: int, offset: int, limit: int
-    ) -> list[Invitation]:
+    ) -> list[Self]:
         return db.get_paginated(
             select(cls).filter_by(community_id=community_id), offset, limit
         )
 
     @classmethod
-    def find_by_code(cls, code: str) -> Invitation | None:
+    def find_by_code(cls, code: str) -> Self | None:
         return db.get_first(select(cls).filter_by(code=code))
 
-    def generate_code(self):
+    def generate_code(self) -> str | bytes:
         return self.serializer.dumps((self.community_id, self.id))
 
     def has_valid_deadline(self) -> bool:

@@ -98,14 +98,16 @@ def test_feedback(
 
     # Check getting feedback by id
     feedback = new_list[-1]
-    assert (feedback_id := feedback.get("id")) is not None
+    feedback_id: int | None = feedback.get("id")
+    assert feedback_id is not None
     get_url = f"/mub/feedback/{feedback_id}/"
     mod_client.get(get_url, expected_json=feedback)
     client.get(get_url, expected_a="Permission denied", expected_status=403)
 
     # Check deleting feedbacks
     for feedback in new_list:
-        assert (feedback_id := feedback.get("id")) is not None
+        feedback_id: int | None = feedback.get("id")
+        assert feedback_id is not None
         id_url = f"/mub/feedback/{feedback_id}/"
         client.delete(id_url, expected_a="Permission denied", expected_status=403)
         mod_client.delete(id_url, expected_a=True)
@@ -127,7 +129,8 @@ def test_feedback_constraints(base_user_id: int):
     feedback_id = Feedback.create(
         user_id=base_user_id, type=FeedbackType.GENERAL, data={"lol": "hey"}
     ).id
-    assert isinstance(feedback_id, int) and isinstance(file_id, int)
+    assert isinstance(feedback_id, int)
+    assert isinstance(file_id, int)
     assert File.find_by_id(file_id) is not None
     assert Feedback.find_by_id(feedback_id) is not None
 

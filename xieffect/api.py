@@ -44,7 +44,7 @@ from vault import files_namespace, mub_files_namespace
 logger = Logger("flask-fullstack", "WARN")
 
 
-def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
+def log_stuff(level: str, message: str) -> None:  # TODO # noqa: WPS231
     if app.debug:
         print(message, **({"file": stderr} if level == "error" else {}))
     else:  # pragma: no cover
@@ -56,9 +56,9 @@ def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
             else:
                 response = send_file_discord_message(
                     WebhookURLs.ERRORS,
-                    message,
-                    "error_message.txt",
-                    "Server error appeared!",
+                    file_content=message,
+                    file_name="error_message.txt",
+                    message="Server error appeared!",
                 )
             if response.status_code < 200 or response.status_code > 299:
                 send_discord_message(
@@ -132,6 +132,6 @@ app.after_request(db.with_autocommit)
 
 
 @app.cli.command("form-sio-docs")
-def form_sio_docs():  # TODO pragma: no coverage
+def form_sio_docs() -> None:  # TODO pragma: no coverage
     with open_file("files/async-api.json", "w") as f:
         dump_json(socketio.docs(), f, ensure_ascii=False)

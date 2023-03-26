@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Self
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
 from sqlalchemy import Column, ForeignKey, select
@@ -54,7 +55,7 @@ class Role(Base, Identifiable):
         name: str,
         color: str | None,
         community_id: int,
-    ) -> Role:
+    ) -> Self:
         return super().create(
             name=name,
             color=color,
@@ -62,11 +63,11 @@ class Role(Base, Identifiable):
         )
 
     @classmethod
-    def find_by_id(cls, role_id: int) -> Role | None:
+    def find_by_id(cls, role_id: int) -> Self | None:
         return db.get_first(select(cls).filter_by(id=role_id))
 
     @classmethod
-    def find_by_community(cls, community_id: int) -> list[Role]:
+    def find_by_community(cls, community_id: int) -> list[Self]:
         return db.get_all(select(cls).filter_by(community_id=community_id))
 
     @classmethod
@@ -89,7 +90,7 @@ class RolePermission(Base):
         cls,
         role_id: int,
         permission_type: PermissionType,
-    ) -> RolePermission:
+    ) -> Self:
         return super().create(
             role_id=role_id,
             permission_type=permission_type,
@@ -104,7 +105,7 @@ class RolePermission(Base):
         )
 
     @classmethod
-    def get_all_by_role(cls, role_id: int) -> list[RolePermission]:
+    def get_all_by_role(cls, role_id: int) -> list[Self]:
         return db.get_all(select(cls).filter_by(role_id=role_id))
 
 

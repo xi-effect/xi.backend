@@ -31,7 +31,7 @@ SECRETS = (
 )
 
 
-def init_test_mod():
+def init_test_mod() -> None:
     if Moderator.find_by_name(TEST_MOD_NAME) is None:
         moderator = Moderator.register(TEST_MOD_NAME, TEST_PASS)
         moderator.super = True
@@ -77,7 +77,7 @@ else:  # works on server restart  # pragma: no coverage
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
 
 
-def init_folder_structure():
+def init_folder_structure() -> None:
     Path(absolute_path("files/avatars")).mkdir(parents=True, exist_ok=True)
     Path(absolute_path("files/images")).mkdir(parents=True, exist_ok=True)
     Path(absolute_path("files/temp")).mkdir(parents=True, exist_ok=True)
@@ -87,8 +87,9 @@ def init_folder_structure():
     Path(absolute_path("files/tfs/wip-modules")).mkdir(parents=True, exist_ok=True)
 
 
-def init_users():
-    if (invite := Invite.find_by_id(TEST_INVITE_ID)) is None:
+def init_users() -> None:
+    invite: Invite = Invite.find_by_id(TEST_INVITE_ID)
+    if invite is None:
         log_stuff("status", "Database has been reset")
         invite: Invite = Invite.create(id=TEST_INVITE_ID, name="TEST_INVITE")
 
@@ -103,7 +104,8 @@ def init_users():
     with open_file("static/test/user-bundle.json") as f:
         for i, user_settings in enumerate(load_json(f)):
             email: str = f"{i}@user.user"
-            if (user := User.find_by_email_address(email)) is None:
+            user: User = User.find_by_email_address(email)
+            if user is None:
                 user = User.create(
                     email=email,
                     username=f"user-{i}",
@@ -134,7 +136,7 @@ def version_check():  # TODO pragma: no coverage
             dump_json(versions, f, ensure_ascii=False)
 
 
-def sqlite_pragma():
+def sqlite_pragma() -> None:
     if db_url.startswith("sqlite"):  # pragma: no coverage
         from sqlalchemy import event
         from sqlalchemy.engine import Engine
