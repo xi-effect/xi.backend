@@ -8,7 +8,8 @@ from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Date
 
-from ._core import Base, db  # noqa: WPS436
+from common._core import Base, db  # noqa: WPS436
+from common.abstract import SoftDeletable
 
 
 class BlockedToken(Base):
@@ -22,7 +23,7 @@ class BlockedToken(Base):
         return db.get_first(select(cls).filter_by(jti=jti))
 
 
-class User(Base, UserRole, Identifiable):
+class User(SoftDeletable, UserRole, Identifiable):
     __tablename__ = "users"
     not_found_text = "User does not exist"
     unauthorized_error = (401, not_found_text)
@@ -73,7 +74,7 @@ class User(Base, UserRole, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
-        return db.get_first(select(cls).filter_by(id=entry_id))
+        return cls.find_first_not_deleted(id=entry_id)
 
     @classmethod
     def find_by_identity(cls, identity: int) -> Self | None:
@@ -90,7 +91,7 @@ class User(Base, UserRole, Identifiable):
 
     @classmethod
     def find_by_email_address(cls, email) -> Self | None:
-        return db.get_first(select(cls).filter_by(email=email))
+        return cls.find_first_by_kwargs(email=email)
 
     @classmethod  # TODO this class shouldn't know about invites
     def create(
@@ -118,10 +119,10 @@ class User(Base, UserRole, Identifiable):
     def search_by_params(
         cls, offset: int, limit: int, **kwargs: str | None
     ) -> list[Self]:
-        stmt = select(cls)
-        for key, value in kwargs.items():
-            if value is not None:
-                stmt = stmt.filter(getattr(cls, key).contains(value))
+        stmt = cls.select_not_deleted()
+        for k, v in kwargs.items():
+            if v is not None:
+                stmt = stmt.filter(getattr(cls, k).contains(v))
         return db.get_paginated(stmt, offset, limit)
 
     @classmethod
@@ -132,7 +133,7 @@ class User(Base, UserRole, Identifiable):
         offset: int,
         limit: int,
     ) -> list[Self]:
-        stmt = select(cls).filter(cls.id != exclude_id)
+        stmt = cls.select_not_deleted().filter(cls.id != exclude_id)
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
         return db.get_paginated(stmt, offset, limit)

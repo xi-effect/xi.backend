@@ -6,10 +6,15 @@ from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
 from pydantic import BaseModel, Field
 
-from common import EventController, db
-from .meta_db import Community, ParticipantRole
-from .roles_db import Role, RolePermission, PermissionType, LIMITING_QUANTITY_ROLES
-from ..utils import check_participant
+from common import EventController
+from communities.base.meta_db import Community, ParticipantRole
+from communities.base.roles_db import (
+    Role,
+    RolePermission,
+    PermissionType,
+    LIMITING_QUANTITY_ROLES,
+)
+from communities.utils import check_participant
 
 controller = EventController()
 
@@ -78,8 +83,6 @@ class RolesEventSpace(EventSpace):
                 role_id=role.id,
                 permission_type=permission,
             )
-
-        db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
         return role
 
@@ -126,8 +129,6 @@ class RolesEventSpace(EventSpace):
                     role_id=role.id,
                     permission_type=permission,
                 )
-
-        db.session.commit()
         event.emit_convert(role, self.room_name(community.id))
         return role
 
@@ -145,8 +146,7 @@ class RolesEventSpace(EventSpace):
         role: Role,
         community: Community,
     ):
-        role.delete()
-        db.session.commit()
+        role.soft_delete()
         event.emit_convert(
             room=self.room_name(community.id),
             community_id=community.id,

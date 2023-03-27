@@ -6,9 +6,10 @@ from typing import Self
 from flask_fullstack import Identifiable, PydanticModel
 from sqlalchemy import Column, ForeignKey, select, update
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Boolean, DateTime, Integer, String, Text
+from sqlalchemy.sql.sqltypes import DateTime, Integer, String, Text
 
 from common import Base, db
+from common.abstract import SoftDeletable
 from vault.files_db import File
 
 
@@ -47,7 +48,7 @@ class TaskEmbed(Base):
         return db.get_all(stmt)
 
 
-class Task(Base, Identifiable):
+class Task(SoftDeletable, Identifiable):
     __tablename__ = "cs_tasks"
     not_found_text = "Task not found"
 
@@ -75,7 +76,6 @@ class Task(Base, Identifiable):
     updated = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
-    deleted = Column(Boolean, nullable=False, default=False)
 
     files = relationship("TaskEmbed", passive_deletes=True)
 
@@ -92,9 +92,8 @@ class Task(Base, Identifiable):
     FullModel = IndexModel.nest_model(TaskEmbed.FileModel, "files", as_list=True)
 
     @classmethod
-    def find_by_id(cls, task_id: int) -> Self | None:
-        """Find only not deleted task (deleted=False)"""
-        return db.get_first(select(cls).filter_by(id=task_id, deleted=False))
+    def find_by_id(cls, entry_id: int) -> Self | None:
+        return cls.find_first_not_deleted(id=entry_id)
 
     @classmethod
     def create(

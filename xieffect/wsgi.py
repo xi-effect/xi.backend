@@ -42,6 +42,7 @@ if (  # noqa: WPS337
     or "pytest" in modules
     or db_url.endswith("test.db")
     or "form-sio-docs" in argv
+    or "database" in argv
 ):  # pragma: no coverage
     application.debug = True
     with application.app_context():

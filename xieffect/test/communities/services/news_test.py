@@ -72,7 +72,7 @@ def test_post_creation(
             assert_contains(data, dict_cut(post_data, "title", "description"))
             assert data.get("created") == data.get("changed")
             # TODO redo without calls to the database (separate into unit-tests)
-            assert Post.find_by_id(data.get("id")).deleted is False
+            assert Post.find_by_id(data.get("id")).deleted is None
             found = True
     assert found
 

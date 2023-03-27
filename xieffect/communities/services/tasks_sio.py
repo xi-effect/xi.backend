@@ -7,10 +7,10 @@ from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
 from common import EventController, User
+from communities.base.meta_db import Community, ParticipantRole
+from communities.services.tasks_db import Task, TaskEmbed
+from communities.utils import check_participant
 from vault import File
-from .tasks_db import Task, TaskEmbed
-from ..base import Community, ParticipantRole
-from ..utils import check_participant
 
 # Set Tasks behavior here
 FILES_LIMIT = 10
@@ -135,7 +135,7 @@ class TasksEventSpace(EventSpace):
     def delete_task(self, event: DuplexEvent, community: Community, task: Task):
         if task.community_id != community.id:  # TODO pragma: no cover | func
             controller.abort(404, Task.not_found_text)
-        task.deleted = True
+        task.soft_delete()
         event.emit_convert(
             room=self.room_name(community.id),
             community_id=community.id,

@@ -8,8 +8,9 @@ from typing import TypeVar
 from pytest import mark
 from werkzeug.datastructures import FileStorage
 
-from common import open_file, absolute_path
+from common import open_file
 from test.conftest import BASIC_PASS, login, FlaskTestClient
+from vault.files_db import FILES_PATH
 
 k = TypeVar("k")
 v = TypeVar("v")
@@ -70,7 +71,7 @@ def test_files_normal(
         assert new_file_list.pop(0) == data
 
         filename: str = data["filename"]
-        filepath = absolute_path(f"files/vault/{filename}")
+        filepath = FILES_PATH + filename
         assert exists(filepath)
         with open(filepath, "rb") as f:
             assert f.read() == contents
@@ -101,7 +102,7 @@ def test_files_normal(
 
         if i % 2:
             client.delete(f"/files/manager/{file_id}/", expected_a=True)
+            assert exists(FILES_PATH + filename)
         else:
             mod_client.delete(f"/mub/files/{file_id}/", expected_a=True)
-
-        assert not exists(absolute_path(f"files/vault/{filename}"))
+            assert not exists(FILES_PATH + filename)

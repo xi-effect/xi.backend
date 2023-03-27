@@ -3,15 +3,16 @@ from __future__ import annotations
 from typing import Self
 
 from flask_fullstack import PydanticModel, Identifiable
-from sqlalchemy import Column, select, ForeignKey, sql
+from sqlalchemy import Column, ForeignKey, sql
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Text, DateTime
+from sqlalchemy.sql.sqltypes import Integer, String, Text, DateTime
 
-from common import Base, db, User
-from ..base import Community
+from common import User
+from common.abstract import SoftDeletable
+from communities.base.meta_db import Community
 
 
-class Post(Base, Identifiable):
+class Post(SoftDeletable, Identifiable):
     __tablename__ = "cs_posts"
     not_found_text = "Post not found"
 
@@ -26,7 +27,6 @@ class Post(Base, Identifiable):
         server_onupdate=sql.func.now(),
         nullable=False,
     )
-    deleted = Column(Boolean, default=False, nullable=False)
 
     # User-related
     user_id = Column(
@@ -54,8 +54,7 @@ class Post(Base, Identifiable):
     def find_by_community(
         cls, community_id: int, offset: int, limit: int
     ) -> list[Self]:
-        stmt = select(cls).filter_by(community_id=community_id, deleted=False)
-        return db.get_paginated(stmt, offset, limit)
+        return cls.find_paginated_not_deleted(offset, limit, community_id=community_id)
 
     @classmethod
     def create(
@@ -74,4 +73,4 @@ class Post(Base, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
-        return db.get_first(select(cls).filter_by(id=entry_id, deleted=False))
+        return cls.find_first_not_deleted(id=entry_id)

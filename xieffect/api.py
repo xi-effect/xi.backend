@@ -24,6 +24,7 @@ from communities import (
 )
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
 from other import (
+    remove_stale_blueprint,
     send_discord_message,
     send_file_discord_message,
     webhook_namespace,
@@ -92,6 +93,7 @@ api.add_namespace(news_namespace)
 api.add_namespace(tasks_namespace)
 api.add_namespace(videochat_namespace)
 
+app.register_blueprint(remove_stale_blueprint)
 api.add_namespace(webhook_namespace)
 
 app.register_blueprint(mub_cli_blueprint)

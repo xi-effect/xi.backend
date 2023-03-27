@@ -7,9 +7,9 @@ from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
 from common import EventController, User
-from .news_db import Post
-from ..base import ParticipantRole, Community
-from ..utils import check_participant
+from communities.base.meta_db import ParticipantRole, Community
+from communities.services.news_db import Post
+from communities.utils import check_participant
 
 controller = EventController()
 
@@ -94,7 +94,7 @@ class PostEventSpace(EventSpace):
         community: Community,
         post: Post,
     ):
-        post.deleted = True
+        post.soft_delete()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
             community_id=community.id,

@@ -42,13 +42,11 @@ class ChatParticipant(Base):  # TODO community to room after channels creating
 
     @classmethod
     def find_by_ids(cls, user_id: int, community_id: int) -> Self | None:
-        return db.get_first(
-            select(cls).filter_by(user_id=user_id, community_id=community_id)
-        )
+        return cls.find_first_by_kwargs(user_id=user_id, community_id=community_id)
 
     @classmethod
     def find_by_community(cls, community_id: int) -> list[Self]:
-        return db.get_all(select(cls).filter_by(community_id=community_id))
+        return cls.find_all_by_kwargs(community_id=community_id)
 
     @classmethod
     def get_count_by_community(cls, community_id: int) -> int:
@@ -89,9 +87,8 @@ class ChatMessage(Base, Identifiable):  # TODO community to room after channels 
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
-        return db.get_first(select(cls).filter_by(id=entry_id))
+        return cls.find_first_by_kwargs(id=entry_id)
 
     @classmethod
     def find_by_ids(cls, community_id: int, offset: int, limit: int) -> list[Self]:
-        stmt = select(cls).filter_by(community_id=community_id)
-        return db.get_paginated(stmt, offset, limit)
+        return cls.find_paginated_by_kwargs(offset, limit, community_id=community_id)

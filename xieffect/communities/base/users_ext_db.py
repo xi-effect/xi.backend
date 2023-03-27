@@ -7,12 +7,13 @@ from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import Base, User
+from common import User
+from common.abstract import SoftDeletable
 from communities.base.meta_db import Community, Participant
 from vault import File
 
 
-class CommunitiesUser(Base):
+class CommunitiesUser(SoftDeletable):
     __tablename__ = "communities_users"
 
     id: int | Column = Column(
@@ -60,7 +61,7 @@ class CommunitiesUser(Base):
 
     @classmethod
     def find_by_id(cls, user_id: int) -> Self | None:
-        return cls.find_first_by_kwargs(id=user_id)
+        return cls.find_first_not_deleted(id=user_id)
 
     @classmethod
     def find_or_create(cls, user_id: int) -> Self:
