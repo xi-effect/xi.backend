@@ -80,8 +80,7 @@ class CommunitiesEventSpace(EventSpace):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @controller.jwt_authorizer(User, check_only=True)
-    @controller.database_searcher(Community)
+    @check_participant(controller)
     @controller.force_ack()
     def close_participants(self, community: Community):
         leave_room(self.room_name(community.id))
@@ -113,11 +112,8 @@ class CommunitiesEventSpace(EventSpace):
                 role_id=role_id,
             )
 
-        for role_id in received_role_ids & role_ids_from_db:
-            received_role_ids.remove(role_id)
-
         ParticipantRole.create_bulk(
-            participant_id=participant.id, role_ids=received_role_ids
+            participant_id=participant.id, role_ids=received_role_ids - role_ids_from_db
         )
         event.emit_convert(participant, self.room_name(community.id))
         return participant
@@ -127,11 +123,14 @@ class CommunitiesEventSpace(EventSpace):
 
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_PARTICIPANT, use_participant=True)
+    @controller.database_searcher(Participant)
+    @check_permission(controller, PermissionType.MANAGE_PARTICIPANT, use_user=True)
     @controller.force_ack()
     def delete_participant_role(
-        self, event: DuplexEvent, participant: Participant, community: Community
+        self, event: DuplexEvent, participant: Participant, user: User, community: Community
     ):
+        if participant.user_id == user.id:
+            controller.abort(400, "Forbidden remove yourself")
         participant.delete()
         event.emit_convert(
             room=self.room_name(community.id),

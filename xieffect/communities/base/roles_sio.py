@@ -116,11 +116,8 @@ class RolesEventSpace(EventSpace):
                     role_id=role.id, permission_type=del_permission
                 )
 
-            for permission in received_permissions & permissions_from_db:
-                received_permissions.remove(permission)
-
             RolePermission.create_bulk(
-                role_id=role.id, permissions=received_permissions
+                role_id=role.id, permissions=received_permissions - permissions_from_db
             )
 
         event.emit_convert(role, self.room_name(community.id))

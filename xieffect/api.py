@@ -12,6 +12,7 @@ from common import db  # noqa: F401
 from communities import (
     communities_meta_events,
     communities_namespace,
+    participants_namespace,
     invitation_events,
     invitation_namespace,
     news_namespace,
@@ -113,6 +114,7 @@ api.add_namespace(wip_json_file_namespace)
 api.add_namespace(wip_index_namespace)
 
 api.add_namespace(communities_namespace)
+api.add_namespace(participants_namespace)
 api.add_namespace(invitation_namespace)
 api.add_namespace(news_namespace)
 api.add_namespace(tasks_namespace)

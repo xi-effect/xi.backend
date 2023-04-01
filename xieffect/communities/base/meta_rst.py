@@ -8,6 +8,7 @@ from .meta_db import Community, Participant
 from .utils import check_participant
 
 controller = ResourceController("communities-meta", path="/communities/<int:community_id>/")
+second_controller = ResourceController("participants-meta", path="/communities/<int:community_id>/participants/")
 
 
 @controller.route("/")
@@ -18,7 +19,7 @@ class CommunityReader(Resource):  # TODO pragma: no coverage
         return community
 
 
-@controller.route("/participants/")
+@second_controller.route("/")
 class ParticipantSearcher(Resource):
     parser: RequestParser = counter_parser.copy()
     parser.add_argument("search", type=str, required=False)

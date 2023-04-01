@@ -61,6 +61,10 @@ class Participant(Base, Identifiable):
         )
 
     @classmethod
+    def find_by_id(cls, participant_id: int) -> Participant | None:
+        return cls.find_first_by_kwargs(id=participant_id)
+
+    @classmethod
     def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
         return cls.find_first_by_kwargs(
             community_id=community_id, user_id=user_id
