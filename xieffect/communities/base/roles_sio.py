@@ -111,10 +111,10 @@ class RolesEventSpace(EventSpace):
                 for permission in RolePermission.get_all_by_role(role.id)
             }
 
-            for del_permission in permissions_from_db - received_permissions:
-                RolePermission.delete_by_role(
-                    role_id=role.id, permission_type=del_permission
-                )
+            RolePermission.delete_by_role(
+                permissions_type=permissions_from_db - received_permissions,
+                role_id=role.id,
+            )
 
             RolePermission.create_bulk(
                 role_id=role.id, permissions=received_permissions - permissions_from_db

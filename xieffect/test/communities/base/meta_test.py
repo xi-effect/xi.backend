@@ -117,7 +117,7 @@ def test_participant(
         user.assert_emit_success("open_participants", community_id_json)
 
     create_participant_role(
-        permission_type="MANAGE_PARTICIPANT",
+        permission_type="MANAGE_PARTICIPANTS",
         community_id=test_community,
         client=socketio_client.flask_test_client,
     )
@@ -144,7 +144,6 @@ def test_participant(
         "user_id": user_id,
         "roles": roles,
     }
-
     # Assert participant update with different data
     participant_result = socketio_client.assert_emit_ack(
         "update_participant_role", participant_data
@@ -161,7 +160,7 @@ def test_participant(
     )
 
     create_participant_role(
-        permission_type="MANAGE_PARTICIPANT",
+        permission_type="MANAGE_PARTICIPANTS",
         community_id=test_community,
         client=socketio_client.flask_test_client,
     )
@@ -190,12 +189,12 @@ def test_participant(
     delete_data = {"community_id": test_community, "participant_id": participant_id}
 
     create_participant_role(
-        permission_type="MANAGE_PARTICIPANT",
+        permission_type="MANAGE_PARTICIPANTS",
         community_id=test_community,
         client=socketio_client.flask_test_client,
     )
 
-    socketio_client.assert_emit_success("delete_participant_role", delete_data, code=400, message="Forbidden remove yourself")
+    socketio_client.assert_emit_success("delete_participant_role", delete_data, code=400, message="Target is the source")
 
     new_user_id = check_code(multi_client("2@user.user").get("/home/")).get("id")
     new_participant_id = Participant.create(test_community, new_user_id).id

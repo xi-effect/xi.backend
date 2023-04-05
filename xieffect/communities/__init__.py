@@ -1,7 +1,7 @@
 from .base import CommunitiesUser
 from .base import (
     communities_namespace,
-    participants_namespace,
+    participants_events,
     invitation_namespace,
     role_namespace,
     role_events,

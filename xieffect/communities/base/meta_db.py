@@ -66,9 +66,7 @@ class Participant(Base, Identifiable):
 
     @classmethod
     def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
-        return cls.find_first_by_kwargs(
-            community_id=community_id, user_id=user_id
-        )
+        return cls.find_first_by_kwargs(community_id=community_id, user_id=user_id)
 
     @classmethod
     def search_by_username(
@@ -78,13 +76,13 @@ class Participant(Base, Identifiable):
         offset: int,
         limit: int,
     ) -> list[Participant]:
-        stmt = select(cls).options(selectinload(cls.roles)).filter_by(community_id=community_id)
-        if search is None:
-            return db.session.get_paginated(stmt, offset, limit)
-        return db.session.get_paginated(
-            stmt.join(User, User.id == cls.user_id).filter(
-                User.username.ilike(f"%{search}%")
-            ),
-            offset,
-            limit,
+        stmt = (
+            select(cls)
+            .options(selectinload(cls.roles))
+            .filter_by(community_id=community_id)
         )
+        if search is not None:
+            stmt = stmt.join(User, User.id == cls.user_id).filter(
+                User.username.ilike(f"%{search}%")
+            )
+        return db.session.get_paginated(stmt, offset, limit)

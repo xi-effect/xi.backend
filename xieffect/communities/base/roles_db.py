@@ -20,7 +20,7 @@ class PermissionType(TypeEnum):
     MANAGE_TASKS = 2
     MANAGE_NEWS = 3
     MANAGE_MESSAGES = 4
-    MANAGE_PARTICIPANT = 5
+    MANAGE_PARTICIPANTS = 5
 
 
 class Role(Base, Identifiable):
@@ -98,10 +98,10 @@ class RolePermission(Base):
         db.session.flush()
 
     @classmethod
-    def delete_by_role(cls, role_id: int, permission_type: str) -> None:
+    def delete_by_role(cls, role_id: int, permissions_type: set[str]) -> None:
         db.session.execute(
-            db.delete(cls).where(
-                cls.role_id == role_id, cls.permission_type == permission_type
+            db.delete(cls).filter(
+                cls.role_id == role_id, cls.permission_type.in_(permissions_type)
             )
         )
 
@@ -137,7 +137,9 @@ class ParticipantRole(Base):
 
     @classmethod
     def get_role_ids(cls, participant_id: int) -> list[int]:
-        return db.session.get_all(select(cls.role_id).filter_by(participant_id=participant_id))
+        return db.session.get_all(
+            select(cls.role_id).filter_by(participant_id=participant_id)
+        )
 
     @classmethod
     def create_bulk(cls, participant_id: int, role_ids: Iterable[int]) -> None:
@@ -147,9 +149,9 @@ class ParticipantRole(Base):
         db.session.flush()
 
     @classmethod
-    def delete_by_participant(cls, participant_id: int, role_id) -> None:
+    def delete_by_participant(cls, participant_id: int, role_ids: set[int]) -> None:
         db.session.execute(
             db.delete(cls).filter(
-                cls.participant_id == participant_id, cls.role_id == role_id
+                cls.participant_id == participant_id, cls.role_id.in_(role_ids)
             )
         )
