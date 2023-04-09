@@ -42,7 +42,7 @@ class ParticipantsEventSpace(EventSpace):
     @controller.database_searcher(Participant)
     @check_permission(controller, PermissionType.MANAGE_PARTICIPANTS)
     @controller.marshal_ack(Participant.FullModel)
-    def update_participant_role(
+    def update_participant(
         self,
         event: DuplexEvent,
         participant: Participant,
@@ -55,7 +55,7 @@ class ParticipantsEventSpace(EventSpace):
 
         received_role_ids: set[int] = set(role_ids)
 
-        ParticipantRole.delete_by_participant(
+        ParticipantRole.delete_by_ids(
             participant_id=participant.id,
             role_ids=current_role_ids - received_role_ids,
         )
@@ -74,7 +74,7 @@ class ParticipantsEventSpace(EventSpace):
     @controller.database_searcher(Participant)
     @check_permission(controller, PermissionType.MANAGE_PARTICIPANTS, use_user=True)
     @controller.force_ack()
-    def delete_participant_role(
+    def delete_participant(
         self,
         event: DuplexEvent,
         participant: Participant,

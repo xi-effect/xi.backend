@@ -91,14 +91,13 @@ class RolePermission(Base):
 
     @classmethod
     def create_bulk(cls, role_id: int, permissions: list[PermissionType]) -> None:
-        db.session.add_all(
-            cls(role_id=role_id, permission_type=permission)
-            for permission in permissions
-        )
+        db.session.add_all(cls(role_id=role_id, permission_type=permission) for permission in permissions)
         db.session.flush()
 
     @classmethod
-    def delete_by_role(cls, role_id: int, permissions_type: set[str]) -> None:
+    def delete_by_ids(
+        cls, role_id: int, permissions_type: set[str]
+    ) -> None:
         db.session.execute(
             db.delete(cls).filter(
                 cls.role_id == role_id, cls.permission_type.in_(permissions_type)
@@ -149,7 +148,7 @@ class ParticipantRole(Base):
         db.session.flush()
 
     @classmethod
-    def delete_by_participant(cls, participant_id: int, role_ids: set[int]) -> None:
+    def delete_by_ids(cls, participant_id: int, role_ids: set[int]) -> None:
         db.session.execute(
             db.delete(cls).filter(
                 cls.participant_id == participant_id, cls.role_id.in_(role_ids)

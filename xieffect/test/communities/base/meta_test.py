@@ -124,12 +124,11 @@ def test_participant(
 
     user = check_code(client.get("/home/"))
     username, user_id = user.get("username"), user.get("id")
-    participant = get_participants_list(client, test_community)[0]
-    participant_id, community_id = participant.get("id"), participant.get("community-id")
+    assert len(participants_list := get_participants_list(client, test_community)) != 0
     assert len(get_participants_list(client, test_community, username)) != 0
+    participant_id, community_id = participants_list[0].get("id"), participants_list[0].get("community-id")
 
     role_ids = get_role_ids(client, test_community)
-    assert isinstance(participant_id, int)
 
     # Participant update data
     participant_data = {
@@ -146,7 +145,7 @@ def test_participant(
     }
     # Assert participant update with different data
     participant_result = socketio_client.assert_emit_ack(
-        "update_participant_role", participant_data
+        "update_participant", participant_data
     )
 
     assert dict_equal(
@@ -156,7 +155,7 @@ def test_participant(
     )
 
     socketio_client2.assert_only_received(
-        "update_participant_role", successful_participant_data
+        "update_participant", successful_participant_data
     )
 
     create_participant_role(
@@ -168,7 +167,7 @@ def test_participant(
     slice_role_ids = len(role_ids) // 2
     participant_data["role_ids"] = role_ids[slice_role_ids:]
     second_participant_result = socketio_client.assert_emit_ack(
-        "update_participant_role", participant_data
+        "update_participant", participant_data
     )
 
     successful_participant_data["roles"] = get_roles_list_by_ids(
@@ -182,7 +181,7 @@ def test_participant(
     )
 
     socketio_client2.assert_only_received(
-        "update_participant_role", successful_participant_data
+        "update_participant", successful_participant_data
     )
 
     # delete participant data
@@ -194,15 +193,17 @@ def test_participant(
         client=socketio_client.flask_test_client,
     )
 
-    socketio_client.assert_emit_success("delete_participant_role", delete_data, code=400, message="Target is the source")
+    socketio_client.assert_emit_success(
+        "delete_participant", delete_data, code=400, message="Target is the source"
+    )
 
     new_user_id = check_code(multi_client("2@user.user").get("/home/")).get("id")
     new_participant_id = Participant.create(test_community, new_user_id).id
 
     delete_data["participant_id"] = new_participant_id
 
-    socketio_client.assert_emit_success("delete_participant_role", delete_data)
-    socketio_client2.assert_only_received("delete_participant_role", delete_data)
+    socketio_client.assert_emit_success("delete_participant", delete_data)
+    socketio_client2.assert_only_received("delete_participant", delete_data)
 
     for user in (socketio_client, socketio_client2):
         user.assert_emit_success("close_participants", community_id_json)

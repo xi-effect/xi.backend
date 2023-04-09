@@ -25,7 +25,7 @@ class VideochatEventSpace(EventSpace):
     @controller.mark_duplex(ChatParticipant.IndexModel, use_event=True)
     @check_participant(controller, use_user=True)
     @controller.marshal_ack(ChatParticipant.IndexModel)
-    def new_participant(
+    def new_chat_participant(
         self,
         event: DuplexEvent,
         user: User,
@@ -48,7 +48,7 @@ class VideochatEventSpace(EventSpace):
     @controller.mark_duplex(DeleteParticipant, use_event=True)
     @check_participant(controller)
     @controller.force_ack()
-    def delete_participant(
+    def delete_chat_participant(
         self, event: DuplexEvent, participant_id: int, community: Community
     ):
         participant = ChatParticipant.find_by_ids(participant_id, community.id)

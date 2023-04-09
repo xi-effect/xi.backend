@@ -111,7 +111,7 @@ class RolesEventSpace(EventSpace):
                 for permission in RolePermission.get_all_by_role(role.id)
             }
 
-            RolePermission.delete_by_role(
+            RolePermission.delete_by_ids(
                 permissions_type=permissions_from_db - received_permissions,
                 role_id=role.id,
             )
