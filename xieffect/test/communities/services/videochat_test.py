@@ -78,12 +78,12 @@ def test_videochat_tools(
         create_data = dict(
             **community_id_json, state={"microphone": True, "camera": True}
         )
-        participant = user.assert_emit_ack("new_participant", create_data)
+        participant = user.assert_emit_ack("new_chat_participant", create_data)
         participant_id = participant.get("user_id")
         assert isinstance(participant_id, int)
         assert participant_id in participants_ids
     member_data = dict(create_data, user_id=participant_id)
-    socketio_client.assert_only_received("new_participant", member_data)
+    socketio_client.assert_only_received("new_chat_participant", member_data)
     assert len(get_participant_list(client, test_community)) == len(participants_ids)
 
     # Check sending message
@@ -133,8 +133,8 @@ def test_videochat_tools(
     # Check successfully delete participant
     for code, message in ((200, "Success"), (404, "Participant not found")):
         sio_member.assert_emit_success(
-            "delete_participant", data, code=code, message=message
+            "delete_chat_participant", data, code=code, message=message
         )
         participant_list = get_participant_list(client, test_community)
         assert len(participant_list) == len(participants_ids) - 1
-    socketio_client.assert_only_received("delete_participant", data)
+    socketio_client.assert_only_received("delete_chat_participant", data)

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from flask_fullstack import Identifiable, PydanticModel
 from sqlalchemy import Column, ForeignKey, select
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 from common import User, Base, db
+from .roles_db import ParticipantRole, Role
 
 
 class Community(Base, Identifiable):
@@ -43,9 +44,14 @@ class Participant(Base, Identifiable):
     __tablename__ = "community_participant"
 
     id = Column(Integer, primary_key=True)
-    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
+    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
     user = relationship("User")
+    roles = relationship("Role", secondary=ParticipantRole.__table__)
+
+    FullModel = PydanticModel.column_model(id, user_id, community_id).nest_model(
+        Role.IndexModel, "roles", as_list=True
+    )
 
     @classmethod
     def create(cls, community_id: int, user_id: int):
@@ -55,7 +61,28 @@ class Participant(Base, Identifiable):
         )
 
     @classmethod
+    def find_by_id(cls, participant_id: int) -> Participant | None:
+        return cls.find_first_by_kwargs(id=participant_id)
+
+    @classmethod
     def find_by_ids(cls, community_id: int, user_id: int) -> Participant | None:
-        return db.session.get_first(
-            select(cls).filter_by(community_id=community_id, user_id=user_id)
+        return cls.find_first_by_kwargs(community_id=community_id, user_id=user_id)
+
+    @classmethod
+    def search_by_username(
+        cls,
+        search: str | None,
+        community_id: int,
+        offset: int,
+        limit: int,
+    ) -> list[Participant]:
+        stmt = (
+            select(cls)
+            .options(selectinload(cls.roles))
+            .filter_by(community_id=community_id)
         )
+        if search is not None:
+            stmt = stmt.join(User, User.id == cls.user_id).filter(
+                User.username.ilike(f"%{search}%")
+            )
+        return db.session.get_paginated(stmt, offset, limit)

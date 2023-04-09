@@ -34,7 +34,6 @@ def assert_create_community(
 
 def find_invite(list_tester, community_id: int, invite_id: int) -> dict | None:
     index_url = f"/communities/{community_id}/invitations/index/"
-
     for data in list_tester(index_url, {}, INVITATIONS_PER_REQUEST):
         if data["id"] == invite_id:
             return data
@@ -116,3 +115,32 @@ def create_assert_successful_join(assert_successful_get, list_tester) -> Callabl
         return assert_successful_join_inner
 
     return assert_successful_join_wrapper
+
+
+@fixture(scope="session")
+def get_role_ids(create_participant_role):
+    def wrapper_get_role_ids(client: FlaskClient, community_id: int):
+        return [
+            create_participant_role(
+                permission_type="MANAGE_INVITATIONS",
+                community_id=community_id,
+                client=client,
+            )
+            for _ in range(3)
+        ]
+
+    return wrapper_get_role_ids
+
+
+@fixture(scope="session")
+def get_roles_list_by_ids():
+    def wrapper_get_roles_list(client, community_id: int, role_ids: list) -> list[dict]:
+        """Check the success of getting the list of roles"""
+        result = check_code(client.get(f"/communities/{community_id}/roles/"))
+        roles: list = []
+        for role in result:
+            if role['id'] in role_ids:
+                role.pop("permissions")
+                roles.append(role)
+        return roles
+    return wrapper_get_roles_list

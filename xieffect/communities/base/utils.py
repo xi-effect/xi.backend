@@ -47,11 +47,17 @@ def check_permission(
     controller: ResourceController | EventController,
     permission_type: PermissionType,
     *,
+    use_participant: bool = False,
     use_user: bool = False,
 ):
     @controller.doc_abort(403, "Permission Denied")
     def check_permission_wrapper(function):
-        @check_participant(controller, use_participant_id=True, use_user=use_user)
+        @check_participant(
+            controller,
+            use_participant=use_participant,
+            use_participant_id=True,
+            use_user=use_user,
+        )
         @wraps(function)
         def check_permission_inner(*args, **kwargs):
             result = ParticipantRole.has_permission(
