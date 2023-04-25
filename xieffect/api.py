@@ -32,6 +32,7 @@ from other import (
     webhook_namespace,
     WebhookURLs,
 )
+from pages.pages_db import Page  # noqa: F401 # to create database models
 from users import (
     emailer_qa_namespace,
     feedback_namespace,
