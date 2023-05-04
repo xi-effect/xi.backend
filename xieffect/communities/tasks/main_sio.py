@@ -83,7 +83,7 @@ class TasksEventSpace(EventSpace):
             user.id, community.id, page_id, name, description, opened, closed
         )
         if len(files) != 0:
-            TaskEmbed.add_files(task.id, check_files(files))
+            TaskEmbed.add_files(check_files(files), task_id=task.id)
         event.emit_convert(task, self.room_name(community.id))
         return task
 
@@ -118,9 +118,9 @@ class TasksEventSpace(EventSpace):
         files: list[int] | None = kwargs.pop("files", None)
         if files is not None:
             new_files: set[int] = check_files(files)
-            old_files: set[int] = set(TaskEmbed.get_task_files(task.id))
-            TaskEmbed.delete_files(task.id, old_files - new_files)
-            TaskEmbed.add_files(task.id, new_files - old_files)
+            old_files: set[int] = set(TaskEmbed.get_file_ids(task_id=task.id))
+            TaskEmbed.delete_files(old_files - new_files, task_id=task.id)
+            TaskEmbed.add_files(new_files - old_files, task_id=task.id)
 
         Task.update(task.id, **kwargs)
         event.emit_convert(

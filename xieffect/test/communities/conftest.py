@@ -7,6 +7,8 @@ from pytest import fixture
 
 from common import db
 from common.users_db import User
+from communities.base.discussion_db import DiscussionMessage
+from communities.base.meta_db import Community
 from communities.base import (
     Participant,
     PermissionType,
@@ -14,7 +16,6 @@ from communities.base import (
     Role,
     RolePermission,
 )
-from communities.base.meta_db import Community
 from communities.tasks.main_db import Task
 from test.conftest import delete_by_id
 
@@ -187,3 +188,25 @@ def get_roles_list_by_ids():
         ]
 
     return wrapper_get_roles_list
+
+
+@fixture
+def test_message_content() -> dict[str, str]:
+    return {"test": "content"}
+
+
+@fixture
+def test_message_id(
+    base_user_id: int,
+    test_discussion_id: int,
+    test_message_content: dict[str, str],
+    test_file_id: int,
+) -> int:
+    message_id: int = DiscussionMessage.create(
+        content=test_message_content,
+        sender_id=base_user_id,
+        discussion_id=test_discussion_id,
+        files=[test_file_id],
+    ).id
+    yield message_id
+    delete_by_id(message_id, DiscussionMessage)

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from io import BytesIO
+from os import remove
+from os.path import exists
 from typing import Protocol, Any
 
 from flask_fullstack import (
@@ -13,11 +16,15 @@ from flask_fullstack.restx.testing import HeaderChecker
 from pydantic import constr
 from pytest import fixture
 from pytest_mock import MockerFixture
+from werkzeug.datastructures import FileStorage
 from werkzeug.test import TestResponse
 
-from common import User, mail, mail_initialized, Base, db
-from communities.base import CommunitiesUser
+from common import mail, mail_initialized, Base, db, open_file
+from common.users_db import User
+from communities.base.discussion_db import Discussion
+from communities.base.users_ext_db import CommunitiesUser
 from pages.pages_db import Page
+from vault.files_db import File, FILES_PATH
 from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
 
@@ -155,7 +162,7 @@ def base_user_data() -> tuple[str, str]:
 
 @fixture
 def base_user_id(base_user_data: tuple[str, str]) -> int:
-    user_id = User.create(
+    user_id: int = User.create(
         email=base_user_data[0],
         password=base_user_data[1],
         username="hey",
@@ -184,3 +191,41 @@ def test_page_id(base_user_id: int, test_page_data: dict[str, str | dict]) -> in
     db.session.commit()
     yield page_id
     delete_by_id(page_id, Page)
+
+
+def create_file(filename: str, contents: bytes) -> FileStorage:
+    return FileStorage(stream=BytesIO(contents), filename=filename)
+
+
+@fixture
+def file_maker(base_user_id: int) -> Callable[File]:
+    created: dict[int, str] = {}
+
+    def file_maker_inner(filename: str) -> File:
+        with open_file(f"xieffect/test/json/{filename}", "rb") as f:
+            contents: bytes = f.read()
+        user: User = User.find_first_by_kwargs(id=base_user_id)
+        file_storage: FileStorage = create_file(filename, contents)
+        file: File = File.create(user, file_storage.filename)
+        file_storage.save(FILES_PATH + file.filename)
+        created[file.id] = file.filename
+        return file
+
+    yield file_maker_inner
+
+    for file_id, name in created.items():
+        if exists(FILES_PATH + name):
+            remove(FILES_PATH + name)
+        delete_by_id(file_id, File)
+
+
+@fixture
+def test_file_id(file_maker: Callable[File]) -> int:
+    return file_maker("test-1.json").id
+
+
+@fixture
+def test_discussion_id() -> int:
+    discussion_id: int = Discussion.create().id
+    yield discussion_id
+    delete_by_id(discussion_id, Discussion)
