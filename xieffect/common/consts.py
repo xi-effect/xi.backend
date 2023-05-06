@@ -13,3 +13,5 @@ TEST_INVITE_ID: int = 0
 
 # From environment
 DISABLE_WEBHOOKS: bool = getenv("ENABLE_WEBHOOKS", "0") != "1"
+PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
+DATABASE_RESET: bool = getenv("DATABASE_RESET", "0") == "1"
