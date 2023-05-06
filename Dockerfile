@@ -24,4 +24,4 @@ RUN chmod +x xieffect/*.sh
 WORKDIR /backend/xieffect
 EXPOSE 5000
 
-ENTRYPOINT ["./gunicorn.sh"]
+ENTRYPOINT ["./server.sh"]
