@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from json import dump as dump_json, load as load_json
 from pathlib import Path
-from sys import argv, modules
 
 from api import app as application, log_stuff, socketio
 from common import (
@@ -19,6 +18,7 @@ from common import (
     BASIC_PASS,
     absolute_path,
 )
+from common.consts import PRODUCTION_MODE, DATABASE_RESET
 from moderation import Moderator, permission_index
 from other import send_discord_message, WebhookURLs
 from users.invites_db import Invite
@@ -37,22 +37,7 @@ def init_test_mod() -> None:
         moderator.super = True
 
 
-if (  # noqa: WPS337
-    __name__ == "__main__"
-    or "pytest" in modules
-    or db_url.endswith("test.db")
-    or "form-sio-docs" in argv
-    or "database" in argv
-):  # pragma: no coverage
-    application.debug = True
-    with application.app_context():
-        if db_url.endswith("app.db"):
-            db.drop_all()
-        if not db_url.startswith("postgresql"):
-            db.create_all()
-        init_test_mod()
-        db.session.commit()
-else:  # works on server restart  # pragma: no coverage
+if PRODUCTION_MODE:  # works on server restart  # pragma: no coverage
     send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
     setup_fail: bool = False
@@ -76,6 +61,15 @@ else:  # works on server restart  # pragma: no coverage
         setup_fail = True
     if setup_fail:
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
+else:
+    application.debug = True
+    with application.app_context():
+        if db_url.endswith("app.db") or DATABASE_RESET:
+            db.drop_all()
+        if not db_url.startswith("postgresql") or DATABASE_RESET:
+            db.create_all()
+        init_test_mod()
+        db.session.commit()
 
 
 def init_folder_structure() -> None:
