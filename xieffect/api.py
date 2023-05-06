@@ -6,6 +6,7 @@ from logging import Logger
 from sys import stderr
 
 from flask_fullstack import SocketIO
+from requests import HTTPError
 
 from common import app, db, versions, open_file
 from communities import (
@@ -52,16 +53,17 @@ def log_stuff(level: str, message: str) -> None:  # TODO # noqa: WPS231
         if level == "status":
             send_discord_message(WebhookURLs.STATUS, message)
         else:
-            if len(message) < 200:
-                response = send_discord_message(WebhookURLs.ERRORS, message)
-            else:
-                response = send_file_discord_message(
-                    WebhookURLs.ERRORS,
-                    file_content=message,
-                    file_name="error_message.txt",
-                    message="Server error appeared!",
-                )
-            if response.status_code < 200 or response.status_code > 299:
+            try:
+                if len(message) < 200:
+                    send_discord_message(WebhookURLs.ERRORS, message)
+                else:
+                    send_file_discord_message(
+                        WebhookURLs.ERRORS,
+                        file_content=message,
+                        file_name="error_message.txt",
+                        message="Server error appeared!",
+                    )
+            except HTTPError:
                 send_discord_message(
                     WebhookURLs.ERRORS,
                     "Server error appeared!\nBut I failed to report it...",
