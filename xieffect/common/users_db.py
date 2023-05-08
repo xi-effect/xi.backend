@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import UserRole, PydanticModel, Identifiable
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Date
 
-from ._core import Base, db  # noqa: WPS436
+from common._core import Base, db  # noqa: WPS436
+from common.abstract import SoftDeletable
 
 
 class BlockedToken(Base):
@@ -17,10 +20,10 @@ class BlockedToken(Base):
 
     @classmethod
     def find_by_jti(cls, jti: str) -> BlockedToken:
-        return db.session.get_first(select(cls).filter_by(jti=jti))
+        return db.get_first(select(cls).filter_by(jti=jti))
 
 
-class User(Base, UserRole, Identifiable):
+class User(SoftDeletable, UserRole, Identifiable):
     __tablename__ = "users"
     not_found_text = "User does not exist"
     unauthorized_error = (401, not_found_text)
@@ -49,22 +52,17 @@ class User(Base, UserRole, Identifiable):
     patronymic = Column(String(100), nullable=True)
     birthday = Column(Date, nullable=True)
 
-    # Education data:
+    # Education data:  # TODO delete
     theory_level = Column(Float, nullable=False, default=0.5)
     filter_bind = Column(String(10), nullable=True)
 
-    # Role-related:
-    author = relationship("Author", backref="user", uselist=False)
-    # TODO remove non-common reference
-    # moderator = relationship("Moderator", backref="user", uselist=False)  # TODO DEPRECATED, redo with MUB
-
-    # Chat-related
-    # chats = relationship("UserToChat", back_populates="user")  # TODO remove non-common reference
-
     # Invite-related
     code = Column(String(100), nullable=True)
-    invite_id = Column(Integer, ForeignKey("invites.id"), nullable=True)
-    # TODO remove non-common reference
+    invite_id = Column(
+        Integer,
+        ForeignKey("invites.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
+    )  # TODO remove non-common reference
     invite = relationship(
         "Invite", back_populates="invited"
     )  # TODO remove non-common reference
@@ -75,20 +73,25 @@ class User(Base, UserRole, Identifiable):
     )
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> User | None:
-        return db.session.get_first(select(cls).filter_by(id=entry_id))
+    def find_by_id(cls, entry_id: int) -> Self | None:
+        return cls.find_first_not_deleted(id=entry_id)
 
     @classmethod
-    def find_by_identity(cls, identity: int) -> User | None:
+    def find_by_identity(cls, identity: int) -> Self | None:
         return cls.find_by_id(identity)
 
     @classmethod
-    def find_by_handle(cls, handle: str) -> User | None:
-        return db.session.get_first(select(cls).filter_by(handle=handle))
+    def find_by_handle(cls, handle: str | None, exclude_id: int = None) -> Self | None:
+        if handle is None:
+            return None
+        stmt = select(cls).filter_by(handle=handle)
+        if exclude_id is not None:
+            stmt = stmt.filter(cls.id != exclude_id)
+        return db.get_first(stmt)
 
     @classmethod
-    def find_by_email_address(cls, email) -> User | None:
-        return db.session.get_first(select(cls).filter_by(email=email))
+    def find_by_email_address(cls, email) -> Self | None:
+        return cls.find_first_by_kwargs(email=email)
 
     @classmethod  # TODO this class shouldn't know about invites
     def create(
@@ -113,12 +116,14 @@ class User(Base, UserRole, Identifiable):
         return new_user
 
     @classmethod
-    def search_by_params(cls, offset: int, limit: int, **kwargs: str | None):
-        stmt = select(cls)
+    def search_by_params(
+        cls, offset: int, limit: int, **kwargs: str | None
+    ) -> list[Self]:
+        stmt = cls.select_not_deleted()
         for k, v in kwargs.items():
             if v is not None:
                 stmt = stmt.filter(getattr(cls, k).contains(v))
-        return db.session.get_paginated(stmt, offset, limit)
+        return db.get_paginated(stmt, offset, limit)
 
     @classmethod
     def search_by_username(
@@ -127,13 +132,13 @@ class User(Base, UserRole, Identifiable):
         search: str | None,
         offset: int,
         limit: int,
-    ) -> list[User]:
-        stmt = select(cls).filter(cls.id != exclude_id)
+    ) -> list[Self]:
+        stmt = cls.select_not_deleted().filter(cls.id != exclude_id)
         if search is not None:
             stmt = stmt.filter(cls.username.contains(search))
-        return db.session.get_paginated(stmt, offset, limit)
+        return db.get_paginated(stmt, offset, limit)
 
-    def get_identity(self):
+    def get_identity(self) -> int:
         return self.id
 
     def change_email(self, new_email: str) -> None:

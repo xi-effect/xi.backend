@@ -6,7 +6,8 @@ from pydantic import BaseModel
 
 from common import EventController, User
 from .videochat_db import ChatMessage, ChatParticipant, PARTICIPANT_LIMIT
-from ..base import Community, ParticipantRole, PermissionType, Participant, check_participant
+from ..base import Community, PermissionType, ParticipantRole, Participant
+from ..base.utils import check_participant
 
 controller = EventController()
 
@@ -14,7 +15,7 @@ controller = EventController()
 @controller.route()
 class VideochatEventSpace(EventSpace):
     @classmethod
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-videochat-{community_id}"
 
     class CommunityIdModel(BaseModel):
@@ -96,7 +97,9 @@ class VideochatEventSpace(EventSpace):
     ):
         checks = [
             participant.user_id == message.sender_id,
-            ParticipantRole.has_permission(participant.id, PermissionType.MANAGE_MESSAGES),
+            ParticipantRole.has_permission(
+                participant.id, PermissionType.MANAGE_MESSAGES
+            ),
         ]
 
         if not any(checks):

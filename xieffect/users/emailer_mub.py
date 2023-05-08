@@ -13,7 +13,7 @@ controller = MUBController("emailer", path="/emailer/")
 
 
 @controller.route("/send/")
-class EmailQAResource(Resource):  # TODO pragma: no coverage (action)
+class EmailQAResource(Resource):
     parser = RequestParser()
     parser.add_argument(
         "user-email",

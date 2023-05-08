@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
+
 from discord_webhook import DiscordWebhook
 from flask_fullstack import TypeEnum
-from requests import post, Response
+
+from common.consts import DISABLE_WEBHOOKS
 
 
 class WebhookURLs(TypeEnum):
@@ -17,22 +20,26 @@ class WebhookURLs(TypeEnum):
     LOLBOT = "1005549141730009108/saLOYG8mQXtUk8yLnD-9Vh4Sagr63sgy7SvYSHzmc1-0gjdyqPvqOdapNP0cYW3VvBgg"
 
 
-def send_message(webhook_url: WebhookURLs, message: str) -> Response:
-    return post(
-        f"https://discord.com/api/webhooks/{webhook_url.value}",
-        json={"content": message},
-    )
-
-
 def send_file_message(
     webhook_url: WebhookURLs,
-    file_content: str,
-    file_name: str,
     message: str,
-) -> Response:
+    file_content: str | None = None,
+    file_name: str = "attachment.txt",
+) -> None:
+    if DISABLE_WEBHOOKS:
+        logging.warning(message)
+        if file_content is not None:
+            logging.warning(file_content)
+        return
+
     webhook = DiscordWebhook(
         url=f"https://discord.com/api/webhooks/{webhook_url.value}"
     )
-    webhook.add_file(file=file_content, filename=file_name)
+    if file_content is not None:
+        webhook.add_file(file=file_content, filename=file_name)
     webhook.set_content(message)
-    return webhook.execute()
+    webhook.execute().raise_for_status()
+
+
+def send_message(webhook_url: WebhookURLs, message: str) -> None:
+    send_file_message(webhook_url, message=message)

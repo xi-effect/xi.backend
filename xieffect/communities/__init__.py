@@ -1,5 +1,5 @@
-from .base import CommunitiesUser
 from .base import (
+    CommunitiesUser,
     communities_namespace,
     participants_events,
     invitation_namespace,
@@ -8,6 +8,5 @@ from .base import (
     communities_meta_events,
     invitation_events,
 )
-from .services import news_namespace, news_events
-from .services import tasks_namespace, tasks_events
-from .services import videochat_namespace, videochat_events
+from .services import news_namespace, news_events, videochat_namespace, videochat_events
+from .tasks import teacher_tasks_namespace, student_tasks_namespace, tasks_events

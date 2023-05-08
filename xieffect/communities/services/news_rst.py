@@ -12,7 +12,8 @@ controller = ResourceController(
 )
 
 
-@controller.route("/index/")
+@controller.route("/")
+@controller.route("/index/")  # TODO: remove after front fix
 class NewsLister(Resource):
     @check_participant(controller)
     @controller.argument_parser(counter_parser)

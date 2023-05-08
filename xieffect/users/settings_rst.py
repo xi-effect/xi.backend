@@ -23,7 +23,7 @@ class Settings(Resource):
 
     @controller.jwt_authorizer(User)
     @controller.marshal_with(User.ProfileData)
-    def get(self, user: User):
+    def get(self, user: User) -> User:
         """Loads user's own full settings"""
         return user
 
@@ -38,7 +38,7 @@ class Settings(Resource):
         handle: str | None,
         **kwargs,
     ) -> str:
-        if User.find_by_handle(handle) is not None:
+        if User.find_by_handle(handle, user.id) is not None:
             return "Handle already in use"
         user.change_settings(birthday=birthday, handle=handle, **kwargs)
         return "Success"

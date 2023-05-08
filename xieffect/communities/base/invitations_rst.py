@@ -16,8 +16,17 @@ controller = ResourceController("communities-invitation", path="/communities/")
 INVITATIONS_PER_REQUEST = 20
 
 
-@controller.route("/<int:community_id>/invitations/index/")
+@controller.route("/<int:community_id>/invitations/")
 class InvitationLister(Resource):
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
+    @controller.argument_parser(counter_parser)
+    @controller.lister(INVITATIONS_PER_REQUEST, Invitation.FullModel)
+    def get(self, community: Community, start: int, finish: int):
+        return Invitation.find_by_community(community.id, start, finish - start)
+
+
+@controller.route("/<int:community_id>/invitations/index/")
+class OldInvitationLister(Resource):
     @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
     @controller.argument_parser(counter_parser)
     @controller.lister(INVITATIONS_PER_REQUEST, Invitation.FullModel)
@@ -82,7 +91,10 @@ class InvitationJoin(Resource):
     def post(self, user: User, invitation: Invitation | None, community: Community):
         if invitation is None:
             controller.abort(400, "User has already joined")
-        participant = Participant.create(community.id, user.id)
+        participant = Participant.add(
+            community_id=community.id,
+            user_id=user.id,
+        )
         ParticipantRole.create_bulk(
             participant_id=participant.id,
             role_ids=[role.id for role in invitation.roles],

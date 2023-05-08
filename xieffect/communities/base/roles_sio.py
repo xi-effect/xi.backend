@@ -7,14 +7,14 @@ from flask_socketio import leave_room, join_room
 from pydantic import BaseModel, Field
 
 from common import EventController
-from .meta_db import Community
-from .roles_db import (
+from communities.base.meta_db import Community
+from communities.base.roles_db import (
     Role,
     RolePermission,
     PermissionType,
     LIMITING_QUANTITY_ROLES,
 )
-from .utils import check_participant, check_permission
+from .utils import check_permission
 
 controller = EventController()
 
@@ -39,20 +39,20 @@ def check_permissions(function):
 @controller.route()
 class RolesEventSpace(EventSpace):
     @classmethod
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-roles-{community_id}"
 
     class CommunityIdModel(BaseModel):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @check_permission(controller, PermissionType.MANAGE_ROLES)
     @controller.force_ack()
     def open_roles(self, community: Community):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @check_permission(controller, PermissionType.MANAGE_ROLES)
     @controller.force_ack()
     def close_roles(self, community: Community):
         leave_room(self.room_name(community.id))
@@ -137,7 +137,7 @@ class RolesEventSpace(EventSpace):
         role: Role,
         community: Community,
     ):
-        role.delete()
+        role.soft_delete()
         event.emit_convert(
             room=self.room_name(community.id),
             community_id=community.id,

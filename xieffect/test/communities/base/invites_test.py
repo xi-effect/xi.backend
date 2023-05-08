@@ -1,19 +1,24 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import timedelta, date
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code, dict_equal
+from flask_fullstack import (
+    FlaskTestClient,
+    SocketIOTestClient,
+    dict_cut,
+    assert_contains,
+)
+from pydantic import constr
 from pytest import mark
 
-from common.testing import SocketIOTestClient
-from communities.base import INVITATIONS_PER_REQUEST
-from ..conftest import COMMUNITY_DATA
+from communities.base import Community, Invitation
+from ..conftest import COMMUNITY_DATA, assert_create_community
+from ...conftest import delete_by_id
 
 
 class InvitesTester:
-    def __init__(self, client: FlaskClient, room_data: dict, *clients):
+    def __init__(self, client: FlaskTestClient, room_data: dict, *clients):
         self.sio1 = SocketIOTestClient(client)
         self.sio2 = SocketIOTestClient(client)
         self.sio3 = SocketIOTestClient(client)
@@ -27,18 +32,22 @@ class InvitesTester:
         self.assert_nop()
 
     def assert_create_invite(self, invite_data: dict) -> dict:
-        invite = self.sio1.assert_emit_ack("new_invite", invite_data)
-        assert isinstance(invite, dict)
-        assert "id" in invite
-        assert "code" in invite
-        assert dict_equal(invite, invite_data, "limit")
-
         days = invite_data.get("days")
         if days is not None:
-            deadline = invite.get("deadline")
-            assert deadline is not None
-            dt: datetime = datetime.fromisoformat(deadline)
-            assert dt.day == (datetime.utcnow() + timedelta(days=days)).day
+            deadline_regex: str = (
+                date.today() + timedelta(days=days)
+            ).isoformat() + r"T\d{2}:\d{2}:\d{2}\.\d+"
+
+        invite = self.sio1.assert_emit_ack(
+            event_name="new_invite",
+            data=invite_data,
+            expected_data={
+                "id": int,
+                "code": str,
+                "deadline": None if days is None else constr(regex=deadline_regex),
+                **dict_cut(invite_data, "role", "limit", default=None),
+            },
+        )
 
         self.sio2.assert_only_received("new_invite", invite)
         self.assert_nop()
@@ -55,7 +64,7 @@ class InvitesTester:
 
 
 @mark.order(1020)
-def test_invites(client, list_tester, test_community, get_role_ids):
+def test_invites(client, socketio_client, test_community, get_role_ids):
     role_ids = get_role_ids(client, test_community)
     invite_data = {
         "community_id": test_community,
@@ -63,19 +72,19 @@ def test_invites(client, list_tester, test_community, get_role_ids):
         "days": 10,
         "role_ids": role_ids,
     }
-    index_url = f"/communities/{test_community}/invitations/index/"
+    index_url = f"/communities/{test_community}/invitations/"
 
     # check that the invite list is empty
-    assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 0
+    assert len(list(client.paginate(index_url))) == 0
 
     # init sio & join rooms
     invite_tester = InvitesTester(client, {"community_id": test_community})
 
     # create a new invite
     invite = invite_tester.assert_create_invite(invite_data)
-    data = list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))
+    data = list(client.paginate(index_url))
     assert len(data) == 1
-    assert dict_equal(data[0], invite, *invite.keys())
+    assert_contains(data[0], invite)
 
     # delete invite & check again
     invite_tester.assert_delete_invite(
@@ -84,14 +93,78 @@ def test_invites(client, list_tester, test_community, get_role_ids):
             "invitation_id": invite["id"],
         }
     )
-    assert len(list(list_tester(index_url, {}, INVITATIONS_PER_REQUEST))) == 0
+    assert len(list(client.paginate(index_url))) == 0
+
+    # check constraints
+    community_data = {"name": "invite_test"}
+    community_id = assert_create_community(socketio_client, community_data)
+    index_url = f"/communities/{community_id}/invitations/"
+    invite_tester = InvitesTester(client, {"community_id": community_id})
+    invite = invite_tester.assert_create_invite(
+        dict(invite_data, community_id=community_id)
+    )
+    assert len(list(client.paginate(index_url))) == 1
+
+    delete_by_id(community_id, Community)
+    assert Invitation.find_by_id(invite.get("id")) is None
+
+
+def find_invite(
+    client: FlaskTestClient,
+    community_id: int,
+    invite_id: int,
+) -> dict | None:
+    index_url = f"/communities/{community_id}/invitations/"
+
+    for data in client.paginate(index_url):
+        if data["id"] == invite_id:
+            return data
+    return None
+
+
+def assert_successful_get(client: FlaskTestClient, code: str, joined: bool):
+    client.get(
+        f"/communities/join/{code}/",
+        expected_json={
+            "joined": joined,
+            "authorized": True,
+            "community": COMMUNITY_DATA,
+        },
+    )
+
+
+def create_assert_successful_join(member: FlaskTestClient, community_id: int):
+    def assert_successful_join(
+        client: FlaskTestClient,
+        invite_id: int,
+        code: str,
+        *sio_clients: SocketIOTestClient,
+    ):
+        invite = find_invite(member, community_id, invite_id)
+        assert invite is not None, "Invitation not found inside assert_successful_join"
+        limit_before = invite.get("limit")
+
+        assert_successful_get(client, code, joined=False)
+        assert client.post(f"/communities/join/{code}/", expected_json=COMMUNITY_DATA)
+
+        if limit_before is not None:
+            invite = find_invite(member, community_id, invite_id)
+            if invite is None:
+                assert limit_before == 1
+            else:
+                assert invite["limit"] == limit_before - 1
+
+        for sio in sio_clients:
+            sio.assert_only_received("new_community", COMMUNITY_DATA)
+
+    return assert_successful_join
 
 
 @mark.order(1022)
 def test_invite_joins(
-    base_client: FlaskClient,
-    client: FlaskClient,
-    multi_client: Callable[[str], FlaskClient],
+    base_client: FlaskTestClient,
+    client: FlaskTestClient,
+    multi_client: Callable[[str], FlaskTestClient],
     test_community: int,
     create_assert_successful_join,
     assert_successful_get,
@@ -106,35 +179,39 @@ def test_invite_joins(
 
         if check_auth:
             join_url = f"/communities/join/{invite['code']}/"
-            data = check_code(base_client.get(join_url))
-            assert data.get("joined") is False
-            assert data.get("authorized") is False
+            base_client.get(
+                join_url,
+                expected_json={
+                    "joined": False,
+                    "authorized": False,
+                    "community": COMMUNITY_DATA,
+                },
+            )
 
-            community = data.get("community")
-            assert community is not None
-            assert dict_equal(community, COMMUNITY_DATA, *COMMUNITY_DATA.keys())
-
-            check_code(base_client.post(join_url), 401)
+            base_client.post(join_url, expected_status=401)
 
         return invite["id"], invite["code"]
 
     assert_successful_join = create_assert_successful_join(test_community)
 
-    def assert_invalid_invite(client: FlaskClient, code: str):
-        assert (
-            check_code(client.get(f"/communities/join/{code}/"), 400)["a"]
-            == "Invalid invitation"
+    def assert_invalid_invite(client: FlaskTestClient, code: str):
+        client.get(
+            f"/communities/join/{code}/",
+            expected_status=400,
+            expected_json={"a": "Invalid invitation"},
         )
-        assert (
-            check_code(client.post(f"/communities/join/{code}/"), 400)["a"]
-            == "Invalid invitation"
+        client.post(
+            f"/communities/join/{code}/",
+            expected_status=400,
+            expected_json={"a": "Invalid invitation"},
         )
 
-    def assert_already_joined(client: FlaskClient, code: str):
+    def assert_already_joined(client: FlaskTestClient, code: str):
         assert_successful_get(client, code, joined=True)
-        assert (
-            check_code(client.post(f"/communities/join/{code}/"), 400)["a"]
-            == "User has already joined"
+        client.post(
+            f"/communities/join/{code}/",
+            expected_status=400,
+            expected_json={"a": "User has already joined"},
         )
 
     vasil1 = multi_client("1@user.user")
@@ -187,9 +264,9 @@ def test_invite_joins(
 
 @mark.order(1024)
 def test_invites_errors(
-    client,
-    multi_client,
-    test_community,
+    client: FlaskTestClient,
+    multi_client: Callable[[str], FlaskTestClient],
+    test_community: int,
     create_participant_role,
     create_assert_successful_join,
 ):
@@ -227,9 +304,14 @@ def test_invites_errors(
     )
 
     # fail check function
-    def assert_fail_event(sio, code: int, message: str):
+    def assert_fail_event(sio: SocketIOTestClient, code: int, message: str):
         for event_name, event_data in test_events:
-            sio.assert_emit_ack(event_name, event_data, code=code, message=message)
+            sio.assert_emit_ack(
+                event_name=event_name,
+                data=event_data,
+                expected_code=code,
+                expected_message=message,
+            )
             invite_tester.assert_nop()
 
     # fail to enter the room by outsider

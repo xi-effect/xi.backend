@@ -2,43 +2,37 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code, dict_equal
+from flask_fullstack import SocketIOTestClient, dict_rekey, assert_contains
 from pytest import mark
 
-from common.testing import SocketIOTestClient
-from communities.base import Participant
-from ..conftest import assert_create_community
+from common import User
+from communities.base import Participant, Community
+from test.communities.conftest import assert_create_community
+from test.conftest import delete_by_id, FlaskTestClient
+from test.vault_test import upload
+from vault import File
 
 
-def get_communities_list(client: FlaskClient) -> list[dict]:
-    result = check_code(client.get("/home/")).get("communities")
-    assert isinstance(result, list)
-    return result
+def get_communities_list(client: FlaskTestClient) -> list[dict]:
+    return client.get("/home/", expected_json={"communities": list})["communities"]
 
 
 def get_participants_list(
-    client: FlaskClient, community_id: int, username: str | None = None
+    client: FlaskTestClient, community_id: int, username: str | None = None
 ) -> list[dict]:
     link = f"/communities/{community_id}/participants/"
     if username is not None:
-        link += f"?search={username}"
-    result = check_code(
-        client.get(
-            link,
-            json={"counter": 20, "offset": 0},
-        )
-    ).get("results")
-    assert isinstance(result, list)
-    return result
+        link += f"?search={username}"  # noqa: WPS336
+    return list(client.paginate(link))
 
 
 @mark.order(1000)
-def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient):
+def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestClient):
     community_ids = [d["id"] for d in get_communities_list(client)]
 
     community_data = {"name": "12345", "description": "test"}
     community_id = assert_create_community(socketio_client, community_data)
+    community_id_json = {"community_id": community_id}
     community_ids.append(community_id)
 
     found = False
@@ -46,13 +40,39 @@ def test_meta_creation(client: FlaskClient, socketio_client: SocketIOTestClient)
         assert data["id"] in community_ids
         if data["id"] == community_id:
             assert not found
-            assert dict_equal(data, community_data, *community_data.keys())
+            assert_contains(data, community_data)
             found = True
     assert found
 
+    # Update metadata
+    update_data = dict(**community_id_json, name="new_name", description="upd")
+    for data in (update_data, dict(community_data, **community_id_json)):
+        socketio_client.assert_emit_ack(
+            event_name="update_community",
+            data=data,
+            expected_data=dict_rekey(data, community_id="id"),
+        )
+
+    # Set and delete avatar
+    file_id = upload(client, "test-1.json")[0].get("id")
+    assert File.find_by_id(file_id) is not None
+
+    client.post(
+        f"/communities/{community_id}/avatar/",
+        json={"avatar-id": file_id},
+        expected_a=True,
+    )
+    client.get(
+        f"/communities/{community_id}/",
+        expected_json={"avatar": {"id": file_id}},
+    )
+
+    client.delete(f"/communities/{community_id}/avatar/", expected_a=True)
+    client.get(f"/communities/{community_id}/", expected_json={"avatar": None})
+
 
 @mark.order(1005)
-def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient):
+def test_community_list(client: FlaskTestClient, socketio_client: SocketIOTestClient):
     def assert_order():
         for i, data in enumerate(get_communities_list(client)):
             assert data["id"] == community_ids[i]
@@ -61,14 +81,10 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     community_ids = [d["id"] for d in get_communities_list(client)]
     assert_order()
 
-    # TODO check order with new community listing
-
     # Creating
-    def assert_double_create(community_data: dict):
-        community_id = assert_create_community(socketio_client, community_data)
-        socketio_client2.assert_received(
-            "new_community", dict(community_data, id=community_id)
-        )
+    def assert_double_create(data: dict):
+        community_id = assert_create_community(socketio_client, data)
+        socketio_client2.assert_received("new_community", dict(data, id=community_id))
         return community_id
 
     community_datas: list[dict[str, str | int]] = [
@@ -79,16 +95,23 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
 
     for community_data in community_datas:
         community_data["id"] = assert_double_create(community_data)
-        community_ids.insert(0, community_data["id"])
-    # assert_order
+        community_ids.append(community_data["id"])
+
+    user_id = client.get("/home/", expected_json={"id": int})["id"]
+    real_ids = [community.id for community in Participant.get_communities_list(user_id)]
+    assert len(real_ids) == len(community_ids)
+    assert real_ids == community_ids
 
     # Reordering
-    reorder_data = {"source_id": community_datas[0]["id"], "target_index": 0}
+    reorder_data = {
+        "source_id": community_datas[0]["id"],
+        "target_index": community_datas[-1]["id"],
+    }
     socketio_client.assert_emit_success("reorder_community", reorder_data)
     socketio_client2.assert_only_received("reorder_community", reorder_data)
 
     community_ids.remove(reorder_data["source_id"])
-    community_ids.insert(reorder_data["target_index"], reorder_data["source_id"])
+    community_ids.insert(reorder_data["target_index"] - 1, reorder_data["source_id"])
     # assert_order
 
     # Leaving
@@ -97,17 +120,45 @@ def test_community_list(client: FlaskClient, socketio_client: SocketIOTestClient
     socketio_client2.assert_only_received("leave_community", leave_data)
 
     community_ids.remove(leave_data["community_id"])
-    # assert_order
+    client.get(
+        "/home/",
+        expected_json={"communities": [{"id": value} for value in community_ids]},
+    )
+
+
+def test_community_delete(
+    client: FlaskTestClient,
+    socketio_client: SocketIOTestClient,
+):
+    community_id = assert_create_community(socketio_client, {"name": "test"})
+    socketio_client.assert_emit_success(
+        "delete_community", {"community_id": community_id}
+    )
+    client.get(
+        f"/communities/{community_id}/",
+        expected_status=404,
+        expected_a="Community not found",
+    )
+    delete_by_id(community_id, Community)
+
+
+def test_participant_constraints(
+    table: type[User | Community],
+    base_user_id: int,
+    community_id: int,
+):
+    delete_by_id(base_user_id if (table == User) else community_id, table)
+    assert Participant.find_by_ids(community_id, base_user_id) is None
 
 
 def test_participant(
-    client: FlaskClient,
+    client: FlaskTestClient,
     multi_client: Callable[str],
     socketio_client: SocketIOTestClient,
     test_community: int,
-    create_participant_role: Callable[str, int, FlaskClient],
-    get_role_ids: Callable[FlaskClient, int],
-    get_roles_list_by_ids: Callable[FlaskClient, int, list[int]],
+    create_participant_role: Callable[str, int, FlaskTestClient],
+    get_role_ids: Callable[FlaskTestClient, int],
+    get_roles_list_by_ids: Callable[FlaskTestClient, int, list[int]],
 ):
     socketio_client2 = SocketIOTestClient(client)
     community_id_json = {"community_id": test_community}
@@ -122,11 +173,19 @@ def test_participant(
         client=socketio_client.flask_test_client,
     )
 
-    user = check_code(client.get("/home/"))
+    user = client.get(
+        "/home/",
+        expected_json={
+            "username": str,
+            "id": int,
+        },
+    )
     username, user_id = user.get("username"), user.get("id")
     assert len(participants_list := get_participants_list(client, test_community)) != 0
     assert len(get_participants_list(client, test_community, username)) != 0
-    participant_id, community_id = participants_list[0].get("id"), participants_list[0].get("community-id")
+    participant_id, community_id = participants_list[0].get("id"), participants_list[
+        0
+    ].get("community-id")
 
     role_ids = get_role_ids(client, test_community)
 
@@ -144,14 +203,10 @@ def test_participant(
         "roles": roles,
     }
     # Assert participant update with different data
-    participant_result = socketio_client.assert_emit_ack(
-        "update_participant", participant_data
-    )
-
-    assert dict_equal(
-        participant_result,
-        successful_participant_data,
-        *successful_participant_data.keys(),
+    socketio_client.assert_emit_ack(
+        "update_participant",
+        participant_data,
+        expected_data=successful_participant_data,
     )
 
     socketio_client2.assert_only_received(
@@ -166,18 +221,13 @@ def test_participant(
 
     slice_role_ids = len(role_ids) // 2
     participant_data["role_ids"] = role_ids[slice_role_ids:]
-    second_participant_result = socketio_client.assert_emit_ack(
-        "update_participant", participant_data
-    )
-
     successful_participant_data["roles"] = get_roles_list_by_ids(
         client, test_community, role_ids[slice_role_ids:]
     )
-
-    assert dict_equal(
-        second_participant_result,
-        successful_participant_data,
-        *successful_participant_data.keys(),
+    socketio_client.assert_emit_ack(
+        "update_participant",
+        participant_data,
+        expected_data=successful_participant_data,
     )
 
     socketio_client2.assert_only_received(
@@ -197,7 +247,8 @@ def test_participant(
         "delete_participant", delete_data, code=400, message="Target is the source"
     )
 
-    new_user_id = check_code(multi_client("2@user.user").get("/home/")).get("id")
+    client2 = multi_client("2@user.user")
+    new_user_id = client2.get("/home/", expected_json={"id": int})["id"]
     new_participant_id = Participant.create(test_community, new_user_id).id
 
     delete_data["participant_id"] = new_participant_id

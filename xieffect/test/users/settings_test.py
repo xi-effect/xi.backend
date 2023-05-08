@@ -2,31 +2,40 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code
-from pytest import mark
+from flask_mail import Message
+from pytest import mark, param
 
+from other import EmailType
+from test.conftest import FlaskTestClient
+from test.vault_test import upload
 from vault import File
 from wsgi import TEST_EMAIL, BASIC_PASS
-from .feedback_test import assert_message
-from ..vault_test import upload
 
 TEST_EMAIL2 = "2@user.user"
 
 
 @mark.order(106)
 def test_changing_settings(
-    client: FlaskClient, multi_client: Callable[[str], FlaskClient]
+    client: FlaskTestClient,
+    multi_client: Callable[[str], FlaskTestClient],
+    test_user_id: int,
 ):
+    client2 = multi_client(TEST_EMAIL2)
 
     # Check getting settings
-    old_settings: dict = check_code(client.get("/users/me/profile/"))
-    for key in ("email", "email-confirmed", "username", "code"):
-        assert key in old_settings
+    settings_model: dict = {
+        "handle": None,
+        "email": str,
+        "email-confirmed": bool,
+        "username": str,
+        "code": str,
+    }
+    old_settings = client.get("/users/me/profile/", expected_json=settings_model)
+    client2.get(f"/users/{test_user_id}/profile/", expected_json=old_settings)
 
+    # Check changing settings
     new_settings = {
         "username": "hey",
-        "handle": "igorthebest",
         "name": "Igor",
         "surname": "Bestov",
         "patronymic": "Thebestovich",
@@ -36,75 +45,96 @@ def test_changing_settings(
         old_settings.get(key) != setting for key, setting in new_settings.items()
     )
 
-    # Check changing settings
-    check_code(client.post("/users/me/profile/", json=new_settings))
-    result_settings = check_code(client.get("/users/me/profile/"))
-    for key, setting in new_settings.items():
-        assert result_settings[key] == setting, key
+    client.post("/users/me/profile/", json=new_settings)
+    client.get("/users/me/profile/", expected_json=new_settings)
+    client2.get(f"/users/{test_user_id}/profile/", expected_json=new_settings)
 
     # Check handle error
-    client2 = multi_client(TEST_EMAIL2)
-    assert_message(
-        client2,
+    handle: str = "igor_the_best"
+    client.post("/users/me/profile/", json={"handle": handle})
+    client.get("/users/me/profile/", expected_json=dict(new_settings, handle=handle))
+
+    client2.post(
         "/users/me/profile/",
-        "Handle already in use",
-        handle=new_settings["handle"],
+        json={"handle": handle},
+        expected_a="Handle already in use",
     )
 
-    check_code(
-        client.post(
-            "/users/me/profile/",
-            json={key: old_settings.get(key) for key in new_settings.keys()},
-        )
-    )
-    result_settings = check_code(client.get("/users/me/profile/"))
-    assert all(result_settings[key] == setting for key, setting in old_settings.items())
+    client.post("/users/me/profile/", json=old_settings)
+    client.get("/users/me/profile/", expected_json=old_settings)
 
 
 @mark.order(107)
-def test_user_avatar(client: FlaskClient):
-    user = check_code(client.get("/users/me/profile/"))
-    assert isinstance(user, dict) and isinstance(user.get("id"), int)
+def test_user_avatar(client: FlaskTestClient):
+    user = client.get("/users/me/profile/", expected_json={"id": int})
 
-    file_id = upload(client, "sample-page.json")[0].get("id")
+    file_id = upload(client, "test-1.json")[0].get("id")
     file = File.find_by_id(file_id)
     assert user.get("id") == file.uploader_id
 
     data = ((200, True, file_id), (404, "File not found", file_id + 1))
     for code, message, file in data:
         avatar = {"avatar-id": file}
-        assert_message(client, "/users/me/avatar/", message, code, **avatar)
+        client.post(
+            "/users/me/avatar/", expected_a=message, expected_status=code, json=avatar
+        )
 
-    main: dict = check_code(client.get("/home/"))
-    assert (main_avatar := main.get("avatar")) is not None
-    assert main_avatar.get("id") == file_id
+    client.get("/home/", expected_json={"avatar": {"id": file_id}})
 
-    assert_message(
-        client, "/users/me/avatar/", message=True, status=200, method="DELETE"
-    )
-    assert check_code(client.get("/home/")).get("avatar") is None
+    client.delete("/users/me/avatar/", expected_a=True)
+    client.get("/home/", expected_json={"avatar": None})
 
 
-@mark.order(108)
-def test_changing_pass(client: FlaskClient):
-    pass_data = (
-        ("WRONGPASS", "NEW_PASS", "Wrong password"),
-        (BASIC_PASS, "NEW_PASS", "Success"),
-        ("NEW_PASS", BASIC_PASS, "Success"),
-    )
-    for password, new_pass, message in pass_data:
-        data = {"password": password, "new-password": new_pass}
-        assert_message(client, "/users/me/password/", message, **data)
+@mark.parametrize(
+    ("password", "new_password", "message"),
+    [
+        param("WRONG_PASS", "NEW_PASS", "Wrong password", id="wrong_password"),
+        param(BASIC_PASS, "NEW_PASS", "Success", id="success"),
+    ],
+)
+def test_changing_pass(
+    fresh_client: FlaskTestClient, password: str, new_password: str, message: str
+):
+    data = {"password": password, "new-password": new_password}
+    fresh_client.post("/users/me/password/", expected_a=message, json=data)
+
+
+@mark.parametrize(
+    ("email", "password", "message"),
+    [
+        param("new@test.email", "WRONG_PASS", "Wrong password", id="wrond_password"),
+        param(TEST_EMAIL2, BASIC_PASS, "Email in use", id="email_in_use"),
+    ],
+)
+def test_changing_email_fails(
+    client: FlaskTestClient, mock_mail, email: str, password: str, message: str
+):
+    data = {"new-email": email, "password": password}
+    client.post("/users/me/email/", expected_a=message, json=data)
+    assert len(mock_mail) == 0
 
 
 @mark.order(109)
-def test_error_email(client: FlaskClient):
-    email_data = (
-        ("new@test.email", "WRONGPASS", "Wrong password"),
-        (TEST_EMAIL2, BASIC_PASS, "Email in use"),
-        ("new@test.email", BASIC_PASS, "Success"),
-        (TEST_EMAIL, BASIC_PASS, "Success"),
-    )
-    for email, password, message in email_data:
-        data = {"new-email": email, "password": password}
-        assert_message(client, "/users/me/email/", message, **data)
+def test_changing_email(client: FlaskTestClient, mock_mail):
+    new_mail: str = "new@test.email"
+
+    data = {"new-email": new_mail, "password": BASIC_PASS}
+    client.post("/users/me/email/", expected_a="Success", json=data)
+    client.get("/users/me/profile/", expected_json={"email": new_mail})
+
+    assert len(mock_mail) == 1
+    mail_message: Message = mock_mail[0]
+    assert mail_message.subject == EmailType.CHANGE.theme
+
+    link_start: str = "https://xieffect.ru/email-change/"
+    assert link_start in mail_message.html
+    code = mail_message.html.partition(link_start)[2].partition('/"')[0]
+    assert code != ""
+
+    recipients = mail_message.recipients
+    assert len(recipients) == 1
+    assert recipients[0] == new_mail
+
+    # Reset user's settings
+    reset_data = {"new-email": TEST_EMAIL, "password": BASIC_PASS}
+    client.post("/users/me/email/", expected_a="Success", json=reset_data)

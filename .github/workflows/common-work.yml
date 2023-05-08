@@ -50,7 +50,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: 3.11
           cache: pip
 
       - id: install
@@ -84,6 +84,16 @@ jobs:
         if: success() || (failure() && steps.install.conclusion == 'success')
         name: Run flake8
         run: flake8 --config=setup.cfg xieffect
+
+      - id: isort
+        if: success() || (failure() && steps.install.conclusion == 'success')
+        name: Check import ordering with isort
+        run: isort xieffect --check --diff
+
+      - id: black
+        if: success() || (failure() && steps.install.conclusion == 'success')
+        name: Check formatting ordering with black
+        run: black xieffect --check --diff --extend-exclude "alembic|test|moderation"
 
       - name: Generate docs
         working-directory: xieffect

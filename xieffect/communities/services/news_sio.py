@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from common import EventController, User
 from .news_db import Post
-from ..base import Community, PermissionType, check_participant, check_permission
+from ..base import Community, PermissionType, check_permission
 
 controller = EventController()
 
@@ -16,20 +16,20 @@ controller = EventController()
 @controller.route()
 class PostEventSpace(EventSpace):
     @classmethod
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-news-{community_id}"
 
     class CommunityIdModel(BaseModel):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @check_permission(controller, PermissionType.MANAGE_NEWS)
     @controller.force_ack()
     def open_news(self, community: Community):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @check_permission(controller, PermissionType.MANAGE_NEWS)
     @controller.force_ack()
     def close_news(self, community: Community):
         leave_room(self.room_name(community.id))
@@ -93,7 +93,7 @@ class PostEventSpace(EventSpace):
         community: Community,
         post: Post,
     ):
-        post.deleted = True
+        post.soft_delete()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
             community_id=community.id,

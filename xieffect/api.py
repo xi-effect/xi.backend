@@ -6,9 +6,9 @@ from logging import Logger
 from sys import stderr
 
 from flask_fullstack import SocketIO
+from requests import HTTPError
 
-from common import app, versions, open_file
-from common import db  # noqa: F401
+from common import app, db, versions, open_file
 from communities import (
     communities_meta_events,
     communities_namespace,
@@ -19,30 +19,21 @@ from communities import (
     news_events,
     role_namespace,
     role_events,
-    tasks_namespace,
+    teacher_tasks_namespace,
+    student_tasks_namespace,
     tasks_events,
     videochat_events,
     videochat_namespace,
 )
-from education import (
-    authors_namespace,
-    education_namespace,
-    images_view_namespace,
-    interaction_namespace,
-    modules_view_namespace,
-    pages_view_namespace,
-    result_namespace,
-    wip_images_namespace,
-    wip_index_namespace,
-    wip_json_file_namespace,
-)
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
 from other import (
+    remove_stale_blueprint,
     send_discord_message,
     send_file_discord_message,
     webhook_namespace,
     WebhookURLs,
 )
+from pages.pages_db import Page  # noqa: F401 # to create database models
 from users import (
     emailer_qa_namespace,
     feedback_namespace,
@@ -58,23 +49,24 @@ from vault import files_namespace, mub_files_namespace
 logger = Logger("flask-fullstack", "WARN")
 
 
-def log_stuff(level: str, message: str):  # TODO # noqa: WPS231
+def log_stuff(level: str, message: str) -> None:  # TODO # noqa: WPS231
     if app.debug:
         print(message, **({"file": stderr} if level == "error" else {}))
     else:  # pragma: no cover
         if level == "status":
             send_discord_message(WebhookURLs.STATUS, message)
         else:
-            if len(message) < 200:
-                response = send_discord_message(WebhookURLs.ERRORS, message)
-            else:
-                response = send_file_discord_message(
-                    WebhookURLs.ERRORS,
-                    message,
-                    "error_message.txt",
-                    "Server error appeared!",
-                )
-            if response.status_code < 200 or response.status_code > 299:
+            try:
+                if len(message) < 200:
+                    send_discord_message(WebhookURLs.ERRORS, message)
+                else:
+                    send_file_discord_message(
+                        WebhookURLs.ERRORS,
+                        file_content=message,
+                        file_name="error_message.txt",
+                        message="Server error appeared!",
+                    )
+            except HTTPError:
                 send_discord_message(
                     WebhookURLs.ERRORS,
                     "Server error appeared!\nBut I failed to report it...",
@@ -100,25 +92,14 @@ api.add_namespace(feedback_namespace)
 api.add_namespace(mub_feedback_namespace)
 api.add_namespace(settings_namespace)
 
-api.add_namespace(education_namespace)
-api.add_namespace(modules_view_namespace)
-api.add_namespace(pages_view_namespace)
-api.add_namespace(images_view_namespace)
-
-api.add_namespace(interaction_namespace)
-api.add_namespace(result_namespace)
-
-api.add_namespace(authors_namespace)
-api.add_namespace(wip_images_namespace)
-api.add_namespace(wip_json_file_namespace)
-api.add_namespace(wip_index_namespace)
-
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
 api.add_namespace(news_namespace)
-api.add_namespace(tasks_namespace)
+api.add_namespace(teacher_tasks_namespace)
+api.add_namespace(student_tasks_namespace)
 api.add_namespace(videochat_namespace)
 
+app.register_blueprint(remove_stale_blueprint)
 api.add_namespace(webhook_namespace)
 
 app.register_blueprint(mub_cli_blueprint)
@@ -152,15 +133,14 @@ socketio.add_namespace(
     tasks_events,
     videochat_events,
     role_events,
-    protected=True
+    protected=True,
 )
 
 socketio.after_event(db.with_autocommit)
+app.after_request(db.with_autocommit)
 
 
 @app.cli.command("form-sio-docs")
-def form_sio_docs():  # TODO pragma: no coverage
+def form_sio_docs() -> None:  # TODO pragma: no coverage
     with open_file("files/async-api.json", "w") as f:
         dump_json(socketio.docs(), f, ensure_ascii=False)
-
-# remove-item alias:\curl

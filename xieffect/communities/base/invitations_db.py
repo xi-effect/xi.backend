@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from typing import Self
 
 from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, select, ForeignKey
-from sqlalchemy.orm import relationship, backref, selectinload
+from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql.sqltypes import Integer, DateTime, String
 
 from common import Base, db, app
@@ -25,7 +26,9 @@ class InvitationRoles(Base):
 
     @classmethod
     def create_bulk(cls, invitation_id: int, role_ids: list[int]) -> None:
-        db.session.add_all(cls(invitation_id=invitation_id, role_id=role_id) for role_id in role_ids)
+        db.session.add_all(
+            cls(invitation_id=invitation_id, role_id=role_id) for role_id in role_ids
+        )
         db.session.flush()
 
 
@@ -38,11 +41,13 @@ class Invitation(Base, Identifiable):
     id = Column(Integer, primary_key=True)
     code = Column(String(100), default="")
 
-    community_id = Column(Integer, ForeignKey(Community.id), nullable=False)
-    community = relationship(
-        "Community",
-        backref=backref("invitations", cascade="all, delete, delete-orphan"),
+    community_id = Column(
+        Integer,
+        ForeignKey(Community.id, ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
     )
+    community = relationship("Community")
+
     roles = relationship("Role", secondary=InvitationRoles.__table__)
     deadline = Column(DateTime, nullable=True)
     limit = Column(Integer, nullable=True)
@@ -60,7 +65,7 @@ class Invitation(Base, Identifiable):
         community_id: int,
         limit: int | None,
         days_to_live: int | None,
-    ) -> Invitation:
+    ) -> Self:
         entry: cls = super().create(
             community_id=community_id,
             limit=limit,
@@ -75,14 +80,14 @@ class Invitation(Base, Identifiable):
         return entry
 
     @classmethod
-    def find_by_id(cls, invitation_id: int) -> Invitation | None:
-        return db.session.get_first(select(cls).filter_by(id=invitation_id))
+    def find_by_id(cls, invitation_id: int) -> Self | None:
+        return db.get_first(select(cls).filter_by(id=invitation_id))
 
     @classmethod
     def find_by_community(
         cls, community_id: int, offset: int, limit: int
-    ) -> list[Invitation]:
-        return db.session.get_paginated(
+    ) -> list[Self]:
+        return db.get_paginated(
             select(cls)
             .options(selectinload(cls.roles))
             .filter_by(community_id=community_id),
@@ -91,10 +96,10 @@ class Invitation(Base, Identifiable):
         )
 
     @classmethod
-    def find_by_code(cls, code: str) -> Invitation | None:
-        return db.session.get_first(select(cls).filter_by(code=code))
+    def find_by_code(cls, code: str) -> Self | None:
+        return db.get_first(select(cls).filter_by(code=code))
 
-    def generate_code(self):
+    def generate_code(self) -> str | bytes:
         return self.serializer.dumps((self.community_id, self.id))
 
     def has_valid_deadline(self) -> bool:
