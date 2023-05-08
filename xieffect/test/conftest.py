@@ -17,6 +17,7 @@ from werkzeug.test import TestResponse
 
 from common import User, mail, mail_initialized, Base, db
 from communities.base import CommunitiesUser
+from pages.pages_db import Page
 from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
 
@@ -153,7 +154,7 @@ def base_user_data() -> tuple[str, str]:
 
 
 @fixture
-def base_user_id(base_user_data) -> int:
+def base_user_id(base_user_data: tuple[str, str]) -> int:
     user_id = User.create(
         email=base_user_data[0],
         password=base_user_data[1],
@@ -166,5 +167,20 @@ def base_user_id(base_user_data) -> int:
 
 
 @fixture
-def fresh_client(base_user_data, base_user_id) -> FlaskTestClient:  # noqa: U100
+def fresh_client(
+    base_user_data: tuple[str, str], base_user_id: int  # noqa: U100
+) -> FlaskTestClient:
     return login(*base_user_data)
+
+
+@fixture
+def test_page_data() -> dict[str, str | dict]:
+    return {"title": "test", "content": {"test": "content"}}
+
+
+@fixture
+def test_page_id(base_user_id: int, test_page_data: dict[str, str | dict]) -> int:
+    page_id: Page = Page.create(**test_page_data, creator_id=base_user_id).id
+    db.session.commit()
+    yield page_id
+    delete_by_id(page_id, Page)
