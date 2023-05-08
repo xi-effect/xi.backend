@@ -3,14 +3,17 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Self
 
-from flask_fullstack import Identifiable, PydanticModel
-from sqlalchemy import Column, ForeignKey, select, update
+from flask_fullstack import Identifiable, PydanticModel, TypeEnum
+from sqlalchemy import Column, ForeignKey, select, update, delete, or_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import DateTime, Integer, String, Text
 
 from common import Base, db
 from common.abstract import SoftDeletable
+from communities.base.meta_db import Participant, ParticipantRole
 from vault.files_db import File
+
+TASKS_PER_PAGE: int = 48
 
 
 class TaskEmbed(Base):
@@ -31,21 +34,32 @@ class TaskEmbed(Base):
     FileModel = PydanticModel.nest_flat_model(File.FullModel, "file")
 
     @classmethod
-    def add_files(cls, task_id: int, file_ids: list[int]) -> None:
-        for file_id in file_ids:
-            cls.create(task_id=task_id, file_id=file_id)
+    def add_files(cls, task_id: int, file_ids: set[int]) -> None:
+        values: list[dict] = [
+            {"task_id": task_id, "file_id": file} for file in file_ids
+        ]
+        db.session.bulk_insert_mappings(cls, values)
 
     @classmethod
-    def delete_files(cls, task_id: int, file_ids: list[int]) -> None:
-        for file_id in file_ids:
-            db.session.delete(
-                cls.find_first_by_kwargs(task_id=task_id, file_id=file_id)
-            )
+    def delete_files(cls, task_id: int, file_ids: set[int]) -> None:
+        db.session.execute(
+            delete(cls).filter(cls.task_id == task_id, cls.file_id.in_(file_ids))
+        )
 
     @classmethod
     def get_task_files(cls, task_id: int) -> list[int]:
-        stmt = select(cls.file_id).filter_by(task_id=task_id)
-        return db.get_all(stmt)
+        return db.get_all(select(cls.file_id).filter(cls.task_id == task_id))
+
+
+class TaskFilter(TypeEnum):
+    ALL = 0
+    ACTIVE = 1
+
+
+class TaskOrder(TypeEnum):
+    CREATED = 0
+    OPENED = 1
+    CLOSED = 2
 
 
 class Task(SoftDeletable, Identifiable):
@@ -72,17 +86,17 @@ class Task(SoftDeletable, Identifiable):
     page_id = Column(Integer, nullable=False)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    created = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+
+    created = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    opened = Column(DateTime, nullable=True, index=True)
+    closed = Column(DateTime, nullable=True, index=True)
 
     files = relationship("TaskEmbed", passive_deletes=True)
 
-    BaseModel = PydanticModel.column_model(id, updated)
-    CreationBaseModel = PydanticModel.column_model(page_id, name, description)
+    BaseModel = PydanticModel.column_model(id, created)
+    CreateModel = PydanticModel.column_model(page_id, name, description, opened, closed)
 
-    class IndexModel(BaseModel, CreationBaseModel):
+    class IndexModel(BaseModel, CreateModel):
         username: str
 
         @classmethod
@@ -102,7 +116,9 @@ class Task(SoftDeletable, Identifiable):
         community_id: int,
         page_id: int,
         name: str,
-        description: str,
+        description: str | None,
+        opened: datetime | None,
+        closed: datetime | None,
     ) -> Self:
         return super().create(
             user_id=user_id,
@@ -110,8 +126,30 @@ class Task(SoftDeletable, Identifiable):
             page_id=page_id,
             name=name,
             description=description,
+            opened=opened,
+            closed=closed,
         )
 
     @classmethod
     def update(cls, task_id: int, **kwargs) -> None:
-        db.session.execute(update(cls).where(cls.id == task_id).values(**kwargs))
+        db.session.execute(update(cls).filter(cls.id == task_id).values(**kwargs))
+
+    @classmethod
+    def get_paginated_tasks(
+        cls,
+        offset: int,
+        limit: int,
+        participant: Participant,
+        entry_filter: TaskFilter,
+        entry_order: TaskOrder = TaskOrder.CREATED,
+        **kwargs,
+    ) -> list[Self]:
+        stmt = select(cls).filter_by(**kwargs).order_by(entry_order.name.lower())
+        if participant.role == ParticipantRole.BASE:
+            stmt.filter(cls.opened <= datetime.utcnow())
+        if entry_filter == TaskFilter.ACTIVE:
+            stmt = stmt.filter(
+                cls.opened <= datetime.utcnow(),
+                or_(cls.closed > datetime.utcnow(), cls.closed.is_(None)),
+            )
+        return db.get_paginated(stmt, offset, limit)

@@ -7,11 +7,5 @@ from .base import (
     invitation_events,
     CommunitiesUser,
 )
-from .services import (
-    news_namespace,
-    news_events,
-    tasks_namespace,
-    tasks_events,
-    videochat_namespace,
-    videochat_events,
-)
+from .services import news_namespace, news_events, videochat_namespace, videochat_events
+from .tasks import teacher_tasks_namespace, student_tasks_namespace, tasks_events

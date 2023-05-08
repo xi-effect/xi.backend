@@ -18,7 +18,8 @@ from communities import (
     news_events,
     role_namespace,
     role_events,
-    tasks_namespace,
+    teacher_tasks_namespace,
+    student_tasks_namespace,
     tasks_events,
     videochat_events,
     videochat_namespace,
@@ -92,7 +93,8 @@ api.add_namespace(settings_namespace)
 api.add_namespace(communities_namespace)
 api.add_namespace(invitation_namespace)
 api.add_namespace(news_namespace)
-api.add_namespace(tasks_namespace)
+api.add_namespace(teacher_tasks_namespace)
+api.add_namespace(student_tasks_namespace)
 api.add_namespace(videochat_namespace)
 
 app.register_blueprint(remove_stale_blueprint)

@@ -61,7 +61,7 @@ if PRODUCTION_MODE:  # works on server restart  # pragma: no coverage
         setup_fail = True
     if setup_fail:
         send_discord_message(WebhookURLs.NOTIFY, "Production environment setup failed")
-else:
+else:  # pragma: no coverage
     application.debug = True
     with application.app_context():
         if db_url.endswith("app.db") or DATABASE_RESET:
