@@ -79,15 +79,16 @@ class TasksEventSpace(EventSpace):
         opened: datetime | None,
         closed: datetime | None,
     ):
+        checked_files: set[int] = check_files(files)
         task: Task = Task.create(
             user.id, community.id, page_id, name, description, opened, closed
         )
-        if len(files) != 0:
-            TaskEmbed.add_files(check_files(files), task_id=task.id)
+
+        TaskEmbed.add_files(checked_files, task_id=task.id)
         event.emit_convert(task, self.room_name(community.id))
         return task
 
-    class UpdateModel(CommunityIdModel, TaskIdModel):
+    class UpdateModel(BaseModel):
         page_id: int = None
         name: str = None
         files: list[int] = None
@@ -100,11 +101,14 @@ class TasksEventSpace(EventSpace):
             kwargs["exclude_none"] = True
             return super().dict(*args, **kwargs)
 
-    @controller.argument_parser(UpdateModel)
-    @controller.mark_duplex(UpdateModel, use_event=True)
+    class UpdateTaskModel(UpdateModel, CommunityIdModel, TaskIdModel):
+        pass
+
+    @controller.argument_parser(UpdateTaskModel)
+    @controller.mark_duplex(Task.FullModel, use_event=True)
     @check_permission(controller, PermissionType.MANAGE_TASKS)
     @controller.database_searcher(Task)
-    @controller.force_ack()
+    @controller.marshal_ack(Task.FullModel)
     def update_task(
         self,
         event: DuplexEvent,
@@ -122,12 +126,9 @@ class TasksEventSpace(EventSpace):
             TaskEmbed.delete_files(old_files - new_files, task_id=task.id)
             TaskEmbed.add_files(new_files - old_files, task_id=task.id)
 
-        Task.update(task.id, **kwargs)
-        event.emit_convert(
-            room=self.room_name(community.id),
-            community_id=community.id,
-            task_id=task.id,
-        )
+        task.update(**kwargs)
+        event.emit_convert(task, room=self.room_name(community.id))
+        return task
 
     class DeleteModel(CommunityIdModel, TaskIdModel):
         pass

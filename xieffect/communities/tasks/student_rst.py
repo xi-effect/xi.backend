@@ -35,7 +35,7 @@ class StudentTasks(Resource):
         finish: int,
         task_filter: TaskFilter,
     ):
-        return Task.get_paginated_tasks(
+        return Task.get_paginated(
             start,
             finish - start,
             task_filter,
