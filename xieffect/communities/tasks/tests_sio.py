@@ -136,7 +136,14 @@ class TasksEventSpace(EventSpace):
     @check_participant(controller, role=ParticipantRole.OWNER, use_user=True)
     @controller.database_searcher(Test)
     @controller.marshal_ack(Question.BaseModel)
-    def new_question(self, event: DuplexEvent, community: Community, text: str, kind: QuestionKind, test: Test):
+    def new_question(
+        self,
+        event: DuplexEvent,
+        community: Community,
+        text: str,
+        kind: QuestionKind,
+        test: Test,
+    ):
         question = Question.create(text, kind, test.id)
         event.emit_convert(question, self.room_name(community.id))
         return question
@@ -158,9 +165,9 @@ class TasksEventSpace(EventSpace):
     @check_participant(controller, role=ParticipantRole.OWNER)
     @controller.database_searcher(Question)
     @controller.force_ack()
-    def update_question(self, event: DuplexEvent,
-                        community: Community,
-                        question: Question, **kwargs):
+    def update_question(
+        self, event: DuplexEvent, community: Community, question: Question, **kwargs
+    ):
         Question.update(question.id, **kwargs)
 
         event.emit_convert(
@@ -177,7 +184,9 @@ class TasksEventSpace(EventSpace):
     @check_participant(controller, role=ParticipantRole.OWNER)
     @controller.database_searcher(Question)
     @controller.force_ack()
-    def delete_question(self, event: DuplexEvent, community: Community, question: Question):
+    def delete_question(
+        self, event: DuplexEvent, community: Community, question: Question
+    ):
         question.soft_delete()
         event.emit_convert(
             room=self.room_name(community.id),

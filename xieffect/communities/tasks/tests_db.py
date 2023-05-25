@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from flask_fullstack import PydanticModel, Identifiable
-
 from typing import Self
 
-from sqlalchemy import Column, ForeignKey, update
-from sqlalchemy.sql.sqltypes import Integer, Text
-from sqlalchemy import Enum
+from flask_fullstack import PydanticModel, Identifiable, TypeEnum
+from sqlalchemy import Column, ForeignKey, update, Enum
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import Integer, Text
+
 from common import db
 from common.abstract import SoftDeletable
 from communities.tasks.main_db import Task
-from flask_fullstack import TypeEnum
 
 
 class QuestionKind(TypeEnum):
@@ -27,9 +25,11 @@ class Question(SoftDeletable, Identifiable):
     id = Column(Integer, primary_key=True)
     text = Column(Text, nullable=False)
     kind = Column("type", Enum(QuestionKind))
-    test_id = Column(Integer, ForeignKey("cs_tests.id", ondelete="CASCADE", onupdate="CASCADE"),
-                     nullable=False,
-                     )
+    test_id = Column(
+        Integer,
+        ForeignKey("cs_tests.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
 
     BaseModel = PydanticModel.column_model(text, kind)
     CreateModel = BaseModel.column_model(test_id)
