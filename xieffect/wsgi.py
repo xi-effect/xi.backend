@@ -52,7 +52,10 @@ if (  # noqa: WPS337
         init_test_mod()
         db.session.commit()
 else:  # works on server restart  # pragma: no coverage
-    send_discord_message(WebhookURLs.NOTIFY, "Application restated")
+    try:
+        send_discord_message(WebhookURLs.NOTIFY, "Application restated")
+    except Exception as e:
+        pass
 
     setup_fail: bool = False
     for secret_name in SECRETS:
