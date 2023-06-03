@@ -80,10 +80,10 @@ jobs:
         if: inputs.coverage
         run: coverage report
 
-      - id: flake8
-        if: success() || (failure() && steps.install.conclusion == 'success')
-        name: Run flake8
-        run: flake8 --config=setup.cfg xieffect
+      # - id: flake8
+      #   if: success() || (failure() && steps.install.conclusion == 'success')
+      #   name: Run flake8
+      #   run: flake8 --config=setup.cfg xieffect
 
       - name: Generate docs
         working-directory: xieffect

@@ -100,6 +100,7 @@ def init_users():
             username="test",
             password=BASIC_PASS,
             invite=invite,
+            theme="dark",
         )
         test_user.author = Author.create(test_user)
 

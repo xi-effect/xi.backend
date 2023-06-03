@@ -38,6 +38,7 @@ def test_changing_settings(
         "surname": "Bestov",
         "patronymic": "Thebestovich",
         "birthday": "2011-12-19",
+        "theme": "blue",
     }
     assert all(
         old_settings.get(key) != setting for key, setting in new_settings.items()
