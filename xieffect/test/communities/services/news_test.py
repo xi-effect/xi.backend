@@ -22,7 +22,6 @@ def test_post_creation(
     multi_client: Callable[[str], FlaskTestClient],
     socketio_client: SocketIOTestClient,
     test_community: int,
-    create_participant_role,
     create_assert_successful_join,
 ):  # TODO redo without calls to the database
     # Create second owner & base clients
@@ -33,12 +32,6 @@ def test_post_creation(
         "limit": 2,
         "days": 10,
     }
-
-    create_participant_role(
-        permission_type="MANAGE_INVITATIONS",
-        community_id=test_community,
-        client=socketio_client.flask_test_client,
-    )
 
     invite = socketio_client.assert_emit_ack(
         event_name="new_invite",
@@ -58,12 +51,6 @@ def test_post_creation(
 
     posts_ids = [d.get("id") for d in get_posts_list(client, test_community)]
     post_data = dict(community_id_json, title="tit", description="desc")
-
-    create_participant_role(
-        permission_type="MANAGE_NEWS",
-        community_id=test_community,
-        client=socketio_client.flask_test_client,
-    )
 
     # Assert post creation
     result_data = socketio_client.assert_emit_ack(

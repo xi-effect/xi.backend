@@ -14,14 +14,13 @@ from test.conftest import delete_by_id
 
 def get_roles_list(client, community_id: int) -> list[dict]:
     """Check the success of getting the list of roles"""
-    return client.paginate(f"/communities/{community_id}/roles/")
+    return client.get(f"/communities/{community_id}/roles/")
 
 
 def test_roles(
     client,
     socketio_client,
     test_community,
-    create_participant_role,
 ):
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
@@ -45,13 +44,7 @@ def test_roles(
     successful_role_data = {**role_data}
     role_data.update(community_id_json)
 
-    create_participant_role(
-        permission_type="MANAGE_ROLES",
-        community_id=test_community,
-        client=socketio_client.flask_test_client,
-    )
-
-    for _ in range(LIMITING_QUANTITY_ROLES - 1):
+    for _ in range(LIMITING_QUANTITY_ROLES):
         socketio_client.assert_emit_ack(
             event_name="new_role",
             data=role_data,
@@ -86,21 +79,23 @@ def test_roles(
     second_role_data.pop("permissions")
     third_role_data = {**role_data}
     third_role_data.pop("color")
-    incorrect_role_data = role_data.copy()
-    incorrect_role_data["permissions"] = incorrect_permissions
+    incorrect_role_data = {**role_data, "permissions": incorrect_permissions}
     roles_data_list = [role_data, second_role_data, third_role_data]
 
     socketio_client.assert_emit_ack(
-        "new_role", incorrect_role_data, code=400, message="Incorrect permissions"
+        "new_role",
+        data={**incorrect_role_data, **community_id_json},
+        expected_code=400,
+        expected_message="Incorrect permissions",
     )
 
     for data in roles_data_list:
         role_id = socketio_client.assert_emit_ack(
             event_name="new_role",
-            data=data,
-            expected_data={**role_data, "id": int},
+            data={**data, **community_id_json},
+            expected_data={**data, "id": int},
         )["id"]
-        socketio_client2.assert_only_received("new_role", data)
+        socketio_client2.assert_only_received("new_role", {**data, "id": role_id})
 
     assert (
         len(get_roles_list(client, community_id=test_community))
@@ -153,7 +148,7 @@ def test_role_constraints(
     community_id: int,
 ):
     role_id = Role.create("test", "FFFF00", community_id).id
-    RolePermission.create(role_id, PermissionType.MANAGE_ROLES)
+    RolePermission.create(role_id=role_id, permission_type=PermissionType.MANAGE_ROLES)
     assert Role.find_by_id(role_id) is not None
     assert len(RolePermission.get_all_by_role(role_id)) == 1
 

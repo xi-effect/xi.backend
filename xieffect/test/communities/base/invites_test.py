@@ -267,12 +267,8 @@ def test_invites_errors(
     client: FlaskTestClient,
     multi_client: Callable[[str], FlaskTestClient],
     test_community: int,
-    create_participant_role,
     create_assert_successful_join,
 ):
-    create_participant_role(
-        permission_type="MANAGE_INVITATIONS", community_id=test_community, client=client
-    )
     member = multi_client("1@user.user")
     outsider = multi_client("2@user.user")
 

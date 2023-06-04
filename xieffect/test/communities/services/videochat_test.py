@@ -27,21 +27,8 @@ def test_videochat_tools(
     multi_client: Callable[[str], FlaskTestClient],
     socketio_client: SocketIOTestClient,
     test_community: int,
-    create_participant_role,
     create_assert_successful_join,
 ):
-    create_participant_role(
-        permission_type="MANAGE_INVITATIONS",
-        community_id=test_community,
-        client=socketio_client.flask_test_client,
-    )
-
-    create_participant_role(
-        permission_type="MANAGE_MESSAGES",
-        community_id=test_community,
-        client=socketio_client.flask_test_client,
-    )
-
     # Create base clients
     invite_data = {
         "community_id": test_community,

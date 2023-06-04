@@ -89,19 +89,19 @@ def test_task_id(task_maker: Callable[Task]) -> int:
 @fixture(scope="session")
 def create_participant_role() -> Callable:
     def create_participant_role_wrapper(
-        permission_type: PermissionType, community_id: int, client: FlaskTestClient
+        *permissions: PermissionType, community_id: int, client: FlaskTestClient
     ) -> int:
         user_id = client.get(
             "/home/",
             expected_json={"id": int},
         )["id"]
         role = Role.create(name="test_name", color="CD5C5C", community_id=community_id)
-        RolePermission.create_bulk(role_id=role.id, permissions=[permission_type])
+        RolePermission.create_bulk(role_id=role.id, permissions=list(permissions))
         participant = Participant.find_by_ids(
             community_id=community_id, user_id=user_id
         )
         assert participant is not None
-        ParticipantRole.create_bulk(role_ids=[role.id], participant_id=participant.id)
+        ParticipantRole.create(role_id=role.id, participant_id=participant.id)
         db.session.commit()
         return role.id
 

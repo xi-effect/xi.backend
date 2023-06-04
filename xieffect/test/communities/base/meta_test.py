@@ -156,7 +156,6 @@ def test_participant(
     multi_client: Callable[str],
     socketio_client: SocketIOTestClient,
     test_community: int,
-    create_participant_role: Callable[str, int, FlaskTestClient],
     get_role_ids: Callable[FlaskTestClient, int],
     get_roles_list_by_ids: Callable[FlaskTestClient, int, list[int]],
 ):
@@ -166,12 +165,6 @@ def test_participant(
     # Check successfully open participants-room
     for user in (socketio_client, socketio_client2):
         user.assert_emit_success("open_participants", community_id_json)
-
-    create_participant_role(
-        permission_type="MANAGE_PARTICIPANTS",
-        community_id=test_community,
-        client=socketio_client.flask_test_client,
-    )
 
     user = client.get(
         "/home/",
@@ -213,12 +206,6 @@ def test_participant(
         "update_participant", successful_participant_data
     )
 
-    create_participant_role(
-        permission_type="MANAGE_PARTICIPANTS",
-        community_id=test_community,
-        client=socketio_client.flask_test_client,
-    )
-
     slice_role_ids = len(role_ids) // 2
     participant_data["role_ids"] = role_ids[slice_role_ids:]
     successful_participant_data["roles"] = get_roles_list_by_ids(
@@ -236,12 +223,6 @@ def test_participant(
 
     # delete participant data
     delete_data = {"community_id": test_community, "participant_id": participant_id}
-
-    create_participant_role(
-        permission_type="MANAGE_PARTICIPANTS",
-        community_id=test_community,
-        client=socketio_client.flask_test_client,
-    )
 
     socketio_client.assert_emit_success(
         "delete_participant", delete_data, code=400, message="Target is the source"
