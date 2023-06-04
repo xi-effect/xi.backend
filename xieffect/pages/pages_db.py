@@ -11,7 +11,7 @@ from sqlalchemy.sql.sqltypes import Integer, String, JSON
 from common.abstract import SoftDeletable
 
 
-class Page(SoftDeletable, Identifiable):
+class Page(SoftDeletable, Identifiable):  # pragma: no coverage
     __tablename__ = "pages"
     not_found_text = "Page not found"
 

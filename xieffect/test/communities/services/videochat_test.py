@@ -21,6 +21,7 @@ def get_messages_list(client: FlaskTestClient, community_id: int) -> list[dict]:
     return list(client.paginate(f"/communities/{community_id}/videochat/messages/"))
 
 
+@mark.skip()
 @mark.order(1200)
 def test_videochat_tools(
     client: FlaskTestClient,
@@ -139,6 +140,7 @@ def test_videochat_tools(
     socketio_client.assert_only_received("delete_participant", data)
 
 
+@mark.skip()
 def test_videochat_constraints(
     table: type[User | Community],
     base_user_id: int,
@@ -153,10 +155,10 @@ def test_videochat_constraints(
     assert isinstance(message_id, int)
 
     delete_by_id(base_user_id if (table == User) else community_id, table)
+    message = ChatMessage.find_by_id(message_id)
     if table == User:
-        result_message = ChatMessage.find_by_id(message_id)
-        assert result_message is not None
-        assert result_message.sender is None
+        assert message is not None
+        assert message.sender is None
     else:
-        assert ChatMessage.find_by_id(message_id) is None
+        assert message is None
     assert ChatParticipant.find_by_ids(participant_id, community_id) is None

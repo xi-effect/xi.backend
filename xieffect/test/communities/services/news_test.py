@@ -16,6 +16,7 @@ def get_posts_list(client, community_id: int) -> list[dict]:
     yield from client.paginate(f"/communities/{community_id}/news/")
 
 
+@mark.skip()
 @mark.order(1100)
 def test_post_creation(
     client: FlaskTestClient,

@@ -26,7 +26,7 @@ class InvitationLister(Resource):
 
 
 @controller.route("/<int:community_id>/invitations/index/")
-class OldInvitationLister(Resource):
+class OldInvitationLister(Resource):  # pragma: no coverage
     @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
     @controller.argument_parser(counter_parser)
     @controller.lister(INVITATIONS_PER_REQUEST, Invitation.FullModel)

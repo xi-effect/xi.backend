@@ -126,10 +126,10 @@ def assert_successful_get() -> Callable:
 
 
 @fixture
-def create_assert_successful_join(assert_successful_get) -> Callable:
+def create_assert_successful_join(assert_successful_get, client) -> Callable:
     def assert_successful_join_wrapper(community_id):
         def assert_successful_join_inner(
-            client: FlaskTestClient,
+            joiner: FlaskTestClient,
             invite_id: int,
             code: str,
             *sio_clients: SocketIOTestClient,
@@ -138,8 +138,8 @@ def create_assert_successful_join(assert_successful_get) -> Callable:
             assert invite is not None, "Invitation not found"
             limit_before = invite.get("limit")
 
-            assert_successful_get(client, code, joined=False)
-            assert client.post(
+            assert_successful_get(joiner, code, joined=False)
+            assert joiner.post(
                 f"/communities/join/{code}/",
                 expected_json=COMMUNITY_DATA,
             )
@@ -164,7 +164,7 @@ def get_role_ids(create_participant_role):
     def wrapper_get_role_ids(client: FlaskTestClient, community_id: int):
         return [
             create_participant_role(
-                permission_type="MANAGE_INVITATIONS",
+                PermissionType.MANAGE_INVITATIONS,
                 community_id=community_id,
                 client=client,
             )

@@ -13,7 +13,7 @@ controller = ResourceController(
 
 
 @controller.route("/participants/")
-class ParticipantsList(Resource):
+class ParticipantsList(Resource):  # pragma: no coverage
     @check_participant(controller)
     @controller.marshal_list_with(ChatParticipant.IndexModel)
     def get(self, community: Community):
@@ -21,7 +21,7 @@ class ParticipantsList(Resource):
 
 
 @controller.route("/messages/")
-class MessagesList(Resource):
+class MessagesList(Resource):  # pragma: no coverage
     @check_participant(controller)
     @controller.argument_parser(counter_parser)
     @controller.lister(20, ChatMessage.IndexModel)

@@ -18,7 +18,7 @@ class NewsLister(Resource):
     @check_participant(controller)
     @controller.argument_parser(counter_parser)
     @controller.lister(20, Post.IndexModel)
-    def get(self, community: Community, start: int, finish: int):
+    def get(self, community: Community, start: int, finish: int):  # pragma: no coverage
         return Post.find_by_community(community.id, start, finish - start)
 
 

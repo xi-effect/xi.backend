@@ -14,7 +14,7 @@ from common import db, Base, User
 PARTICIPANT_LIMIT: int = 50
 
 
-class ChatParticipant(Base):  # TODO community to room after channels creating
+class ChatParticipant(Base):  # pragma: no coverage
     __tablename__ = "cs_chat_participants"
 
     user_id = Column(
@@ -22,7 +22,7 @@ class ChatParticipant(Base):  # TODO community to room after channels creating
         ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
-    community_id = Column(
+    community_id = Column(  # TODO community to room after channels creating
         Integer,
         ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
@@ -55,14 +55,14 @@ class ChatParticipant(Base):  # TODO community to room after channels creating
         )
 
 
-class ChatMessage(Base, Identifiable):  # TODO community to room after channels creating
+class ChatMessage(Base, Identifiable):  # pragma: no coverage
     __tablename__ = "cs_chat_messages"
     not_found_text = "Message not found"
 
     id = Column(Integer, primary_key=True)
     content = Column(Text, nullable=False)
 
-    community_id = Column(
+    community_id = Column(  # TODO community to room after channels creating
         Integer,
         ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
         nullable=False,

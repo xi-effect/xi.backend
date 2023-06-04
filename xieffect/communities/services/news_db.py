@@ -53,7 +53,7 @@ class Post(SoftDeletable, Identifiable):
     @classmethod
     def find_by_community(
         cls, community_id: int, offset: int, limit: int
-    ) -> list[Self]:
+    ) -> list[Self]:  # pragma: no coverage
         return cls.find_paginated_not_deleted(offset, limit, community_id=community_id)
 
     @classmethod

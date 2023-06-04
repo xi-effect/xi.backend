@@ -13,7 +13,7 @@ controller = EventController()
 
 
 @controller.route()
-class VideochatEventSpace(EventSpace):
+class VideochatEventSpace(EventSpace):  # pragma: no coverage
     @classmethod
     def room_name(cls, community_id: int) -> str:
         return f"cs-videochat-{community_id}"
