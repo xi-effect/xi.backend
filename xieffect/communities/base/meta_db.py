@@ -92,7 +92,9 @@ class Participant(LinkedListNode, Identifiable):
 
     prev_id = Column(
         Integer,
-        ForeignKey("community_participant.id", ondelete="SET NULL"),
+        ForeignKey(
+            "community_participant.id", ondelete="SET NULL"
+        ),  # TODO breaks the list?
         nullable=True,
     )
     prev = relationship(
@@ -103,7 +105,9 @@ class Participant(LinkedListNode, Identifiable):
 
     next_id = Column(
         Integer,
-        ForeignKey("community_participant.id", ondelete="SET NULL"),
+        ForeignKey(
+            "community_participant.id", ondelete="SET NULL"
+        ),  # TODO breaks the list?
         nullable=True,
     )
     next = relationship(

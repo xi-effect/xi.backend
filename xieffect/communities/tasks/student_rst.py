@@ -7,7 +7,7 @@ from flask_restx import Resource
 
 from common import ResourceController, User
 from .main_db import Task, TaskFilter, TASKS_PER_PAGE
-from ..base import Community, Participant, check_participant
+from ..base import Community, check_participant
 
 controller = ResourceController(
     "cs-student-tasks", path="/communities/<int:community_id>/tasks/student/"
@@ -26,22 +26,21 @@ class StudentTasks(Resource):
 
     @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
-    @check_participant(controller, use_participant=True)
+    @check_participant(controller)
     @controller.lister(TASKS_PER_PAGE, Task.IndexModel)
     def get(
         self,
         community: Community,
         start: int,
         finish: int,
-        participant: Participant,
         task_filter: TaskFilter,
     ):
         return Task.get_paginated_tasks(
             start,
             finish - start,
-            participant,
             task_filter,
             community_id=community.id,
+            open_only=True,
             deleted=None,
         )
 
