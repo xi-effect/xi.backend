@@ -130,7 +130,7 @@ class ParticipantRole(Base):
     )
 
     @classmethod
-    def has_permission(cls, participant_id: int, permission: PermissionType) -> bool:
+    def deny_permission(cls, participant_id: int, permission: PermissionType) -> bool:
         return (
             db.get_first(
                 select(distinct(RolePermission.permission_type))
@@ -141,7 +141,7 @@ class ParticipantRole(Base):
                 )
                 .filter(RolePermission.permission_type == permission)
             )
-            is not None
+            is None
         )
 
     @classmethod

@@ -96,13 +96,14 @@ class VideochatEventSpace(EventSpace):
         participant: Participant,
     ):
         checks = [
-            participant.user_id == message.sender_id,
-            ParticipantRole.has_permission(
+            participant.user_id != message.sender_id,
+            community.owner_id != participant.user_id
+            and ParticipantRole.deny_permission(
                 participant.id, PermissionType.MANAGE_MESSAGES
             ),
         ]
 
-        if not any(checks):
+        if any(checks):
             controller.abort(403, "Permission Denied")
         message.delete()
         event.emit_convert(

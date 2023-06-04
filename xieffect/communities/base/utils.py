@@ -47,6 +47,7 @@ def check_permission(
     controller: ResourceController | EventController,
     permission_type: PermissionType,
     *,
+    use_community: bool = True,
     use_participant: bool = False,
     use_user: bool = False,
 ):
@@ -56,14 +57,18 @@ def check_permission(
             controller,
             use_participant=use_participant,
             use_participant_id=True,
-            use_user=use_user,
+            use_user=True,
         )
         @wraps(function)
         def check_permission_inner(*args, **kwargs):
-            result = ParticipantRole.has_permission(
-                kwargs.pop("participant_id"), permission_type
+            user: User = get_or_pop(kwargs, "user", use_user)
+            community: Community = get_or_pop(kwargs, "community", use_community)
+            participant_id: int = kwargs.pop("participant_id")
+
+            denied = community.owner_id != user.id and ParticipantRole.deny_permission(
+                participant_id, permission_type
             )
-            if result is False:
+            if denied:
                 controller.abort(403, "Permission Denied: Not sufficient permissions")
 
             return function(*args, **kwargs)

@@ -29,6 +29,10 @@ class Community(SoftDeletable, Identifiable):
     )
     avatar = relationship("File", foreign_keys=[avatar_id])
 
+    owner_id = Column(
+        Integer, ForeignKey(User.id, ondelete="CASCADE"), nullable=False
+    )  # TODO ondelete is temporary
+
     participants = relationship(
         "Participant",
         back_populates="community",
@@ -46,7 +50,11 @@ class Community(SoftDeletable, Identifiable):
         creator_id: int,
         description: str | None,
     ) -> Self:
-        entry: cls = super().create(name=name, description=description)
+        entry: cls = super().create(
+            name=name,
+            description=description,
+            owner_id=creator_id,
+        )
 
         participant = Participant.add(
             user_id=creator_id,
