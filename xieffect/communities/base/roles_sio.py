@@ -71,7 +71,7 @@ class RolesEventSpace(EventSpace):
         event: DuplexEvent,
         name: str,
         color: str | None,
-        permissions: list[str],
+        permissions: list[PermissionType],
         community: Community,
     ):
         if Role.get_count_by_community(community.id) >= LIMITING_QUANTITY_ROLES:
@@ -96,7 +96,7 @@ class RolesEventSpace(EventSpace):
         event: DuplexEvent,
         name: str | None,
         color: str | None,
-        permissions: list[str] | None,
+        permissions: list[PermissionType] | None,
         community: Community,
         role: Role,
     ):
@@ -117,7 +117,8 @@ class RolesEventSpace(EventSpace):
             )
 
             RolePermission.create_bulk(
-                role_id=role.id, permissions=received_permissions - permissions_from_db
+                role_id=role.id,
+                permissions=list(received_permissions - permissions_from_db),
             )
 
         event.emit_convert(role, self.room_name(community.id))

@@ -103,7 +103,7 @@ class RolePermission(Base):
         db.session.flush()
 
     @classmethod
-    def delete_by_ids(cls, role_id: int, permissions_type: set[str]) -> None:
+    def delete_by_ids(cls, role_id: int, permissions_type: set[PermissionType]) -> None:
         db.session.execute(
             db.delete(cls).filter(
                 cls.role_id == role_id, cls.permission_type.in_(permissions_type)
