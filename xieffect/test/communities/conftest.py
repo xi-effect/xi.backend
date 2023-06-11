@@ -7,8 +7,6 @@ from pytest import fixture
 
 from common import db
 from common.users_db import User
-from communities.base.discussion_db import DiscussionMessage
-from communities.base.meta_db import Community
 from communities.base import (
     Participant,
     PermissionType,
@@ -16,6 +14,8 @@ from communities.base import (
     Role,
     RolePermission,
 )
+from communities.base.discussion_db import DiscussionMessage
+from communities.base.meta_db import Community
 from communities.tasks.main_db import Task
 from test.conftest import delete_by_id
 
@@ -70,7 +70,11 @@ def task_maker(base_user_id: int, community_id: int) -> Callable[Task]:
 
     def task_maker_inner() -> Task:
         task: Task = Task.create(
-            base_user_id, community_id, 1, "test", "description", None, None
+            base_user_id,
+            community_id,
+            1,
+            "test",
+            "description",
         )
         created.append(task.id)
         return task
