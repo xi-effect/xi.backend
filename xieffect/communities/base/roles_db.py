@@ -1,24 +1,29 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import Self
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, select
+from sqlalchemy import Column, ForeignKey, select, distinct
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.expression import and_
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
 from common import Base, db
 from common.abstract import SoftDeletable
-from communities.base.meta_db import Community, Participant
 
 LIMITING_QUANTITY_ROLES: int = 50
 
 
 class PermissionType(TypeEnum):
+    MANAGE_COMMUNITY = -1
     MANAGE_INVITATIONS = 0
     MANAGE_ROLES = 1
+    MANAGE_TASKS = 2
+    MANAGE_NEWS = 3
+    MANAGE_MESSAGES = 4
+    MANAGE_PARTICIPANTS = 5
 
 
 class Role(SoftDeletable, Identifiable):
@@ -30,7 +35,7 @@ class Role(SoftDeletable, Identifiable):
     color = Column(String(6), nullable=True)
     community_id = Column(
         Integer,
-        ForeignKey(Community.id, ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
         nullable=False,
     )
 
@@ -90,21 +95,18 @@ class RolePermission(Base):
     permission_type = Column(Enum(PermissionType), primary_key=True)
 
     @classmethod
-    def create(
-        cls,
-        role_id: int,
-        permission_type: PermissionType,
-    ) -> Self:
-        return super().create(
-            role_id=role_id,
-            permission_type=permission_type,
+    def create_bulk(cls, role_id: int, permissions: list[PermissionType]) -> None:
+        db.session.add_all(
+            cls(role_id=role_id, permission_type=permission)
+            for permission in permissions
         )
+        db.session.flush()
 
     @classmethod
-    def delete_by_role(cls, role_id: int, permission_type: str) -> None:
+    def delete_by_ids(cls, role_id: int, permissions_type: set[PermissionType]) -> None:
         db.session.execute(
-            db.delete(cls).where(
-                cls.role_id == role_id, cls.permission_type == permission_type
+            db.delete(cls).filter(
+                cls.role_id == role_id, cls.permission_type.in_(permissions_type)
             )
         )
 
@@ -113,12 +115,12 @@ class RolePermission(Base):
         return db.get_all(select(cls).filter_by(role_id=role_id))
 
 
-class ParticipantRole(Base):  # TODO pragma: no cover
+class ParticipantRole(Base):
     __tablename__ = "cs_participant_roles"
 
     participant_id = Column(
         Integer,
-        ForeignKey(Participant.id, ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community_participant.id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
     role_id = Column(
@@ -126,3 +128,37 @@ class ParticipantRole(Base):  # TODO pragma: no cover
         ForeignKey(Role.id, ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
+
+    @classmethod
+    def deny_permission(cls, participant_id: int, permission: PermissionType) -> bool:
+        return (
+            db.get_first(
+                select(distinct(RolePermission.permission_type))
+                .join(Role, Role.id == RolePermission.role_id)
+                .join(
+                    cls,
+                    and_(cls.role_id == Role.id, cls.participant_id == participant_id),
+                )
+                .filter(RolePermission.permission_type == permission)
+            )
+            is None
+        )
+
+    @classmethod
+    def get_role_ids(cls, participant_id: int) -> list[int]:
+        return db.get_all(select(cls.role_id).filter_by(participant_id=participant_id))
+
+    @classmethod
+    def create_bulk(cls, participant_id: int, role_ids: Iterable[int]) -> None:
+        db.session.add_all(
+            cls(participant_id=participant_id, role_id=role_id) for role_id in role_ids
+        )
+        db.session.flush()
+
+    @classmethod
+    def delete_by_ids(cls, participant_id: int, role_ids: set[int]) -> None:
+        db.session.execute(
+            db.delete(cls).filter(
+                cls.participant_id == participant_id, cls.role_id.in_(role_ids)
+            )
+        )

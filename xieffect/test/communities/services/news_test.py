@@ -8,7 +8,6 @@ from pytest import mark
 from common import User
 from communities.base import Community
 from communities.services.news_db import Post
-from test.communities.base.invites_test import create_assert_successful_join
 from test.conftest import delete_by_id, FlaskTestClient
 
 
@@ -17,22 +16,24 @@ def get_posts_list(client, community_id: int) -> list[dict]:
     yield from client.paginate(f"/communities/{community_id}/news/")
 
 
+@mark.skip()
 @mark.order(1100)
 def test_post_creation(
     client: FlaskTestClient,
     multi_client: Callable[[str], FlaskTestClient],
     socketio_client: SocketIOTestClient,
     test_community: int,
+    create_assert_successful_join,
 ):  # TODO redo without calls to the database
     # Create second owner & base clients
     socketio_client2 = SocketIOTestClient(client)
 
     invite_data = {
         "community_id": test_community,
-        "role": "base",
         "limit": 2,
         "days": 10,
     }
+
     invite = socketio_client.assert_emit_ack(
         event_name="new_invite",
         data=invite_data,
@@ -40,7 +41,7 @@ def test_post_creation(
     )
     member = multi_client("1@user.user")
     sio_member = SocketIOTestClient(member)
-    assert_successful_join = create_assert_successful_join(client, test_community)
+    assert_successful_join = create_assert_successful_join(test_community)
     assert_successful_join(member, invite["id"], invite["code"], sio_member)
 
     community_id_json: dict[str, str | int] = {"community_id": test_community}

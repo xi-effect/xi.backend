@@ -12,6 +12,7 @@ from common import app, db, versions, open_file
 from communities import (
     communities_meta_events,
     communities_namespace,
+    participants_events,
     invitation_events,
     invitation_namespace,
     news_namespace,
@@ -126,6 +127,7 @@ socketio = SocketIO(
 socketio.add_namespace(
     "/",
     communities_meta_events,
+    participants_events,
     invitation_events,
     news_events,
     tasks_events,

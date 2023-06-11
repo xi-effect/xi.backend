@@ -3,20 +3,22 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import timedelta, date
 
-from flask_fullstack import SocketIOTestClient, dict_cut, assert_contains
+from flask_fullstack import (
+    FlaskTestClient,
+    SocketIOTestClient,
+    dict_cut,
+    assert_contains,
+)
 from pydantic import constr
 from pytest import mark
 
-from communities.base import Community
-from communities.base.invitations_db import Invitation
-from test.communities.conftest import COMMUNITY_DATA, assert_create_community
-from test.conftest import delete_by_id, FlaskTestClient
+from communities.base import Community, Invitation
+from ..conftest import COMMUNITY_DATA, assert_create_community
+from ...conftest import delete_by_id
 
 
 class InvitesTester:
-    def __init__(
-        self, client: FlaskTestClient, room_data: dict, *clients: SocketIOTestClient
-    ):
+    def __init__(self, client: FlaskTestClient, room_data: dict, *clients):
         self.sio1 = SocketIOTestClient(client)
         self.sio2 = SocketIOTestClient(client)
         self.sio3 = SocketIOTestClient(client)
@@ -62,16 +64,13 @@ class InvitesTester:
 
 
 @mark.order(1020)
-def test_invites(
-    client: FlaskTestClient,
-    socketio_client: SocketIOTestClient,
-    test_community: int,
-):
+def test_invites(client, socketio_client, test_community, get_role_ids):
+    role_ids = get_role_ids(client, test_community)
     invite_data = {
         "community_id": test_community,
-        "role": "base",
         "limit": 2,
         "days": 10,
+        "role_ids": role_ids,
     }
     index_url = f"/communities/{test_community}/invitations/"
 
@@ -167,7 +166,12 @@ def test_invite_joins(
     client: FlaskTestClient,
     multi_client: Callable[[str], FlaskTestClient],
     test_community: int,
+    create_assert_successful_join,
+    assert_successful_get,
+    get_role_ids,
 ):
+    role_ids = get_role_ids(client, test_community)
+
     # functions
     def create_invite(invite_data, check_auth: bool = True):
         invite_data["community_id"] = test_community
@@ -188,7 +192,7 @@ def test_invite_joins(
 
         return invite["id"], invite["code"]
 
-    assert_successful_join = create_assert_successful_join(client, test_community)
+    assert_successful_join = create_assert_successful_join(test_community)
 
     def assert_invalid_invite(client: FlaskTestClient, code: str):
         client.get(
@@ -220,24 +224,29 @@ def test_invite_joins(
     sio6 = SocketIOTestClient(vasil1)
 
     # testing joining & errors
-    invite_id1, code1 = create_invite({"role": "base"})
+    invite_id1, code1 = create_invite({})
     assert_invalid_invite(vasil1, "hey")
     assert_already_joined(client, code1)
     assert_successful_join(vasil1, invite_id1, code1, sio5, sio6)
     assert_already_joined(vasil1, code1)
 
     # testing counter limit
-    invite_id2, code2 = create_invite({"role": "base", "limit": 1})
+    invite_id2, code2 = create_invite({"limit": 1})
     assert_already_joined(vasil1, code2)
     assert_successful_join(vasil2, invite_id2, code2)
     assert_invalid_invite(vasil2, code2)  # may be converted to already joined
     assert_invalid_invite(vasil3, code2)
 
     # testing time limit
-    _, code3 = create_invite({"role": "base", "days": 0}, check_auth=False)
+    _, code3 = create_invite({"days": 0}, check_auth=False)
     assert_already_joined(vasil1, code3)
     assert_already_joined(vasil2, code3)
     assert_invalid_invite(vasil3, code3)
+
+    # testing role_participant
+    invite_id3, code4 = create_invite({"role_ids": role_ids})
+    assert_already_joined(vasil1, code4)
+    assert_successful_join(vasil3, invite_id3, code4)
 
     # delete invite from test-1020
     invite_tester.assert_delete_invite(
@@ -258,19 +267,21 @@ def test_invites_errors(
     client: FlaskTestClient,
     multi_client: Callable[[str], FlaskTestClient],
     test_community: int,
+    create_assert_successful_join,
 ):
     member = multi_client("1@user.user")
     outsider = multi_client("2@user.user")
 
     invite_data = {
-        "role": "base",
+        "permission": "manage_invitations",
         "limit": 2,
         "days": 10,
         "community_id": test_community,
+        "role_ids": [],
     }
     room_data = {"community_id": test_community}
 
-    assert_successful_join = create_assert_successful_join(client, test_community)
+    assert_successful_join = create_assert_successful_join(test_community)
 
     # init sio, join rooms & set up the invite
     sio_member = SocketIOTestClient(member)
@@ -304,4 +315,4 @@ def test_invites_errors(
 
     # member joins community & fails connecting to room
     assert_successful_join(member, invite["id"], invite["code"], sio_member)
-    assert_fail_event(sio_member, 403, "Permission Denied: Low role")
+    assert_fail_event(sio_member, 403, "Permission Denied: Not sufficient permissions")

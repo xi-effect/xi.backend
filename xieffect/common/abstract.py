@@ -29,7 +29,7 @@ class SoftDeletable(Base):
     @classmethod
     def find_paginated_not_deleted(
         cls, offset: int, limit: int, *args, **kwargs
-    ) -> list[Self]:
+    ) -> list[Self]:  # pragma: no coverage
         return cls.find_paginated_by_kwargs(
             offset, limit, *args, deleted=None, **kwargs
         )

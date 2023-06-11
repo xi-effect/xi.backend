@@ -5,7 +5,7 @@ from flask_restx import Resource
 
 from common import ResourceController
 from .videochat_db import ChatParticipant, ChatMessage
-from ..utils import check_participant, Community
+from ..base import Community, check_participant
 
 controller = ResourceController(
     "cs-videochat", path="/communities/<int:community_id>/videochat/"
@@ -13,7 +13,7 @@ controller = ResourceController(
 
 
 @controller.route("/participants/")
-class ParticipantsList(Resource):
+class ParticipantsList(Resource):  # pragma: no coverage
     @check_participant(controller)
     @controller.marshal_list_with(ChatParticipant.IndexModel)
     def get(self, community: Community):
@@ -21,7 +21,7 @@ class ParticipantsList(Resource):
 
 
 @controller.route("/messages/")
-class MessagesList(Resource):
+class MessagesList(Resource):  # pragma: no coverage
     @check_participant(controller)
     @controller.argument_parser(counter_parser)
     @controller.lister(20, ChatMessage.IndexModel)

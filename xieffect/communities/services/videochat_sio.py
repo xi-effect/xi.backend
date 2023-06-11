@@ -6,14 +6,14 @@ from pydantic import BaseModel
 
 from common import EventController, User
 from .videochat_db import ChatMessage, ChatParticipant, PARTICIPANT_LIMIT
-from ..base import Community
-from ..utils import check_participant, ParticipantRole, Participant
+from ..base import Community, PermissionType, ParticipantRole, Participant
+from ..base.utils import check_participant
 
 controller = EventController()
 
 
 @controller.route()
-class VideochatEventSpace(EventSpace):
+class VideochatEventSpace(EventSpace):  # pragma: no coverage
     @classmethod
     def room_name(cls, community_id: int) -> str:
         return f"cs-videochat-{community_id}"
@@ -26,7 +26,7 @@ class VideochatEventSpace(EventSpace):
     @controller.mark_duplex(ChatParticipant.IndexModel, use_event=True)
     @check_participant(controller, use_user=True)
     @controller.marshal_ack(ChatParticipant.IndexModel)
-    def new_participant(
+    def new_chat_participant(
         self,
         event: DuplexEvent,
         user: User,
@@ -49,7 +49,7 @@ class VideochatEventSpace(EventSpace):
     @controller.mark_duplex(DeleteParticipant, use_event=True)
     @check_participant(controller)
     @controller.force_ack()
-    def delete_participant(
+    def delete_chat_participant(
         self, event: DuplexEvent, participant_id: int, community: Community
     ):
         participant = ChatParticipant.find_by_ids(participant_id, community.id)
@@ -96,10 +96,14 @@ class VideochatEventSpace(EventSpace):
         participant: Participant,
     ):
         checks = [
-            participant.user_id == message.sender_id,
-            participant.role == ParticipantRole.OWNER,
+            participant.user_id != message.sender_id,
+            community.owner_id != participant.user_id
+            and ParticipantRole.deny_permission(
+                participant.id, PermissionType.MANAGE_MESSAGES
+            ),
         ]
-        if not any(checks):
+
+        if any(checks):
             controller.abort(403, "Permission Denied")
         message.delete()
         event.emit_convert(

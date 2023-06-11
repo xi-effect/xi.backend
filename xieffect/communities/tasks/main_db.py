@@ -10,7 +10,6 @@ from sqlalchemy.sql.sqltypes import DateTime, Integer, String, Text
 
 from common import Base, db
 from common.abstract import SoftDeletable
-from communities.base.meta_db import Participant, ParticipantRole
 from vault.files_db import File
 
 TASKS_PER_PAGE: int = 48
@@ -116,9 +115,9 @@ class Task(SoftDeletable, Identifiable):
         community_id: int,
         page_id: int,
         name: str,
-        description: str | None,
-        opened: datetime | None,
-        closed: datetime | None,
+        description: str | None = None,
+        opened: datetime | None = None,
+        closed: datetime | None = None,
     ) -> Self:
         return super().create(
             user_id=user_id,
@@ -139,14 +138,14 @@ class Task(SoftDeletable, Identifiable):
         cls,
         offset: int,
         limit: int,
-        participant: Participant,
         entry_filter: TaskFilter,
         entry_order: TaskOrder = TaskOrder.CREATED,
+        open_only: bool = False,
         **kwargs,
     ) -> list[Self]:
         stmt = select(cls).filter_by(**kwargs).order_by(entry_order.name.lower())
-        if participant.role == ParticipantRole.BASE:
-            stmt.filter(cls.opened <= datetime.utcnow())
+        if open_only:
+            stmt = stmt.filter(cls.opened <= datetime.utcnow())
         if entry_filter == TaskFilter.ACTIVE:
             stmt = stmt.filter(
                 cls.opened <= datetime.utcnow(),

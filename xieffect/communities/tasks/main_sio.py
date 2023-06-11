@@ -8,9 +8,9 @@ from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
 from common import EventController, User
-from communities.base.meta_db import Community, ParticipantRole
+from communities.base import check_permission, PermissionType
+from communities.base.meta_db import Community
 from communities.tasks.main_db import Task, TaskEmbed
-from communities.utils import check_participant
 from vault import File
 
 # Set Tasks behavior here
@@ -49,13 +49,13 @@ class TasksEventSpace(EventSpace):
         task_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_TASKS)
     @controller.force_ack()
     def open_tasks(self, community: Community):
         join_room(self.room_name(community.id))  # TODO pragma: no cover | task
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_TASKS)
     @controller.force_ack()
     def close_tasks(self, community: Community):
         leave_room(self.room_name(community.id))  # TODO pragma: no cover | task
@@ -65,7 +65,7 @@ class TasksEventSpace(EventSpace):
 
     @controller.argument_parser(CreationModel)
     @controller.mark_duplex(Task.FullModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER, use_user=True)
+    @check_permission(controller, PermissionType.MANAGE_TASKS, use_user=True)
     @controller.marshal_ack(Task.FullModel)
     def new_task(
         self,
@@ -102,7 +102,7 @@ class TasksEventSpace(EventSpace):
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(UpdateModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_TASKS)
     @controller.database_searcher(Task)
     @controller.force_ack()
     def update_task(
@@ -134,7 +134,7 @@ class TasksEventSpace(EventSpace):
 
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(DeleteModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_TASKS)
     @controller.database_searcher(Task)
     @controller.force_ack()
     def delete_task(self, event: DuplexEvent, community: Community, task: Task):

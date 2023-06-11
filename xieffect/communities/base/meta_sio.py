@@ -4,9 +4,10 @@ from flask_fullstack import DuplexEvent, EventSpace
 from pydantic import BaseModel, Field
 
 from common import EventController, User
-from communities.base.meta_db import Community, ParticipantRole
+from communities.base.meta_db import Community
+from communities.base.roles_db import PermissionType
 from communities.base.users_ext_db import CommunitiesUser
-from communities.utils import check_participant
+from communities.base.utils import check_participant, check_permission
 
 controller = EventController()
 
@@ -71,7 +72,7 @@ class CommunitiesEventSpace(EventSpace):
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER, use_user=True)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY, use_user=True)
     @controller.marshal_ack(Community.IndexModel)
     def update_community(
         self,
@@ -90,7 +91,7 @@ class CommunitiesEventSpace(EventSpace):
 
     @controller.argument_parser(CommunityIdModel)
     @controller.mark_duplex(use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER, use_user=True)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY, use_user=True)
     @controller.force_ack()
     def delete_community(
         self,

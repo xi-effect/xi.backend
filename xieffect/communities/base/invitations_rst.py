@@ -6,28 +6,30 @@ from flask_fullstack import PydanticModel, counter_parser
 from flask_restx import Resource
 
 from common import ResourceController, User
-from communities.base.invitations_db import Invitation
-from communities.base.meta_db import Community, Participant, ParticipantRole
-from communities.base.meta_sio import CommunitiesEventSpace
-from communities.utils import check_participant
+from .invitations_db import Invitation
+from .meta_db import Community, Participant
+from .meta_sio import CommunitiesEventSpace
+from .roles_db import PermissionType, ParticipantRole
+from .utils import check_permission
 
 controller = ResourceController("communities-invitation", path="/communities/")
+INVITATIONS_PER_REQUEST = 20
 
 
 @controller.route("/<int:community_id>/invitations/")
 class InvitationLister(Resource):
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
     @controller.argument_parser(counter_parser)
-    @controller.lister(20, Invitation.IndexModel)
+    @controller.lister(INVITATIONS_PER_REQUEST, Invitation.FullModel)
     def get(self, community: Community, start: int, finish: int):
         return Invitation.find_by_community(community.id, start, finish - start)
 
 
 @controller.route("/<int:community_id>/invitations/index/")
-class OldInvitationLister(Resource):  # pragma: no coverage  # TODO remove
-    @check_participant(controller, role=ParticipantRole.OWNER)
+class OldInvitationLister(Resource):  # pragma: no coverage
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
     @controller.argument_parser(counter_parser)
-    @controller.lister(20, Invitation.IndexModel)
+    @controller.lister(INVITATIONS_PER_REQUEST, Invitation.FullModel)
     def post(self, community: Community, start: int, finish: int):
         return Invitation.find_by_community(community.id, start, finish - start)
 
@@ -89,11 +91,13 @@ class InvitationJoin(Resource):
     def post(self, user: User, invitation: Invitation | None, community: Community):
         if invitation is None:
             controller.abort(400, "User has already joined")
-
-        Participant.add(
+        participant = Participant.add(
             community_id=community.id,
             user_id=user.id,
-            role=invitation.role,
+        )
+        ParticipantRole.create_bulk(
+            participant_id=participant.id,
+            role_ids=[role.id for role in invitation.roles],
         )
         if invitation.limit == 1:
             invitation.delete()

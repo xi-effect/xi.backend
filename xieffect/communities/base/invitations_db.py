@@ -6,15 +6,34 @@ from typing import Self
 from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
 from sqlalchemy import Column, select, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, DateTime, String, Enum
+from sqlalchemy.orm import relationship, selectinload
+from sqlalchemy.sql.sqltypes import Integer, DateTime, String
 
 from common import Base, db, app
-from .meta_db import Community, ParticipantRole
+from .meta_db import Community
+from .roles_db import Role
+
+
+class InvitationRoles(Base):
+    __tablename__ = "cs_invitation_roles"
+
+    invitation_id = Column(
+        Integer, ForeignKey("cs_invitations.id", ondelete="CASCADE"), primary_key=True
+    )
+    role_id = Column(
+        Integer, ForeignKey("cs_roles.id", ondelete="CASCADE"), primary_key=True
+    )
+
+    @classmethod
+    def create_bulk(cls, invitation_id: int, role_ids: list[int]) -> None:
+        db.session.add_all(
+            cls(invitation_id=invitation_id, role_id=role_id) for role_id in role_ids
+        )
+        db.session.flush()
 
 
 class Invitation(Base, Identifiable):
-    __tablename__ = "community_invites"
+    __tablename__ = "cs_invitations"
     serializer: URLSafeSerializer = URLSafeSerializer(
         app.config["SECURITY_PASSWORD_SALT"]
     )
@@ -29,24 +48,25 @@ class Invitation(Base, Identifiable):
     )
     community = relationship("Community")
 
-    role = Column(Enum(ParticipantRole), nullable=False)
+    roles = relationship("Role", secondary=InvitationRoles.__table__)
     deadline = Column(DateTime, nullable=True)
     limit = Column(Integer, nullable=True)
 
-    BaseModel = PydanticModel.column_model(id, code)
-    CreationBaseModel = PydanticModel.column_model(role, limit)
-    IndexModel = BaseModel.column_model(deadline).combine_with(CreationBaseModel)
+    CreationBaseModel = PydanticModel.column_model(limit)
+    FullModel = (
+        PydanticModel.column_model(id, code, deadline)
+        .combine_with(CreationBaseModel)
+        .nest_model(Role.IndexModel, "roles", as_list=True)
+    )
 
     @classmethod
     def create(
         cls,
         community_id: int,
-        role: ParticipantRole,
         limit: int | None,
         days_to_live: int | None,
     ) -> Self:
         entry: cls = super().create(
-            role=role,
             community_id=community_id,
             limit=limit,
             deadline=(
@@ -68,7 +88,11 @@ class Invitation(Base, Identifiable):
         cls, community_id: int, offset: int, limit: int
     ) -> list[Self]:
         return db.get_paginated(
-            select(cls).filter_by(community_id=community_id), offset, limit
+            select(cls)
+            .options(selectinload(cls.roles))
+            .filter_by(community_id=community_id),
+            offset,
+            limit,
         )
 
     @classmethod

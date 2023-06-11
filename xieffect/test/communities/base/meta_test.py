@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from flask_fullstack import SocketIOTestClient, dict_rekey, assert_contains
 from pytest import mark
 
@@ -13,6 +15,15 @@ from vault import File
 
 def get_communities_list(client: FlaskTestClient) -> list[dict]:
     return client.get("/home/", expected_json={"communities": list})["communities"]
+
+
+def get_participants_list(
+    client: FlaskTestClient, community_id: int, username: str | None = None
+) -> list[dict]:
+    link = f"/communities/{community_id}/participants/"
+    if username is not None:
+        link += f"?search={username}"  # noqa: WPS336
+    return list(client.paginate(link))
 
 
 @mark.order(1000)
@@ -138,3 +149,93 @@ def test_participant_constraints(
 ):
     delete_by_id(base_user_id if (table == User) else community_id, table)
     assert Participant.find_by_ids(community_id, base_user_id) is None
+
+
+def test_participant(
+    client: FlaskTestClient,
+    multi_client: Callable[str],
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    get_role_ids: Callable[FlaskTestClient, int],
+    get_roles_list_by_ids: Callable[FlaskTestClient, int, list[int]],
+):
+    socketio_client2 = SocketIOTestClient(client)
+    community_id_json = {"community_id": test_community}
+
+    # Check successfully open participants-room
+    for user in (socketio_client, socketio_client2):
+        user.assert_emit_success("open_participants", community_id_json)
+
+    user = client.get(
+        "/home/",
+        expected_json={
+            "username": str,
+            "id": int,
+        },
+    )
+    username, user_id = user.get("username"), user.get("id")
+    assert len(participants_list := get_participants_list(client, test_community)) != 0
+    assert len(get_participants_list(client, test_community, username)) != 0
+    participant_id, community_id = participants_list[0].get("id"), participants_list[
+        0
+    ].get("community-id")
+
+    role_ids = get_role_ids(client, test_community)
+
+    # Participant update data
+    participant_data = {
+        "role_ids": role_ids,
+        "participant_id": participant_id,
+        **community_id_json,
+    }
+    roles = get_roles_list_by_ids(client, test_community, role_ids)
+    successful_participant_data = {
+        "community_id": community_id,
+        "id": participant_id,
+        "user_id": user_id,
+        "roles": roles,
+    }
+    # Assert participant update with different data
+    socketio_client.assert_emit_ack(
+        "update_participant",
+        participant_data,
+        expected_data=successful_participant_data,
+    )
+
+    socketio_client2.assert_only_received(
+        "update_participant", successful_participant_data
+    )
+
+    slice_role_ids = len(role_ids) // 2
+    participant_data["role_ids"] = role_ids[slice_role_ids:]
+    successful_participant_data["roles"] = get_roles_list_by_ids(
+        client, test_community, role_ids[slice_role_ids:]
+    )
+    socketio_client.assert_emit_ack(
+        "update_participant",
+        participant_data,
+        expected_data=successful_participant_data,
+    )
+
+    socketio_client2.assert_only_received(
+        "update_participant", successful_participant_data
+    )
+
+    # delete participant data
+    delete_data = {"community_id": test_community, "participant_id": participant_id}
+
+    socketio_client.assert_emit_success(
+        "delete_participant", delete_data, code=400, message="Target is the source"
+    )
+
+    client2 = multi_client("2@user.user")
+    new_user_id = client2.get("/home/", expected_json={"id": int})["id"]
+    new_participant_id = Participant.create(test_community, new_user_id).id
+
+    delete_data["participant_id"] = new_participant_id
+
+    socketio_client.assert_emit_success("delete_participant", delete_data)
+    socketio_client2.assert_only_received("delete_participant", delete_data)
+
+    for user in (socketio_client, socketio_client2):
+        user.assert_emit_success("close_participants", community_id_json)

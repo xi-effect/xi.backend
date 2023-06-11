@@ -115,7 +115,7 @@ def full_client() -> FlaskTestClient:
     return test_client
 
 
-@fixture
+@fixture(scope="session")
 def multi_client() -> Callable[[str], FlaskTestClient]:
     def multi_client_inner(user_email: str):
         return login(user_email, BASIC_PASS)

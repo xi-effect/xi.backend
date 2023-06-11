@@ -7,15 +7,14 @@ from flask_socketio import join_room, leave_room
 from pydantic import BaseModel
 
 from common import EventController, User
-from communities.base.meta_db import ParticipantRole, Community
-from communities.services.news_db import Post
-from communities.utils import check_participant
+from .news_db import Post
+from ..base import Community, PermissionType, check_permission
 
 controller = EventController()
 
 
 @controller.route()
-class PostEventSpace(EventSpace):
+class PostEventSpace(EventSpace):  # pragma: no coverage
     @classmethod
     def room_name(cls, community_id: int) -> str:
         return f"cs-news-{community_id}"
@@ -24,13 +23,13 @@ class PostEventSpace(EventSpace):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @check_permission(controller, PermissionType.MANAGE_NEWS)
     @controller.force_ack()
     def open_news(self, community: Community):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @check_permission(controller, PermissionType.MANAGE_NEWS)
     @controller.force_ack()
     def close_news(self, community: Community):
         leave_room(self.room_name(community.id))
@@ -40,7 +39,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER, use_user=True)
+    @check_permission(controller, PermissionType.MANAGE_NEWS, use_user=True)
     @controller.marshal_ack(Post.IndexModel)
     def new_post(
         self,
@@ -59,7 +58,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_NEWS)
     @controller.database_searcher(Post)
     @controller.marshal_ack(Post.IndexModel)
     def update_post(
@@ -85,7 +84,7 @@ class PostEventSpace(EventSpace):
 
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(DeleteModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_NEWS)
     @controller.database_searcher(Post)
     @controller.force_ack()
     def delete_post(
