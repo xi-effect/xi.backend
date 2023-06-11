@@ -33,12 +33,7 @@ class Community(SoftDeletable, Identifiable):
         Integer, ForeignKey(User.id, ondelete="CASCADE"), nullable=False
     )  # TODO ondelete is temporary
 
-    participants = relationship(
-        "Participant",
-        back_populates="community",
-        cascade="all, delete",
-        passive_deletes=True,
-    )
+    participants = relationship("Participant", passive_deletes=True)
 
     CreateModel = PydanticModel.column_model(name, description)
     IndexModel = CreateModel.column_model(id).nest_model(File.FullModel, "avatar")
@@ -86,7 +81,7 @@ class Participant(LinkedListNode, Identifiable):
         ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
         nullable=False,
     )
-    community = relationship("Community", back_populates="participants")
+    community = relationship("Community")
 
     roles = relationship("Role", secondary=ParticipantRole.__table__)
 

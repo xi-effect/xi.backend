@@ -20,18 +20,20 @@ def assert_message(
 
 def test_discussion_messages(
     test_discussion_id: int,
-    test_message_content: dict[str, str],
-    test_message_id: int,
+    message_content: dict[str, str],
+    message_id: int,
     test_file_id: int,
     file_maker: Callable[File],
 ):
-    message: DiscussionMessage = DiscussionMessage.find_by_id(test_message_id)
+    message: DiscussionMessage = DiscussionMessage.find_by_id(message_id)
     assert Discussion.find_by_id(test_discussion_id) is not None
     assert message is not None
 
-    assert_message(message, test_message_content, test_file_id)
-    discussion: list[int] = Discussion.get_discussion(entry_id=test_discussion_id)
-    assert len(discussion) == 1
+    assert_message(message, message_content, test_file_id)
+    messages: list[int] = DiscussionMessage.get_paginated_messages(
+        test_discussion_id, 0, 50
+    )
+    assert len(messages) == 1
 
     new_content: dict[str, str] = {"update": "content"}
     new_file_id: int = file_maker("test-2.json").id

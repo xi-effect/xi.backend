@@ -39,7 +39,7 @@ def test_teacher_task_crud(
     socketio_client: SocketIOTestClient,
     test_community: int,
     file_id: int,
-    test_task_id: int,
+    task_id: int,
 ):
     task_data: dict[str, int | str | list] = {
         "community_id": test_community,
@@ -47,20 +47,23 @@ def test_teacher_task_crud(
         "name": "test task",
         "files": [file_id],
     }
-    task_id: int = assert_create_task(socketio_client, task_data)
+    created_task_id: int = assert_create_task(socketio_client, task_data)
     client.get(
-        f"/communities/{test_community}/tasks/{test_task_id}/",
+        f"/communities/{test_community}/tasks/{task_id}/",
         expected_a=Task.not_found_text,
         expected_status=404,
     )
 
-    ids_data: dict[str, int] = {"community_id": test_community, "task_id": task_id}
+    ids_data: dict[str, int] = {
+        "community_id": test_community,
+        "task_id": created_task_id,
+    }
     updated_data: dict[str, int | str | list] = dict(
         **ids_data, name="update", description="test"
     )
     socketio_client.assert_emit_success("update_task", updated_data)
     client.get(
-        f"/communities/{test_community}/tasks/{task_id}/",
+        f"/communities/{test_community}/tasks/{created_task_id}/",
         expected_json=dict(
             dict_cut(updated_data, "name", "description"),
             files=[{"id": file_id}],
@@ -69,13 +72,13 @@ def test_teacher_task_crud(
     updated_data["files"]: list[int] = []
     socketio_client.assert_emit_success("update_task", updated_data)
     client.get(
-        f"/communities/{test_community}/tasks/{task_id}/",
+        f"/communities/{test_community}/tasks/{created_task_id}/",
         expected_json={"files": updated_data["files"]},
     )
 
     socketio_client.assert_emit_success("delete_task", ids_data)
     client.get(
-        f"/communities/{test_community}/tasks/{task_id}/",
+        f"/communities/{test_community}/tasks/{created_task_id}/",
         expected_status=404,
         expected_a=Task.not_found_text,
     )
@@ -121,7 +124,7 @@ def test_teacher_tasks_pagination(
         "expected_code",
         "expected_message",
         "data",
-        "task_id",
+        "received_task_id",
     ),
     [
         ("new_task", TEST_EMAIL, 404, "File not found", {"files": [12345]}, None),
@@ -147,9 +150,9 @@ def test_teacher_tasks_pagination(
             404,
             Task.not_found_text,
             {"name": "new"},
-            "test_task_id",
+            "task_id",
         ),
-        ("delete_task", TEST_EMAIL, 404, Task.not_found_text, {}, "test_task_id"),
+        ("delete_task", TEST_EMAIL, 404, Task.not_found_text, {}, "task_id"),
     ],
     ids=[
         "file_not_found",
@@ -167,14 +170,14 @@ def test_task_sio_errors(
     expected_code: int,
     expected_message: str,
     data: dict[str, list | str],
-    task_id: str,
+    received_task_id: str,
     request: FixtureRequest,
 ):
     client: FlaskTestClient = multi_client(client_email)
     client_sio: SocketIOTestClient = SocketIOTestClient(client)
     task_data: dict[str, list | str | int] = dict(**data, community_id=test_community)
-    if task_id is not None:
-        task_id: int = request.getfixturevalue(task_id)
+    if received_task_id is not None:
+        task_id: int = request.getfixturevalue(received_task_id)
         task_data: dict[str, str | int] = dict(**task_data, task_id=task_id)
     else:
         task_data: dict[str, list | int] = dict(**task_data, name="test", page_id=1)
@@ -188,9 +191,9 @@ def test_task_sio_errors(
 
 def test_task_constraints(
     table: type[User | Community],
-    test_task_id: int,
+    task_id: int,
     base_user_id: int,
     community_id: int,
 ):
     delete_by_id(base_user_id if (table == User) else community_id, table)
-    assert Task.find_by_id(test_task_id) is None
+    assert Task.find_by_id(task_id) is None

@@ -9,8 +9,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import DateTime, Integer, String, Text
 
 from common import db
-from common.abstract import FileEmbed
-from common.abstract import SoftDeletable
+from common.abstract import FileEmbed, SoftDeletable
 from vault.files_db import File
 
 TASKS_PER_PAGE: int = 48

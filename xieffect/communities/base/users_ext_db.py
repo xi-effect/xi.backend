@@ -30,11 +30,7 @@ class CommunitiesUser(SoftDeletable):
     )
     avatar = relationship("File", foreign_keys=[avatar_id])
 
-    communities = relationship(
-        "Participant",
-        cascade="all, delete",
-        passive_deletes=True,
-    )
+    communities = relationship("Participant", passive_deletes=True)
 
     @PydanticModel.include_flat_nest_model(User.MainData, "user")
     @PydanticModel.include_nest_model(File.FullModel, "avatar")
