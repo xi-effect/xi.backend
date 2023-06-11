@@ -20,6 +20,7 @@ class Settings(Resource):
     parser.add_argument("surname", type=str, required=False)
     parser.add_argument("patronymic", type=str, required=False)
     parser.add_argument("birthday", type=inputs.date_from_iso8601, required=False)
+    parser.add_argument("theme", type=str, required=False)
 
     @controller.jwt_authorizer(User)
     @controller.marshal_with(User.ProfileData)

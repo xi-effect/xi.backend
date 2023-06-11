@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from json import dump as dump_json, load as load_json
 from pathlib import Path
 
@@ -38,7 +39,8 @@ def init_test_mod() -> None:
 
 
 if PRODUCTION_MODE:  # works on server restart  # pragma: no coverage
-    send_discord_message(WebhookURLs.NOTIFY, "Application restated")
+    with suppress(Exception):
+        send_discord_message(WebhookURLs.NOTIFY, "Application restated")
 
     setup_fail: bool = False
     for secret_name in SECRETS:

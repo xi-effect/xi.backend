@@ -45,6 +45,7 @@ class User(SoftDeletable, UserRole, Identifiable):
     # Settings:
     username = Column(String(100), nullable=False)
     handle = Column(String(100), nullable=True, unique=True, index=True)
+    theme = Column(String(10), nullable=False, default="system")
 
     # profile:
     name = Column(String(100), nullable=True)
@@ -69,7 +70,7 @@ class User(SoftDeletable, UserRole, Identifiable):
 
     MainData = PydanticModel.column_model(id, username, handle)
     ProfileData = MainData.column_model(
-        email, email_confirmed, name, surname, patronymic, birthday, code
+        email, email_confirmed, theme, name, surname, patronymic, birthday, code
     )
 
     @classmethod
