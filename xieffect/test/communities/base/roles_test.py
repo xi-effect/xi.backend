@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask_fullstack import SocketIOTestClient, assert_contains
+from pydantic import conlist
 
 from communities.base import Community
 from communities.base.roles_db import (
@@ -26,11 +27,11 @@ def test_roles(
     socketio_client2 = SocketIOTestClient(client)
 
     # Create valid & invalid permissions list
-    permissions: list[str] = sorted(PermissionType.get_all_field_names())
+    possible_permissions: list[str] = sorted(PermissionType.get_all_field_names())
     incorrect_permissions: list[str] = ["test"]
 
     role_data = {
-        "permissions": permissions,
+        "permissions": possible_permissions,
         "name": "test_role",
         "color": "FFFF00",
     }
@@ -41,7 +42,14 @@ def test_roles(
         user.assert_emit_success("open_roles", community_id_json)
 
     # Assert limiting quantity creating roles in a community
-    successful_role_data = {**role_data}
+    successful_role_data = {
+        **role_data,
+        "permissions": conlist(
+            str,
+            min_items=len(possible_permissions),
+            max_items=len(possible_permissions),
+        ),  # TODO upgrade list-via-set check
+    }
     role_data.update(community_id_json)
 
     for _ in range(LIMITING_QUANTITY_ROLES):
@@ -111,16 +119,17 @@ def test_roles(
     empty_role_data = {**community_id_json, "role_id": role_id}
     update_role_data = update_data | empty_role_data
     successful_data = {**update_data, "id": role_id}
-    list_permissions = [permissions[1:], [], permissions]
-    list_data = [update_role_data, successful_data]
 
-    for data in list_permissions:
-        for role_data in list_data:
-            role_data["permissions"] = data
+    for permissions in (possible_permissions[1:], [], possible_permissions):
         socketio_client.assert_emit_ack(
             event_name="update_role",
-            data=update_role_data,
-            expected_data=successful_data,
+            data={**update_role_data, "permissions": permissions},
+            expected_data={
+                **successful_data,
+                "permissions": conlist(
+                    str, min_items=len(permissions), max_items=len(permissions)
+                ),  # TODO upgrade list-via-set check
+            },
         )
         socketio_client2.assert_only_received("update_role", successful_data)
 

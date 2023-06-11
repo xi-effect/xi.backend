@@ -9,11 +9,24 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from migration_utils import EnumUpdater
+
 # revision identifiers, used by Alembic.
-revision = '402'
-down_revision = '409'
+revision = "402"
+down_revision = "409"
 branch_labels = None
 depends_on = None
+
+permission_type_updater = EnumUpdater(
+    "permissiontype",
+    "MANAGE_COMMUNITY",
+    "MANAGE_INVITATIONS",
+    "MANAGE_ROLES",
+    "MANAGE_TASKS",
+    "MANAGE_NEWS",
+    "MANAGE_MESSAGES",
+    "MANAGE_PARTICIPANTS",
+)
 
 
 def upgrade():
@@ -41,6 +54,8 @@ def upgrade():
 
     with op.batch_alter_table('community_participant', schema=None) as batch_op:
         batch_op.drop_column('role')
+
+    permission_type_updater.upgrade(op, table_name="cs_role_permissions", column_name="permission_type")
 
     # ### end Alembic commands ###
 
