@@ -8,6 +8,7 @@ from sys import stderr
 from flask_fullstack import SocketIO
 from requests import HTTPError
 
+import communities.base.discussion_db  # TODO (use in api) # noqa: F401 WPS301
 from common import app, db, versions, open_file
 from communities import (
     communities_meta_events,

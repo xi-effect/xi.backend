@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from io import BytesIO
 from os.path import exists
 from typing import TypeVar
 
 from pytest import mark
-from werkzeug.datastructures import FileStorage
 
 from common import open_file
-from test.conftest import BASIC_PASS, login, FlaskTestClient
+from test.conftest import BASIC_PASS, login, FlaskTestClient, create_file
 from vault.files_db import FILES_PATH
 
 k = TypeVar("k")
@@ -25,10 +23,6 @@ def assert_spread(dct: dict[k, v], *keys: k) -> Iterable[v]:
         result = dct.get(key)
         assert result is not None
         yield result
-
-
-def create_file(filename: str, contents: bytes):
-    return FileStorage(stream=BytesIO(contents), filename=filename)
 
 
 def upload(client: FlaskTestClient, filename: str) -> tuple[dict, bytes]:

@@ -14,6 +14,7 @@ from communities.base import (
     Role,
     RolePermission,
 )
+from communities.base.discussion_db import DiscussionMessage
 from communities.base.meta_db import Community
 from communities.tasks.main_db import Task
 from test.conftest import delete_by_id
@@ -69,7 +70,11 @@ def task_maker(base_user_id: int, community_id: int) -> Callable[Task]:
 
     def task_maker_inner() -> Task:
         task: Task = Task.create(
-            base_user_id, community_id, 1, "test", "description", None, None
+            user_id=base_user_id,
+            community_id=community_id,
+            page_id=1,
+            name="test",
+            description="description",
         )
         created.append(task.id)
         return task
@@ -81,7 +86,7 @@ def task_maker(base_user_id: int, community_id: int) -> Callable[Task]:
 
 
 @fixture
-def test_task_id(task_maker: Callable[Task]) -> int:
+def task_id(task_maker: Callable[Task]) -> int:
     task: Task = task_maker()
     return task.id
 
@@ -187,3 +192,25 @@ def get_roles_list_by_ids():
         ]
 
     return wrapper_get_roles_list
+
+
+@fixture
+def message_content() -> dict[str, str]:
+    return {"test": "content"}
+
+
+@fixture
+def message_id(
+    base_user_id: int,
+    test_discussion_id: int,
+    message_content: dict[str, str],
+    test_file_id: int,
+) -> int:
+    message_id: int = DiscussionMessage.create(
+        content=message_content,
+        sender_id=base_user_id,
+        discussion_id=test_discussion_id,
+        file_ids=[test_file_id],
+    ).id
+    yield message_id
+    delete_by_id(message_id, DiscussionMessage)

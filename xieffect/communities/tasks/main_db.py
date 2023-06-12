@@ -4,18 +4,18 @@ from datetime import datetime
 from typing import Self
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, select, update, delete, or_
+from sqlalchemy import Column, ForeignKey, select, update, or_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import DateTime, Integer, String, Text
 
-from common import Base, db
-from common.abstract import SoftDeletable
+from common import db
+from common.abstract import FileEmbed, SoftDeletable
 from vault.files_db import File
 
 TASKS_PER_PAGE: int = 48
 
 
-class TaskEmbed(Base):
+class TaskEmbed(FileEmbed):
     __tablename__ = "cs_embeds"
 
     task_id = Column(
@@ -23,31 +23,6 @@ class TaskEmbed(Base):
         ForeignKey("cs_tasks.id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
-    file_id = Column(
-        Integer,
-        ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
-        primary_key=True,
-    )
-    file = relationship("File")
-
-    FileModel = PydanticModel.nest_flat_model(File.FullModel, "file")
-
-    @classmethod
-    def add_files(cls, task_id: int, file_ids: set[int]) -> None:
-        values: list[dict] = [
-            {"task_id": task_id, "file_id": file} for file in file_ids
-        ]
-        db.session.bulk_insert_mappings(cls, values)
-
-    @classmethod
-    def delete_files(cls, task_id: int, file_ids: set[int]) -> None:
-        db.session.execute(
-            delete(cls).filter(cls.task_id == task_id, cls.file_id.in_(file_ids))
-        )
-
-    @classmethod
-    def get_task_files(cls, task_id: int) -> list[int]:
-        return db.get_all(select(cls.file_id).filter(cls.task_id == task_id))
 
 
 class TaskFilter(TypeEnum):
@@ -90,7 +65,7 @@ class Task(SoftDeletable, Identifiable):
     opened = Column(DateTime, nullable=True, index=True)
     closed = Column(DateTime, nullable=True, index=True)
 
-    files = relationship("TaskEmbed", passive_deletes=True)
+    files = relationship("File", secondary=TaskEmbed.__table__, passive_deletes=True)
 
     BaseModel = PydanticModel.column_model(id, created)
     CreateModel = PydanticModel.column_model(page_id, name, description, opened, closed)
@@ -102,7 +77,7 @@ class Task(SoftDeletable, Identifiable):
         def callback_convert(cls, callback, orm_object: Task, **_) -> None:
             callback(username=orm_object.user.username)
 
-    FullModel = IndexModel.nest_model(TaskEmbed.FileModel, "files", as_list=True)
+    FullModel = IndexModel.nest_model(File.FullModel, "files", as_list=True)
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:

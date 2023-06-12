@@ -32,14 +32,14 @@ def student(
 def test_student_tasks_pagination(
     student: FlaskTestClient,
     community_id: int,
-    test_task_id: int,
+    task_id: int,
 ):
     filter_data: dict[str, str] = {"filter": "ACTIVE"}
     base_link: str = f"/communities/{community_id}/tasks/"
 
     assert len(list(student.paginate(f"{base_link}student/", json=filter_data))) == 0
 
-    task: Task = Task.find_by_id(test_task_id)
+    task: Task = Task.find_by_id(task_id)
     task.opened = datetime.utcnow()
     assert len(list(student.paginate(f"{base_link}student/", json=filter_data))) == 1
 

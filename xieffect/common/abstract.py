@@ -3,10 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Self
 
-from sqlalchemy import Column, DateTime
+from sqlalchemy import Column, DateTime, delete, select, Integer, ForeignKey
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.sql import Select
 
-from common._core import Base  # noqa: WPS436
+from common._core import Base, db  # noqa: WPS436
 
 
 class SoftDeletable(Base):
@@ -111,3 +112,37 @@ class LinkedListNode(Base):
     def delete(self) -> None:
         self.remove()
         super().delete()
+
+
+class FileEmbed(Base):
+    __abstract__ = True
+
+    @declared_attr
+    def file_id(self) -> Column:
+        return Column(
+            Integer,
+            ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+            primary_key=True,
+        )
+
+    @classmethod
+    def add_files(cls, file_ids: set[int], **kwargs) -> None:
+        values: list[dict] = [dict(kwargs, file_id=file) for file in file_ids]
+        db.session.bulk_insert_mappings(cls, values)
+
+    @classmethod
+    def delete_files(cls, file_ids: set[int], **kwargs) -> None:
+        db.session.execute(
+            delete(cls).filter(
+                *[getattr(cls, column) == value for column, value in kwargs.items()],
+                cls.file_id.in_(file_ids),
+            )
+        )
+
+    @classmethod
+    def get_file_ids(cls, **kwargs) -> list[int]:
+        return db.get_all(
+            select(cls.file_id).filter(
+                *[getattr(cls, column) == value for column, value in kwargs.items()]
+            )
+        )
