@@ -40,7 +40,12 @@ class DiscussionMessage(Base, Identifiable):
 
     discussion_id = Column(
         Integer,
-        ForeignKey("discussions.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey(
+            "discussions.id",
+            back_populates="messages",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+        ),
         nullable=False,
     )
     discussion = relationship("Discussion")
@@ -84,7 +89,10 @@ class Discussion(Base, Identifiable):
 
     id = Column(Integer, primary_key=True)
     messages = relationship(
-        "DiscussionMessage", cascade="all, delete", passive_deletes=True
+        "DiscussionMessage",
+        back_populates="discussion",
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     IndexModel = PydanticModel.column_model(id).nest_model(

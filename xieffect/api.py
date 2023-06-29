@@ -24,6 +24,8 @@ from communities import (
     tasks_events,
     videochat_events,
     videochat_namespace,
+    task_discussions_namespace,
+    task_discussions_events,
 )
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
 from other import (
@@ -112,6 +114,8 @@ api.add_namespace(invites_mub_namespace)
 
 api.add_namespace(role_namespace)
 
+api.add_namespace(task_discussions_namespace)
+
 socketio = SocketIO(
     app,
     title="SIO",
@@ -133,6 +137,7 @@ socketio.add_namespace(
     tasks_events,
     videochat_events,
     role_events,
+    task_discussions_events,
     protected=True,
 )
 
