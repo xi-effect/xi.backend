@@ -33,18 +33,14 @@ class DiscussionMessage(Base, Identifiable):
 
     sender_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
     sender = relationship("User")
 
     discussion_id = Column(
         Integer,
-        ForeignKey(
-            "discussions.id",
-            ondelete="CASCADE",
-            onupdate="CASCADE",
-        ),
+        ForeignKey("discussions.id"),
         nullable=False,
     )
     discussion = relationship("Discussion")
@@ -103,7 +99,7 @@ class Discussion(Base, Identifiable):
         return cls.find_first_by_kwargs(id=entry_id)
 
     @classmethod
-    def get_discussion(
+    def find_paginated_discussions(
         cls, entry_id: int, offset: int = 0, limit: int = 50
     ) -> list[Self]:
         return cls.find_paginated_by_kwargs(offset, limit, id=entry_id)

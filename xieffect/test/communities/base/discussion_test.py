@@ -30,7 +30,9 @@ def test_discussion_messages(
     assert message is not None
 
     assert_message(message, test_message_content, test_file_id)
-    discussion: list[int] = Discussion.get_discussion(entry_id=test_discussion_id)
+    discussion: list[int] = Discussion.find_paginated_discussions(
+        entry_id=test_discussion_id
+    )
     assert len(discussion) == 1
 
     new_content: dict[str, str] = {"update": "content"}
