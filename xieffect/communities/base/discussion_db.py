@@ -40,7 +40,7 @@ class DiscussionMessage(Base, Identifiable):
 
     discussion_id = Column(
         Integer,
-        ForeignKey("discussions.id"),
+        ForeignKey("discussions.id", ondelete="CASCADE"),
         nullable=False,
     )
     discussion = relationship("Discussion")
