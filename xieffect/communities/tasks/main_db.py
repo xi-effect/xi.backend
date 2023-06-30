@@ -11,7 +11,6 @@ from sqlalchemy.sql.sqltypes import DateTime, Integer, String, Text
 from common import db
 from common.abstract import FileEmbed, SoftDeletable
 from vault.files_db import File
-from .discussion_db import TaskDiscussion
 
 TASKS_PER_PAGE: int = 48
 
@@ -56,13 +55,6 @@ class Task(SoftDeletable, Identifiable):
         nullable=False,
     )
     community = relationship("Community")
-
-    discussions: TaskDiscussion = relationship(
-        "TaskDiscussion",
-        back_populates="task",
-        cascade="all, delete",
-        passive_deletes=True,
-    )
 
     # TODO recheck the argument name after information pages will be added
     page_id = Column(Integer, nullable=False)
