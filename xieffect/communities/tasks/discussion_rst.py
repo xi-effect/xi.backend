@@ -8,8 +8,9 @@ from communities.tasks.discussion_db import TaskDiscussionMessage
 
 controller = ResourceController(
     "cs-task-discussion",
-    path="/communities/<int:community_id>/tasks/<int:task_id>/discussion/"
-    "<int:discussion_id>/",
+    path="/communities/<int:community_id>"
+    "/tasks/<int:task_id>/discussion"
+    "/<int:discussion_id>/",
 )
 
 MESSAGES_PER_REQUEST: int = 20
