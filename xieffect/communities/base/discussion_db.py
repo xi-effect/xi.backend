@@ -42,7 +42,6 @@ class DiscussionMessage(Base, Identifiable):
         Integer,
         ForeignKey(
             "discussions.id",
-            back_populates="messages",
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),
