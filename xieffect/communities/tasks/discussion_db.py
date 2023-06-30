@@ -28,7 +28,7 @@ class TaskDiscussion(Discussion):
 
     task_id: Column | int = Column(
         Integer,
-        ForeignKey("cs_tasks.id"),
+        ForeignKey("cs_tasks.id", ondelete="CASCADE"),
         nullable=False,
     )
     task = relationship("Task")
