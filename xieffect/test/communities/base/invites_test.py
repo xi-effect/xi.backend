@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import timedelta, date
+from datetime import timedelta, datetime
 
 from flask_fullstack import (
     FlaskTestClient,
@@ -35,7 +35,7 @@ class InvitesTester:
         days = invite_data.get("days")
         if days is not None:
             deadline_regex: str = (
-                date.today() + timedelta(days=days)
+                datetime.utcnow().date() + timedelta(days=days)
             ).isoformat() + r"T\d{2}:\d{2}:\d{2}\.\d+"
 
         invite = self.sio1.assert_emit_ack(
