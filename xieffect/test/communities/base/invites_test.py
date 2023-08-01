@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import timedelta, datetime
+from typing import Any
 
 from flask_fullstack import (
     FlaskTestClient,
@@ -11,10 +12,11 @@ from flask_fullstack import (
 )
 from pydantic import constr
 from pytest import mark
+from pytest_mock import MockerFixture
 
 from communities.base import Community, Invitation
-from ..conftest import COMMUNITY_DATA, assert_create_community
-from ...conftest import delete_by_id
+from test.communities.conftest import COMMUNITY_DATA, assert_create_community
+from test.conftest import delete_by_id
 
 
 class InvitesTester:
@@ -316,3 +318,33 @@ def test_invites_errors(
     # member joins community & fails connecting to room
     assert_successful_join(member, invite["id"], invite["code"], sio_member)
     assert_fail_event(sio_member, 403, "Permission Denied: Not sufficient permissions")
+
+
+def test_limit_invitations(
+    client: FlaskTestClient,
+    multi_client: Callable[[str], FlaskTestClient],
+    test_community: int,
+    mocker: MockerFixture,
+):
+    mocker.patch.object(target=Invitation, attribute="max_count", new=1)
+
+    user1 = multi_client("1@user.user")
+    invite_data: dict[str, Any] = {
+        "permission": "manage_invitations",
+        "limit": 3,
+        "days": 10,
+        "community_id": test_community,
+        "role_ids": [],
+    }
+
+    sio_user1 = SocketIOTestClient(user1)
+
+    invite_tester = InvitesTester(client, {"community_id": test_community}, sio_user1)
+    invite_tester.assert_create_invite(invite_data)
+
+    invite_tester.sio1.assert_emit_ack(
+        event_name="new_invite",
+        data=invite_data,
+        expected_code=400,
+        expected_message="Quantity exceeded",
+    )
