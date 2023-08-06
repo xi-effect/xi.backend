@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Self
+from typing import Self, ClassVar
 
 from flask_fullstack import PydanticModel, Identifiable
 from itsdangerous import URLSafeSerializer
-from sqlalchemy import Column, select, ForeignKey
+from sqlalchemy import Column, select, ForeignKey, Index
 from sqlalchemy.orm import relationship, selectinload
+from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, DateTime, String
 
 from common import Base, db, app
@@ -37,6 +38,7 @@ class Invitation(Base, Identifiable):
     serializer: URLSafeSerializer = URLSafeSerializer(
         app.config["SECURITY_PASSWORD_SALT"]
     )
+    max_count: ClassVar[int] = 50
 
     id = Column(Integer, primary_key=True)
     code = Column(String(100), default="")
@@ -51,6 +53,12 @@ class Invitation(Base, Identifiable):
     roles = relationship("Role", secondary=InvitationRoles.__table__)
     deadline = Column(DateTime, nullable=True)
     limit = Column(Integer, nullable=True)
+
+    __table_args__ = (
+        Index(
+            "hash_index_cs_invites_community_id", community_id, postgresql_using="hash"
+        ),
+    )
 
     CreationBaseModel = PydanticModel.column_model(limit)
     FullModel = (
@@ -107,3 +115,9 @@ class Invitation(Base, Identifiable):
 
     def is_invalid(self) -> bool:
         return not self.has_valid_deadline() or self.limit == 0
+
+    @classmethod
+    def get_count_by_community(cls, community_id: int) -> int:
+        return db.get_first(
+            select(count()).select_from(cls).filter_by(community_id=community_id)
+        )

@@ -5,10 +5,10 @@ from flask_socketio import join_room, leave_room
 from pydantic import BaseModel, Field
 
 from common import EventController
-from .invitations_db import Invitation, InvitationRoles
-from .meta_db import Community
-from .roles_db import PermissionType
-from .utils import check_permission
+from communities.base.invitations_db import Invitation, InvitationRoles
+from communities.base.meta_db import Community
+from communities.base.roles_db import PermissionType
+from communities.base.utils import check_permission
 
 controller = EventController()
 
@@ -38,6 +38,7 @@ class InvitationsEventSpace(EventSpace):
         role_ids: list[int] = Field(default_factory=list)
         days: int = None
 
+    @controller.doc_abort(400, "Quantity exceeded")
     @controller.argument_parser(CreationModel)
     @controller.mark_duplex(Invitation.FullModel, use_event=True)
     @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
@@ -50,6 +51,9 @@ class InvitationsEventSpace(EventSpace):
         days: int | None,
         role_ids: list[int],
     ):
+        if Invitation.get_count_by_community(community.id) >= Invitation.max_count:
+            controller.abort(400, "Quantity exceeded")
+
         invitation = Invitation.create(community.id, limit, days)
         InvitationRoles.create_bulk(invitation_id=invitation.id, role_ids=role_ids)
         event.emit_convert(invitation, self.room_name(community.id))

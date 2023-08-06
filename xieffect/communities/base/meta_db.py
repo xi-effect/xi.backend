@@ -20,7 +20,6 @@ class Community(SoftDeletable, Identifiable):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    invite_count = Column(Integer, nullable=False, default=0)
 
     avatar_id = Column(
         Integer,
