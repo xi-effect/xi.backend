@@ -16,7 +16,6 @@ from communities.base import (
 )
 from communities.base.discussion_db import DiscussionMessage
 from communities.base.meta_db import Community
-from communities.tasks.main_db import Task
 from test.conftest import delete_by_id
 
 COMMUNITY_DATA: dict = {"name": "test"}
@@ -48,7 +47,7 @@ def test_community(socketio_client: SocketIOTestClient) -> int:
 
 
 @fixture
-def community_id(base_user_id) -> int:
+def community_id(base_user_id: int) -> int:
     community_id = Community.create(
         name="test_community",
         description="description",
@@ -59,36 +58,14 @@ def community_id(base_user_id) -> int:
     delete_by_id(community_id, Community)
 
 
+@fixture
+def client_community_id(socketio_client: SocketIOTestClient) -> int:
+    return assert_create_community(socketio_client, {"name": "client_test"})
+
+
 @fixture(params=[User, Community])
 def table(request) -> type[User | Community]:
     return request.param
-
-
-@fixture
-def task_maker(base_user_id: int, community_id: int) -> Callable[Task]:
-    created: list[int] = []
-
-    def task_maker_inner() -> Task:
-        task: Task = Task.create(
-            user_id=base_user_id,
-            community_id=community_id,
-            page_id=1,
-            name="test",
-            description="description",
-        )
-        created.append(task.id)
-        return task
-
-    yield task_maker_inner
-
-    for task_id in created:
-        delete_by_id(task_id, Task)
-
-
-@fixture
-def task_id(task_maker: Callable[Task]) -> int:
-    task: Task = task_maker()
-    return task.id
 
 
 @fixture(scope="session")

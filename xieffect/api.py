@@ -25,6 +25,9 @@ from communities import (
     tasks_events,
     videochat_events,
     videochat_namespace,
+    teacher_tests_namespace,
+    tests_events,
+    questions_events,
 )
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
 from other import (
@@ -99,6 +102,7 @@ api.add_namespace(news_namespace)
 api.add_namespace(teacher_tasks_namespace)
 api.add_namespace(student_tasks_namespace)
 api.add_namespace(videochat_namespace)
+api.add_namespace(teacher_tests_namespace)
 
 app.register_blueprint(remove_stale_blueprint)
 api.add_namespace(webhook_namespace)
@@ -132,6 +136,8 @@ socketio.add_namespace(
     invitation_events,
     news_events,
     tasks_events,
+    tests_events,
+    questions_events,
     videochat_events,
     role_events,
     protected=True,

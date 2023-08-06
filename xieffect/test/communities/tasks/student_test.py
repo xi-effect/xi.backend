@@ -13,14 +13,14 @@ from test.conftest import FlaskTestClient
 
 @fixture
 def student(
-    multi_client: Callable[[str], FlaskTestClient], community_id: int
+    multi_client: Callable[[str], FlaskTestClient], test_community: int
 ) -> FlaskTestClient:
     student: FlaskTestClient = multi_client("1@user.user")
     student_id: int = student.get(
         "/users/me/profile/",
         expected_json={"email": "1@user.user", "id": int},
     )["id"]
-    participant = Participant.create(community_id, student_id)
+    participant = Participant.create(test_community, student_id)
     db.session.commit()
 
     yield student
@@ -31,11 +31,11 @@ def student(
 
 def test_student_tasks_pagination(
     student: FlaskTestClient,
-    community_id: int,
+    test_community: int,
     task_id: int,
 ):
     filter_data: dict[str, str] = {"filter": "ACTIVE"}
-    base_link: str = f"/communities/{community_id}/tasks/"
+    base_link: str = f"/communities/{test_community}/tasks/"
 
     assert len(list(student.paginate(f"{base_link}student/", json=filter_data))) == 0
 
@@ -64,23 +64,23 @@ def test_student_tasks_pagination(
 )
 def test_student_task_getting(
     student: FlaskTestClient,
-    community_id: int,
-    base_user_id: int,
+    test_community: int,
+    test_user_id: int,
     expected_status: int,
     expected_a: str,
     expected_json: dict[str, str],
     delta: int,
 ):
     task: Task = Task.create(
-        user_id=base_user_id,
-        community_id=community_id,
+        user_id=test_user_id,
+        community_id=test_community,
         name="test",
         page_id=1,  # TODO remove hardcoding
     )
     task.opened = datetime.utcnow() + timedelta(days=delta)
 
     student.get(
-        f"/communities/{community_id}/tasks/student/{task.id}/",
+        f"/communities/{test_community}/tasks/student/{task.id}/",
         expected_status=expected_status,
         expected_a=expected_a,
         expected_json=expected_json,

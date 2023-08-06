@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Self
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, select, update, or_
+from sqlalchemy import Column, ForeignKey, select, or_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import DateTime, Integer, String, Text
 
@@ -104,12 +104,13 @@ class Task(SoftDeletable, Identifiable):
             closed=closed,
         )
 
-    @classmethod
-    def update(cls, task_id: int, **kwargs) -> None:
-        db.session.execute(update(cls).filter(cls.id == task_id).values(**kwargs))
+    def update(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
 
     @classmethod
-    def get_paginated_tasks(
+    def get_paginated(
         cls,
         offset: int,
         limit: int,

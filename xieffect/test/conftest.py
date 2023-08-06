@@ -229,3 +229,15 @@ def test_discussion_id() -> int:
     discussion_id: int = Discussion.create().id
     yield discussion_id
     delete_by_id(discussion_id, Discussion)
+
+
+@fixture
+def file_id(client: FlaskTestClient) -> int:
+    with open_file("xieffect/test/json/test-1.json", "rb") as f:
+        contents: bytes = f.read()
+    return client.post(
+        "/files/",
+        content_type="multipart/form-data",
+        data={"file": create_file("task-file", contents)},
+        expected_json={"id": int},
+    )["id"]
