@@ -8,12 +8,7 @@ from pydantic import BaseModel, Field
 
 from common import EventController
 from communities.base.meta_db import Community
-from communities.base.roles_db import (
-    Role,
-    RolePermission,
-    PermissionType,
-    LIMITING_QUANTITY_ROLES,
-)
+from communities.base.roles_db import Role, RolePermission, PermissionType
 from .utils import check_permission
 
 controller = EventController()
@@ -74,7 +69,7 @@ class RolesEventSpace(EventSpace):
         permissions: list[PermissionType],
         community: Community,
     ):
-        if Role.get_count_by_community(community.id) >= LIMITING_QUANTITY_ROLES:
+        if Role.get_count_by_community(community.id) >= Role.max_count:
             controller.abort(400, "Quantity exceeded")
         role = Role.create(name=name, color=color, community_id=community.id)
         RolePermission.create_bulk(role_id=role.id, permissions=permissions)
@@ -137,8 +132,8 @@ class RolesEventSpace(EventSpace):
         event: DuplexEvent,
         role: Role,
         community: Community,
-    ):
-        role.soft_delete()
+    ) -> None:
+        role.delete()
         event.emit_convert(
             room=self.room_name(community.id),
             community_id=community.id,

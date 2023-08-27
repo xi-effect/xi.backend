@@ -194,7 +194,7 @@ class Participant(LinkedListNode, Identifiable):
     def permissions(self) -> list[PermissionType]:
         if self.community.owner_id == self.user_id:
             return list(PermissionType)
-        return db.get_all(
+        return db.get_all(  # TODO pragma: no coverage
             select(distinct(RolePermission.permission_type))
             .join(Role, Role.id == RolePermission.role_id)
             .join(
