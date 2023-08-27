@@ -81,7 +81,7 @@ class RolesEventSpace(EventSpace):
         role_id: int
 
     @controller.argument_parser(UpdateModel)
-    @controller.mark_duplex(Role.FullModel, use_event=True)
+    @controller.mark_duplex(Role.FullModel, use_event=True)  # TODO add community_id?
     @check_permission(controller, PermissionType.MANAGE_ROLES)
     @check_permissions
     @controller.database_searcher(Role)

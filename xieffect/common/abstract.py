@@ -10,7 +10,7 @@ from sqlalchemy.sql import Select
 from common._core import Base, db  # noqa: WPS436
 
 
-class SoftDeletable(Base):
+class SoftDeletable(Base):  # TODO pragma: no coverage
     __abstract__ = True
 
     deleted = Column(DateTime, nullable=True)
