@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Self
 
 from flask_fullstack import Identifiable, PydanticModel
-from sqlalchemy import Column, ForeignKey, select, literal
+from sqlalchemy import Column, ForeignKey, select, literal, distinct, and_
 from sqlalchemy.orm import aliased, relationship, selectinload
 from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 from common import User, db
 from common.abstract import SoftDeletable, LinkedListNode
 from vault.files_db import File
-from .roles_db import ParticipantRole, Role
+from .roles_db import ParticipantRole, Role, PermissionType, RolePermission
 
 
 class Community(SoftDeletable, Identifiable):
@@ -113,6 +114,24 @@ class Participant(LinkedListNode, Identifiable):
     FullModel = PydanticModel.column_model(id, user_id, community_id).nest_model(
         Role.IndexModel, "roles", as_list=True
     )
+    _IndexModel = (
+        PydanticModel.column_model(id)
+        .nest_model(Community.IndexModel, "community")
+        .nest_model(Role.IndexModel, "roles", as_list=True)
+    )
+
+    class IndexModel(_IndexModel):
+        permissions: list[str]
+
+        @classmethod
+        def callback_convert(
+            cls, callback: Callable, orm_object: Participant, **_
+        ) -> None:
+            callback(
+                permissions=[
+                    permission.to_string() for permission in orm_object.permissions
+                ]
+            )
 
     @classmethod
     def create(cls, community_id: int, user_id: int) -> Self:
@@ -170,3 +189,19 @@ class Participant(LinkedListNode, Identifiable):
                 User.username.ilike(f"%{search}%")
             )
         return db.get_paginated(stmt, offset, limit)
+
+    @property
+    def permissions(self) -> list[PermissionType]:
+        if self.community.owner_id == self.user_id:
+            return list(PermissionType)
+        return db.get_all(
+            select(distinct(RolePermission.permission_type))
+            .join(Role, Role.id == RolePermission.role_id)
+            .join(
+                ParticipantRole,
+                and_(
+                    ParticipantRole.role_id == Role.id,
+                    ParticipantRole.participant_id == self.id,
+                ),
+            )
+        )
