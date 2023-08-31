@@ -17,10 +17,10 @@ controller = ResourceController(
 
 @controller.route("/")
 class CommunityReader(Resource):
-    @check_participant(controller)
-    @controller.marshal_with(Community.IndexModel)
-    def get(self, community: Community):
-        return community
+    @check_participant(controller, use_participant=True, use_community=False)
+    @controller.marshal_with(Participant.IndexModel)
+    def get(self, participant: Participant) -> Participant:
+        return participant
 
 
 @controller.route("/avatar/")

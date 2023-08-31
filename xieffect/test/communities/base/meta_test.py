@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from flask_fullstack import SocketIOTestClient, dict_rekey, assert_contains
+from pydantic import conlist
 from pytest import mark
 
 from common import User
-from communities.base import Participant, Community
+from communities.base import Participant, Community, PermissionType
 from test.communities.conftest import assert_create_community
 from test.conftest import delete_by_id, FlaskTestClient
 from test.vault_test import upload
@@ -32,6 +33,19 @@ def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestCli
 
     community_data = {"name": "12345", "description": "test"}
     community_id = assert_create_community(socketio_client, community_data)
+    client.get(
+        f"/communities/{community_id}/",
+        expected_json={
+            "id": int,
+            "roles": [],
+            "permissions": conlist(
+                str,
+                min_items=len(PermissionType.get_all_field_names()),
+                max_items=len(PermissionType.get_all_field_names()),
+            ),  # TODO upgrade list-via-set check
+            "community": {"name": "12345", "description": "test"},
+        },
+    )
     community_id_json = {"community_id": community_id}
     community_ids.append(community_id)
 
@@ -64,7 +78,7 @@ def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestCli
     )
     client.get(
         f"/communities/{community_id}/",
-        expected_json={"avatar": {"id": file_id}},
+        expected_json={"community": {"avatar": {"id": file_id}}},
     )
 
     client.delete(f"/communities/{community_id}/avatar/", expected_a=True)
@@ -200,6 +214,18 @@ def test_participant(
         "update_participant",
         participant_data,
         expected_data=successful_participant_data,
+    )
+
+    client.get(  # TODO use non-owner to test this
+        f"/communities/{test_community}/",
+        expected_json={
+            "permissions": conlist(
+                str,
+                min_items=len(PermissionType.get_all_field_names()),
+                max_items=len(PermissionType.get_all_field_names()),
+            ),  # TODO upgrade list-via-set check,
+            "roles": roles,
+        },
     )
 
     socketio_client2.assert_only_received(

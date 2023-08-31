@@ -7,6 +7,7 @@ from sys import modules
 from dotenv import load_dotenv
 from flask import Response
 from flask_fullstack import Flask as _Flask, SQLAlchemy
+from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 
 from ._files import absolute_path, open_file  # noqa: WPS436
@@ -16,7 +17,7 @@ class Flask(_Flask):
     def return_error(self, code: int, message: str):
         return Response(dump_json({"a": message}), code)
 
-    def configure_jwt_with_loaders(self, *args, **kwargs) -> None:
+    def configure_jwt_with_loaders(self, *args, **kwargs) -> JWTManager:
         from .users_db import BlockedToken
 
         jwt = super().configure_jwt_with_loaders(*args, **kwargs)
@@ -24,6 +25,8 @@ class Flask(_Flask):
         @jwt.token_in_blocklist_loader
         def check_if_token_revoked(_, jwt_payload) -> bool:
             return BlockedToken.find_by_jti(jwt_payload["jti"]) is not None
+
+        return jwt
 
 
 # xieffect specific:

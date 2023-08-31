@@ -1,161 +1,210 @@
 from __future__ import annotations
 
-from flask_fullstack import SocketIOTestClient, assert_contains
+from typing import Any
+
+import pytest
+from flask_fullstack import SocketIOTestClient, dict_cut
 from pydantic import conlist
+from pytest_mock import MockerFixture
 
 from communities.base import Community
-from communities.base.roles_db import (
-    LIMITING_QUANTITY_ROLES,
-    PermissionType,
-    Role,
-    RolePermission,
-)
-from test.conftest import delete_by_id
+from communities.base.roles_db import PermissionType, Role, RolePermission
+from test.conftest import delete_by_id, FlaskTestClient
 
 
-def get_roles_list(client, community_id: int) -> list[dict]:
-    """Check the success of getting the list of roles"""
-    return client.get(f"/communities/{community_id}/roles/")
+def permission_conlist(length: int) -> dict[str, Any]:
+    # TODO upgrade list-via-set check
+    return {"permissions": conlist(str, min_items=length, max_items=length)}
 
 
-def test_roles(
-    client,
-    socketio_client,
-    test_community,
-):
-    # Create second owner & base clients
-    socketio_client2 = SocketIOTestClient(client)
-
-    # Create valid & invalid permissions list
-    possible_permissions: list[str] = sorted(PermissionType.get_all_field_names())
-    incorrect_permissions: list[str] = ["test"]
-
-    role_data = {
-        "permissions": possible_permissions,
-        "name": "test_role",
-        "color": "FFFF00",
-    }
-    community_id_json = {"community_id": test_community}
-
-    # Check successfully open roles-room
-    for user in (socketio_client, socketio_client2):
-        user.assert_emit_success("open_roles", community_id_json)
-
-    # Assert limiting quantity creating roles in a community
-    successful_role_data = {
+def create_role(
+    socketio_client: SocketIOTestClient,
+    community_id: int,
+    role_data: dict[str, Any],
+    role_watcher_client: SocketIOTestClient | None = None,
+) -> int:
+    expected: dict[str, Any] = {
         **role_data,
-        "permissions": conlist(
-            str,
-            min_items=len(possible_permissions),
-            max_items=len(possible_permissions),
-        ),  # TODO upgrade list-via-set check
+        **permission_conlist(len(role_data["permissions"])),
+        "id": int,
     }
-    role_data.update(community_id_json)
+    role_id = socketio_client.assert_emit_ack(
+        event_name="new_role",
+        data={**role_data, "community_id": community_id},
+        expected_data=expected,
+    )["id"]
+    if role_watcher_client is not None:
+        role_watcher_client.assert_only_received("new_role", expected)
+    return role_id
 
-    for _ in range(LIMITING_QUANTITY_ROLES):
-        socketio_client.assert_emit_ack(
-            event_name="new_role",
-            data=role_data,
-            expected_data={
-                **successful_role_data,
-                "id": int,
-            },
-        )
-        socketio_client2.assert_only_received("new_role", successful_role_data)
+
+@pytest.fixture()
+def role_watcher_client(
+    client: FlaskTestClient,
+    test_community: int,
+) -> SocketIOTestClient:
+    watcher_client = SocketIOTestClient(client)
+    watcher_client.assert_emit_success("open_roles", {"community_id": test_community})
+    yield watcher_client
+    watcher_client.assert_emit_success("close_roles", {"community_id": test_community})
+
+
+@pytest.fixture()
+def role_data() -> dict[str, Any]:
+    return {
+        "name": "role",
+        "color": "FFFF00",
+        "permissions": list(sorted(PermissionType.get_all_field_names())),
+    }
+
+
+def test_create_role(
+    client: FlaskTestClient,
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    role_watcher_client: SocketIOTestClient,
+    role_data: dict[str, Any],
+) -> None:
+    role_id = create_role(
+        socketio_client, test_community, role_data, role_watcher_client
+    )
+    client.get(
+        f"/communities/{test_community}/roles/",
+        expected_json=[
+            {
+                **role_data,
+                **permission_conlist(len(role_data["permissions"])),
+                "id": role_id,
+            }
+        ],
+    )
+    delete_by_id(role_id, Role)
+
+
+def test_roles_limit(
+    mocker: MockerFixture,
+    client: FlaskTestClient,
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    role_watcher_client: SocketIOTestClient,
+    role_data: dict[str, Any],
+) -> None:
+    mocker.patch.object(target=Role, attribute="max_count", new=0)
 
     socketio_client.assert_emit_success(
         event_name="new_role",
-        data=role_data,
+        data={**role_data, "community_id": test_community},
         code=400,
         message="Quantity exceeded",
     )
+    role_watcher_client.assert_nop()
+    client.get(f"/communities/{test_community}/roles/", expected_json=[])
 
-    # Delete 50 roles
-    for index, role_data in enumerate(get_roles_list(client, test_community)):
-        if index == 0:
-            continue
-        assert_contains(role_data, successful_role_data)
-        data = {**community_id_json, "role_id": role_data["id"]}
-        socketio_client.assert_emit_success("delete_role", data)
-        socketio_client2.assert_only_received("delete_role", data)
 
-    assert len(get_roles_list(client, test_community)) == 1
-
-    # Assert role creation with different data
-
-    second_role_data = {**role_data}
-    second_role_data.pop("permissions")
-    third_role_data = {**role_data}
-    third_role_data.pop("color")
-    incorrect_role_data = {**role_data, "permissions": incorrect_permissions}
-    roles_data_list = [role_data, second_role_data, third_role_data]
-
-    socketio_client.assert_emit_ack(
-        "new_role",
-        data={**incorrect_role_data, **community_id_json},
-        expected_code=400,
-        expected_message="Incorrect permissions",
+@pytest.mark.parametrize(
+    ("data", "code", "message"),
+    [
+        pytest.param(
+            {"permissions": ["test"]},
+            400,
+            "Incorrect permissions",
+            id="incorrect_permissions",
+        ),
+        # TODO add after new-marshals enable string checks
+        #  ``pytest.param(({"color": "bad"}, 400, "Bad color"), id="bad_color"),``
+        #  ``pytest.param(({"color": "00000000"}, 400, "Too long"), id="bad_color"),``
+    ],
+)
+def test_role_validation(
+    client: FlaskTestClient,
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    role_watcher_client: SocketIOTestClient,
+    role_data: dict[str, Any],
+    data: dict[str, Any],
+    code: int,
+    message: str,
+) -> None:
+    socketio_client.assert_emit_success(
+        event_name="new_role",
+        data={**role_data, "community_id": test_community, **data},
+        code=code,
+        message=message,
     )
+    role_watcher_client.assert_nop()
+    client.get(f"/communities/{test_community}/roles/", expected_json=[])
 
-    for data in roles_data_list:
-        role_id = socketio_client.assert_emit_ack(
-            event_name="new_role",
-            data={**data, **community_id_json},
-            expected_data={**data, "id": int},
-        )["id"]
-        socketio_client2.assert_only_received("new_role", {**data, "id": role_id})
 
-    assert (
-        len(get_roles_list(client, community_id=test_community))
-        == len(roles_data_list) + 1
+@pytest.fixture()
+def role(role_data: dict[str, Any], test_community: int) -> Role:
+    role = Role.create(
+        **dict_cut(role_data, "name", "color"),
+        community_id=test_community,
     )
+    RolePermission.create_bulk(
+        role_id=role.id,
+        permissions=[
+            PermissionType.from_string(permission)
+            for permission in role_data["permissions"]
+        ],
+    )
+    yield role
+    role.delete()
 
-    # Assert role update with different data
-    update_data = {
-        "name": "update_test_name_role",
-        "color": "00008B",
-    }
 
-    empty_role_data = {**community_id_json, "role_id": role_id}
-    update_role_data = update_data | empty_role_data
-    successful_data = {**update_data, "id": role_id}
+@pytest.fixture()
+def role_ids(role: Role, test_community: int) -> dict[str, int]:
+    return {"community_id": test_community, "role_id": role.id}
 
-    for permissions in (possible_permissions[1:], [], possible_permissions):
-        socketio_client.assert_emit_ack(
-            event_name="update_role",
-            data={**update_role_data, "permissions": permissions},
-            expected_data={
-                **successful_data,
-                "permissions": conlist(
-                    str, min_items=len(permissions), max_items=len(permissions)
-                ),  # TODO upgrade list-via-set check
-            },
-        )
-        socketio_client2.assert_only_received("update_role", successful_data)
 
+@pytest.mark.parametrize(
+    "data",
+    [
+        pytest.param({"name": "update", "color": "00008B"}, id="name_and_color"),
+        pytest.param({"permissions": []}, id="empty_permissions"),
+        pytest.param({"permissions": ["manage-roles"]}, id="one_permission"),
+    ],
+)
+def test_update_role(
+    client: FlaskTestClient,
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    role_watcher_client: SocketIOTestClient,
+    role_data: dict[str, Any],
+    role_ids: dict[str, int],
+    data: dict[str, Any],
+) -> None:
+    expected_data: dict[str, Any] = {**role_data, **data}
+    expected_data.update(permission_conlist(len(expected_data["permissions"])))
     socketio_client.assert_emit_ack(
         event_name="update_role",
-        data=empty_role_data,
-        expected_data=successful_data,
+        data={**data, **role_ids},
+        expected_data=expected_data,
     )
-    socketio_client2.assert_only_received("update_role", successful_data)
+    role_watcher_client.assert_only_received(
+        "update_role",
+        {**expected_data, "id": role_ids["role_id"]},  # TODO add community_id?
+    )
+    client.get(f"/communities/{test_community}/roles/", expected_json=[expected_data])
 
-    update_role_data["permissions"] = incorrect_permissions
+
+def test_delete_role(
+    client: FlaskTestClient,
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    role_watcher_client: SocketIOTestClient,
+    role: Role,
+) -> None:
+    role_ids = {"role_id": role.id, "community_id": test_community}
     socketio_client.assert_emit_ack(
-        event_name="update_role",
-        data=update_role_data,
-        expected_code=400,
-        expected_message="Incorrect permissions",
+        event_name="delete_role",
+        data=role_ids,
     )
-
-    # Check successfully close roles-room
-    for user in (socketio_client, socketio_client2):
-        user.assert_emit_success("close_roles", community_id_json)
+    role_watcher_client.assert_only_received("delete_role", role_ids)
+    client.get(f"/communities/{test_community}/roles/", expected_json=[])
 
 
-def test_role_constraints(
-    community_id: int,
-):
+def test_role_constraints(community_id: int):
     role_id = Role.create("test", "FFFF00", community_id).id
     RolePermission.create(role_id=role_id, permission_type=PermissionType.MANAGE_ROLES)
     assert Role.find_by_id(role_id) is not None

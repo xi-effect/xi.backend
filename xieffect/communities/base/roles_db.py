@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import Self
+from typing import Self, ClassVar
 
 from flask_fullstack import Identifiable, PydanticModel, TypeEnum
 from sqlalchemy import Column, ForeignKey, select, distinct
@@ -11,9 +11,6 @@ from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, String, Enum
 
 from common import Base, db
-from common.abstract import SoftDeletable
-
-LIMITING_QUANTITY_ROLES: int = 50
 
 
 class PermissionType(TypeEnum):
@@ -26,8 +23,9 @@ class PermissionType(TypeEnum):
     MANAGE_PARTICIPANTS = 5
 
 
-class Role(SoftDeletable, Identifiable):
+class Role(Base, Identifiable):
     __tablename__ = "cs_roles"
+    max_count: ClassVar[int] = 50
     not_found_text = "Role not found"
 
     id = Column(Integer, primary_key=True)
@@ -35,7 +33,7 @@ class Role(SoftDeletable, Identifiable):
     color = Column(String(6), nullable=True)
     community_id = Column(
         Integer,
-        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -71,17 +69,15 @@ class Role(SoftDeletable, Identifiable):
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
-        return cls.find_first_not_deleted(id=entry_id)
+        return cls.find_first_by_kwargs(id=entry_id)
 
     @classmethod
     def find_by_community(cls, community_id: int) -> list[Self]:
-        return cls.find_all_not_deleted(community_id=community_id)
+        return cls.find_all_by_kwargs(community_id=community_id)
 
     @classmethod
     def get_count_by_community(cls, community_id: int) -> int:
-        return db.get_first(
-            select(count(cls.id)).filter_by(community_id=community_id, deleted=None)
-        )
+        return db.get_first(select(count(cls.id)).filter_by(community_id=community_id))
 
 
 class RolePermission(Base):
@@ -89,7 +85,7 @@ class RolePermission(Base):
 
     role_id = Column(
         Integer,
-        ForeignKey(Role.id, ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey(Role.id, ondelete="CASCADE"),
         primary_key=True,
     )
     permission_type = Column(Enum(PermissionType), primary_key=True)
@@ -120,12 +116,12 @@ class ParticipantRole(Base):
 
     participant_id = Column(
         Integer,
-        ForeignKey("community_participant.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community_participant.id", ondelete="CASCADE"),
         primary_key=True,
     )
     role_id = Column(
         Integer,
-        ForeignKey(Role.id, ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey(Role.id, ondelete="CASCADE"),
         primary_key=True,
     )
 
