@@ -11,6 +11,35 @@ github_token: str = ""
 controller = ResourceController("webhooks")
 
 
+@controller.route("/resume/")
+class SendResume(Resource):
+    parser: RequestParser = RequestParser()
+    parser.add_argument("name", str, required=True)
+    parser.add_argument("tg", str, required=True)
+    parser.add_argument("position", str, required=True)
+    parser.add_argument("link", str, required=True)
+    parser.add_argument("message", str, required=False)
+
+    @controller.argument_parser(parser)
+    @controller.a_response()
+    def post(
+        self,
+        name: str,
+        tg: str,
+        position: str,
+        link: str,
+        message: str,
+    ) -> None:
+        send_discord_message(
+            WebhookURLs.GALINA,
+            f"**Новый отклик на вакансию {position}**\n"
+            f"- Имя: {name}\n"
+            f"- Телеграм: {tg}\n"
+            f"- [Резюме](<{link}>)\n"
+            f">>> {message}",
+        )
+
+
 @controller.route("/heroku-build/")
 class HerokuBuildWebhook(Resource):
     parser: RequestParser = RequestParser()
@@ -43,22 +72,22 @@ class NetlifyBuildWebhook(Resource):
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, state: str, commit_url: str, **kwargs) -> None:
-        result: str = (
-            "__**Netlify build failed!**__\n"
+        result: list[str] = [
+            "__**Netlify build failed!**__"
             if state == "error"
-            else f"__**Netlify build is {state}!**__\n"
-        )
+            else f"__**Netlify build is {state}!**__"
+        ]
 
-        result += "\n".join([
+        result.extend(
             f"{message}: `{arg}`"
             for name, message in self.arguments.items()
             if (arg := kwargs.get(name)) is not None and arg != ""
-        ])
+        )
 
         if commit_url is not None:
-            result += f"\n{commit_url}"
+            result.append(f"{commit_url}")
 
-        send_discord_message(WebhookURLs.NETLIF, result)
+        send_discord_message(WebhookURLs.NETLIF, "\n".join(result))
 
 
 @controller.route("/pass-through/")
@@ -91,6 +120,7 @@ class WebhookPassthrough(Resource):
 @controller.route("/lol-bot/")
 class LolBot(Resource):
     def get(self):
+        message: str | None = None
         try:
             with open_file("files/lol-counter.txt") as f:
                 count = str(int(f.read()) + 1)
@@ -100,6 +130,7 @@ class LolBot(Resource):
             message = "Reset happened... Got the first one!"
             count = 1
 
-        send_discord_message(WebhookURLs.LOLBOT, message)
+        if message is not None:
+            send_discord_message(WebhookURLs.LOLBOT, message)
         with open_file("files/lol-counter.txt", "w") as f:
             f.write(str(count))

@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from io import BytesIO
 from os.path import exists
 from typing import TypeVar
 
-from flask.testing import FlaskClient
-from flask_fullstack import check_code
 from pytest import mark
-from werkzeug.datastructures import FileStorage
 
-from common import open_file, absolute_path
-from .conftest import BASIC_PASS, login
+from common import open_file
+from test.conftest import BASIC_PASS, login, FlaskTestClient, create_file
+from vault.files_db import FILES_PATH
 
 k = TypeVar("k")
 v = TypeVar("v")
@@ -28,66 +25,78 @@ def assert_spread(dct: dict[k, v], *keys: k) -> Iterable[v]:
         yield result
 
 
-def create_file(filename: str, contents: bytes):
-    return FileStorage(stream=BytesIO(contents), filename=filename)
-
-
-def upload(client: FlaskClient, filename: str):
-    with open_file(f"xieffect/test/education/json/{filename}", "rb") as f:
+def upload(client: FlaskTestClient, filename: str) -> tuple[dict, bytes]:
+    with open_file(f"xieffect/test/json/{filename}", "rb") as f:
         contents: bytes = f.read()
-    data = check_code(client.post(
+    data = client.post(
         "/files/",
         content_type="multipart/form-data",
-        data={"file": create_file(filename, contents)}
-    ))
+        data={"file": create_file(filename, contents)},
+    )
 
     file_id, server_filename = assert_spread(data, "id", "filename")
-    assert server_filename == str(file_id) + "-" + filename
+    assert server_filename == f"{file_id}-{filename}"
     return data, contents
 
 
 @mark.order(70)
-def test_files_normal(client: FlaskClient, mod_client: FlaskClient, base_client: FlaskClient, list_tester):
+def test_files_normal(
+    client: FlaskTestClient,
+    mod_client: FlaskTestClient,
+    base_client: FlaskTestClient,
+):
     # saving file list for future checks
-    previous_file_list = list(list_tester("/mub/files/index/", {}, 20))
+    previous_file_list = list(mod_client.paginate("/mub/files/"))
 
     # upload a file
     new_files: list[tuple[dict, bytes]] = [
-        upload(client, filename) for filename in ("sample-page.json", "sample-page-2.json")
+        upload(client, filename) for filename in ("test-1.json", "test-2.json")
     ]
     new_files.reverse()
 
     # check file accessibility
     def assert_file_data(server_filename: str, real_data: bytes):
-        assert check_code(client.get(f"/files/{server_filename}/"), get_json=False).data == real_data
-        assert check_code(mod_client.get(f"/files/{server_filename}/"), get_json=False).data == real_data
-        assert check_code(base_client.get(f"/files/{server_filename}/"), get_json=False).data == real_data
+        client.get_file(f"/files/{server_filename}/", expected_data=real_data)
+        mod_client.get_file(f"/files/{server_filename}/", expected_data=real_data)
+        base_client.get_file(f"/files/{server_filename}/", expected_data=real_data)
 
-    new_file_list = list(list_tester("/mub/files/index/", {}, 20))
+    new_file_list = list(mod_client.paginate("/mub/files/"))
     for data, contents in new_files:
         assert new_file_list.pop(0) == data
-        assert_file_data(data["filename"], contents)
 
         filename: str = data["filename"]
-        filepath = absolute_path(f"files/vault/{filename}")
+        filepath = FILES_PATH + filename
         assert exists(filepath)
         with open(filepath, "rb") as f:
             assert f.read() == contents
 
+        assert_file_data(filename, contents)
+
     assert len(new_file_list) == len(previous_file_list)
-    assert all(new_file_list[i] == previous_file_list[i] for i in range(len(previous_file_list)))
+    assert all(
+        new_file_list[i] == previous_file_list[i]
+        for i in range(len(previous_file_list))
+    )
 
     # check deleting files
-    stranger_client: FlaskClient = login("1@user.user", BASIC_PASS)
+    stranger_client: FlaskTestClient = login("1@user.user", BASIC_PASS)
 
     for i, file in enumerate(new_files):
         file_id, filename = spread_dict(file[0], "id", "filename")
-        assert check_code(stranger_client.delete(f"/files/manager/{file_id}/"), 403)["a"] == "Not your file"
-        assert check_code(stranger_client.delete(f"/mub/files/{file_id}/"), 403)["a"] == "Permission denied"
+        stranger_client.delete(
+            f"/files/manager/{file_id}/",
+            expected_status=403,
+            expected_a="Not your file",
+        )
+        stranger_client.delete(
+            f"/mub/files/{file_id}/",
+            expected_status=403,
+            expected_a="Permission denied",
+        )
 
         if i % 2:
-            assert check_code(client.delete(f"/files/manager/{file_id}/"))["a"]
+            client.delete(f"/files/manager/{file_id}/", expected_a=True)
+            assert exists(FILES_PATH + filename)
         else:
-            assert check_code(mod_client.delete(f"/mub/files/{file_id}/"))["a"]
-
-        assert not exists(absolute_path(f"files/vault/{filename}"))
+            mod_client.delete(f"/mub/files/{file_id}/", expected_a=True)
+            assert not exists(FILES_PATH + filename)

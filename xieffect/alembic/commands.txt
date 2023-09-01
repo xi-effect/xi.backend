@@ -2,6 +2,6 @@ alembic stamp head
 
 alembic upgrade head
 
-alembic revision --autogenerate -m "<name>"
+alembic revision --autogenerate -m "<name>" --rev-id <issue>
 
 venv/Scripts/activate

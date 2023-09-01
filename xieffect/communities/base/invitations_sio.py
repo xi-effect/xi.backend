@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import join_room, leave_room
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from common import EventController, db
-from .invitations_db import Invitation
-from .meta_db import Community, ParticipantRole
-from ..utils import check_participant
+from common import EventController
+from communities.base.invitations_db import Invitation, InvitationRoles
+from communities.base.meta_db import Community
+from communities.base.roles_db import PermissionType
+from communities.base.utils import check_permission
 
 controller = EventController()
 
@@ -15,42 +16,46 @@ controller = EventController()
 @controller.route()
 class InvitationsEventSpace(EventSpace):
     @classmethod  # TODO fix in ffs
-    def room_name(cls, community_id: int):
+    def room_name(cls, community_id: int) -> str:
         return f"cs-invites-{community_id}"
 
     class CommunityIdModel(BaseModel):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
     @controller.force_ack()
     def open_invites(self, community: Community):
         join_room(self.room_name(community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
     @controller.force_ack()
     def close_invites(self, community: Community):
         leave_room(self.room_name(community.id))
 
     class CreationModel(Invitation.CreationBaseModel, CommunityIdModel):
+        role_ids: list[int] = Field(default_factory=list)
         days: int = None
 
-    @controller.doc_abort(400, "Invalid role")
+    @controller.doc_abort(400, "Quantity exceeded")
     @controller.argument_parser(CreationModel)
-    @controller.mark_duplex(Invitation.IndexModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
-    @controller.marshal_ack(Invitation.IndexModel)
+    @controller.mark_duplex(Invitation.FullModel, use_event=True)
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
+    @controller.marshal_ack(Invitation.FullModel)
     def new_invite(
         self,
         event: DuplexEvent,
         community: Community,
-        role: ParticipantRole,
         limit: int | None,
         days: int | None,
+        role_ids: list[int],
     ):
-        invitation = Invitation.create(community.id, role, limit, days)
-        db.session.commit()
+        if Invitation.get_count_by_community(community.id) >= Invitation.max_count:
+            controller.abort(400, "Quantity exceeded")
+
+        invitation = Invitation.create(community.id, limit, days)
+        InvitationRoles.create_bulk(invitation_id=invitation.id, role_ids=role_ids)
         event.emit_convert(invitation, self.room_name(community.id))
         return invitation
 
@@ -59,14 +64,13 @@ class InvitationsEventSpace(EventSpace):
 
     @controller.argument_parser(InvitationIdsModel)
     @controller.mark_duplex(InvitationIdsModel, use_event=True)
-    @check_participant(controller, role=ParticipantRole.OWNER)
+    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
     @controller.database_searcher(Invitation)
     @controller.force_ack()
     def delete_invite(
         self, event: DuplexEvent, community: Community, invitation: Invitation
     ):
         invitation.delete()
-        db.session.commit()
         event.emit_convert(
             room=self.room_name(community_id=community.id),
             community_id=community.id,

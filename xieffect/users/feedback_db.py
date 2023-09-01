@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import PydanticModel, TypeEnum, Identifiable
 from sqlalchemy import Column, select, ForeignKey
 from sqlalchemy.orm import relationship
@@ -12,8 +14,16 @@ from vault import File
 class FeedbackImage(Base):
     __tablename__ = "feedback_images"
 
-    feedback_id = Column(Integer, ForeignKey("feedbacks.id"), primary_key=True)
-    file_id = Column(Integer, ForeignKey("files.id"), primary_key=True)
+    feedback_id = Column(
+        Integer,
+        ForeignKey("feedbacks.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )
+    file_id = Column(
+        Integer,
+        ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )
 
 
 class FeedbackType(TypeEnum):
@@ -30,13 +40,16 @@ class Feedback(Base, Identifiable):
     type = Column(Enum(FeedbackType), nullable=False)
     data = Column(JSON, nullable=False)
 
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+    )
     user = relationship(User)
 
     files = relationship(
         "File",
         secondary=FeedbackImage.__table__,
-        backref="feedbacks",
     )
 
     # fmt: off
@@ -55,8 +68,8 @@ class Feedback(Base, Identifiable):
         db.session.flush()
 
     @classmethod
-    def find_by_id(cls, entry_id: int) -> Feedback | None:
-        return db.session.get_first(select(cls).filter_by(id=entry_id))
+    def find_by_id(cls, entry_id: int) -> Self | None:
+        return db.get_first(select(cls).filter_by(id=entry_id))
 
     @classmethod
     def search_by_params(
@@ -65,10 +78,10 @@ class Feedback(Base, Identifiable):
         limit: int,
         user_id: int | None,
         feedback_type: FeedbackType | None,
-    ) -> list[Feedback]:
+    ) -> list[Self]:
         stmt = select(cls)
         if user_id is not None:
             stmt = stmt.filter_by(user_id=user_id)
         if feedback_type is not None:
             stmt = stmt.filter_by(type=feedback_type)
-        return db.session.get_paginated(stmt, offset, limit)
+        return db.get_paginated(stmt, offset, limit)

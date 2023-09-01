@@ -57,9 +57,8 @@ class UserRegistration(Resource):
 
         if invite is None:
             return {"a": "Invite not found"}, 404
-        if invite.limit == invite.accepted:  # TODO pragma: no coverage
+        if invite.limit == invite.accepted:
             return {"a": "Invite code limit exceeded"}
-        invite.accepted += 1
 
         user = User.create(
             email=email,
@@ -67,8 +66,9 @@ class UserRegistration(Resource):
             password=password,
             invite=invite,
         )
-        if user is None:  # TODO pragma: no coverage
+        if user is None:
             return {"a": "Email already in use"}
+        invite.accepted += 1
         send_code_email(email, EmailType.CONFIRM)
         cu = CommunitiesUser.find_or_create(user.id)
         return cu, user
@@ -88,47 +88,51 @@ class UserLogin(Resource):
     @controller.doc_abort(" 200", "Wrong password")
     @controller.argument_parser(parser)
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
-    def post(self, email: str, password: str):
+    def post(self, email: str, password: str) -> tuple[CommunitiesUser, User] | dict:
         """Tries to log in with credentials given"""
         user = User.find_by_email_address(email)
-        if user is None:  # TODO pragma: no coverage
+        if user is None:
             return {"a": "User doesn't exist"}
 
         if User.verify_hash(password, user.password):
             cu = CommunitiesUser.find_or_create(user.id)
             return cu, user
-        return {"a": "Wrong password"}  # TODO pragma: no coverage
+        return {"a": "Wrong password"}
 
 
 @controller.route("/go/")
-class Test(Resource):  # TODO pragma: no coverage
+class Test(Resource):
     @controller.marshal_with_authorization(CommunitiesUser.TempModel)
-    def get(self):
+    def get(self) -> tuple[CommunitiesUser, User] | dict:
         """Localhost-only endpoint for logging in from the docs"""
         if not current_app.debug:
             return {"a": False}
-
-        return CommunitiesUser.find_or_create(1), User.find_by_id(1)
+        user = User.find_by_id(1)
+        cu = CommunitiesUser.find_or_create(1)
+        return cu, user
 
 
 @controller.route("/signout/")
 class UserLogout(Resource):
     @controller.removes_authorization()
-    def post(self):
+    def post(self) -> dict:
         """Logs the user out, blocks the token"""
         BlockedToken.create(jti=get_jwt()["jti"])
         return {"a": True}
 
 
 @controller.route("/password-reset/")
-class PasswordResetSender(Resource):  # TODO pragma: no coverage
+class PasswordResetSender(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument("email", required=True, help="User's email")
 
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, email: str) -> bool:
-        """First step of resetting password, tries sending a password-reset email by the address given"""
+        """
+        First step of resetting password, tries sending a password-reset email
+        by the address given
+        """
         user = User.find_by_email_address(email)
         if user is not None:
             send_code_email(email, EmailType.PASSWORD)
@@ -137,7 +141,7 @@ class PasswordResetSender(Resource):  # TODO pragma: no coverage
 
 
 @controller.route("/password-reset/confirm/")
-class PasswordReseter(Resource):  # TODO pragma: no coverage
+class PasswordReseter(Resource):
     parser: RequestParser = password_parser.copy()
     parser.add_argument("code", required=True, help="Code sent in the email")
 
@@ -147,13 +151,16 @@ class PasswordReseter(Resource):  # TODO pragma: no coverage
     @controller.argument_parser(parser)
     @controller.a_response()
     def post(self, code: str, password: str) -> str:
-        """Second step of resetting password, sets the new password if code is correct"""
+        """
+        Second step of resetting password, sets the new password if code is correct
+        """
 
         email = EmailType.PASSWORD.parse_code(code)
         if email is None:
             return "Code error"
 
-        if (user := User.find_by_email_address(email)) is None:
+        user: User = User.find_by_email_address(email)
+        if user is None:
             return "User doesn't exist"
         user.change_password(password)
         return "Success"

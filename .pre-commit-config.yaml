@@ -1,0 +1,46 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+default_language_version:
+  python: python3.9
+
+files: ^xieffect/
+exclude: ^xieffect/(alembic|flask_fullstack)/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      # general:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+      # executable files:
+      - id: check-executables-have-shebangs
+      # other files (markup & docs):
+      - id: check-json
+      - id: check-xml
+      - id: check-yaml
+
+  - repo: https://github.com/myint/autoflake
+    rev: v1.6.0
+    hooks:
+      - id: autoflake
+
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        language: system
+
+  # TODO https://github.com/pre-commit/mirrors-mypy

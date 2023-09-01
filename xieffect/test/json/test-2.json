@@ -1,0 +1,7 @@
+{
+  "test": "hello",
+  "good": {
+    "y": "yes",
+    "n": "no"
+  }
+}

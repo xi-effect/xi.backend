@@ -1,32 +1,36 @@
 from __future__ import annotations
 
+from typing import Self
+
 from flask_fullstack import PydanticModel
-from sqlalchemy import Column, ForeignKey, select
-from sqlalchemy.ext.orderinglist import ordering_list
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer
 
-from common import Base, User, db
+from common import User
+from common.abstract import SoftDeletable
+from communities.base.meta_db import Community, Participant
 from vault import File
-from .meta_db import Community
 
 
-class CommunitiesUser(Base):
+class CommunitiesUser(SoftDeletable):
     __tablename__ = "communities_users"
 
-    id: int | Column = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    user = relationship("User")
+    id: int | Column = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    )
+    user = relationship("User", foreign_keys=[id])
 
     avatar_id = Column(
-        Integer, ForeignKey("files.id", ondelete="SET NULL"), nullable=True
+        Integer,
+        ForeignKey("files.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
     )
     avatar = relationship("File", foreign_keys=[avatar_id])
 
-    communities = relationship(
-        "CommunityListItem",
-        order_by="CommunityListItem.position",
-        collection_class=ordering_list("position"),
-    )
+    communities = relationship("Participant", passive_deletes=True)
 
     @PydanticModel.include_flat_nest_model(User.MainData, "user")
     @PydanticModel.include_nest_model(File.FullModel, "avatar")
@@ -34,11 +38,13 @@ class CommunitiesUser(Base):
         communities: list[Community.IndexModel]
 
         @classmethod
-        def callback_convert(cls, callback, orm_object: CommunitiesUser, **context):
+        def callback_convert(
+            cls, callback, orm_object: CommunitiesUser, **context
+        ) -> None:
             callback(
                 communities=[
-                    Community.IndexModel.convert(ci.community, **context)
-                    for ci in orm_object.communities
+                    Community.IndexModel.convert(community, **context)
+                    for community in Participant.get_communities_list(orm_object.id)
                 ]
             )
 
@@ -46,59 +52,31 @@ class CommunitiesUser(Base):
         a: str = "Success"
 
     @classmethod
-    def _create_empty(cls, user_id: int) -> CommunitiesUser:
+    def _create_empty(cls, user_id: int) -> Self:
         return cls.create(id=user_id)
 
     @classmethod
-    def find_by_id(cls, user_id: int) -> CommunitiesUser | None:
-        return db.session.get_first(select(cls).filter_by(id=user_id))
+    def find_by_id(cls, user_id: int) -> Self | None:
+        return cls.find_first_not_deleted(id=user_id)
 
     @classmethod
-    def find_or_create(cls, user_id: int) -> CommunitiesUser:
+    def find_or_create(cls, user_id: int) -> Self:
         return cls.find_by_id(user_id) or cls._create_empty(user_id)
 
     def reorder_community_list(
         self,
         source_id: int,
-        target_index: int,
+        target_index: int | None,
     ) -> bool:
-        # TODO target_index might change after deletion?
-        list_item = CommunityListItem.find_by_ids(self.id, source_id)
+        list_item = Participant.find_by_ids(source_id, self.id)
         if list_item is None:  # TODO pragma: no coverage
             return False
-        self.communities.remove(list_item)
-        self.communities.insert(target_index, list_item)
+        list_item.move(target_index)
         return True
-
-    def join_community(self, community_id: int) -> None:
-        # autocommit  # TODO find a way to reverse the list
-        new_item = CommunityListItem(user_id=self.id, community_id=community_id)
-        self.communities.insert(0, new_item)
 
     def leave_community(self, community_id: int) -> bool:
-        list_item = CommunityListItem.find_by_ids(self.id, community_id)
+        list_item = Participant.find_by_ids(community_id, self.id)
         if list_item is None:  # TODO pragma: no coverage
             return False
-        self.communities.remove(list_item)
+        list_item.delete()
         return True
-
-
-class CommunityListItem(Base):
-    __tablename__ = "community_lists"
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("communities_users.id"))
-    position = Column(Integer)
-
-    community_id = Column(Integer, ForeignKey("community.id"), nullable=False)
-    community = relationship("Community")
-
-    @classmethod
-    def find_by_ids(
-        cls,
-        user_id: int,
-        community_id: int,
-    ) -> CommunityListItem | None:
-        return db.session.get_first(
-            select(cls).filter_by(user_id=user_id, community_id=community_id)
-        )

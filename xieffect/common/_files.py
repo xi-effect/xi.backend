@@ -9,7 +9,7 @@ if base_name == "xieffect":  # pragma: no cover
     current_directory = dir_name
 
 
-def absolute_path(path: str):
+def absolute_path(path: str) -> str:
     return join(current_directory, path)
 
 
