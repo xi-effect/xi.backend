@@ -11,6 +11,35 @@ github_token: str = ""
 controller = ResourceController("webhooks")
 
 
+@controller.route("/resume/")
+class SendResume(Resource):
+    parser: RequestParser = RequestParser()
+    parser.add_argument("name", str, required=True)
+    parser.add_argument("tg", str, required=True)
+    parser.add_argument("position", str, required=True)
+    parser.add_argument("link", str, required=True)
+    parser.add_argument("message", str, required=False)
+
+    @controller.argument_parser(parser)
+    @controller.a_response()
+    def post(
+        self,
+        name: str,
+        tg: str,
+        position: str,
+        link: str,
+        message: str,
+    ) -> None:
+        send_discord_message(
+            WebhookURLs.GALINA,
+            f"**Новый отклик на вакансию {position}**\n"
+            f"- Имя: {name}\n"
+            f"- Телеграм: {tg}\n"
+            f"- [Резюме](<{link}>)\n"
+            f">>> {message}",
+        )
+
+
 @controller.route("/heroku-build/")
 class HerokuBuildWebhook(Resource):
     parser: RequestParser = RequestParser()
