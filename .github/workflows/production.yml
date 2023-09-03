@@ -16,7 +16,7 @@ jobs:
 
   deploy:
     needs: build-test-docs
-    uses: xi-effect/xieffect-actions/.github/workflows/docker-deploy.yml@main
+    uses: xi-effect/xi.actions/.github/workflows/docker-deploy.yml@main
     with:
       images: flask
     secrets: inherit

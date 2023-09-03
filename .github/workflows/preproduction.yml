@@ -19,11 +19,11 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Run the Action
+      - name: Create pull request
         uses: devops-infra/action-pull-request@v0.5.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -31,5 +31,6 @@ jobs:
           target_branch: master
           title: New Version
           body: |
-            - [ ] migrations
             - [ ] version update
+            - [ ] migration test
+            - [ ] docker image check
