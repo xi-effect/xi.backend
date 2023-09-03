@@ -33,12 +33,13 @@ jobs:
           path: ./sio-doc/
 
       - name: Upload docs via SCP
-        uses: appleboy/scp-action@master
-        env:
-          HOST: ${{ secrets.SERVER_IP }}
-          USERNAME: root
-          KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        uses: appleboy/scp-action@v0.1.4
         with:
-          source: "./sio-doc/*"
-          target: "~/xieffect-core/sio-docs-new/"
+          host: ${{ secrets.HOST }}
+          port: ${{ secrets.PORT }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: ./sio-doc/*
+          target: ~/xieffect-core/sio-docs-new/
           strip_components: 1
+          rm: true
