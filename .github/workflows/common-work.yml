@@ -14,10 +14,6 @@ on:
         type: boolean
         required: false
         default: true
-      cache:
-        type: boolean
-        required: false
-        default: true
     secrets:
       DOCKER_HUB_USERNAME:
         required: true
@@ -107,19 +103,10 @@ jobs:
           retention-days: 1
 
   build:
-    if: inputs.cache == true
     needs: prepare
     uses: xi-effect/xi.actions/.github/workflows/docker-build.yml@main
     with:
       tag: ${{ inputs.tag }}
-    secrets: inherit
-
-  build-nocache:
-    if: inputs.cache == false
-    needs: prepare
-    uses: xi-effect/xieffect-actions/.github/workflows/docker-build-nocache.yml@main
-    with:
-      tag: ${{inputs.tag}}
     secrets: inherit
 
   docs:

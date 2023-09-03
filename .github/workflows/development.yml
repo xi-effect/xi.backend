@@ -9,11 +9,30 @@ on:
   workflow_dispatch:
 
 jobs:
+  branch_name:
+    runs-on: ubuntu-latest
+
+    outputs:
+      branch-name: ${{ steps.branch_name.outputs.branch }}
+      docker-tag: ${{ steps.branch_name.outputs.tag }}
+
+    steps:
+      - name: Get tag & branch name
+        id: branch_name
+        run: |-
+          result=${{ github.ref }}
+          result=${result#refs/heads/}
+          echo "branch=${result}"
+          echo "branch=${result}" >> $GITHUB_OUTPUT
+          result=${result////-}
+          echo "tag=${result}"
+          echo "tag=${result}" >> $GITHUB_OUTPUT
+
   build-test-docs:
+    needs: branch_name
     uses: ./.github/workflows/common-work.yml
     with:
-      tag: flask-${{ github.event.issue.number }}
+      tag: flask-${{ needs.branch_name.outputs.docker-tag }}
       database: false
       coverage: false
-      cache: false
     secrets: inherit
