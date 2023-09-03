@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import suppress
+import logging
 from json import dump as dump_json, load as load_json
 from pathlib import Path
 
@@ -39,8 +39,10 @@ def init_test_mod() -> None:
 
 
 if PRODUCTION_MODE:  # works on server restart  # pragma: no coverage
-    with suppress(Exception):
+    try:
         send_discord_message(WebhookURLs.NOTIFY, "Application restated")
+    except Exception as e:  # noqa: PIE786
+        logging.error("Bot reporting failed", exc_info=e)
 
     setup_fail: bool = False
     for secret_name in SECRETS:
