@@ -12,6 +12,7 @@ jobs:
     uses: ./.github/workflows/common-work.yml
     with:
       tag: flask
+      base-tag: flask-prod
     secrets: inherit
 
   deploy:

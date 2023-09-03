@@ -6,6 +6,9 @@ on:
       tag:
         type: string
         required: true
+      base-tag:
+        type: string
+        required: false
       database:
         type: boolean
         required: false
@@ -107,6 +110,7 @@ jobs:
     uses: xi-effect/xi.actions/.github/workflows/docker-build.yml@main
     with:
       tag: ${{ inputs.tag }}
+      base-tag: ${{ inputs.base-tag }}
     secrets: inherit
 
   docs:

@@ -33,6 +33,7 @@ jobs:
     uses: ./.github/workflows/common-work.yml
     with:
       tag: flask-${{ needs.branch_name.outputs.docker-tag }}
+      base-tag: flask-prod
       database: false
       coverage: false
     secrets: inherit
