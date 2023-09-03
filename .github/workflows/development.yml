@@ -7,6 +7,25 @@ on:
       - prod  # see preproduction.yml
 
   workflow_dispatch:
+    inputs:
+      check_migrations:
+        description: Migrations check
+        type: boolean
+        required: false
+        default: false
+      check_coverage:
+        description: Coverage check
+        type: boolean
+        required: false
+        default: false
+      docker_tag:
+        description: Docker tag override
+        type: string
+        required: false
+      docker_base_tag:
+        description: Base docker tag override
+        type: string
+        required: false
 
 jobs:
   branch_name:
@@ -32,8 +51,8 @@ jobs:
     needs: branch_name
     uses: ./.github/workflows/common-work.yml
     with:
-      tag: flask-${{ needs.branch_name.outputs.docker-tag }}
-      base-tag: flask-prod
-      database: false
-      coverage: false
+      tag: flask-${{ inputs.docker_tag || needs.branch_name.outputs.docker-tag }}
+      base-tag: flask-${{ inputs.docker_base_tag || 'prod' }}
+      database: ${{ inputs.check_migrations || false }}
+      coverage: ${{ inputs.check_coverage || false }}
     secrets: inherit
