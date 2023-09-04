@@ -26,6 +26,14 @@ jobs:
     needs: build-test-docs
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        envir:
+          - staging
+          - production
+    environment:
+      name: ${{ matrix.envir }}
+
     steps:
       - name: Download sio-doc from artifacts
         uses: actions/download-artifact@v3
@@ -36,7 +44,7 @@ jobs:
       - name: Upload docs via SCP
         uses: appleboy/scp-action@v0.1.4
         with:
-          host: ${{ secrets.HOST }}
+          host: ${{ secrets.SERVER_HOST }}
           port: ${{ secrets.PORT }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
