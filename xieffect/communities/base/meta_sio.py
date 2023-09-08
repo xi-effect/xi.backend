@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
+from flask_socketio import join_room, leave_room
 from pydantic import BaseModel, Field
 
 from common import EventController, User
@@ -14,6 +15,29 @@ controller = EventController()
 
 @controller.route()
 class CommunitiesEventSpace(EventSpace):
+    @classmethod
+    def room_name(cls, community_id: int) -> str:
+        return f"cs-invites-{community_id}"
+
+    class CommunityIdModel(BaseModel):
+        community_id: int
+
+    @controller.argument_parser(CommunityIdModel)
+    @check_participant(controller)
+    @controller.force_ack()
+    @controller.marshal_ack(Community.IndexModel)
+    def open_communities(self, event: DuplexEvent, community: Community):
+        join_room(self.room_name(community_id=community.id))
+        event.emit_convert(
+            community, room=self.room_name(community_id=community.id), include_self=True
+        )
+
+    @controller.argument_parser(CommunityIdModel)
+    @check_participant(controller)
+    @controller.force_ack()
+    def close_communities(self, community: Community):
+        leave_room(self.room_name(community_id=community.id))
+
     @controller.argument_parser(Community.CreateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
     @controller.jwt_authorizer(User)

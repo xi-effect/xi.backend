@@ -27,6 +27,31 @@ def get_participants_list(
     return list(client.paginate(link))
 
 
+def test_open_close_communities(socketio_client: SocketIOTestClient):
+    community_data = {"name": "test", "description": "test"}
+    community_id = assert_create_community(socketio_client, community_data)
+
+    # Reports an error that an 'event' argument is awaited to be passed to the
+    # method, but in other similar test functions, which test methods that
+    # also require an 'event' as argument, this exact 'event' is not being passed,
+    # so why is it an error here?
+    socketio_client.assert_emit_ack(
+        event_name="open_communities",
+        data={"community_id": community_id},
+        expected_data={
+            "id": community_id,
+            "name": community_data["name"],
+            "description": community_data["description"],
+            "avatar": None,
+        },
+    )
+
+    socketio_client.assert_emit_success(
+        event_name="close_communities",
+        data={"community_id": community_id},
+    )
+
+
 @mark.order(1000)
 def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestClient):
     community_ids = [d["id"] for d in get_communities_list(client)]
