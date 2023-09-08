@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
+from flask_socketio import join_room, leave_room
 from pydantic import BaseModel, Field
 
 from common import EventController, User
@@ -8,12 +9,32 @@ from communities.base.meta_db import Community
 from communities.base.roles_db import PermissionType
 from communities.base.users_ext_db import CommunitiesUser
 from communities.base.utils import check_participant, check_permission
+from vault import File
 
 controller = EventController()
 
 
 @controller.route()
 class CommunitiesEventSpace(EventSpace):
+    @classmethod
+    def room_name(cls, community_id: int) -> str:
+        return f"community-{community_id}"
+
+    class CommunityIdModel(BaseModel):
+        community_id: int
+
+    @controller.argument_parser(CommunityIdModel)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
+    @controller.force_ack()
+    def open_communities(self, community: Community):
+        join_room(self.room_name(community_id=community.id))
+
+    @controller.argument_parser(CommunityIdModel)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
+    @controller.force_ack()
+    def close_communities(self, community: Community):
+        leave_room(self.room_name(community_id=community.id))
+
     @controller.argument_parser(Community.CreateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
     @controller.jwt_authorizer(User)
@@ -29,9 +50,6 @@ class CommunitiesEventSpace(EventSpace):
         community = Community.create(name, user.id, description)
         event.emit_convert(community, user_id=user.id)
         return community
-
-    class CommunityIdModel(BaseModel):
-        community_id: int
 
     @controller.argument_parser(CommunityIdModel)
     @controller.mark_duplex(use_event=True)
@@ -68,17 +86,17 @@ class CommunitiesEventSpace(EventSpace):
         )
 
     class UpdateModel(Community.CreateModel, CommunityIdModel):
-        pass
+        avatar_id: int | None = -1  # TODO [nq] fix in ffs!
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_COMMUNITY, use_user=True)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
     @controller.marshal_ack(Community.IndexModel)
     def update_community(
         self,
         event: DuplexEvent,
-        user: User,
         community: Community,
+        avatar_id: int | None,
         name: str = None,
         description: str = None,
     ):
@@ -86,7 +104,23 @@ class CommunitiesEventSpace(EventSpace):
             community.name = name
         if description is not None:
             community.description = description
-        event.emit_convert(community, user_id=user.id, community_id=community.id)
+
+        if avatar_id is None:
+            community.avatar.delete()
+            community.avatar = None
+        elif avatar_id != -1:  # TODO [nq] fix in ffs!
+            if File.find_by_id(avatar_id) is None:
+                controller.abort(404, File.not_found_text)
+            old_avatar = File.find_by_id(community.avatar_id)
+            if old_avatar:
+                old_avatar.delete()
+            community.avatar_id = avatar_id
+
+        event.emit_convert(
+            community,
+            room=self.room_name(community_id=community.id),
+            community_id=community.id,
+        )
         return community
 
     @controller.argument_parser(CommunityIdModel)
