@@ -1,32 +1,45 @@
-name: Production Pipeline
+name: Production
 
 on:
   push:
     branches:
-     - master
-
-  workflow_dispatch:
+      - master
 
 jobs:
-  build-test-docs:
+  build_test_docs:
     uses: ./.github/workflows/common-work.yml
     with:
-      tag: flask
+      tag: flask-master
       base-tag: flask-prod
     secrets: inherit
 
-  deploy:
-    needs: build-test-docs
-    uses: xi-effect/xi.actions/.github/workflows/docker-deploy.yml@main
-    with:
-      images: flask
-    secrets: inherit
-
-  upload:
-    needs: build-test-docs
+  deploy_prod:
+    needs: build_test_docs
     runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:flask-master
+      deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}
 
     steps:
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          script: |-
+            cd ~/xieffect-core
+            docker pull ${{ env.pull_image }}
+            docker tag ${{ env.pull_image }} ${{ env.deploy_image }}
+            docker tag ${{ env.pull_image }} ${{ env.deploy_image }}-backup
+            docker compose up -d
+            docker image prune -f
+          script_stop: true
+
       - name: Download sio-doc from artifacts
         uses: actions/download-artifact@v3
         with:
@@ -40,7 +53,8 @@ jobs:
           port: ${{ secrets.PORT }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
           source: ./sio-doc/*
-          target: ~/xieffect-core/sio-docs-new/
+          target: ~/xieffect-core/sio-docs/prod/
           strip_components: 1
           rm: true
