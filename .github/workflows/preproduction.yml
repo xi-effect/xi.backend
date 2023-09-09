@@ -22,6 +22,7 @@ jobs:
           source_branch: prod
           target_branch: master
           title: New Version
+          label: "ci:covered,ci:migrated,ci:deployable"
           body: |
             - [ ] version update
             - [ ] migration test
