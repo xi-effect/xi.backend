@@ -1,0 +1,41 @@
+name: Rollback (Dispatch)
+
+on:
+  workflow_dispatch:
+    # inputs:
+    #   environment:
+    #     description: Environment
+    #     required: true
+    #     type: choice
+    #     options:
+    #       - production
+    #       - staging
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: 'staging'  # ${{ inputs.environment }}
+
+    env:
+      deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}
+      compose_command: docker compose --profile stage' up -d
+      # compose_command: >
+      #   docker compose
+      #   ${{ inputs.environment == 'staging' && '--profile stage' }}
+      #   up -d
+
+    steps:
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          script: |-
+            cd ~/xieffect-core
+            docker image tag ${{ env.deploy_image }}-backup ${{ env.deploy_image }}
+            ${{ env.compose_command }}
+          script_stop: true
+        # TODO roll back migrations
