@@ -12,9 +12,6 @@ on:
       - master
       - prod
 
-env:
-  repo: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}
-
 jobs:
   namer:
     runs-on: ubuntu-latest
@@ -54,3 +51,55 @@ jobs:
       coverage: ${{ contains(github.event.pull_request.labels.*.name, 'ci:covered') }}
       database: ${{ contains(github.event.pull_request.labels.*.name, 'ci:migrated') }}
     secrets: inherit
+
+  deploy_staging:
+    needs:
+      - namer
+      - build_test_docs
+    if: >
+      contains(github.event.pull_request.labels.*.name, 'ci:covered')
+      && contains(github.event.pull_request.labels.*.name, 'ci:migrated')
+      && contains(github.event.pull_request.labels.*.name, 'ci:deployable')
+
+    runs-on: ubuntu-latest
+    environment: manual-staging
+
+    env:
+      pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ needs.namer.outputs.tag }}
+      deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}
+
+    steps:
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          script: |-
+            cd ~/xieffect-core
+            docker pull ${{ env.pull_image }}
+            docker image tag ${{ env.pull_image }} ${{ env.deploy_image }}
+            docker compose up -d
+            docker image prune -f
+          script_stop: true
+
+      - name: Download sio-doc from artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: sio-doc
+          path: ./sio-doc/
+
+      - name: Upload docs via SCP
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          source: ./sio-doc/*
+          target: ~/xieffect-core/sio-docs/stage/
+          strip_components: 1
+          rm: true
