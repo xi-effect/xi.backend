@@ -1,4 +1,4 @@
-name: Development
+name: Development + Staging (PR)
 
 on:
   pull_request:
@@ -62,7 +62,7 @@ jobs:
       && contains(github.event.pull_request.labels.*.name, 'ci:deployable')
 
     runs-on: ubuntu-latest
-    environment: manual-staging
+    environment: ${{ needs.namer.outputs.branch == 'prod' && 'staging' || 'manual-staging' }}
 
     env:
       pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ needs.namer.outputs.tag }}
@@ -80,8 +80,9 @@ jobs:
           script: |-
             cd ~/xieffect-core
             docker pull ${{ env.pull_image }}
-            docker image tag ${{ env.pull_image }} ${{ env.deploy_image }}
-            docker compose up -d
+            docker tag ${{ env.pull_image }} ${{ env.deploy_image }}
+            ${{ needs.namer.outputs.branch != 'prod' }} || docker tag ${{ env.pull_image }} ${{ env.deploy_image }}-backup
+            docker compose --profile stage up -d
             docker image prune -f
           script_stop: true
 

@@ -1,19 +1,11 @@
-name: Preproduction Pipeline
+name: Preproduction (Create PR)
 
 on:
   push:
     branches:
       - prod
 
-  workflow_dispatch:
-
 jobs:
-  build-test-docs:
-    uses: ./.github/workflows/common-work.yml
-    with:
-      tag: flask-prod
-    secrets: inherit
-
   pull-request:
     runs-on: ubuntu-latest
 
