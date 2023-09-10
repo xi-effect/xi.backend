@@ -130,7 +130,7 @@ jobs:
             Branch: `${{ needs.namer.outputs.branch }}`
             Issuer: `${{ github.actor }}`
 
-      - name: Report status to discord
+      - name: Report failure to discord
         uses: tsickert/discord-webhook@v5.3.0
         if: failure()
         with:
