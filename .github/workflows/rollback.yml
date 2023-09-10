@@ -40,3 +40,18 @@ jobs:
             rsync -a --delete ./sio-docs/stage-backup/ ./sio-docs/stage/
             docker compose --profile stage up -d
           script_stop: true
+
+      - name: Report status to discord
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :repeat: Service xi.backend was successfully reverted to mainline
+
+      - name: Report status to discord
+        uses: tsickert/discord-webhook@v5.3.0
+        if: failure()
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :bangbang: [Service xi.backend failed to revert to mainline](<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>)
