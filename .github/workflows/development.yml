@@ -105,3 +105,17 @@ jobs:
           target: ~/xieffect-core/sio-docs/stage/
           strip_components: 1
           rm: true
+
+      - name: Upload docs via SCP
+        uses: appleboy/scp-action@v0.1.4
+        if: ${{ needs.namer.outputs.branch == 'prod' }}
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          source: ./sio-doc/*
+          target: ~/xieffect-core/sio-docs/stage-backup/
+          strip_components: 1
+          rm: true

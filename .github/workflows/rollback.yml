@@ -37,5 +37,6 @@ jobs:
             docker compose --profile stage stop flask-stage
             docker compose --profile stage run --rm --entrypoint alembic flask-stage downgrade $(cat stage-version.txt)
             docker image tag ${{ env.deploy_image }}-backup ${{ env.deploy_image }}
+            rsync -a --delete ./sio-docs/stage-backup/ ./sio-docs/stage/
             docker compose --profile stage up -d
           script_stop: true
