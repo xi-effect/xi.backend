@@ -83,6 +83,7 @@ jobs:
             docker tag ${{ env.pull_image }} ${{ env.deploy_image }}
             ${{ needs.namer.outputs.branch != 'prod' }} || docker tag ${{ env.pull_image }} ${{ env.deploy_image }}-backup
             docker compose --profile stage up -d
+            ${{ needs.namer.outputs.branch != 'prod' }} || docker compose --profile stage exec flask-stage alembic heads | cut -d ' ' --fields=1 > stage-version.txt
             docker image prune -f
           script_stop: true
 

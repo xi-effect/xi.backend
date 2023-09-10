@@ -14,11 +14,10 @@ on:
 jobs:
   rollback:
     runs-on: ubuntu-latest
-    environment: 'staging'  # ${{ inputs.environment }}
+    environment: ${{ github.actor == 'niqzart' && 'staging' || 'manual-staging' }}  # ${{ inputs.environment }}
 
     env:
       deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}
-      compose_command: docker compose --profile stage' up -d
       # compose_command: >
       #   docker compose
       #   ${{ inputs.environment == 'staging' && '--profile stage' }}
@@ -35,7 +34,8 @@ jobs:
           passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
           script: |-
             cd ~/xieffect-core
+            docker compose --profile stage stop flask-stage
+            docker compose --profile stage run --rm --entrypoint alembic flask-stage downgrade $(cat stage-version.txt)
             docker image tag ${{ env.deploy_image }}-backup ${{ env.deploy_image }}
-            ${{ env.compose_command }}
+            docker compose --profile stage up -d
           script_stop: true
-        # TODO roll back migrations
