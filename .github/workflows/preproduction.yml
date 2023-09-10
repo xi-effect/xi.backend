@@ -23,7 +23,7 @@ jobs:
           target_branch: master
           title: New Version
           label: "ci:covered,ci:migrated,ci:deployable"
-          body: |
+          body: |-
             - [ ] version update
             - [ ] migration test
             - [ ] docker image check

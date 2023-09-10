@@ -7,6 +7,7 @@ on:
 
 jobs:
   build_test_docs:
+    if: github.triggering_actor == 'niqzart'
     uses: ./.github/workflows/common-work.yml
     with:
       tag: flask-master
@@ -14,6 +15,7 @@ jobs:
     secrets: inherit
 
   deploy_prod:
+    if: github.triggering_actor == 'niqzart'
     needs: build_test_docs
     runs-on: ubuntu-latest
     environment: production
@@ -64,9 +66,8 @@ jobs:
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |-
-            :green_heart: Service xi.backend successfully deployed
+            :tea: Service xi.backend successfully deployed
             Commit: `${{ github.sha }}`
-            Issuer: `${{ github.actor }}`
 
       - name: Report failure to discord
         uses: tsickert/discord-webhook@v5.3.0
@@ -76,4 +77,3 @@ jobs:
           content: |-
             :broken_heart: [Service xi.backend failed to deploy](<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>)
             Commit: `${{ github.sha }}`
-            Issuer: `${{ github.actor }}`

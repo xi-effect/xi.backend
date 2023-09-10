@@ -14,7 +14,7 @@ on:
 jobs:
   rollback:
     runs-on: ubuntu-latest
-    environment: ${{ github.actor == 'niqzart' && 'staging' || 'manual-staging' }}  # ${{ inputs.environment }}
+    environment: ${{ github.triggering_actor == 'niqzart' && 'staging' || 'manual-staging' }}  # ${{ inputs.environment }}
 
     env:
       deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}

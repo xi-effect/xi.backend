@@ -62,7 +62,13 @@ jobs:
       && contains(github.event.pull_request.labels.*.name, 'ci:deployable')
 
     runs-on: ubuntu-latest
-    environment: ${{ needs.namer.outputs.branch == 'prod' && 'staging' || 'manual-staging' }}
+    environment: >
+      ${{
+        needs.namer.outputs.branch == 'prod'
+        && github.actor == github.triggering_actor
+        && 'staging'
+        || 'manual-staging'
+      }}
 
     env:
       pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ needs.namer.outputs.tag }}
@@ -128,7 +134,7 @@ jobs:
             :white_check_mark: Service xi.backend successfully deployed
             Commit: `${{ github.event.pull_request.head.sha }}`
             Branch: `${{ needs.namer.outputs.branch }}`
-            Issuer: `${{ github.actor }}`
+            Issuer: `${{ github.triggering_actor }}`
 
       - name: Report failure to discord
         uses: tsickert/discord-webhook@v5.3.0
@@ -139,4 +145,4 @@ jobs:
             :red_circle: [Service xi.backend failed to deploy](<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>)
             Commit: `${{ github.event.pull_request.head.sha }}`
             Branch: `${{ needs.namer.outputs.branch }}`
-            Issuer: `${{ github.actor }}`
+            Issuer: `${{ github.triggering_actor }}`
