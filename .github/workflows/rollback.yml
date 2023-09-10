@@ -1,0 +1,57 @@
+name: Rollback (Dispatch)
+
+on:
+  workflow_dispatch:
+    # inputs:
+    #   environment:
+    #     description: Environment
+    #     required: true
+    #     type: choice
+    #     options:
+    #       - production
+    #       - staging
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: ${{ github.actor == 'niqzart' && 'staging' || 'manual-staging' }}  # ${{ inputs.environment }}
+
+    env:
+      deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}
+      # compose_command: >
+      #   docker compose
+      #   ${{ inputs.environment == 'staging' && '--profile stage' }}
+      #   up -d
+
+    steps:
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          script: |-
+            cd ~/xieffect-core
+            docker compose --profile stage stop flask-stage
+            docker compose --profile stage run --rm --entrypoint alembic flask-stage downgrade $(cat stage-version.txt)
+            docker image tag ${{ env.deploy_image }}-backup ${{ env.deploy_image }}
+            rsync -a --delete ./sio-docs/stage-backup/ ./sio-docs/stage/
+            docker compose --profile stage up -d
+          script_stop: true
+
+      - name: Report status to discord
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :repeat: Service xi.backend was successfully reverted to mainline
+
+      - name: Report status to discord
+        uses: tsickert/discord-webhook@v5.3.0
+        if: failure()
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :bangbang: [Service xi.backend failed to revert to mainline](<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>)

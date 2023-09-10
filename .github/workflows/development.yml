@@ -1,58 +1,142 @@
-name: Feature Branch PR Pipeline
+name: Development + Staging (PR)
 
 on:
-  push:
-    branches-ignore:
-      - master  # see production.yml
-      - prod  # see preproduction.yml
-
-  workflow_dispatch:
-    inputs:
-      check_migrations:
-        description: Migrations check
-        type: boolean
-        required: false
-        default: false
-      check_coverage:
-        description: Coverage check
-        type: boolean
-        required: false
-        default: false
-      docker_tag:
-        description: Docker tag override
-        type: string
-        required: false
-      docker_base_tag:
-        description: Base docker tag override
-        type: string
-        required: false
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
+    branches:
+      - master
+      - prod
 
 jobs:
-  branch_name:
+  namer:
     runs-on: ubuntu-latest
 
     outputs:
-      branch-name: ${{ steps.branch_name.outputs.branch }}
-      docker-tag: ${{ steps.branch_name.outputs.tag }}
+      branch: ${{ steps.branch_name.outputs.branch }}
+      tag: ${{ steps.branch_name.outputs.tag }}
+      base_branch: ${{ steps.branch_name.outputs.base_branch }}
+      base_tag: ${{ steps.branch_name.outputs.base_tag }}
 
     steps:
       - name: Get tag & branch name
         id: branch_name
         run: |-
-          result=${{ github.ref }}
-          result=${result#refs/heads/}
-          echo "branch=${result}"
-          echo "branch=${result}" >> $GITHUB_OUTPUT
-          result=${result////-}
-          echo "tag=${result}"
-          echo "tag=${result}" >> $GITHUB_OUTPUT
+          branch=${{ github.event.pull_request.head.ref }}
+          echo "branch=${branch}"
+          echo "branch=${branch}" >> $GITHUB_OUTPUT
 
-  build-test-docs:
-    needs: branch_name
+          tag="flask-${branch////-}"
+          echo "tag=${tag}"
+          echo "tag=${tag}" >> $GITHUB_OUTPUT
+
+          base_branch=${{ github.event.pull_request.base.ref }}
+          echo "base_branch=${base_branch}"
+          echo "base_branch=${base_branch}" >> $GITHUB_OUTPUT
+
+          base_tag="flask-${base_branch////-}"
+          echo "base_tag=${base_tag}"
+          echo "base_tag=${base_tag}" >> $GITHUB_OUTPUT
+
+  build_test_docs:
+    needs: namer
     uses: ./.github/workflows/common-work.yml
     with:
-      tag: flask-${{ inputs.docker_tag || needs.branch_name.outputs.docker-tag }}
-      base-tag: flask-${{ inputs.docker_base_tag || 'prod' }}
-      database: ${{ inputs.check_migrations || false }}
-      coverage: ${{ inputs.check_coverage || false }}
+      tag: ${{ needs.namer.outputs.tag }}
+      base-tag: ${{ needs.namer.outputs.base_tag }}
+      coverage: ${{ contains(github.event.pull_request.labels.*.name, 'ci:covered') }}
+      database: ${{ contains(github.event.pull_request.labels.*.name, 'ci:migrated') }}
     secrets: inherit
+
+  deploy_staging:
+    needs:
+      - namer
+      - build_test_docs
+    if: >
+      contains(github.event.pull_request.labels.*.name, 'ci:covered')
+      && contains(github.event.pull_request.labels.*.name, 'ci:migrated')
+      && contains(github.event.pull_request.labels.*.name, 'ci:deployable')
+
+    runs-on: ubuntu-latest
+    environment: ${{ needs.namer.outputs.branch == 'prod' && 'staging' || 'manual-staging' }}
+
+    env:
+      pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ needs.namer.outputs.tag }}
+      deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}
+
+    steps:
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          script: |-
+            cd ~/xieffect-core
+            docker pull ${{ env.pull_image }}
+            docker tag ${{ env.pull_image }} ${{ env.deploy_image }}
+            ${{ needs.namer.outputs.branch != 'prod' }} || docker tag ${{ env.pull_image }} ${{ env.deploy_image }}-backup
+            docker compose --profile stage up -d
+            ${{ needs.namer.outputs.branch != 'prod' }} || docker compose --profile stage exec flask-stage alembic heads | cut -d ' ' --fields=1 > stage-version.txt
+            docker image prune -f
+          script_stop: true
+
+      - name: Download sio-doc from artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: sio-doc
+          path: ./sio-doc/
+
+      - name: Upload docs via SCP
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          source: ./sio-doc/*
+          target: ~/xieffect-core/sio-docs/stage/
+          strip_components: 1
+          rm: true
+
+      - name: Upload docs via SCP
+        uses: appleboy/scp-action@v0.1.4
+        if: ${{ needs.namer.outputs.branch == 'prod' }}
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          source: ./sio-doc/*
+          target: ~/xieffect-core/sio-docs/stage-backup/
+          strip_components: 1
+          rm: true
+
+      - name: Report status to discord
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :white_check_mark: Service xi.backend successfully deployed
+            Commit: `${{ github.event.pull_request.head.sha }}`
+            Branch: `${{ needs.namer.outputs.branch }}`
+            Issuer: `${{ github.actor }}`
+
+      - name: Report status to discord
+        uses: tsickert/discord-webhook@v5.3.0
+        if: failure()
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :red_circle: [Service xi.backend failed to deploy](<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>)
+            Commit: `${{ github.event.pull_request.head.sha }}`
+            Branch: `${{ needs.namer.outputs.branch }}`
+            Issuer: `${{ github.actor }}`
