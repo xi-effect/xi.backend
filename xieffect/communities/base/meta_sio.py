@@ -9,6 +9,7 @@ from communities.base.meta_db import Community
 from communities.base.roles_db import PermissionType
 from communities.base.users_ext_db import CommunitiesUser
 from communities.base.utils import check_participant, check_permission
+from vault import File
 
 controller = EventController()
 
@@ -17,23 +18,19 @@ controller = EventController()
 class CommunitiesEventSpace(EventSpace):
     @classmethod
     def room_name(cls, community_id: int) -> str:
-        return f"cs-invites-{community_id}"
+        return f"community-{community_id}"
 
     class CommunityIdModel(BaseModel):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
     @controller.force_ack()
-    @controller.marshal_ack(Community.IndexModel)
-    def open_communities(self, event: DuplexEvent, community: Community):
+    def open_communities(self, community: Community):
         join_room(self.room_name(community_id=community.id))
-        event.emit_convert(
-            community, room=self.room_name(community_id=community.id), include_self=True
-        )
 
     @controller.argument_parser(CommunityIdModel)
-    @check_participant(controller)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
     @controller.force_ack()
     def close_communities(self, community: Community):
         leave_room(self.room_name(community_id=community.id))
@@ -53,9 +50,6 @@ class CommunitiesEventSpace(EventSpace):
         community = Community.create(name, user.id, description)
         event.emit_convert(community, user_id=user.id)
         return community
-
-    class CommunityIdModel(BaseModel):
-        community_id: int
 
     @controller.argument_parser(CommunityIdModel)
     @controller.mark_duplex(use_event=True)
@@ -91,27 +85,44 @@ class CommunitiesEventSpace(EventSpace):
             target_index=target_index,
         )
 
-    class UpdateModel(Community.CreateModel, CommunityIdModel):
-        pass
-
-    @controller.argument_parser(UpdateModel)
+    @controller.argument_parser(Community.IndexModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_COMMUNITY, use_user=True)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
+    @controller.database_searcher(File, input_field_name="avatar_id", check_only=True)
     @controller.marshal_ack(Community.IndexModel)
     def update_community(
         self,
         event: DuplexEvent,
-        user: User,
         community: Community,
         name: str = None,
         description: str = None,
+        file: File = None,
     ):
         if name is not None:
             community.name = name
         if description is not None:
             community.description = description
-        event.emit_convert(community, user_id=user.id, community_id=community.id)
+        if file is not None:
+            community.avatar_id = file.id
+        event.emit_convert(
+            community,
+            room=self.room_name(community_id=community.id),
+            community_id=community.id,
+        )
         return community
+
+    @controller.argument_parser(CommunityIdModel)
+    @controller.mark_duplex(Community.IndexModel, use_event=True)
+    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
+    @controller.database_searcher(Community)
+    @controller.force_ack()
+    def delete_avatar(self, event: DuplexEvent, community: Community):
+        community.avatar.delete()
+        event.emit_convert(
+            community,
+            room=self.room_name(community_id=community.id),
+            community_id=community.id,
+        )
 
     @controller.argument_parser(CommunityIdModel)
     @controller.mark_duplex(use_event=True)
