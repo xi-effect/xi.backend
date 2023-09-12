@@ -47,6 +47,8 @@ def role_watcher_client(
     watcher_client.assert_emit_success("open_roles", {"community_id": test_community})
     yield watcher_client
     watcher_client.assert_emit_success("close_roles", {"community_id": test_community})
+    residual_events = watcher_client.queue[watcher_client.eio_sid]
+    assert residual_events == [], "Not all events were consumed in watcher_client"
 
 
 @pytest.fixture()

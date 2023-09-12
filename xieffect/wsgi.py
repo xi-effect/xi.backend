@@ -19,7 +19,7 @@ from common import (
     BASIC_PASS,
     absolute_path,
 )
-from common.consts import PRODUCTION_MODE, DATABASE_RESET
+from common.consts import PRODUCTION_MODE, DATABASE_RESET, USER_EMAIL
 from moderation import Moderator, permission_index
 from other import send_discord_message, WebhookURLs
 from users.invites_db import Invite
@@ -102,7 +102,7 @@ def init_users() -> None:
 
     with open_file("static/test/user-bundle.json") as f:
         for i, user_settings in enumerate(load_json(f)):
-            email: str = f"{i}@user.user"
+            email: str = f"{i}{USER_EMAIL}"
             user: User = User.find_by_email_address(email)
             if user is None:
                 user = User.create(

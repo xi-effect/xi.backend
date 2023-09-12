@@ -20,6 +20,7 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.test import TestResponse
 
 from common import mail, mail_initialized, Base, db, open_file
+from common.consts import USER_EMAIL
 from common.users_db import User
 from communities.base.discussion_db import Discussion
 from communities.base.users_ext_db import CommunitiesUser
@@ -132,7 +133,9 @@ def multi_client() -> Callable[[str], FlaskTestClient]:
 
 @fixture
 def socketio_client(client: FlaskTestClient) -> SocketIOTestClient:  # noqa: WPS442
-    return SocketIOTestClient(client)
+    sio = SocketIOTestClient(client)
+    yield sio
+    assert sio.queue[sio.eio_sid] == [], "Not all events were consumed"
 
 
 @fixture
@@ -178,6 +181,14 @@ def fresh_client(
     base_user_data: tuple[str, str], base_user_id: int  # noqa: U100
 ) -> FlaskTestClient:
     return login(*base_user_data)
+
+
+# TODO use `assert_nop()`, but it needs to display what events are there
+@fixture(autouse=True)
+def garbage_collector_client() -> SocketIOTestClient:
+    sio = SocketIOTestClient(login(f"5{USER_EMAIL}", BASIC_PASS))
+    yield sio
+    assert sio.queue[sio.eio_sid] == [], "Roomless events found"
 
 
 @fixture

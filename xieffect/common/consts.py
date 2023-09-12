@@ -4,6 +4,7 @@ from os import getenv
 
 # None of these are secret
 TEST_EMAIL: str = "test@test.test"
+USER_EMAIL: str = "@user.user"
 TEST_MOD_NAME: str = "test"
 
 TEST_PASS: str = "q"

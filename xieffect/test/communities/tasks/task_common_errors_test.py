@@ -70,3 +70,4 @@ def test_task_fail_with_foreign_user(
         expected_code=403,
         expected_message="Permission Denied: Participant not found",
     )
+    client_sio.assert_nop()
