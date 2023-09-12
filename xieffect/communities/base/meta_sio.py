@@ -85,7 +85,13 @@ class CommunitiesEventSpace(EventSpace):
             target_index=target_index,
         )
 
-    @controller.argument_parser(Community.IndexModel)
+    class AvatarUpdateModel(BaseModel):
+        file: File
+
+    class UpdateModel(Community.CreateModel, CommunityIdModel, AvatarUpdateModel):
+        pass
+
+    @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
     @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
     @controller.database_searcher(File, input_field_name="avatar_id", check_only=True)
