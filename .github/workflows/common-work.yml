@@ -17,11 +17,6 @@ on:
         type: boolean
         required: false
         default: true
-    secrets:
-      DOCKER_HUB_USERNAME:
-        required: true
-      DOCKER_HUB_ACCESS_TOKEN:
-        required: true
 
 jobs:
   prepare:
