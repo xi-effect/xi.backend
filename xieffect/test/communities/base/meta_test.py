@@ -247,6 +247,17 @@ def test_participant(
         "update_participant", successful_participant_data
     )
 
+    participant_data.pop("role_ids")
+    successful_participant_data.pop("roles")
+    socketio_client.assert_emit_ack(
+        "update_participant",
+        participant_data,
+        expected_data=successful_participant_data,
+    )
+    socketio_client2.assert_only_received(
+        "update_participant", successful_participant_data
+    )
+
     # delete participant data
     delete_data = {"community_id": test_community, "participant_id": participant_id}
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from common import EventController, User
 from .meta_db import Community, Participant
@@ -34,7 +34,7 @@ class ParticipantsEventSpace(EventSpace):
         leave_room(self.room_name(community.id))
 
     class UpdateModel(CommunityIdModel):
-        role_ids: list[int] = Field(default_factory=list)
+        role_ids: list[int] = []
         participant_id: int
 
     @controller.argument_parser(UpdateModel)
@@ -52,17 +52,23 @@ class ParticipantsEventSpace(EventSpace):
         current_role_ids: set[int] = set(
             ParticipantRole.get_role_ids(participant_id=participant.id)
         )
-
         received_role_ids: set[int] = set(role_ids)
+        not_found_role_ids: set[int] = received_role_ids - set(
+            ParticipantRole.find_all_by_ids(role_ids=role_ids)
+        )
+
+        if len(not_found_role_ids) != 0:
+            controller.abort(400, f"Roles {not_found_role_ids} not found")
 
         ParticipantRole.delete_by_ids(
             participant_id=participant.id,
             role_ids=current_role_ids - received_role_ids,
         )
-
         ParticipantRole.create_bulk(
-            participant_id=participant.id, role_ids=received_role_ids - current_role_ids
+            participant_id=participant.id,
+            role_ids=received_role_ids - current_role_ids,
         )
+
         event.emit_convert(participant, self.room_name(community.id))
         return participant
 

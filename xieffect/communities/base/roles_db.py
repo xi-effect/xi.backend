@@ -145,6 +145,10 @@ class ParticipantRole(Base):
         return db.get_all(select(cls.role_id).filter_by(participant_id=participant_id))
 
     @classmethod
+    def find_all_by_ids(cls, role_ids: list[int]) -> list[int]:
+        return db.get_all(select(cls.role_id).filter(cls.role_id.in_(role_ids)))
+
+    @classmethod
     def create_bulk(cls, participant_id: int, role_ids: Iterable[int]) -> None:
         db.session.add_all(
             cls(participant_id=participant_id, role_id=role_id) for role_id in role_ids

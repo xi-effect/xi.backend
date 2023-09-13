@@ -4,7 +4,7 @@ from functools import wraps
 
 from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from common import EventController
 from communities.base.meta_db import Community
@@ -53,7 +53,7 @@ class RolesEventSpace(EventSpace):
         leave_room(self.room_name(community.id))
 
     class CreateModel(Role.CreateModel, CommunityIdModel):
-        permissions: list[str] = Field(default_factory=list)
+        permissions: list[str] = []
 
     @controller.doc_abort(400, "Quantity exceeded")
     @controller.argument_parser(CreateModel)

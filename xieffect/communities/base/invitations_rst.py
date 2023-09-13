@@ -25,15 +25,6 @@ class InvitationLister(Resource):
         return Invitation.find_by_community(community.id, start, finish - start)
 
 
-@controller.route("/<int:community_id>/invitations/index/")
-class OldInvitationLister(Resource):  # pragma: no coverage
-    @check_permission(controller, PermissionType.MANAGE_INVITATIONS)
-    @controller.argument_parser(counter_parser)
-    @controller.lister(INVITATIONS_PER_REQUEST, Invitation.FullModel)
-    def post(self, community: Community, start: int, finish: int):
-        return Invitation.find_by_community(community.id, start, finish - start)
-
-
 def check_invitation():  # TODO # noqa: WPS231
     def check_invitation_wrapper(function):
         @controller.doc_abort("400 ", "Invalid invitation")
