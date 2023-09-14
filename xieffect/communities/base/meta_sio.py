@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask_fullstack import DuplexEvent, EventSpace
+from flask_fullstack import DuplexEvent, EventSpace, Undefined
 from flask_socketio import join_room, leave_room
 from pydantic import BaseModel, Field
 
@@ -85,16 +85,12 @@ class CommunitiesEventSpace(EventSpace):
             target_index=target_index,
         )
 
-    class AvatarUpdateModel(BaseModel):
-        file: File
-
-    class UpdateModel(Community.CreateModel, CommunityIdModel, AvatarUpdateModel):
-        pass
+    class UpdateModel(Community.CreateModel, CommunityIdModel):
+        new_avatar_id: int | None
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
     @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
-    @controller.database_searcher(File, input_field_name="avatar_id", check_only=True)
     @controller.marshal_ack(Community.IndexModel)
     def update_community(
         self,
@@ -102,33 +98,29 @@ class CommunitiesEventSpace(EventSpace):
         community: Community,
         name: str = None,
         description: str = None,
-        file: File = None,
+        new_avatar_id: int | None | type[Undefined] = Undefined,
     ):
         if name is not None:
             community.name = name
         if description is not None:
             community.description = description
-        if file is not None:
-            community.avatar_id = file.id
+        if new_avatar_id is not Undefined:
+            if isinstance(new_avatar_id, int):
+                if File.find_by_id(new_avatar_id):
+                    old_avatar = File.find_by_id(community.avatar_id)
+                    community.avatar_id = new_avatar_id
+                    old_avatar.soft_delete()
+                else:
+                    controller.abort("404", "File not found")
+            elif new_avatar_id is None:
+                old_avatar = File.find_by_id(community.avatar_id)
+                old_avatar.soft_delete()
         event.emit_convert(
             community,
             room=self.room_name(community_id=community.id),
             community_id=community.id,
         )
         return community
-
-    @controller.argument_parser(CommunityIdModel)
-    @controller.mark_duplex(Community.IndexModel, use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
-    @controller.database_searcher(Community)
-    @controller.force_ack()
-    def delete_avatar(self, event: DuplexEvent, community: Community):
-        community.avatar.delete()
-        event.emit_convert(
-            community,
-            room=self.room_name(community_id=community.id),
-            community_id=community.id,
-        )
 
     @controller.argument_parser(CommunityIdModel)
     @controller.mark_duplex(use_event=True)
