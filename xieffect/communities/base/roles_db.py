@@ -21,6 +21,7 @@ class PermissionType(TypeEnum):
     MANAGE_NEWS = 3
     MANAGE_MESSAGES = 4
     MANAGE_PARTICIPANTS = 5
+    MANAGE_ANSWERS = 6
 
 
 class Role(Base, Identifiable):

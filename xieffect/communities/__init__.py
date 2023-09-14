@@ -16,4 +16,5 @@ from .tasks import (
     teacher_tests_namespace,
     tests_events,
     questions_events,
+    answers_namespace,
 )
