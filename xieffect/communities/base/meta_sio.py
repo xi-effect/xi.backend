@@ -86,7 +86,7 @@ class CommunitiesEventSpace(EventSpace):
         )
 
     class UpdateModel(Community.CreateModel, CommunityIdModel):
-        new_avatar_id: int | None
+        avatar_id: int | None
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
@@ -98,22 +98,22 @@ class CommunitiesEventSpace(EventSpace):
         community: Community,
         name: str = None,
         description: str = None,
-        new_avatar_id: int | None | type[Undefined] = Undefined,
+        avatar_id: int | None | type[Undefined] = Undefined,
     ):
         if name is not None:
             community.name = name
         if description is not None:
             community.description = description
-        if new_avatar_id is not Undefined:
-            if isinstance(new_avatar_id, int):
-                if File.find_by_id(new_avatar_id):
-                    old_avatar = File.find_by_id(community.avatar_id)
-                    community.avatar_id = new_avatar_id
-                    old_avatar.soft_delete()
-                else:
-                    controller.abort("404", "File not found")
-            elif new_avatar_id is None:
-                old_avatar = File.find_by_id(community.avatar_id)
+        if type(avatar_id) is int:
+            if File.find_by_id(avatar_id) is None:
+                controller.abort("404", File.not_found_text)
+            old_avatar = File.find_by_id(community.avatar_id)
+            if old_avatar:
+                old_avatar.soft_delete()
+            community.avatar_id = avatar_id
+        elif avatar_id is None:
+            old_avatar = File.find_by_id(community.avatar_id)
+            if old_avatar:
                 old_avatar.soft_delete()
         event.emit_convert(
             community,
