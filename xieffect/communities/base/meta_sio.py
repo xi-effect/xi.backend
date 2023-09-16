@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask_fullstack import DuplexEvent, EventSpace, Undefined
+from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
 from pydantic import BaseModel, Field
 
@@ -86,7 +86,7 @@ class CommunitiesEventSpace(EventSpace):
         )
 
     class UpdateModel(Community.CreateModel, CommunityIdModel):
-        avatar_id: int | None
+        avatar_id: int | None = -1  # TODO [nq] fix in ffs!
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
@@ -96,25 +96,25 @@ class CommunitiesEventSpace(EventSpace):
         self,
         event: DuplexEvent,
         community: Community,
+        avatar_id: int | None,
         name: str = None,
         description: str = None,
-        avatar_id: int | None | type[Undefined] = Undefined,
     ):
         if name is not None:
             community.name = name
         if description is not None:
             community.description = description
-        if type(avatar_id) is int:
+
+        if avatar_id is None:
+            community.avatar.soft_delete()
+        elif avatar_id != -1:  # TODO [nq] fix in ffs!
             if File.find_by_id(avatar_id) is None:
                 controller.abort("404", File.not_found_text)
             old_avatar = File.find_by_id(community.avatar_id)
             if old_avatar:
                 old_avatar.soft_delete()
             community.avatar_id = avatar_id
-        elif avatar_id is None:
-            old_avatar = File.find_by_id(community.avatar_id)
-            if old_avatar:
-                old_avatar.soft_delete()
+
         event.emit_convert(
             community,
             room=self.room_name(community_id=community.id),
