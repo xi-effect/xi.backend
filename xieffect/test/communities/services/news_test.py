@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from flask_fullstack import SocketIOTestClient, dict_cut, assert_contains
+from flask_fullstack import SocketIOTestClient, dict_cut
+from pydantic_marshals.contains import assert_contains
 from pytest import mark
 
 from common import User

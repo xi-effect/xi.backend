@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from flask_fullstack import EventSpace, ServerEvent, DuplexEvent
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from common import User, EventController
 

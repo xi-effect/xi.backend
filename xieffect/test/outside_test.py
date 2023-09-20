@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from flask_mail import Message
-from pydantic import constr
+from pydantic.v1 import constr
 from pytest import mark, param
 from pytest_mock import MockerFixture
 

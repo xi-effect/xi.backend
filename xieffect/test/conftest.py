@@ -13,7 +13,7 @@ from flask_fullstack import (
     TypeChecker,
 )
 from flask_fullstack.restx.testing import HeaderChecker
-from pydantic import constr
+from pydantic.v1 import constr
 from pytest import fixture
 from pytest_mock import MockerFixture
 from werkzeug.datastructures import FileStorage

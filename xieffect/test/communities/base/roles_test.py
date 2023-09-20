@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from flask_fullstack import SocketIOTestClient, dict_cut
-from pydantic import conlist
+from pydantic.v1 import conlist
 from pytest_mock import MockerFixture
 
 from communities.base import Community

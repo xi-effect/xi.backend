@@ -10,7 +10,7 @@ from flask_fullstack import (
     dict_cut,
     assert_contains,
 )
-from pydantic import constr
+from pydantic.v1 import constr
 from pytest import mark
 from pytest_mock import MockerFixture
 

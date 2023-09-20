@@ -4,8 +4,9 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-from flask_fullstack import SocketIOTestClient, assert_contains, dict_rekey
-from pydantic import conlist
+from flask_fullstack import SocketIOTestClient, dict_rekey
+from pydantic.v1 import conlist
+from pydantic_marshals.contains import assert_contains
 
 from common import User
 from communities.base import Participant, Community, PermissionType

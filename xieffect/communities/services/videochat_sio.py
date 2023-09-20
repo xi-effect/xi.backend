@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from common import EventController, User
 from .videochat_db import ChatMessage, ChatParticipant, PARTICIPANT_LIMIT

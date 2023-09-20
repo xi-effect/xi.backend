@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from common import EventController, User
 from .meta_db import Community, Participant

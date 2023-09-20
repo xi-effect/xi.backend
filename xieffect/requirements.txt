@@ -1,6 +1,6 @@
 flask==2.2.5
 werkzeug==2.2.3
-flask-fullstack==0.4.13
+flask-fullstack==0.5.3
 
 # Misc
 discord-webhook~=0.14.0
@@ -15,6 +15,7 @@ psycopg2-binary
 # Pinned for misbehaving
 python-engineio==4.6.1
 python-socketio==5.8.0
+flask-socketio==5.1.2
 
 # Server stuff (do not change!)
 gevent-websocket==0.10.1
