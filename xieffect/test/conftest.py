@@ -10,7 +10,7 @@ from typing import Protocol, Any
 from flask_fullstack import FlaskTestClient as _FlaskTestClient, SocketIOTestClient
 from flask_fullstack.restx.testing import HeaderChecker
 from pydantic import constr
-from pydantic_marshals.contains.type_aliases import TypeChecker
+from pydantic_marshals.contains import TypeChecker
 from pytest import fixture
 from pytest_mock import MockerFixture
 from werkzeug.datastructures import FileStorage

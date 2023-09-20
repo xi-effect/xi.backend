@@ -20,7 +20,7 @@ def create_role(
 ) -> int:
     expected: dict[str, Any] = {
         **role_data,
-        "permissions": UnorderedLiteralCollection(set(role_data["permissions"])),
+        "permissions": UnorderedLiteralCollection(role_data["permissions"]),
         "id": int,
     }
     role_id = socketio_client.assert_emit_ack(
@@ -68,9 +68,7 @@ def test_create_role(
         expected_json=[
             {
                 **role_data,
-                "permissions": UnorderedLiteralCollection(
-                    set(role_data["permissions"])
-                ),
+                "permissions": UnorderedLiteralCollection(role_data["permissions"]),
                 "id": role_id,
             }
         ],
@@ -175,7 +173,7 @@ def test_update_role(
         **role_data,
         **data,
         "permissions": UnorderedLiteralCollection(
-            set(data.get("permissions", PermissionType.get_all_field_names()))
+            data.get("permissions", PermissionType.get_all_field_names())
         ),
     }
     socketio_client.assert_emit_ack(

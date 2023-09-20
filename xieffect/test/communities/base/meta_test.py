@@ -144,7 +144,7 @@ def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestCli
             "id": int,
             "roles": [],
             "permissions": UnorderedLiteralCollection(
-                set(PermissionType.get_all_field_names())
+                PermissionType.get_all_field_names()
             ),
             "community": {"name": "12345", "description": "test"},
         },
@@ -296,7 +296,7 @@ def test_participant(
         f"/communities/{test_community}/",
         expected_json={
             "permissions": UnorderedLiteralCollection(
-                set(PermissionType.get_all_field_names())
+                PermissionType.get_all_field_names()
             ),
             "roles": roles,
         },
