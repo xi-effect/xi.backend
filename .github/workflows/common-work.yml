@@ -52,13 +52,11 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Upgrade database to latest migration
-        id: alembic-upgrade
         if: inputs.database
         working-directory: xieffect
         run: alembic upgrade head
 
       - name: Check that database is up to date with code
-        id: alembic-revision
         if: inputs.database
         working-directory: xieffect
         run: |
@@ -68,26 +66,19 @@ jobs:
           fi
 
       - name: Run pytest
-        run: pytest xieffect -p no:cacheprovider --cov=. --cov-fail-under=0
-
-      - name: Report test coverage
-        if: inputs.coverage
-        run: coverage report
+        run: pytest xieffect -p no:cacheprovider --cov=. ${{ inputs.coverage && '--cov-fail-under=0' || ''}}
 
       - name: Run flake8
-        id: flake8
         if: success() || (failure() && steps.install.conclusion == 'success')
         run: flake8 --config=setup.cfg xieffect
 
       - name: Check import ordering with isort
-        id: isort
         if: success() || (failure() && steps.install.conclusion == 'success')
         run: isort xieffect --check --diff
 
       - name: Check formatting ordering with black
-        id: black
         if: success() || (failure() && steps.install.conclusion == 'success')
-        run: black xieffect --check --diff --extend-exclude "alembic|test|moderation"
+        run: black xieffect --check --diff --extend-exclude "alembic|moderation"
 
       - name: Generate docs
         working-directory: xieffect
