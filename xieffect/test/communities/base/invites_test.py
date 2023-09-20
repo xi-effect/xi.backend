@@ -4,13 +4,9 @@ from collections.abc import Callable
 from datetime import timedelta, datetime
 from typing import Any
 
-from flask_fullstack import (
-    FlaskTestClient,
-    SocketIOTestClient,
-    dict_cut,
-    assert_contains,
-)
-from pydantic.v1 import constr
+from flask_fullstack import FlaskTestClient, SocketIOTestClient, dict_cut
+from pydantic import constr
+from pydantic_marshals.contains import assert_contains
 from pytest import mark
 from pytest_mock import MockerFixture
 
@@ -46,7 +42,7 @@ class InvitesTester:
             expected_data={
                 "id": int,
                 "code": str,
-                "deadline": None if days is None else constr(regex=deadline_regex),
+                "deadline": None if days is None else constr(pattern=deadline_regex),
                 **dict_cut(invite_data, "role", "limit", default=None),
             },
         )

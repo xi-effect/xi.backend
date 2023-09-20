@@ -7,13 +7,10 @@ from os import remove
 from os.path import exists
 from typing import Protocol, Any
 
-from flask_fullstack import (
-    FlaskTestClient as _FlaskTestClient,
-    SocketIOTestClient,
-    TypeChecker,
-)
+from flask_fullstack import FlaskTestClient as _FlaskTestClient, SocketIOTestClient
 from flask_fullstack.restx.testing import HeaderChecker
-from pydantic.v1 import constr
+from pydantic import constr
+from pydantic_marshals.contains.type_aliases import TypeChecker
 from pytest import fixture
 from pytest_mock import MockerFixture
 from werkzeug.datastructures import FileStorage
@@ -38,7 +35,7 @@ class OpenProtocol(Protocol):
         expected_status: int = 200,
         expected_data: Any | None = None,
         expected_text: str | None = None,
-        expected_json: TypeChecker | None = None,
+        expected_json: TypeChecker = None,
         expected_a: int | str | type | re.Pattern | None = None,
         expected_headers: HeaderChecker | None = None,
         get_json: bool = True,
@@ -60,7 +57,7 @@ class FlaskTestClient(_FlaskTestClient):
     def open(  # noqa: A003
         self,
         *args: Any,
-        expected_a: TypeChecker | None = None,
+        expected_a: TypeChecker = None,
         **kwargs: Any,
     ) -> None | dict | list | TestResponse:
         if expected_a is not None:
@@ -90,7 +87,7 @@ def base_login(
     response: TestResponse = client.post(
         "/mub/sign-in/" if mub else "/signin/",
         data={"username" if mub else "email": account, "password": password},
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
         get_json=False,
     )
     client.set_cookie(

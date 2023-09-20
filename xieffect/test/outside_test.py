@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from flask_mail import Message
-from pydantic.v1 import constr
+from pydantic import constr
 from pytest import mark, param
 from pytest_mock import MockerFixture
 
@@ -43,7 +43,7 @@ def test_login(base_client: FlaskTestClient):
         "/signin/",
         json=TEST_CREDENTIALS,
         expected_json={"a": "Success", "communities": list, "id": int, "username": str},
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )
     base_client.post("/signout/")
 
@@ -100,7 +100,7 @@ def test_signup(base_client: FlaskTestClient, mock_mail):
             "username": BASE_CREDENTIALS["username"],
             "id": int,
         },
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )
 
     # Check the email
@@ -163,7 +163,7 @@ def test_signup_invites(
         "/signup/",
         json=sign_up_data,
         expected_json={"a": "Success", "id": int},
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )["id"]
     base_client.post(
         "/signup/",

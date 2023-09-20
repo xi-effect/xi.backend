@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from flask_fullstack import SocketIOTestClient, dict_rekey
 from pydantic.v1 import conlist
-from pydantic_marshals.contains import assert_contains
+from pydantic_marshals.contains import assert_contains, UnorderedLiteralCollection
 
 from common import User
 from communities.base import Participant, Community, PermissionType
@@ -143,11 +143,9 @@ def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestCli
         expected_json={
             "id": int,
             "roles": [],
-            "permissions": conlist(
-                str,
-                min_items=len(PermissionType.get_all_field_names()),
-                max_items=len(PermissionType.get_all_field_names()),
-            ),  # TODO upgrade list-via-set check
+            "permissions": UnorderedLiteralCollection(
+                set(PermissionType.get_all_field_names())
+            ),
             "community": {"name": "12345", "description": "test"},
         },
     )
@@ -297,11 +295,9 @@ def test_participant(
     client.get(  # TODO use non-owner to test this
         f"/communities/{test_community}/",
         expected_json={
-            "permissions": conlist(
-                str,
-                min_items=len(PermissionType.get_all_field_names()),
-                max_items=len(PermissionType.get_all_field_names()),
-            ),  # TODO upgrade list-via-set check,
+            "permissions": UnorderedLiteralCollection(
+                set(PermissionType.get_all_field_names())
+            ),
             "roles": roles,
         },
     )
