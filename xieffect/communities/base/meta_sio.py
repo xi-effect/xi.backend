@@ -24,13 +24,13 @@ class CommunitiesEventSpace(EventSpace):
         community_id: int
 
     @controller.argument_parser(CommunityIdModel)
-    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
+    @check_participant(controller)
     @controller.force_ack()
     def open_communities(self, community: Community):
         join_room(self.room_name(community_id=community.id))
 
     @controller.argument_parser(CommunityIdModel)
-    @check_permission(controller, PermissionType.MANAGE_COMMUNITY)
+    @check_participant(controller)
     @controller.force_ack()
     def close_communities(self, community: Community):
         leave_room(self.room_name(community_id=community.id))
@@ -106,15 +106,15 @@ class CommunitiesEventSpace(EventSpace):
             community.description = description
 
         if avatar_id is None:
-            community.avatar.delete()
+            community.avatar.soft_delete()
             community.avatar = None
         elif avatar_id != -1:  # TODO [nq] fix in ffs!
-            if File.find_by_id(avatar_id) is None:
+            new_file = File.find_by_id(avatar_id)
+            if new_file is None:
                 controller.abort(404, File.not_found_text)
-            old_avatar = File.find_by_id(community.avatar_id)
-            if old_avatar:
-                old_avatar.delete()
-            community.avatar_id = avatar_id
+            if community.avatar:
+                community.avatar.soft_delete()
+            community.avatar = new_file
 
         event.emit_convert(
             community,

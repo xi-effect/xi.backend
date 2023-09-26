@@ -4,8 +4,8 @@ from flask_fullstack import counter_parser, RequestParser
 from flask_restx import Resource
 
 from common import ResourceController
-from .meta_db import Community, Participant
-from .utils import check_participant
+from communities.base.meta_db import Community, Participant
+from communities.base.utils import check_participant
 
 controller = ResourceController(
     "communities-meta",
