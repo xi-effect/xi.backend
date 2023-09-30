@@ -19,12 +19,12 @@ class ChatParticipant(Base):  # pragma: no coverage
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     )
     community_id = Column(  # TODO community to room after channels creating
         Integer,
-        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community.id", ondelete="CASCADE"),
         primary_key=True,
     )
     state = Column(MutableDict.as_mutable(JSON), nullable=False)
@@ -64,15 +64,15 @@ class ChatMessage(Base, Identifiable):  # pragma: no coverage
 
     community_id = Column(  # TODO community to room after channels creating
         Integer,
-        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community.id", ondelete="CASCADE"),
         nullable=False,
     )
     sender_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
-    sender: User | relationship = relationship("User")
+    sender: User | relationship = relationship("User", passive_deletes=True)
 
     CreateModel = PydanticModel.column_model(content)
     IndexModel = CreateModel.column_model(id).nest_model(User.MainData, "sender")

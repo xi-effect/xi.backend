@@ -31,18 +31,18 @@ class Post(SoftDeletable, Identifiable):
     # User-related
     user_id = Column(
         Integer,
-        ForeignKey(User.id, ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey(User.id, ondelete="CASCADE"),
         nullable=False,
     )
-    user = relationship("User")
+    user = relationship("User", passive_deletes=True)
 
     # Community-related
     community_id = Column(
         Integer,
-        ForeignKey(Community.id, ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey(Community.id, ondelete="CASCADE"),
         nullable=False,
     )
-    community = relationship("Community")
+    community = relationship("Community", passive_deletes=True)
 
     BaseModel = PydanticModel.column_model(id)
     CreationBaseModel = PydanticModel.column_model(title, description)

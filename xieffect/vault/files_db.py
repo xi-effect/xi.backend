@@ -24,10 +24,14 @@ class File(SoftDeletable):
 
     uploader_id: int | Column = Column(
         Integer,
-        ForeignKey(User.id, ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey(User.id, ondelete="CASCADE"),
         nullable=False,
     )
-    uploader: User | relationship = relationship(User, foreign_keys=[uploader_id])
+    uploader: User | relationship = relationship(
+        User,
+        foreign_keys=[uploader_id],
+        passive_deletes=True,
+    )
 
     @PydanticModel.include_columns(id)
     class FullModel(PydanticModel):

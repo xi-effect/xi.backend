@@ -18,17 +18,17 @@ class CommunitiesUser(SoftDeletable):
 
     id: int | Column = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    user = relationship("User", foreign_keys=[id])
+    user = relationship("User", foreign_keys=[id], passive_deletes=True)
 
     avatar_id = Column(
         Integer,
-        ForeignKey("files.id", ondelete="SET NULL", onupdate="CASCADE"),
+        ForeignKey("files.id", ondelete="SET NULL"),
         nullable=True,
     )
-    avatar = relationship("File", foreign_keys=[avatar_id])
+    avatar = relationship("File", foreign_keys=[avatar_id], passive_deletes=True)
 
     communities = relationship("Participant", passive_deletes=True)
 

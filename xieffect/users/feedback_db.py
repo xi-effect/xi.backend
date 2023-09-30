@@ -16,12 +16,12 @@ class FeedbackImage(Base):
 
     feedback_id = Column(
         Integer,
-        ForeignKey("feedbacks.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("feedbacks.id", ondelete="CASCADE"),
         primary_key=True,
     )
     file_id = Column(
         Integer,
-        ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("files.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -42,10 +42,10 @@ class Feedback(Base, Identifiable):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    user = relationship(User)
+    user = relationship(User, passive_deletes=True)
 
     files = relationship(
         "File",

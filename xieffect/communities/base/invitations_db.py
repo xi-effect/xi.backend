@@ -45,7 +45,7 @@ class Invitation(Base, Identifiable):
 
     community_id = Column(
         Integer,
-        ForeignKey(Community.id, ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey(Community.id, ondelete="CASCADE"),
         nullable=False,
     )
     community = relationship("Community")
