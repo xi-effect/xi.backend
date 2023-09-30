@@ -10,7 +10,7 @@ from flask_fullstack import Flask as _Flask, SQLAlchemy
 from flask_fullstack.utils.sqlalchemy import ModBaseMeta, CustomModel
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, Table
 from sqlalchemy.orm import declarative_base
 
 from ._files import absolute_path, open_file  # noqa: WPS436
@@ -54,6 +54,7 @@ app.configure_cors()
 
 class Base(CustomModel):
     __allow_unmapped__ = True
+    __table__: Table
     metadata = MetaData(naming_convention=SQLAlchemy.DEFAULT_CONVENTION)
 
 
