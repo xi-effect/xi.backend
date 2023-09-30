@@ -135,24 +135,11 @@ def version_check():  # TODO pragma: no coverage
             dump_json(versions, f, ensure_ascii=False)
 
 
-def sqlite_pragma() -> None:
-    if db_url.startswith("sqlite"):  # pragma: no coverage
-        from sqlalchemy import event
-        from sqlalchemy.engine import Engine
-
-        @event.listens_for(Engine, "connect")
-        def set_sqlite_pragma(*args):
-            cursor = args[0].cursor()
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.close()
-
-
 with application.app_context():
     permission_index.initialize()
     init_folder_structure()
     init_users()
     version_check()
-    sqlite_pragma()
     db.session.commit()
 
 if __name__ == "__main__":  # test only

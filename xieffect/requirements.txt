@@ -1,6 +1,6 @@
 flask==2.2.5
 werkzeug==2.2.3
-flask-fullstack==0.5.4
+flask-fullstack==0.5.5
 
 # Misc
 discord-webhook~=0.14.0
@@ -9,6 +9,8 @@ passlib
 python-dotenv
 
 # Database-related
+sqlalchemy~=2.0
+flask-sqlalchemy~=3.1
 alembic
 psycopg2-binary
 

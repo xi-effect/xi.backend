@@ -5,6 +5,7 @@ from typing import Self
 
 from sqlalchemy import Column, DateTime, delete, select, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import Select
 
 from common._core import Base, db  # noqa: WPS436
@@ -118,10 +119,10 @@ class FileEmbed(Base):
     __abstract__ = True
 
     @declared_attr
-    def file_id(self) -> Column:
-        return Column(
+    def file_id(self) -> Mapped[int]:
+        return mapped_column(
             Integer,
-            ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+            ForeignKey("files.id", ondelete="CASCADE"),
             primary_key=True,
         )
 

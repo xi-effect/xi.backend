@@ -7,8 +7,11 @@ from sys import modules
 from dotenv import load_dotenv
 from flask import Response
 from flask_fullstack import Flask as _Flask, SQLAlchemy
+from flask_fullstack.utils.sqlalchemy import ModBaseMeta, CustomModel
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
+from sqlalchemy import MetaData
+from sqlalchemy.orm import declarative_base
 
 from ._files import absolute_path, open_file  # noqa: WPS436
 
@@ -48,11 +51,35 @@ app.secrets_from_env("hope it's local")
 # TODO DI to use secrets in `URLSafeSerializer`s
 app.configure_cors()
 
+
+class Base(CustomModel):
+    __allow_unmapped__ = True
+    metadata = MetaData(naming_convention=SQLAlchemy.DEFAULT_CONVENTION)
+
+
 db_url: str = getenv(
     "DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db")  # noqa: WPS336
 )
-db = SQLAlchemy(app, db_url)  # echo=True
-Base = db.Model
+Base = declarative_base(cls=Base, metaclass=ModBaseMeta)
+
+# `logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)`
+
+db = SQLAlchemy(
+    app,
+    db_url,
+    model_class=Base,
+)
+
+if db_url.startswith("sqlite"):  # pragma: no coverage
+    from sqlalchemy.event import listen
+
+    def set_sqlite_pragma(dbapi_connection, *_):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+    with app.app_context():
+        listen(db.engine, "connect", set_sqlite_pragma)
 
 mail_hostname: str | None = getenv("MAIL_HOSTNAME")
 mail_username: str | None = getenv("MAIL_USERNAME")
