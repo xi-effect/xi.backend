@@ -1,22 +1,33 @@
 from __future__ import annotations
 
-from typing import Self
+from datetime import date
+from typing import Self, TYPE_CHECKING
 
-from flask_fullstack import UserRole, PydanticModel, Identifiable
+from flask_fullstack import UserRole, Identifiable
 from passlib.hash import pbkdf2_sha256
-from sqlalchemy import Column, select, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, String, Boolean, Float, Date
+from pydantic_marshals.sqlalchemy import MappedModel
+from sqlalchemy import select, ForeignKey
+from sqlalchemy.orm import relationship, mapped_column
+from sqlalchemy.sql.sqltypes import String
 
 from common._core import Base, db  # noqa: WPS436
 from common.abstract import SoftDeletable
+from common.pydantic import v2_model_to_ffs
+
+if TYPE_CHECKING:
+    from typing import ClassVar, TypeVar
+
+    T = TypeVar("T")
+    Mapped = ClassVar[T]
+else:
+    from sqlalchemy.orm import Mapped
 
 
 class BlockedToken(Base):
     __tablename__ = "blocked_tokens"
 
-    id = Column(Integer, primary_key=True, unique=True)
-    jti = Column(String(36), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True)
+    jti: Mapped[str] = mapped_column(String(36))
 
     @classmethod
     def find_by_jti(cls, jti: str) -> BlockedToken:
@@ -37,41 +48,33 @@ class User(SoftDeletable, UserRole, Identifiable):
         return pbkdf2_sha256.verify(password, hashed)
 
     # Vital:
-    id = Column(Integer, primary_key=True)
-    email = Column(String(100), nullable=False, unique=True)
-    email_confirmed = Column(Boolean, nullable=False, default=False)
-    password = Column(String(100), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(100), unique=True)
+    email_confirmed: Mapped[bool] = mapped_column(default=False)
+    password: Mapped[str] = mapped_column(String(100))
 
     # Settings:
-    username = Column(String(100), nullable=False)
-    handle = Column(String(100), nullable=True, unique=True, index=True)
-    theme = Column(String(10), nullable=False, default="system")
+    username: Mapped[str] = mapped_column(String(100))
+    handle: Mapped[str | None] = mapped_column(String(100), unique=True, index=True)
+    theme: Mapped[str] = mapped_column(String(10), default="system")
 
     # profile:
-    name = Column(String(100), nullable=True)
-    surname = Column(String(100), nullable=True)
-    patronymic = Column(String(100), nullable=True)
-    birthday = Column(Date, nullable=True)
+    name: Mapped[str | None] = mapped_column(String(100))
+    surname: Mapped[str | None] = mapped_column(String(100))
+    patronymic: Mapped[str | None] = mapped_column(String(100))
+    birthday: Mapped[date | None] = mapped_column()
 
-    # Education data:  # TODO delete
-    theory_level = Column(Float, nullable=False, default=0.5)
-    filter_bind = Column(String(10), nullable=True)
-
-    # Invite-related
-    code = Column(String(100), nullable=True)
-    invite_id = Column(
-        Integer,
-        ForeignKey("invites.id", ondelete="SET NULL", onupdate="CASCADE"),
-        nullable=True,
-    )  # TODO remove non-common reference
-    invite = relationship(
-        "Invite", back_populates="invited"
-    )  # TODO remove non-common reference
-
-    MainData = PydanticModel.column_model(id, username, handle)
-    ProfileData = MainData.column_model(
-        email, email_confirmed, theme, name, surname, patronymic, birthday, code
+    # Invite-related  # TODO remove non-common reference
+    code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    invite_id: Mapped[int | None] = mapped_column(
+        ForeignKey("invites.id", ondelete="SET NULL")
     )
+    invite = relationship("Invite", back_populates="invited")
+
+    MainData = MappedModel.create(columns=[id, username, handle])
+    settings_columns = [email, email_confirmed, theme, code]
+    profile_columns = [name, surname, patronymic, birthday]
+    ProfileData = MainData.extend(columns=settings_columns + profile_columns)
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
@@ -155,4 +158,6 @@ class User(SoftDeletable, UserRole, Identifiable):
                 setattr(self, key, value)
 
 
+User.MainData = v2_model_to_ffs(User.MainData)
+User.ProfileData = v2_model_to_ffs(User.ProfileData)
 UserRole.default_role = User
