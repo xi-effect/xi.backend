@@ -10,7 +10,6 @@ from sqlalchemy.sql.sqltypes import Text
 
 from common import db, User, absolute_path
 from common.abstract import SoftDeletable
-from common.pydantic import v2_model_to_ffs
 
 FILES_PATH: str = absolute_path("files/vault/")
 
@@ -51,6 +50,3 @@ class File(SoftDeletable):
     @classmethod
     def get_for_mub(cls, offset: int, limit: int) -> list[Self]:
         return cls.find_paginated_by_kwargs(offset, limit, cls.id.desc())
-
-
-File.FullModel = v2_model_to_ffs(File.FullModel)

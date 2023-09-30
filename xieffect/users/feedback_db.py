@@ -9,7 +9,6 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql.sqltypes import JSON
 
 from common import User, Base, db
-from common.pydantic import v2_model_to_ffs
 from vault import File
 
 
@@ -47,7 +46,7 @@ class Feedback(Base, Identifiable):
 
     FullModel = MappedModel.create(
         columns=[id, user_id, type, data],
-        relationships=[(user, User.ProfileData.raw), (files, File.FullModel.raw)],
+        relationships=[(user, User.ProfileData), (files, File.FullModel)],
     )
 
     def add_files(self, files: list[File]) -> None:
@@ -72,6 +71,3 @@ class Feedback(Base, Identifiable):
         if feedback_type is not None:
             stmt = stmt.filter_by(type=feedback_type)
         return db.get_paginated(stmt, offset, limit)
-
-
-Feedback.FullModel = v2_model_to_ffs(Feedback.FullModel)

@@ -10,7 +10,6 @@ from sqlalchemy.orm import relationship, mapped_column
 from sqlalchemy.sql.sqltypes import Integer, String
 
 from common import Base, db
-from common.pydantic import v2_model_to_ffs
 from common.users_db import Mapped
 
 
@@ -56,7 +55,3 @@ class Invite(Base):
 
     def generate_code(self, user_id: int) -> str | bytes:
         return self.serializer.dumps((self.id, user_id))
-
-
-Invite.IDModel = v2_model_to_ffs(Invite.IDModel)
-Invite.IndexModel = v2_model_to_ffs(Invite.IndexModel)

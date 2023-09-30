@@ -12,7 +12,6 @@ from sqlalchemy.sql.sqltypes import String
 
 from common._core import Base, db  # noqa: WPS436
 from common.abstract import SoftDeletable
-from common.pydantic import v2_model_to_ffs
 
 if TYPE_CHECKING:
     from typing import ClassVar, TypeVar
@@ -158,6 +157,4 @@ class User(SoftDeletable, UserRole, Identifiable):
                 setattr(self, key, value)
 
 
-User.MainData = v2_model_to_ffs(User.MainData)
-User.ProfileData = v2_model_to_ffs(User.ProfileData)
 UserRole.default_role = User
