@@ -106,14 +106,14 @@ class CommunitiesEventSpace(EventSpace):
             community.description = description
 
         if avatar_id is None:
-            community.avatar.soft_delete()
+            community.avatar.delete()
             community.avatar = None
         elif avatar_id != -1:  # TODO [nq] fix in ffs!
             new_file = File.find_by_id(avatar_id)
             if new_file is None:
                 controller.abort(404, File.not_found_text)
-            if community.avatar:
-                community.avatar.soft_delete()
+            if community.avatar is not None:
+                community.avatar.delete()
             community.avatar = new_file
 
         event.emit_convert(

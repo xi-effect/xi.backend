@@ -23,7 +23,7 @@ def test_discussion_messages(
     message_content: dict[str, str],
     message_id: int,
     test_file_id: int,
-    file_maker: Callable[File],
+    file_maker: Callable[[str], File],
 ):
     message: DiscussionMessage = DiscussionMessage.find_by_id(message_id)
     assert Discussion.find_by_id(test_discussion_id) is not None

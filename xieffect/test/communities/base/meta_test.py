@@ -13,8 +13,6 @@ from test.communities.conftest import assert_create_community
 from test.conftest import delete_by_id, FlaskTestClient
 from vault import File
 
-NON_EXISTENT_FILE_ID: int = 123
-
 
 def get_communities_list(client: FlaskTestClient) -> list[dict]:
     return client.get("/home/", expected_json={"communities": list})["communities"]
@@ -30,7 +28,8 @@ def get_participants_list(
 
 
 def test_open_close_communities(
-    socketio_client: SocketIOTestClient, test_community: int
+    socketio_client: SocketIOTestClient,
+    test_community: int,
 ):
     socketio_client.assert_emit_success(
         event_name="open_communities", data={"community_id": test_community}
@@ -44,85 +43,90 @@ def test_open_close_communities(
     "data",
     [
         pytest.param({"name": "update", "description": "update"}, id="full"),
-        pytest.param({"name": "second update"}, id="update_name"),
-        pytest.param({"description": "third update"}, id="update_description"),
+        pytest.param({"name": "update"}, id="only_name"),
+        pytest.param({"description": "update"}, id="only_description"),
     ],
 )
 def test_update_community(
-    socketio_client: SocketIOTestClient, test_community: int, data: dict[str, Any]
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    data: dict[str, Any],
 ):
-    update_data: dict[str, Any] = {"community_id": test_community, **data}
+    data["community_id"] = test_community
     socketio_client.assert_emit_ack(
         event_name="update_community",
-        data=update_data,
-        expected_data=dict_rekey(data, test_community="id"),
+        data=data,
+        expected_data=dict_rekey(data, community_id="id"),
     )
 
 
-def test_set_update_avatar(
+def test_update_avatar(
     socketio_client: SocketIOTestClient,
-    test_community: int,
-    file_id: int,
-    file_maker: Callable[File],
+    community: Community,
+    file: File,
+    file_maker: Callable[[str], File],
 ):
-    # Setting old avatar
-    set_avatar: dict[str, Any] = {"community_id": test_community, "avatar_id": file_id}
+    check_data: dict[str, Any] = {
+        "id": community.id,
+        "name": community.name,
+        "description": community.description,
+    }
+
+    # Setting an avatar
     socketio_client.assert_emit_ack(
         event_name="update_community",
-        data=set_avatar,
+        data={"community_id": community.id, "avatar_id": file.id},
         expected_data={
-            "id": test_community,
-            "name": "test",
-            "avatar": {"id": file_id, "filename": str},
+            **check_data,
+            "avatar": {"id": file.id, "filename": file.filename},
         },
     )
 
     # Updating with a new avatar
     new_file: File = file_maker("test-2.json")
-    update_avatar: dict[str, Any] = {
-        "community_id": test_community,
-        "avatar_id": new_file.id,
-    }
     socketio_client.assert_emit_ack(
         event_name="update_community",
-        data=update_avatar,
+        data={"community_id": community.id, "avatar_id": new_file.id},
         expected_data={
-            "id": test_community,
-            "name": "test",
+            **check_data,
             "avatar": {"id": new_file.id, "filename": new_file.filename},
         },
     )
 
     # Checking if old avatar was deleted
+    assert File.find_by_id(file.id) is None
+
+
+def test_delete_avatar(
+    socketio_client: SocketIOTestClient,
+    community: Community,
+    file_id: int,
+):
+    community.avatar_id = file_id
+    assert community.avatar.id == file_id
+
+    socketio_client.assert_emit_ack(
+        event_name="update_community",
+        data={"community_id": community.id, "avatar_id": None},
+        expected_data={
+            "id": community.id,
+            "name": community.name,
+            "description": community.description,
+        },
+    )
+    assert community.avatar is None
     assert File.find_by_id(file_id) is None
 
 
-@pytest.mark.parametrize("data", [{"avatar_id": None}])
-def test_delete_avatar(
+def test_avatar_not_found(
     socketio_client: SocketIOTestClient,
     test_community: int,
     file_id: int,
-    data: dict[str, Any],
 ):
-    community: Community = Community.find_by_id(test_community)
-    community.avatar_id = file_id
-    delete_data: dict[str, Any] = {"community_id": test_community, **data}
+    delete_by_id(file_id, File)
     socketio_client.assert_emit_ack(
         event_name="update_community",
-        data=delete_data,
-        expected_data=dict_rekey(data, test_community="id"),
-    )
-    assert File.find_by_id(file_id) is None
-
-
-@pytest.mark.parametrize("data", [{"avatar_id": NON_EXISTENT_FILE_ID}])
-def test_avatar_not_found(
-    socketio_client: SocketIOTestClient, test_community: int, data: dict[str, Any]
-):
-    update_data: dict[str, Any] = {"community_id": test_community, **data}
-    socketio_client.assert_emit_ack(
-        event_name="update_community",
-        data=update_data,
+        data={"community_id": test_community, "avatar_id": file_id},
         expected_code=404,
         expected_message=File.not_found_text,
     )
