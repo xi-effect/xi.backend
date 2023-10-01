@@ -48,7 +48,8 @@ from users import (
     settings_namespace,
     users_namespace,
 )
-from vault import files_namespace, mub_files_namespace
+from vault.files_mub import controller as mub_files_namespace
+from vault.files_rst import controller as files_namespace
 
 logger = Logger("flask-fullstack", "WARN")
 

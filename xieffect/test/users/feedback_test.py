@@ -7,7 +7,7 @@ from test.conftest import delete_by_id, FlaskTestClient
 from test.vault_test import create_file, upload
 from users import generate_code
 from users.feedback_db import Feedback, FeedbackType
-from vault import File
+from vault.files_db import File
 
 
 @fixture()

@@ -12,7 +12,7 @@ from common import User
 from communities.base import Participant, Community, PermissionType
 from test.communities.conftest import assert_create_community
 from test.conftest import delete_by_id, FlaskTestClient
-from vault import File
+from vault.files_db import File
 
 
 def get_communities_list(client: FlaskTestClient) -> list[dict]:

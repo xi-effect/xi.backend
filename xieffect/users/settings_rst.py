@@ -6,7 +6,7 @@ from flask_restx import Resource, inputs
 from common import ResourceController, User
 from communities.base.users_ext_db import CommunitiesUser
 from other import create_email_confirmer, EmailType, send_code_email
-from vault import File
+from vault.files_db import File
 
 controller = ResourceController("settings", path="/users/me/")
 
