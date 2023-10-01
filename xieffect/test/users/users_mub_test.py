@@ -7,9 +7,10 @@ from flask_mail import Message
 from pytest import mark, param
 from pytest_mock import MockerFixture
 
-from common import TEST_EMAIL, User
+from common import TEST_EMAIL
 from other import EmailType, WebhookURLs
 from test.conftest import FlaskTestClient, delete_by_id
+from users.users_db import User
 from wsgi import Invite
 
 

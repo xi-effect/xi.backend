@@ -4,9 +4,9 @@ from functools import wraps
 
 from flask_fullstack import ResourceController, EventController, get_or_pop
 
-from common import User
-from .meta_db import Community, Participant
-from .roles_db import PermissionType, ParticipantRole
+from communities.base.meta_db import Community, Participant
+from communities.base.roles_db import PermissionType, ParticipantRole
+from users.users_db import User
 
 
 def check_participant(

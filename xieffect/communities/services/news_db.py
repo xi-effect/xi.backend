@@ -7,9 +7,9 @@ from sqlalchemy import Column, ForeignKey, sql
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, DateTime
 
-from common import User
 from common.abstract import SoftDeletable
 from communities.base.meta_db import Community
+from users.users_db import User
 
 
 class Post(SoftDeletable, Identifiable):

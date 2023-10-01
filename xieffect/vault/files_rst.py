@@ -8,7 +8,8 @@ from flask_restx import Resource
 from werkzeug.datastructures import FileStorage
 from werkzeug.exceptions import NotFound
 
-from common import ResourceController, User, app
+from common import ResourceController, app
+from users.users_db import User
 from vault.files_db import File, FILES_PATH
 
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 4  # 4 MiB max file size

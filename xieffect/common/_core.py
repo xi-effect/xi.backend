@@ -21,7 +21,7 @@ class Flask(_Flask):
         return Response(dump_json({"a": message}), code)
 
     def configure_jwt_with_loaders(self, *args, **kwargs) -> JWTManager:
-        from .users_db import BlockedToken
+        from users.users_db import BlockedToken
 
         jwt = super().configure_jwt_with_loaders(*args, **kwargs)
 
@@ -52,7 +52,7 @@ app.secrets_from_env("hope it's local")
 app.configure_cors()
 
 
-class Base(CustomModel):
+class DeclaredBase(CustomModel):
     __allow_unmapped__ = True
     __table__: Table
     metadata = MetaData(naming_convention=SQLAlchemy.DEFAULT_CONVENTION)
@@ -61,15 +61,9 @@ class Base(CustomModel):
 db_url: str = getenv(
     "DB_LINK", "sqlite:///" + absolute_path("xieffect/app.db")  # noqa: WPS336
 )
-Base = declarative_base(cls=Base, metaclass=ModBaseMeta)
-
+Base = declarative_base(cls=DeclaredBase, metaclass=ModBaseMeta)
+db = SQLAlchemy(app, db_url, model_class=Base)
 # `logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)`
-
-db = SQLAlchemy(
-    app,
-    db_url,
-    model_class=Base,
-)
 
 if db_url.startswith("sqlite"):  # pragma: no coverage
     from sqlalchemy.event import listen

@@ -10,8 +10,11 @@ from sqlalchemy import select, ForeignKey
 from sqlalchemy.orm import relationship, mapped_column
 from sqlalchemy.sql.sqltypes import String
 
-from common._core import Base, db  # noqa: WPS436
+from common import Base, db
 from common.abstract import SoftDeletable
+from communities.base.meta_db import Community, Participant
+from users.invites_db import Invite
+from vault.files_db import File
 
 if TYPE_CHECKING:
     from typing import ClassVar, TypeVar
@@ -57,18 +60,33 @@ class User(SoftDeletable, UserRole, Identifiable):
     handle: Mapped[str | None] = mapped_column(String(100), unique=True, index=True)
     theme: Mapped[str] = mapped_column(String(10), default="system")
 
-    # profile:
+    # Profile:
     name: Mapped[str | None] = mapped_column(String(100))
     surname: Mapped[str | None] = mapped_column(String(100))
     patronymic: Mapped[str | None] = mapped_column(String(100))
     birthday: Mapped[date | None] = mapped_column()
 
-    # Invite-related  # TODO remove non-common reference
+    # Invite-related
     code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     invite_id: Mapped[int | None] = mapped_column(
         ForeignKey("invites.id", ondelete="SET NULL")
     )
-    invite = relationship("Invite", back_populates="invited")
+    invite = relationship(Invite, back_populates="invited")
+
+    avatar_id: Mapped[int | None] = mapped_column(
+        ForeignKey("files.id", ondelete="SET NULL")
+    )
+    avatar: Mapped[File | None] = relationship(
+        foreign_keys=[avatar_id],
+        passive_deletes=True,
+    )
+
+    communities_r = relationship("Participant", passive_deletes=True)
+    # TODO move to participant
+
+    @property
+    def communities(self) -> list[Community]:
+        return Participant.get_communities_list(self.id)
 
     MainData = MappedModel.create(columns=[id, username, handle])
     settings_columns = [email, email_confirmed, theme, code]

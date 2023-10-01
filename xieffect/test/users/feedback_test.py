@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from pytest import mark, fixture, param
 
-from common import User, open_file
+from common import open_file
 from test.conftest import delete_by_id, FlaskTestClient
 from test.vault_test import create_file, upload
 from users import generate_code
 from users.feedback_db import Feedback, FeedbackType
+from users.users_db import User
 from vault.files_db import File
 
 

@@ -8,8 +8,9 @@ from sqlalchemy import select, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql.sqltypes import JSON
 
-from common import User, Base, db
-from vault import File
+from common import Base, db
+from users.users_db import User
+from vault.files_db import File
 
 
 class FeedbackImage(Base):

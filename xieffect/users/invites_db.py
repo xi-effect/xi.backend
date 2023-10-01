@@ -6,11 +6,10 @@ from typing import Self, ClassVar
 from itsdangerous.url_safe import URLSafeSerializer
 from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import select
-from sqlalchemy.orm import relationship, mapped_column
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql.sqltypes import Integer, String
 
 from common import Base, db
-from common.users_db import Mapped
 
 
 class Invite(Base):

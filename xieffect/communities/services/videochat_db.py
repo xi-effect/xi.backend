@@ -9,7 +9,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, Text
 
-from common import db, Base, User
+from common import db, Base
+from users.users_db import User
 
 PARTICIPANT_LIMIT: int = 50
 

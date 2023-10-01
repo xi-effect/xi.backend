@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Self, ClassVar
+from typing import Any, Self, ClassVar
 
 from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql.sqltypes import Text
 
-from common import db, User, absolute_path
+from common import db, absolute_path
 from common.abstract import SoftDeletable
 
 FILES_PATH: str = absolute_path("files/vault/")
@@ -22,8 +22,11 @@ class File(SoftDeletable):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(Text)
 
-    uploader_id: Mapped[int] = mapped_column(ForeignKey(User.id, ondelete="CASCADE"))
-    uploader: Mapped[User] = relationship(
+    uploader_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE", use_alter=True)
+    )
+    uploader = relationship(
+        "User",
         foreign_keys=[uploader_id],
         passive_deletes=True,
     )
@@ -35,7 +38,7 @@ class File(SoftDeletable):
     FullModel = MappedModel.create(columns=[id], properties=[filename])
 
     @classmethod
-    def create(cls, uploader: User, name: str) -> Self:
+    def create(cls, uploader: Any, name: str) -> Self:
         return super().create(name=name, uploader=uploader)
 
     @classmethod

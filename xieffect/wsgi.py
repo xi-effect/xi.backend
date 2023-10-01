@@ -10,7 +10,6 @@ from common import (
     db_url,
     mail_initialized,
     open_file,
-    User,
     versions,
     TEST_MOD_NAME,
     TEST_PASS,
@@ -23,6 +22,7 @@ from common.consts import PRODUCTION_MODE, DATABASE_RESET
 from moderation import Moderator, permission_index
 from other import send_discord_message, WebhookURLs
 from users.invites_db import Invite
+from users.users_db import User
 
 SECRETS = (
     "SECRET_KEY",
