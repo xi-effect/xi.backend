@@ -5,7 +5,7 @@ from typing import Any
 
 from pytest import fixture
 
-from communities.tasks.main_db import Task
+from communities.tasks.tasks_db import Task
 from communities.tasks.tests_db import Test
 from test.conftest import delete_by_id
 

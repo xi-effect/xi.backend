@@ -11,7 +11,7 @@ from common import EventController
 from communities.base.meta_db import Community
 from communities.base.roles_db import PermissionType
 from communities.base.utils import check_permission
-from communities.tasks.main_db import Task, TaskEmbed
+from communities.tasks.tasks_db import Task, TaskEmbed
 from users.users_db import User
 from vault.files_db import File
 

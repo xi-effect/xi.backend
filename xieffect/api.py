@@ -8,44 +8,45 @@ from sys import stderr
 from flask_fullstack import SocketIO
 from requests import HTTPError
 
-import communities.base.discussion_db  # TODO (use in api) # noqa: F401 WPS301
-import pages.pages_db  # noqa: F401 WPS301 # to create database models
+import communities.base.discussion_db  # noqa: F401 WPS301  # to create database models
+import pages.pages_db  # noqa: F401 WPS301  # to create database models
 from common import app, db, versions, open_file
-from communities.base.invitations_rst import controller as invitation_namespace
-from communities.base.invitations_sio import controller as invitation_events
-from communities.base.meta_rst import controller as communities_namespace
-from communities.base.meta_sio import controller as communities_meta_events
-from communities.base.participants_sio import controller as participants_events
-from communities.base.roles_rst import controller as role_namespace
-from communities.base.roles_sio import controller as role_events
-from communities.services.news_rst import controller as news_namespace
-from communities.services.news_sio import controller as news_events
-from communities.services.videochat_rst import controller as videochat_namespace
-from communities.services.videochat_sio import controller as videochat_events
-from communities.tasks.main_sio import controller as tasks_events
-from communities.tasks.questions_sio import controller as questions_events
-from communities.tasks.student_rst import controller as student_tasks_namespace
-from communities.tasks.teacher_rst import controller as teacher_tasks_namespace
-from communities.tasks.tests_sio import controller as tests_events
-from communities.tasks.tests_teacher_rst import controller as teacher_tests_namespace
+from communities.base import (
+    invitations_rst,
+    invitations_sio,
+    meta_rst,
+    meta_sio,
+    participants_sio,
+    roles_rst,
+    roles_sio,
+)
+from communities.services import news_rst, news_sio, videochat_rst, videochat_sio
+from communities.tasks import (
+    tasks_sio,
+    teacher_rst,
+    tests_sio,
+    tests_teacher_rst,
+    questions_sio,
+    student_rst,
+)
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
-from other.database_cli import remove_stale_blueprint
+from other import updater_rst, database_cli
 from other.discorder import (
     send_message as send_discord_message,
     send_file_message as send_file_discord_message,
     WebhookURLs,
 )
-from other.updater_rst import controller as webhook_namespace
-from users.emailer_mub import controller as emailer_qa_namespace
-from users.feedback_mub import controller as mub_feedback_namespace
-from users.feedback_rst import controller as feedback_namespace
-from users.invites_mub import controller as invites_mub_namespace
-from users.profiles_rst import controller as users_namespace
-from users.reglog_rst import controller as reglog_namespace
-from users.settings_rst import controller as settings_namespace
-from users.users_mub import controller as mub_users_namespace
-from vault.files_mub import controller as mub_files_namespace
-from vault.files_rst import controller as files_namespace
+from users import (
+    emailer_mub,
+    feedback_mub,
+    feedback_rst,
+    invites_mub,
+    profiles_rst,
+    reglog_rst,
+    settings_rst,
+    users_mub,
+)
+from vault import files_mub, files_rst
 
 logger = Logger("flask-fullstack", "WARN")
 
@@ -83,36 +84,44 @@ jwt = app.configure_jwt_with_loaders(
 )
 api = app.configure_restx()
 
-api.add_namespace(files_namespace)
-api.add_namespace(mub_files_namespace)
+# Files
+api.add_namespace(files_rst.controller)
+api.add_namespace(files_mub.controller)
 
-api.add_namespace(reglog_namespace)
-api.add_namespace(users_namespace)
+# Users
+api.add_namespace(reglog_rst.controller)
+api.add_namespace(profiles_rst.controller)
+api.add_namespace(settings_rst.controller)
+api.add_namespace(users_mub.controller)
 
-api.add_namespace(feedback_namespace)
-api.add_namespace(mub_feedback_namespace)
-api.add_namespace(settings_namespace)
+# Feedback
+api.add_namespace(feedback_rst.controller)
+api.add_namespace(feedback_mub.controller)
 
-api.add_namespace(communities_namespace)
-api.add_namespace(invitation_namespace)
-api.add_namespace(news_namespace)
-api.add_namespace(teacher_tasks_namespace)
-api.add_namespace(student_tasks_namespace)
-api.add_namespace(videochat_namespace)
-api.add_namespace(teacher_tests_namespace)
+# Communities base
+api.add_namespace(meta_rst.controller)
+api.add_namespace(roles_rst.controller)
+api.add_namespace(invitations_rst.controller)
 
-app.register_blueprint(remove_stale_blueprint)
-api.add_namespace(webhook_namespace)
+# Communities services
+api.add_namespace(news_rst.controller)
+api.add_namespace(videochat_rst.controller)
 
+# Communities tasks & tests
+api.add_namespace(teacher_rst.controller)
+api.add_namespace(tests_teacher_rst.controller)
+api.add_namespace(student_rst.controller)
+
+# Other
+app.register_blueprint(database_cli.blueprint)
+api.add_namespace(updater_rst.controller)
+
+# MUB + QA
 app.register_blueprint(mub_cli_blueprint)
 api.add_namespace(mub_base_namespace)
 api.add_namespace(mub_super_namespace)
-
-api.add_namespace(emailer_qa_namespace)
-api.add_namespace(mub_users_namespace)
-api.add_namespace(invites_mub_namespace)
-
-api.add_namespace(role_namespace)
+api.add_namespace(emailer_mub.controller)
+api.add_namespace(invites_mub.controller)
 
 socketio = SocketIO(
     app,
@@ -128,15 +137,18 @@ socketio = SocketIO(
 
 socketio.add_namespace(
     "/",
-    communities_meta_events,
-    participants_events,
-    invitation_events,
-    news_events,
-    tasks_events,
-    tests_events,
-    questions_events,
-    videochat_events,
-    role_events,
+    # Communities base
+    meta_sio.controller,
+    roles_sio.controller,
+    invitations_sio.controller,
+    participants_sio.controller,
+    # Communities services
+    news_sio.controller,
+    videochat_sio.controller,
+    # Communities tasks & tests
+    tasks_sio.controller,
+    tests_sio.controller,
+    questions_sio.controller,
     protected=True,
 )
 

@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text
 
 from common import Base
-from communities.tasks.main_db import Task
+from communities.tasks.tasks_db import Task
 
 
 class QuestionKind(TypeEnum):

@@ -8,7 +8,7 @@ import pytest
 from flask_fullstack import dict_cut, SocketIOTestClient
 
 from communities.base.meta_db import Community
-from communities.tasks.main_db import Task
+from communities.tasks.tasks_db import Task
 from test.conftest import delete_by_id, FlaskTestClient
 from users.users_db import User
 
