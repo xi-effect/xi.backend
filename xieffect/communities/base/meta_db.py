@@ -4,37 +4,43 @@ from collections.abc import Callable
 from typing import Self
 
 from flask_fullstack import Identifiable, PydanticModel
+from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import Column, ForeignKey, select, literal, distinct, and_
-from sqlalchemy.orm import aliased, relationship, selectinload
+from sqlalchemy.orm import aliased, relationship, selectinload, Mapped, mapped_column
 from sqlalchemy.sql.sqltypes import Integer, String, Text
 
-from common import User, db
+from common import db
 from common.abstract import SoftDeletable, LinkedListNode
+from communities.base.roles_db import (
+    ParticipantRole,
+    Role,
+    PermissionType,
+    RolePermission,
+)
 from vault.files_db import File
-from .roles_db import ParticipantRole, Role, PermissionType, RolePermission
 
 
 class Community(SoftDeletable, Identifiable):
     __tablename__ = "community"
     not_found_text = "Community not found"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    description = Column(Text, nullable=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(Text)
 
-    avatar_id = Column(
-        Integer,
+    avatar_id: Mapped[int | None] = mapped_column(
         ForeignKey("files.id", ondelete="SET NULL"),
-        nullable=True,
     )
-    avatar = relationship("File", foreign_keys=[avatar_id])
+    avatar: Mapped[File | None] = relationship(foreign_keys=[avatar_id])
 
-    owner_id = Column(
-        Integer, ForeignKey(User.id, ondelete="CASCADE"), nullable=False
-    )  # TODO ondelete is temporary
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # TODO ondelete is temporary
 
-    CreateModel = PydanticModel.column_model(name, description)
-    IndexModel = CreateModel.column_model(id).nest_model(File.FullModel, "avatar")
+    CreateModel = MappedModel.create(columns=[name, description])
+    IndexModel = CreateModel.extend(
+        columns=[id],
+        relationships=[(avatar, File.FullModel, True)],
+    )
 
     @classmethod
     def create(
@@ -69,7 +75,7 @@ class Participant(LinkedListNode, Identifiable):
 
     user_id = Column(
         Integer,
-        ForeignKey("communities_users.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -176,6 +182,8 @@ class Participant(LinkedListNode, Identifiable):
         offset: int,
         limit: int,
     ) -> list[Participant]:
+        from users.users_db import User  # TODO fix
+
         stmt = (
             select(cls)
             .options(selectinload(cls.roles))

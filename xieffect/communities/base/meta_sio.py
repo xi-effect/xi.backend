@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
+from flask_fullstack.restx.marshals import v2_model_to_ffs
 from flask_socketio import join_room, leave_room
 from pydantic.v1 import BaseModel, Field
 
@@ -9,7 +10,7 @@ from communities.base.meta_db import Community
 from communities.base.roles_db import PermissionType
 from communities.base.users_ext_db import CommunitiesUser
 from communities.base.utils import check_participant, check_permission
-from vault import File
+from vault.files_db import File
 
 controller = EventController()
 
@@ -85,7 +86,10 @@ class CommunitiesEventSpace(EventSpace):
             target_index=target_index,
         )
 
-    class UpdateModel(Community.CreateModel, CommunityIdModel):
+    class UpdateModel(
+        CommunityIdModel,
+        v2_model_to_ffs(Community.CreateModel),  # noqa: WPS606
+    ):
         avatar_id: int | None = -1  # TODO [nq] fix in ffs!
 
     @controller.argument_parser(UpdateModel)
