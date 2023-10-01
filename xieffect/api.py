@@ -9,6 +9,7 @@ from flask_fullstack import SocketIO
 from requests import HTTPError
 
 import communities.base.discussion_db  # TODO (use in api) # noqa: F401 WPS301
+import pages.pages_db  # noqa: F401 WPS301 # to create database models
 from common import app, db, versions, open_file
 from communities.base.invitations_rst import controller as invitation_namespace
 from communities.base.invitations_sio import controller as invitation_events
@@ -35,17 +36,14 @@ from other.discorder import (
     WebhookURLs,
 )
 from other.updater_rst import controller as webhook_namespace
-from pages.pages_db import Page  # noqa: F401 # to create database models
-from users import (
-    emailer_qa_namespace,
-    feedback_namespace,
-    invites_mub_namespace,
-    mub_feedback_namespace,
-    mub_users_namespace,
-    reglog_namespace,
-    settings_namespace,
-    users_namespace,
-)
+from users.emailer_mub import controller as emailer_qa_namespace
+from users.feedback_mub import controller as mub_feedback_namespace
+from users.feedback_rst import controller as feedback_namespace
+from users.invites_mub import controller as invites_mub_namespace
+from users.profiles_rst import controller as users_namespace
+from users.reglog_rst import controller as reglog_namespace
+from users.settings_rst import controller as settings_namespace
+from users.users_mub import controller as mub_users_namespace
 from vault.files_mub import controller as mub_files_namespace
 from vault.files_rst import controller as files_namespace
 
