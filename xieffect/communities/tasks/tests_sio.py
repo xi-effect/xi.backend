@@ -4,13 +4,14 @@ from datetime import datetime
 
 from flask_fullstack import DuplexEvent
 
-from common import EventController, User
-from communities.base import check_permission, PermissionType
-from communities.base.meta_db import Community
+from common import EventController
+from communities.base.meta_db import Community, PermissionType
+from communities.base.utils import check_permission
 from communities.tasks.main_db import TaskEmbed
 from communities.tasks.main_sio import check_files, TasksEventSpace
 from communities.tasks.tests_db import Test
 from communities.tasks.utils import test_finder
+from users.users_db import User
 
 controller = EventController()
 

@@ -7,7 +7,7 @@ from flask_fullstack import SocketIOTestClient, dict_cut
 from pydantic_marshals.contains import UnorderedLiteralCollection
 from pytest_mock import MockerFixture
 
-from communities.base import Community
+from communities.base.meta_db import Community
 from communities.base.roles_db import PermissionType, Role, RolePermission
 from test.conftest import delete_by_id, FlaskTestClient
 

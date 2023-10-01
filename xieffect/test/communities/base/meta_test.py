@@ -5,13 +5,12 @@ from typing import Any
 
 import pytest
 from flask_fullstack import SocketIOTestClient, dict_rekey
-from pydantic.v1 import conlist
 from pydantic_marshals.contains import assert_contains, UnorderedLiteralCollection
 
-from common import User
-from communities.base import Participant, Community, PermissionType
+from communities.base.meta_db import Participant, Community, PermissionType
 from test.communities.conftest import assert_create_community
 from test.conftest import delete_by_id, FlaskTestClient
+from users.users_db import User
 from vault.files_db import File
 
 

@@ -3,9 +3,10 @@ from __future__ import annotations
 from flask_fullstack import password_parser, RequestParser
 from flask_restx import Resource, inputs
 
-from common import ResourceController, User
+from common import ResourceController
 from communities.base.users_ext_db import CommunitiesUser
 from other import create_email_confirmer, EmailType, send_code_email
+from users.users_db import User
 from vault.files_db import File
 
 controller = ResourceController("settings", path="/users/me/")

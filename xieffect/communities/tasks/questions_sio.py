@@ -6,7 +6,8 @@ from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
 
 from common import EventController
-from communities.base import check_permission, PermissionType
+from communities.base.meta_db import PermissionType
+from communities.base.utils import check_permission
 from communities.tasks.tests_db import Test, Question, QuestionKind
 from communities.tasks.tests_sio import TestsEventSpace
 from communities.tasks.utils import test_finder, question_finder

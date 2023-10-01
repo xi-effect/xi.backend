@@ -3,11 +3,13 @@ from __future__ import annotations
 from flask_fullstack import counter_parser, RequestParser
 from flask_restx import Resource
 
-from common import ResourceController, User
-from communities.base import Community, PermissionType, check_permission
+from common import ResourceController
+from communities.base.meta_db import Community, PermissionType
+from communities.base.utils import check_permission
 from communities.tasks.main_db import TaskFilter, TaskOrder, TASKS_PER_PAGE
 from communities.tasks.tests_db import Test
 from communities.tasks.utils import test_finder
+from users.users_db import User
 
 controller = ResourceController(
     "cs-teacher-tests", path="/communities/<int:community_id>/tests/"

@@ -5,7 +5,6 @@ from pydantic import constr
 from pytest import mark, param
 from pytest_mock import MockerFixture
 
-from common import User
 from communities import CommunitiesUser
 from other import EmailType
 from test.conftest import (
@@ -15,6 +14,7 @@ from test.conftest import (
     SocketIOTestClient,
     delete_by_id,
 )
+from users.users_db import User
 from wsgi import Invite, TEST_INVITE_ID, socketio
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407

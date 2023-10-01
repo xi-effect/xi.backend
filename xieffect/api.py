@@ -10,25 +10,23 @@ from requests import HTTPError
 
 import communities.base.discussion_db  # TODO (use in api) # noqa: F401 WPS301
 from common import app, db, versions, open_file
-from communities import (
-    communities_meta_events,
-    communities_namespace,
-    participants_events,
-    invitation_events,
-    invitation_namespace,
-    news_namespace,
-    news_events,
-    role_namespace,
-    role_events,
-    teacher_tasks_namespace,
-    student_tasks_namespace,
-    tasks_events,
-    videochat_events,
-    videochat_namespace,
-    teacher_tests_namespace,
-    tests_events,
-    questions_events,
-)
+from communities.base.invitations_rst import controller as invitation_namespace
+from communities.base.invitations_sio import controller as invitation_events
+from communities.base.meta_rst import controller as communities_namespace
+from communities.base.meta_sio import controller as communities_meta_events
+from communities.base.participants_sio import controller as participants_events
+from communities.base.roles_rst import controller as role_namespace
+from communities.base.roles_sio import controller as role_events
+from communities.services.news_rst import controller as news_namespace
+from communities.services.news_sio import controller as news_events
+from communities.services.videochat_rst import controller as videochat_namespace
+from communities.services.videochat_sio import controller as videochat_events
+from communities.tasks.main_sio import controller as tasks_events
+from communities.tasks.questions_sio import controller as questions_events
+from communities.tasks.student_rst import controller as student_tasks_namespace
+from communities.tasks.teacher_rst import controller as teacher_tasks_namespace
+from communities.tasks.tests_sio import controller as tests_events
+from communities.tasks.tests_teacher_rst import controller as teacher_tests_namespace
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
 from other import (
     remove_stale_blueprint,

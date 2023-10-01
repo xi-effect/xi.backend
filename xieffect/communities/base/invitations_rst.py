@@ -6,12 +6,13 @@ from flask_fullstack import PydanticModel, counter_parser
 from flask_fullstack.restx.marshals import v2_model_to_ffs
 from flask_restx import Resource
 
-from common import ResourceController, User
-from .invitations_db import Invitation
-from .meta_db import Community, Participant
-from .meta_sio import CommunitiesEventSpace
-from .roles_db import PermissionType, ParticipantRole
-from .utils import check_permission
+from common import ResourceController
+from communities.base.invitations_db import Invitation
+from communities.base.meta_db import Community, Participant
+from communities.base.meta_sio import CommunitiesEventSpace
+from communities.base.roles_db import PermissionType, ParticipantRole
+from communities.base.utils import check_permission
+from users.users_db import User
 
 controller = ResourceController("communities-invitation", path="/communities/")
 INVITATIONS_PER_REQUEST = 20

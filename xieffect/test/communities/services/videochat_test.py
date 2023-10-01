@@ -6,10 +6,10 @@ from flask_fullstack import SocketIOTestClient
 from pydantic_marshals.contains import assert_contains
 from pytest import mark
 
-from common import User
-from communities.base import Community
+from communities.base.meta_db import Community
 from communities.services.videochat_db import ChatParticipant, ChatMessage
 from test.conftest import delete_by_id, FlaskTestClient
+from users.users_db import User
 
 
 def get_participant_list(client: FlaskTestClient, community_id: int):

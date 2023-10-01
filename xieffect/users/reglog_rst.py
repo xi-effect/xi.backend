@@ -6,10 +6,11 @@ from flask_jwt_extended import get_jwt
 from flask_restx import Resource
 from itsdangerous import BadSignature
 
-from common import BlockedToken, ResourceController, User
+from common import ResourceController
 from communities import CommunitiesUser
 from other import create_email_confirmer, EmailType, send_code_email
-from .invites_db import Invite
+from users.invites_db import Invite
+from users.users_db import BlockedToken, User
 
 controller = ResourceController("reglog", path="/")
 

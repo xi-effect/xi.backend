@@ -6,17 +6,17 @@ from flask_fullstack import SocketIOTestClient, FlaskTestClient, dict_reduce
 from pytest import fixture
 
 from common import db
-from common.users_db import User
-from communities.base import (
+from communities.base.discussion_db import DiscussionMessage
+from communities.base.meta_db import (
     Participant,
     PermissionType,
     ParticipantRole,
     Role,
     RolePermission,
+    Community,
 )
-from communities.base.discussion_db import DiscussionMessage
-from communities.base.meta_db import Community
 from test.conftest import delete_by_id
+from users.users_db import User
 
 COMMUNITY_DATA: dict = {"name": "test"}
 

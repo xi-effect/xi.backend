@@ -5,11 +5,12 @@ from flask_fullstack.restx.marshals import v2_model_to_ffs
 from flask_socketio import join_room, leave_room
 from pydantic.v1 import BaseModel, Field
 
-from common import EventController, User
+from common import EventController
 from communities.base.meta_db import Community
 from communities.base.roles_db import PermissionType
 from communities.base.users_ext_db import CommunitiesUser
 from communities.base.utils import check_participant, check_permission
+from users.users_db import User
 from vault.files_db import File
 
 controller = EventController()

@@ -17,10 +17,10 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.test import TestResponse
 
 from common import mail, mail_initialized, Base, db, open_file
-from common.users_db import User
 from communities.base.discussion_db import Discussion
 from communities.base.users_ext_db import CommunitiesUser
 from pages.pages_db import Page
+from users.users_db import User
 from vault.files_db import File, FILES_PATH
 from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 

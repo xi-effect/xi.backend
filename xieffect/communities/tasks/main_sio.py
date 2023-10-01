@@ -7,11 +7,13 @@ from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
 from pydantic.v1 import BaseModel
 
-from common import EventController, User
-from communities.base import check_permission, PermissionType
+from common import EventController
 from communities.base.meta_db import Community
+from communities.base.roles_db import PermissionType
+from communities.base.utils import check_permission
 from communities.tasks.main_db import Task, TaskEmbed
-from vault import File
+from users.users_db import User
+from vault.files_db import File
 
 # Set Tasks behavior here
 FILES_LIMIT: int = 10

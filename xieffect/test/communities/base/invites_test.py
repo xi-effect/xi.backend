@@ -10,7 +10,8 @@ from pydantic_marshals.contains import assert_contains
 from pytest import mark
 from pytest_mock import MockerFixture
 
-from communities.base import Community, Invitation
+from communities.base.invitations_db import Invitation
+from communities.base.meta_db import Community
 from test.communities.conftest import COMMUNITY_DATA, assert_create_community
 from test.conftest import delete_by_id
 

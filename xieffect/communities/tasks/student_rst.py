@@ -5,9 +5,11 @@ from datetime import datetime
 from flask_fullstack import counter_parser, RequestParser
 from flask_restx import Resource
 
-from common import ResourceController, User
-from .main_db import Task, TaskFilter, TASKS_PER_PAGE
-from ..base import Community, check_participant
+from common import ResourceController
+from communities.base.meta_db import Community
+from communities.base.utils import check_participant
+from communities.tasks.main_db import Task, TaskFilter, TASKS_PER_PAGE
+from users.users_db import User
 
 controller = ResourceController(
     "cs-student-tasks", path="/communities/<int:community_id>/tasks/student/"
