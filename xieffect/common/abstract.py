@@ -13,9 +13,8 @@ from common._core import Base, db  # noqa: WPS436
 
 class SoftDeletable(Base):  # TODO pragma: no coverage
     __abstract__ = True
-    shelf_life: ClassVar[timedelta] = timedelta(
-        days=2
-    )  # TODO: discuss timedelta for each table
+    shelf_life: ClassVar[timedelta] = timedelta(days=2)
+    # TODO: discuss timedelta for each table
 
     deleted = Column(DateTime, nullable=True)
 

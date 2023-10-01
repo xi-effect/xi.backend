@@ -4,7 +4,6 @@ from flask_fullstack import password_parser, RequestParser
 from flask_restx import Resource, inputs
 
 from common import ResourceController
-from communities.base.users_ext_db import CommunitiesUser
 from other import create_email_confirmer, EmailType, send_code_email
 from users.users_db import User
 from vault.files_db import File
@@ -61,13 +60,11 @@ class AvatarChanger(Resource):
     @controller.database_searcher(File, input_field_name="avatar_id")
     @controller.a_response()
     def post(self, user: User, file: File) -> None:
-        profile = CommunitiesUser.find_by_id(user.id)
-        profile.avatar_id = file.id
+        user.avatar_id = file.id
 
     @controller.jwt_authorizer(User)
     @controller.a_response()
     def delete(self, user: User) -> None:
-        user = CommunitiesUser.find_by_id(user.id)
         user.avatar.delete()
 
 

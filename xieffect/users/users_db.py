@@ -89,6 +89,11 @@ class User(SoftDeletable, UserRole, Identifiable):
         return Participant.get_communities_list(self.id)
 
     MainData = MappedModel.create(columns=[id, username, handle])
+    CommunityModel = MainData.extend(
+        relationships=[(avatar, File.FullModel, True)],
+        properties=[(communities, list[Community.IndexModel])],
+    )
+
     settings_columns = [email, email_confirmed, theme, code]
     profile_columns = [name, surname, patronymic, birthday]
     ProfileData = MainData.extend(columns=settings_columns + profile_columns)

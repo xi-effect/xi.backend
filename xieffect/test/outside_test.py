@@ -5,7 +5,6 @@ from pydantic import constr
 from pytest import mark, param
 from pytest_mock import MockerFixture
 
-from communities import CommunitiesUser
 from other import EmailType
 from test.conftest import (
     BASIC_PASS,
@@ -140,7 +139,6 @@ def test_signup(base_client: FlaskTestClient, mock_mail):
 
     # Clearing database after test
     delete_by_id(result["id"], User)
-    assert CommunitiesUser.find_by_id(result["id"]) is None
     assert len(mock_mail) == 0
 
 
@@ -182,7 +180,6 @@ def test_signup_invites(
 
     # Clearing database after test
     delete_by_id(user_id, User)
-    assert CommunitiesUser.find_by_id(user_id) is None
 
 
 @mark.order(20)

@@ -6,9 +6,8 @@ from flask_socketio import join_room, leave_room
 from pydantic.v1 import BaseModel, Field
 
 from common import EventController
-from communities.base.meta_db import Community
+from communities.base.meta_db import Community, Participant
 from communities.base.roles_db import PermissionType
-from communities.base.users_ext_db import CommunitiesUser
 from communities.base.utils import check_participant, check_permission
 from users.users_db import User
 from vault.files_db import File
@@ -48,19 +47,19 @@ class CommunitiesEventSpace(EventSpace):
         name: str,
         description: str = None,
     ):
-        CommunitiesUser.find_or_create(user.id)
         community = Community.create(name, user.id, description)
         event.emit_convert(community, user_id=user.id)
         return community
 
     @controller.argument_parser(CommunityIdModel)
     @controller.mark_duplex(use_event=True)
-    @check_participant(controller, use_user=True)
+    @check_participant(controller, use_participant=True)
     @controller.force_ack()
-    def leave_community(self, event: DuplexEvent, user: User, community: Community):
-        cu = CommunitiesUser.find_or_create(user.id)
-        cu.leave_community(community.id)
-        event.emit_convert(user_id=user.id, community_id=community.id)
+    def leave_community(
+        self, event: DuplexEvent, participant: Participant, community: Community
+    ):
+        participant.delete()
+        event.emit_convert(user_id=participant.user_id, community_id=community.id)
 
     class ReorderModel(BaseModel):
         community_id: int = Field(alias="source-id")
@@ -68,21 +67,17 @@ class CommunitiesEventSpace(EventSpace):
 
     @controller.argument_parser(ReorderModel)
     @controller.mark_duplex(use_event=True)
-    @check_participant(controller, use_user=True)
+    @check_participant(controller, use_participant=True)
     def reorder_community(
         self,
         event: DuplexEvent,
-        user: User,
+        participant: Participant,
         community: Community,
         target_index: int | None,
     ):
-        cu = CommunitiesUser.find_or_create(user.id)
-        if not cu.reorder_community_list(community.id, target_index):
-            controller.abort(
-                404, "Community not in the list"
-            )  # TODO pragma: no coverage
+        participant.move(target_index)
         event.emit_convert(
-            user_id=user.id,
+            user_id=participant.user_id,
             community_id=community.id,
             target_index=target_index,
         )

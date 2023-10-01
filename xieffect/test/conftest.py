@@ -18,7 +18,6 @@ from werkzeug.test import TestResponse
 
 from common import mail, mail_initialized, Base, db, open_file
 from communities.base.discussion_db import Discussion
-from communities.base.users_ext_db import CommunitiesUser
 from pages.pages_db import Page
 from users.users_db import User
 from vault.files_db import File, FILES_PATH
@@ -164,8 +163,6 @@ def base_user_id(base_user_data: tuple[str, str]) -> int:
         password=base_user_data[1],
         username="hey",
     ).id
-    CommunitiesUser.find_or_create(user_id)  # TODO remove after CU removal
-    db.session.commit()
     yield user_id
     delete_by_id(user_id, User)
 
