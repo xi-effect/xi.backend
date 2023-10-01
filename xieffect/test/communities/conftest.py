@@ -42,8 +42,18 @@ def find_invite(
 
 @fixture
 def test_community(socketio_client: SocketIOTestClient) -> int:
-    # TODO use yield & delete the community after
-    return assert_create_community(socketio_client, COMMUNITY_DATA)
+    community_id = assert_create_community(socketio_client, COMMUNITY_DATA)
+    yield community_id
+    delete_by_id(community_id, Community)
+
+
+@fixture
+def community(socketio_client: SocketIOTestClient) -> Community:
+    community = Community.find_by_id(
+        assert_create_community(socketio_client, COMMUNITY_DATA)
+    )
+    yield community
+    delete_by_id(community.id, Community)
 
 
 @fixture

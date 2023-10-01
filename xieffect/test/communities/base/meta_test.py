@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
-from flask_fullstack import SocketIOTestClient, dict_rekey, assert_contains
+import pytest
+from flask_fullstack import SocketIOTestClient, assert_contains, dict_rekey
 from pydantic import conlist
-from pytest import mark
 
 from common import User
 from communities.base import Participant, Community, PermissionType
 from test.communities.conftest import assert_create_community
 from test.conftest import delete_by_id, FlaskTestClient
-from test.vault_test import upload
 from vault import File
 
 
@@ -27,7 +27,111 @@ def get_participants_list(
     return list(client.paginate(link))
 
 
-@mark.order(1000)
+def test_open_close_communities(
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+):
+    socketio_client.assert_emit_success(
+        event_name="open_communities", data={"community_id": test_community}
+    )
+    socketio_client.assert_emit_success(
+        event_name="close_communities", data={"community_id": test_community}
+    )
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        pytest.param({"name": "update", "description": "update"}, id="full"),
+        pytest.param({"name": "update"}, id="only_name"),
+        pytest.param({"description": "update"}, id="only_description"),
+    ],
+)
+def test_update_community(
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    data: dict[str, Any],
+):
+    data["community_id"] = test_community
+    socketio_client.assert_emit_ack(
+        event_name="update_community",
+        data=data,
+        expected_data=dict_rekey(data, community_id="id"),
+    )
+
+
+def test_update_avatar(
+    socketio_client: SocketIOTestClient,
+    community: Community,
+    file: File,
+    file_maker: Callable[[str], File],
+):
+    check_data: dict[str, Any] = {
+        "id": community.id,
+        "name": community.name,
+        "description": community.description,
+    }
+
+    # Setting an avatar
+    socketio_client.assert_emit_ack(
+        event_name="update_community",
+        data={"community_id": community.id, "avatar_id": file.id},
+        expected_data={
+            **check_data,
+            "avatar": {"id": file.id, "filename": file.filename},
+        },
+    )
+
+    # Updating with a new avatar
+    new_file: File = file_maker("test-2.json")
+    socketio_client.assert_emit_ack(
+        event_name="update_community",
+        data={"community_id": community.id, "avatar_id": new_file.id},
+        expected_data={
+            **check_data,
+            "avatar": {"id": new_file.id, "filename": new_file.filename},
+        },
+    )
+
+    # Checking if old avatar was deleted
+    assert File.find_by_id(file.id) is None
+
+
+def test_delete_avatar(
+    socketio_client: SocketIOTestClient,
+    community: Community,
+    file_id: int,
+):
+    community.avatar_id = file_id
+
+    socketio_client.assert_emit_ack(
+        event_name="update_community",
+        data={"community_id": community.id, "avatar_id": None},
+        expected_data={
+            "id": community.id,
+            "name": community.name,
+            "description": community.description,
+            "avatar": None,
+        },
+    )
+    assert File.find_by_id(file_id) is None
+
+
+def test_avatar_not_found(
+    socketio_client: SocketIOTestClient,
+    test_community: int,
+    file_id: int,
+):
+    delete_by_id(file_id, File)
+    socketio_client.assert_emit_ack(
+        event_name="update_community",
+        data={"community_id": test_community, "avatar_id": file_id},
+        expected_code=404,
+        expected_message=File.not_found_text,
+    )
+
+
+@pytest.mark.order(1000)
 def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestClient):
     community_ids = [d["id"] for d in get_communities_list(client)]
 
@@ -46,7 +150,6 @@ def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestCli
             "community": {"name": "12345", "description": "test"},
         },
     )
-    community_id_json = {"community_id": community_id}
     community_ids.append(community_id)
 
     found = False
@@ -58,34 +161,8 @@ def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestCli
             found = True
     assert found
 
-    # Update metadata
-    update_data = dict(**community_id_json, name="new_name", description="upd")
-    for data in (update_data, dict(community_data, **community_id_json)):
-        socketio_client.assert_emit_ack(
-            event_name="update_community",
-            data=data,
-            expected_data=dict_rekey(data, community_id="id"),
-        )
 
-    # Set and delete avatar
-    file_id = upload(client, "test-1.json")[0].get("id")
-    assert File.find_by_id(file_id) is not None
-
-    client.post(
-        f"/communities/{community_id}/avatar/",
-        json={"avatar-id": file_id},
-        expected_a=True,
-    )
-    client.get(
-        f"/communities/{community_id}/",
-        expected_json={"community": {"avatar": {"id": file_id}}},
-    )
-
-    client.delete(f"/communities/{community_id}/avatar/", expected_a=True)
-    client.get(f"/communities/{community_id}/", expected_json={"avatar": None})
-
-
-@mark.order(1005)
+@pytest.mark.order(1005)
 def test_community_list(client: FlaskTestClient, socketio_client: SocketIOTestClient):
     def assert_order():
         for i, data in enumerate(get_communities_list(client)):
