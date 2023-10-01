@@ -16,6 +16,7 @@ TASKS_PER_PAGE: int = 48
 
 
 class TaskEmbed(FileEmbed):
+    __allow_unmapped__ = True
     __tablename__ = "cs_embeds"
 
     task_id = Column(
@@ -37,6 +38,7 @@ class TaskOrder(TypeEnum):
 
 
 class Task(SoftDeletable, Identifiable):
+    __allow_unmapped__ = True
     __tablename__ = "cs_tasks"
     not_found_text = "Task not found"
 

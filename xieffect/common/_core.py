@@ -53,7 +53,6 @@ app.configure_cors()
 
 
 class DeclaredBase(CustomModel):
-    __allow_unmapped__ = True
     __table__: Table
     metadata = MetaData(naming_convention=SQLAlchemy.DEFAULT_CONVENTION)
 

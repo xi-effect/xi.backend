@@ -13,6 +13,7 @@ from users.users_db import User
 
 
 class Post(SoftDeletable, Identifiable):
+    __allow_unmapped__ = True
     __tablename__ = "cs_posts"
     not_found_text = "Post not found"
 

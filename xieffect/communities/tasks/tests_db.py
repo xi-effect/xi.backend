@@ -18,6 +18,7 @@ class QuestionKind(TypeEnum):
 
 
 class Question(Base, Identifiable):
+    __allow_unmapped__ = True
     __tablename__ = "cs_questions"
     not_found_text = "Question not found"
 

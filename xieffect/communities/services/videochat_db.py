@@ -16,6 +16,7 @@ PARTICIPANT_LIMIT: int = 50
 
 
 class ChatParticipant(Base):  # pragma: no coverage
+    __allow_unmapped__ = True
     __tablename__ = "cs_chat_participants"
 
     user_id = Column(
@@ -57,6 +58,7 @@ class ChatParticipant(Base):  # pragma: no coverage
 
 
 class ChatMessage(Base, Identifiable):  # pragma: no coverage
+    __allow_unmapped__ = True
     __tablename__ = "cs_chat_messages"
     not_found_text = "Message not found"
 
