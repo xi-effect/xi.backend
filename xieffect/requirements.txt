@@ -1,6 +1,6 @@
 flask==2.2.5
 werkzeug==2.2.3
-flask-fullstack==0.5.9
+flask-fullstack==0.5.10
 pydantic_marshals[sqlalchemy]==0.3.2
 
 # Misc
