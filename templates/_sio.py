@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from flask_fullstack import EventSpace, ServerEvent, DuplexEvent
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
-from common import User, EventController
+from common import EventController
+from users.users_db import User
 
 controller = EventController()
 

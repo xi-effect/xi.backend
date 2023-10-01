@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
-from flask_fullstack.restx.marshals import v2_model_to_ffs
 from flask_socketio import join_room, leave_room
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from common import EventController
 from communities.base.meta_db import Community, Participant
@@ -82,10 +81,7 @@ class CommunitiesEventSpace(EventSpace):
             target_index=target_index,
         )
 
-    class UpdateModel(
-        CommunityIdModel,
-        v2_model_to_ffs(Community.CreateModel),  # noqa: WPS606
-    ):
+    class UpdateModel(CommunityIdModel, Community.CreateModel):
         avatar_id: int | None = -1  # TODO [nq] fix in ffs!
 
     @controller.argument_parser(UpdateModel)
