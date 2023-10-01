@@ -187,7 +187,7 @@ def test_page_data() -> dict[str, str | dict]:
 
 @fixture
 def test_page_id(base_user_id: int, test_page_data: dict[str, str | dict]) -> int:
-    page_id: Page = Page.create(**test_page_data, creator_id=base_user_id).id
+    page_id: int = Page.create(**test_page_data, creator_id=base_user_id).id
     db.session.commit()
     yield page_id
     delete_by_id(page_id, Page)
@@ -220,7 +220,12 @@ def file_maker(base_user_id: int) -> Callable[File]:
 
 
 @fixture
-def test_file_id(file_maker: Callable[File]) -> int:
+def file(file_maker: Callable[[str], File]) -> File:
+    return file_maker("test-1.json")
+
+
+@fixture
+def test_file_id(file_maker: Callable[[str], File]) -> int:
     return file_maker("test-1.json").id
 
 
