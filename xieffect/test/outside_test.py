@@ -5,7 +5,7 @@ from pydantic import constr
 from pytest import mark, param
 from pytest_mock import MockerFixture
 
-from other import EmailType
+from other.emailer import EmailType
 from test.conftest import (
     BASIC_PASS,
     TEST_EMAIL,

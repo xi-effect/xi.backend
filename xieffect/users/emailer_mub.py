@@ -4,7 +4,7 @@ from flask_fullstack import RequestParser
 from flask_restx import Resource
 
 from moderation import MUBController, permission_index
-from other import EmailType, send_code_email
+from other.emailer import EmailType, send_code_email
 from users.users_db import User
 
 qa_section = permission_index.add_section("quality assurance")

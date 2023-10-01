@@ -28,13 +28,13 @@ from communities.tasks.teacher_rst import controller as teacher_tasks_namespace
 from communities.tasks.tests_sio import controller as tests_events
 from communities.tasks.tests_teacher_rst import controller as teacher_tests_namespace
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
-from other import (
-    remove_stale_blueprint,
-    send_discord_message,
-    send_file_discord_message,
-    webhook_namespace,
+from other.database_cli import remove_stale_blueprint
+from other.discorder import (
+    send_message as send_discord_message,
+    send_file_message as send_file_discord_message,
     WebhookURLs,
 )
+from other.updater_rst import controller as webhook_namespace
 from pages.pages_db import Page  # noqa: F401 # to create database models
 from users import (
     emailer_qa_namespace,

@@ -5,7 +5,7 @@ from collections.abc import Callable
 from flask_mail import Message
 from pytest import mark, param
 
-from other import EmailType
+from other.emailer import EmailType
 from test.conftest import FlaskTestClient
 from test.vault_test import upload
 from vault.files_db import File

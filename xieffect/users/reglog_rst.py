@@ -7,7 +7,7 @@ from flask_restx import Resource
 from itsdangerous import BadSignature
 
 from common import ResourceController
-from other import create_email_confirmer, EmailType, send_code_email
+from other.emailer import create_email_confirmer, EmailType, send_code_email
 from users.invites_db import Invite
 from users.users_db import BlockedToken, User
 

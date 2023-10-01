@@ -20,7 +20,7 @@ from common import (
 )
 from common.consts import PRODUCTION_MODE, DATABASE_RESET
 from moderation import Moderator, permission_index
-from other import send_discord_message, WebhookURLs
+from other.discorder import send_message as send_discord_message, WebhookURLs
 from users.invites_db import Invite
 from users.users_db import User
 
