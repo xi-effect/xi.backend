@@ -4,8 +4,9 @@ from flask_fullstack import counter_parser
 from flask_restx import Resource
 
 from common import ResourceController
-from .news_db import Post
-from ..base import Community, check_participant
+from communities.base.meta_db import Community
+from communities.base.utils import check_participant
+from communities.services.news_db import Post
 
 controller = ResourceController(
     "communities-news", path="/communities/<int:community_id>/news/"

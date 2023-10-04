@@ -7,10 +7,10 @@ from typing import Any
 import pytest
 from flask_fullstack import dict_cut, SocketIOTestClient
 
-from common import User
-from communities.base import Community
+from communities.base.meta_db import Community
 from communities.tasks.tests_db import Test
 from test.conftest import FlaskTestClient, delete_by_id
+from users.users_db import User
 
 
 def test_create_test(

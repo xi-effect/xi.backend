@@ -9,22 +9,24 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, Text
 
-from common import db, Base, User
+from common import db, Base
+from users.users_db import User
 
 PARTICIPANT_LIMIT: int = 50
 
 
 class ChatParticipant(Base):  # pragma: no coverage
+    __allow_unmapped__ = True
     __tablename__ = "cs_chat_participants"
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     )
     community_id = Column(  # TODO community to room after channels creating
         Integer,
-        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community.id", ondelete="CASCADE"),
         primary_key=True,
     )
     state = Column(MutableDict.as_mutable(JSON), nullable=False)
@@ -56,6 +58,7 @@ class ChatParticipant(Base):  # pragma: no coverage
 
 
 class ChatMessage(Base, Identifiable):  # pragma: no coverage
+    __allow_unmapped__ = True
     __tablename__ = "cs_chat_messages"
     not_found_text = "Message not found"
 
@@ -64,15 +67,15 @@ class ChatMessage(Base, Identifiable):  # pragma: no coverage
 
     community_id = Column(  # TODO community to room after channels creating
         Integer,
-        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community.id", ondelete="CASCADE"),
         nullable=False,
     )
     sender_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
-    sender: User | relationship = relationship("User")
+    sender: User | relationship = relationship("User", passive_deletes=True)
 
     CreateModel = PydanticModel.column_model(content)
     IndexModel = CreateModel.column_model(id).nest_model(User.MainData, "sender")

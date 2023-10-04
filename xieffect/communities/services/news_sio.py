@@ -4,11 +4,13 @@ from datetime import datetime
 
 from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
-from common import EventController, User
-from .news_db import Post
-from ..base import Community, PermissionType, check_permission
+from common import EventController
+from communities.base.meta_db import Community, PermissionType
+from communities.base.utils import check_permission
+from communities.services.news_db import Post
+from users.users_db import User
 
 controller = EventController()
 

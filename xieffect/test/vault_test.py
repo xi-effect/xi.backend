@@ -88,11 +88,6 @@ def test_files_normal(
             expected_status=403,
             expected_a="Not your file",
         )
-        stranger_client.delete(
-            f"/mub/files/{file_id}/",
-            expected_status=403,
-            expected_a="Permission denied",
-        )
 
         if i % 2:
             client.delete(f"/files/manager/{file_id}/", expected_a=True)

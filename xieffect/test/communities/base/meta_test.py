@@ -4,14 +4,14 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-from flask_fullstack import SocketIOTestClient, assert_contains, dict_rekey
-from pydantic import conlist
+from flask_fullstack import SocketIOTestClient, dict_rekey
+from pydantic_marshals.contains import assert_contains, UnorderedLiteralCollection
 
-from common import User
-from communities.base import Participant, Community, PermissionType
+from communities.base.meta_db import Participant, Community, PermissionType
 from test.communities.conftest import assert_create_community
 from test.conftest import delete_by_id, FlaskTestClient
-from vault import File
+from users.users_db import User
+from vault.files_db import File
 
 
 def get_communities_list(client: FlaskTestClient) -> list[dict]:
@@ -142,11 +142,9 @@ def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestCli
         expected_json={
             "id": int,
             "roles": [],
-            "permissions": conlist(
-                str,
-                min_items=len(PermissionType.get_all_field_names()),
-                max_items=len(PermissionType.get_all_field_names()),
-            ),  # TODO upgrade list-via-set check
+            "permissions": UnorderedLiteralCollection(
+                PermissionType.get_all_field_names()
+            ),
             "community": {"name": "12345", "description": "test"},
         },
     )
@@ -296,11 +294,9 @@ def test_participant(
     client.get(  # TODO use non-owner to test this
         f"/communities/{test_community}/",
         expected_json={
-            "permissions": conlist(
-                str,
-                min_items=len(PermissionType.get_all_field_names()),
-                max_items=len(PermissionType.get_all_field_names()),
-            ),  # TODO upgrade list-via-set check,
+            "permissions": UnorderedLiteralCollection(
+                PermissionType.get_all_field_names()
+            ),
             "roles": roles,
         },
     )

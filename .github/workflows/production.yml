@@ -70,8 +70,8 @@ jobs:
             Commit: `${{ github.sha }}`
 
       - name: Report failure to discord
-        uses: tsickert/discord-webhook@v5.3.0
         if: failure()
+        uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |-

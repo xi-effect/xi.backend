@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from pytest import mark, fixture, param
 
 from common import db
-from communities.base import Participant
-from communities.tasks.main_db import Task
+from communities.base.meta_db import Participant
+from communities.tasks.tasks_db import Task
 from test.conftest import FlaskTestClient
 
 

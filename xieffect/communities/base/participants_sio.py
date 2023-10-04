@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
-from common import EventController, User
-from .meta_db import Community, Participant
-from .roles_db import ParticipantRole, PermissionType
-from .utils import check_permission, check_participant
+from common import EventController
+from communities.base.meta_db import Community, Participant
+from communities.base.roles_db import ParticipantRole, PermissionType
+from communities.base.utils import check_permission, check_participant
+from users.users_db import User
 
 controller = EventController()
 

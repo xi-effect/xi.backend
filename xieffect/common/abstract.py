@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Self
+from typing import Self, ClassVar
 
 from sqlalchemy import Column, DateTime, delete, select, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import Select
 
 from common._core import Base, db  # noqa: WPS436
@@ -12,9 +13,10 @@ from common._core import Base, db  # noqa: WPS436
 
 class SoftDeletable(Base):  # TODO pragma: no coverage
     __abstract__ = True
+    shelf_life: ClassVar[timedelta] = timedelta(days=2)
+    # TODO: discuss timedelta for each table
 
     deleted = Column(DateTime, nullable=True)
-    shelf_life: timedelta = timedelta(days=2)  # TODO: discuss timedelta for each table
 
     def soft_delete(self) -> None:
         self.deleted = datetime.utcnow() + self.shelf_life  # noqa: WPS601
@@ -118,10 +120,10 @@ class FileEmbed(Base):
     __abstract__ = True
 
     @declared_attr
-    def file_id(self) -> Column:
-        return Column(
+    def file_id(self) -> Mapped[int]:
+        return mapped_column(
             Integer,
-            ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+            ForeignKey("files.id", ondelete="CASCADE"),
             primary_key=True,
         )
 

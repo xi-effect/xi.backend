@@ -4,7 +4,7 @@ from functools import wraps
 
 from flask_fullstack import EventSpace, DuplexEvent
 from flask_socketio import leave_room, join_room
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from common import EventController
 from communities.base.meta_db import Community

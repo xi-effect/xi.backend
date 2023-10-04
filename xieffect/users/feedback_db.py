@@ -2,26 +2,26 @@ from __future__ import annotations
 
 from typing import Self
 
-from flask_fullstack import PydanticModel, TypeEnum, Identifiable
-from sqlalchemy import Column, select, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, JSON, Enum
+from flask_fullstack import TypeEnum, Identifiable
+from pydantic_marshals.sqlalchemy import MappedModel
+from sqlalchemy import select, ForeignKey
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.sql.sqltypes import JSON
 
-from common import User, Base, db
-from vault import File
+from common import Base, db
+from users.users_db import User
+from vault.files_db import File
 
 
 class FeedbackImage(Base):
     __tablename__ = "feedback_images"
 
-    feedback_id = Column(
-        Integer,
-        ForeignKey("feedbacks.id", ondelete="CASCADE", onupdate="CASCADE"),
+    feedback_id: Mapped[int] = mapped_column(
+        ForeignKey("feedbacks.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    file_id = Column(
-        Integer,
-        ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+    file_id: Mapped[int] = mapped_column(
+        ForeignKey("files.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -36,32 +36,19 @@ class Feedback(Base, Identifiable):
     __tablename__ = "feedbacks"
     not_found_text = "Feedback does not exist"
 
-    id = Column(Integer, primary_key=True)
-    type = Column(Enum(FeedbackType), nullable=False)
-    data = Column(JSON, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    type: Mapped[FeedbackType] = mapped_column()
+    data: Mapped[dict] = mapped_column(JSON)
 
-    user_id = Column(
-        Integer,
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
-        nullable=False,
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    user: Mapped[User] = relationship(passive_deletes=True)
+
+    files: Mapped[list[File]] = relationship(secondary=FeedbackImage.__table__)
+
+    FullModel = MappedModel.create(
+        columns=[id, user_id, type, data],
+        relationships=[(user, User.ProfileData), (files, File.FullModel)],
     )
-    user = relationship(User)
-
-    files = relationship(
-        "File",
-        secondary=FeedbackImage.__table__,
-    )
-
-    # fmt: off
-    # TODO black should fix https://github.com/psf/black/issues/571
-    FullModel = (
-        PydanticModel
-        .column_model(id, user_id, type, data)
-        .nest_model(User.ProfileData, "user")
-        .nest_model(File.FullModel, "files", as_list=True)
-    )
-
-    # fmt: on
 
     def add_files(self, files: list[File]) -> None:
         self.files.extend(files)

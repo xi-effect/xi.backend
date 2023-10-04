@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, Text
 
 from common import Base
-from communities.tasks.main_db import Task
+from communities.tasks.tasks_db import Task
 
 
 class QuestionKind(TypeEnum):
@@ -18,6 +18,7 @@ class QuestionKind(TypeEnum):
 
 
 class Question(Base, Identifiable):
+    __allow_unmapped__ = True
     __tablename__ = "cs_questions"
     not_found_text = "Question not found"
 
@@ -57,8 +58,10 @@ class Test(Task):
     __tablename__ = "cs_tests"
     not_found_text = "Test not found"
     id = Column(
-        Integer, ForeignKey("cs_tasks.id", ondelete="CASCADE"), primary_key=True
+        Integer,
+        ForeignKey("cs_tasks.id", ondelete="CASCADE"),
+        primary_key=True,
     )
-    questions = relationship("Question", passive_deletes=True)
+    questions = relationship("Question", passive_deletes=True, cascade="all, delete")
 
     FullModel = Task.FullModel.nest_model(Question.BaseModel, "questions", as_list=True)

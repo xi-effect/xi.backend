@@ -3,14 +3,16 @@ from __future__ import annotations
 from functools import wraps
 
 from flask_fullstack import PydanticModel, counter_parser
+from flask_fullstack.restx.marshals import v2_model_to_ffs
 from flask_restx import Resource
 
-from common import ResourceController, User
-from .invitations_db import Invitation
-from .meta_db import Community, Participant
-from .meta_sio import CommunitiesEventSpace
-from .roles_db import PermissionType, ParticipantRole
-from .utils import check_permission
+from common import ResourceController
+from communities.base.invitations_db import Invitation
+from communities.base.meta_db import Community, Participant
+from communities.base.meta_sio import CommunitiesEventSpace
+from communities.base.roles_db import PermissionType, ParticipantRole
+from communities.base.utils import check_permission
+from users.users_db import User
 
 controller = ResourceController("communities-invitation", path="/communities/")
 INVITATIONS_PER_REQUEST = 20
@@ -66,10 +68,13 @@ def check_invitation():  # TODO # noqa: WPS231
     return check_invitation_wrapper
 
 
+CommunityIndexModel = v2_model_to_ffs(Community.IndexModel)
+
+
 class InvitePreview(PydanticModel):
     joined: bool
     authorized: bool
-    community: Community.IndexModel = None
+    community: CommunityIndexModel = None
 
 
 @controller.route("/join/<code>/")
@@ -81,7 +86,7 @@ class InvitationJoin(Resource):
         return InvitePreview(
             joined=invitation is None,
             authorized=user is not None,
-            community=Community.IndexModel.convert(community),
+            community=CommunityIndexModel.convert(community),
         )
 
     @controller.doc_abort(400, "User has already joined")

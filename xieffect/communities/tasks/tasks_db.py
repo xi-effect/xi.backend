@@ -16,11 +16,12 @@ TASKS_PER_PAGE: int = 48
 
 
 class TaskEmbed(FileEmbed):
+    __allow_unmapped__ = True
     __tablename__ = "cs_embeds"
 
     task_id = Column(
         Integer,
-        ForeignKey("cs_tasks.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("cs_tasks.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -37,6 +38,7 @@ class TaskOrder(TypeEnum):
 
 
 class Task(SoftDeletable, Identifiable):
+    __allow_unmapped__ = True
     __tablename__ = "cs_tasks"
     not_found_text = "Task not found"
 
@@ -44,17 +46,17 @@ class Task(SoftDeletable, Identifiable):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    user = relationship("User")
+    user = relationship("User", passive_deletes=True)
 
     community_id = Column(
         Integer,
-        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("community.id", ondelete="CASCADE"),
         nullable=False,
     )
-    community = relationship("Community")
+    community = relationship("Community", passive_deletes=True)
 
     # TODO recheck the argument name after information pages will be added
     page_id = Column(Integer, nullable=False)

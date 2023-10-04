@@ -5,9 +5,7 @@ from pydantic import constr
 from pytest import mark, param
 from pytest_mock import MockerFixture
 
-from common import User
-from communities import CommunitiesUser
-from other import EmailType
+from other.emailer import EmailType
 from test.conftest import (
     BASIC_PASS,
     TEST_EMAIL,
@@ -15,6 +13,7 @@ from test.conftest import (
     SocketIOTestClient,
     delete_by_id,
 )
+from users.users_db import User
 from wsgi import Invite, TEST_INVITE_ID, socketio
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
@@ -43,7 +42,7 @@ def test_login(base_client: FlaskTestClient):
         "/signin/",
         json=TEST_CREDENTIALS,
         expected_json={"a": "Success", "communities": list, "id": int, "username": str},
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )
     base_client.post("/signout/")
 
@@ -100,7 +99,7 @@ def test_signup(base_client: FlaskTestClient, mock_mail):
             "username": BASE_CREDENTIALS["username"],
             "id": int,
         },
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )
 
     # Check the email
@@ -140,7 +139,6 @@ def test_signup(base_client: FlaskTestClient, mock_mail):
 
     # Clearing database after test
     delete_by_id(result["id"], User)
-    assert CommunitiesUser.find_by_id(result["id"]) is None
     assert len(mock_mail) == 0
 
 
@@ -163,7 +161,7 @@ def test_signup_invites(
         "/signup/",
         json=sign_up_data,
         expected_json={"a": "Success", "id": int},
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )["id"]
     base_client.post(
         "/signup/",
@@ -182,7 +180,6 @@ def test_signup_invites(
 
     # Clearing database after test
     delete_by_id(user_id, User)
-    assert CommunitiesUser.find_by_id(user_id) is None
 
 
 @mark.order(20)
