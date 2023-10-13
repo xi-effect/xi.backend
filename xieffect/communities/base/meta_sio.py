@@ -58,6 +58,8 @@ class CommunitiesEventSpace(EventSpace):
     def leave_community(
         self, event: DuplexEvent, participant: Participant, community: Community
     ):
+        if community.owner_id == participant.id:
+            controller.abort(409, "Owner can't leave the community")
         participant.delete()
         event.emit_convert(user_id=participant.user_id, community_id=community.id)
 

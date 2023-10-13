@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Self
 
-from flask_fullstack import Identifiable, PydanticModel
+from flask_fullstack import Identifiable
 from pydantic_marshals.sqlalchemy import MappedModel
-from sqlalchemy import Column, ForeignKey, select, literal, distinct, and_
+from sqlalchemy import ForeignKey, select, literal, distinct, and_
 from sqlalchemy.orm import aliased, relationship, selectinload, Mapped, mapped_column
-from sqlalchemy.sql.sqltypes import Integer, String, Text
+from sqlalchemy.sql.sqltypes import String, Text
 
 from common import db
 from common.abstract import SoftDeletable, LinkedListNode
@@ -33,13 +32,16 @@ class Community(SoftDeletable, Identifiable):
     )
     avatar: Mapped[File | None] = relationship(foreign_keys=[avatar_id])
 
-    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    # TODO ondelete is temporary
+    owner_id: Mapped[int | None] = mapped_column(
+        ForeignKey("community_participant.id", ondelete="SET NULL", use_alter=True)
+    )
+    # owner_id is nullable for sql constraints only, it shouldn't actually be None
+    owner: Mapped[Participant | None] = relationship(foreign_keys=[owner_id])
 
     CreateModel = MappedModel.create(columns=[name, description])
     UpdateModel = CreateModel.extend(columns=[avatar_id]).as_patch()
     IndexModel = CreateModel.extend(
-        columns=[id],
+        columns=[id, (owner_id, int)],
         relationships=[(avatar, File.FullModel, True)],
     )
 
@@ -50,92 +52,95 @@ class Community(SoftDeletable, Identifiable):
         creator_id: int,
         description: str | None,
     ) -> Self:
-        entry: cls = super().create(
-            name=name,
-            description=description,
-            owner_id=creator_id,
-        )
+        entry: cls = super().create(name=name, description=description)
 
         participant = Participant.add(
+            list_id=creator_id,
             user_id=creator_id,
             community_id=entry.id,
         )
-        db.session.add(participant)
-        db.session.flush()
+        entry.owner_id = participant.id
         return entry
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
         return cls.find_first_not_deleted(id=entry_id)
 
+    def change_owner(self, new_owner: Participant) -> None:
+        self.owner_id = new_owner.id
+
 
 class Participant(LinkedListNode, Identifiable):
     __tablename__ = "community_participant"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
 
-    user_id = Column(
-        Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("community.id", ondelete="CASCADE")
+    )
+    community: Mapped[Community] = relationship(
+        passive_deletes=True, foreign_keys=[community_id]
     )
 
-    community_id = Column(
-        Integer,
-        ForeignKey("community.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    community = relationship("Community", passive_deletes=True)
+    roles: Mapped[list[Role]] = relationship(secondary=ParticipantRole.__table__)
 
-    roles = relationship("Role", secondary=ParticipantRole.__table__)
-
-    prev_id = Column(
-        Integer,
+    prev_id: Mapped[int | None] = mapped_column(
         ForeignKey(
             "community_participant.id", ondelete="SET NULL"
         ),  # TODO breaks the list?
-        nullable=True,
     )
-    prev = relationship(
-        "Participant",
+    prev: Mapped[Participant | None] = relationship(
         remote_side=[id],
         foreign_keys=[prev_id],
     )
 
-    next_id = Column(
-        Integer,
+    next_id: Mapped[int | None] = mapped_column(
         ForeignKey(
             "community_participant.id", ondelete="SET NULL"
         ),  # TODO breaks the list?
-        nullable=True,
     )
-    next = relationship(
-        "Participant",
+    next: Mapped[Participant | None] = relationship(
         remote_side=[id],
         foreign_keys=[next_id],
     )
 
-    FullModel = PydanticModel.column_model(id, user_id, community_id).nest_model(
-        Role.IndexModel, "roles", as_list=True
-    )
-    _IndexModel = (
-        PydanticModel.column_model(id)
-        .nest_model(Community.IndexModel, "community")
-        .nest_model(Role.IndexModel, "roles", as_list=True)
-    )
-
-    class IndexModel(_IndexModel):
-        permissions: list[str]
-
-        @classmethod
-        def callback_convert(
-            cls, callback: Callable, orm_object: Participant, **_
-        ) -> None:
-            callback(
-                permissions=[
-                    permission.to_string() for permission in orm_object.permissions
-                ]
+    @property
+    def permissions(self) -> list[str]:
+        if self.community.owner_id == self.id:
+            permissions_list = list(PermissionType)
+        else:
+            permissions_list = db.get_all(
+                select(distinct(RolePermission.permission_type))
+                .join(Role, Role.id == RolePermission.role_id)
+                .join(
+                    ParticipantRole,
+                    and_(
+                        ParticipantRole.role_id == Role.id,
+                        ParticipantRole.participant_id == self.id,
+                    ),
+                )
             )
+        return [permission.to_string() for permission in permissions_list]
+
+    FullModel = MappedModel.create(
+        columns=[id, user_id, community_id],
+        relationships=[(roles, Role.IndexModel)],
+    )
+    IndexModel = MappedModel.create(
+        columns=[id],
+        properties=[permissions],
+        relationships=[(community, Community.IndexModel), (roles, Role.IndexModel)],
+    )
+
+    @classmethod
+    def find_by_list_id(cls, list_id: int, **kwargs) -> Participant | None:
+        return cls.find_first_by_kwargs(user_id=list_id, **kwargs)
+
+    @property
+    def list_id(self) -> int:  # noqa: FNE002  # false positive (list is a noun)
+        return self.user_id
 
     @classmethod
     def create(cls, community_id: int, user_id: int) -> Self:
@@ -195,19 +200,3 @@ class Participant(LinkedListNode, Identifiable):
                 User.username.ilike(f"%{search}%")
             )
         return db.get_paginated(stmt, offset, limit)
-
-    @property
-    def permissions(self) -> list[PermissionType]:
-        if self.community.owner_id == self.user_id:
-            return list(PermissionType)
-        return db.get_all(  # TODO pragma: no coverage
-            select(distinct(RolePermission.permission_type))
-            .join(Role, Role.id == RolePermission.role_id)
-            .join(
-                ParticipantRole,
-                and_(
-                    ParticipantRole.role_id == Role.id,
-                    ParticipantRole.participant_id == self.id,
-                ),
-            )
-        )

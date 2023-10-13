@@ -8,6 +8,7 @@ from flask_fullstack import SocketIOTestClient, dict_rekey
 from pydantic_marshals.contains import assert_contains, UnorderedLiteralCollection
 
 from communities.base.meta_db import Participant, Community, PermissionType
+from communities.base.roles_db import Role
 from test.communities.conftest import assert_create_community
 from test.conftest import delete_by_id, FlaskTestClient
 from users.users_db import User
@@ -118,10 +119,12 @@ def test_delete_avatar(
 
 
 def test_avatar_not_found(
+    client: FlaskTestClient,
     socketio_client: SocketIOTestClient,
     test_community: int,
     file_id: int,
 ):
+    socketio_client2: SocketIOTestClient = SocketIOTestClient(client)
     delete_by_id(file_id, File)
     socketio_client.assert_emit_ack(
         event_name="update_community",
@@ -129,6 +132,7 @@ def test_avatar_not_found(
         expected_code=404,
         expected_message=File.not_found_text,
     )
+    socketio_client2.assert_nop()
 
 
 @pytest.mark.order(1000)
@@ -160,8 +164,27 @@ def test_meta_creation(client: FlaskTestClient, socketio_client: SocketIOTestCli
     assert found
 
 
+def test_change_community_owner(
+    client: FlaskTestClient,
+    base_user_id: int,
+    community: Community,
+):
+    participant: Participant = Participant.add(
+        list_id=base_user_id, user_id=base_user_id, community_id=community.id
+    )
+    community.change_owner(participant)
+    client.get(
+        f"/communities/{community.id}/",
+        expected_json={"community": {"owner-id": participant.id}},
+    )
+
+
 @pytest.mark.order(1005)
-def test_community_list(client: FlaskTestClient, socketio_client: SocketIOTestClient):
+def test_community_list(
+    client: FlaskTestClient,
+    fresh_client: FlaskTestClient,
+    socketio_client: SocketIOTestClient,
+):
     def assert_order():
         for i, data in enumerate(get_communities_list(client)):
             assert data["id"] == community_ids[i]
@@ -204,15 +227,34 @@ def test_community_list(client: FlaskTestClient, socketio_client: SocketIOTestCl
     # assert_order
 
     # Leaving
+    socketio_client3 = SocketIOTestClient(fresh_client)
+    socketio_client4 = SocketIOTestClient(fresh_client)
+    new_user_id = fresh_client.get("/home/", expected_json={"id": int})["id"]
+    for comm_id in community_ids:
+        Participant.add(list_id=new_user_id, user_id=new_user_id, community_id=comm_id)
+
     leave_data = {"community_id": community_datas[-1]["id"]}
-    socketio_client.assert_emit_success("leave_community", leave_data)
-    socketio_client2.assert_only_received("leave_community", leave_data)
+    socketio_client3.assert_emit_success("leave_community", leave_data)
+    socketio_client4.assert_only_received("leave_community", leave_data)
 
     community_ids.remove(leave_data["community_id"])
-    client.get(
+    fresh_client.get(
         "/home/",
         expected_json={"communities": [{"id": value} for value in community_ids]},
     )
+
+
+def test_community_leave_fail(
+    client: FlaskTestClient, socketio_client: SocketIOTestClient, test_community: int
+):
+    user_id: int = client.get("/home/", expected_json={"id": int})["id"]
+    socketio_client.assert_emit_ack(
+        event_name="leave_community",
+        data={"community_id": test_community},
+        expected_code=409,
+        expected_message="Owner can't leave the community",
+    )
+    assert Participant.find_by_ids(test_community, user_id) is not None
 
 
 def test_community_delete(
@@ -226,7 +268,7 @@ def test_community_delete(
     client.get(
         f"/communities/{community_id}/",
         expected_status=404,
-        expected_a="Community not found",
+        expected_a=Community.not_found_text,
     )
     delete_by_id(community_id, Community)
 
@@ -247,6 +289,7 @@ def test_participant(
     test_community: int,
     get_role_ids: Callable[FlaskTestClient, int],
     get_roles_list_by_ids: Callable[FlaskTestClient, int, list[int]],
+    create_participant_role: Callable[PermissionType, int, FlaskTestClient],
 ):
     socketio_client2 = SocketIOTestClient(client)
     community_id_json = {"community_id": test_community}
@@ -328,8 +371,27 @@ def test_participant(
     )
 
     client2 = multi_client("2@user.user")
+    socketio_client3 = SocketIOTestClient(client2)
     new_user_id = client2.get("/home/", expected_json={"id": int})["id"]
-    new_participant_id = Participant.create(test_community, new_user_id).id
+    new_participant_id = Participant.add(
+        list_id=new_user_id, user_id=new_user_id, community_id=test_community
+    ).id
+    role_id = create_participant_role(
+        PermissionType.MANAGE_PARTICIPANTS, community_id=test_community, client=client2
+    )
+    new_permissions = Role.find_by_id(entry_id=role_id).permissions
+    client2.get(
+        f"/communities/{community_id}/",
+        expected_json={"permissions": UnorderedLiteralCollection(new_permissions)},
+    )
+
+    socketio_client3.assert_emit_ack(
+        event_name="delete_participant",
+        data=delete_data,
+        expected_code=409,
+        expected_message="Target is the owner",
+    )
+    assert Participant.find_by_ids(test_community, user_id) is not None
 
     delete_data["participant_id"] = new_participant_id
 
