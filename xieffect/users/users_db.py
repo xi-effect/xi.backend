@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Self, TYPE_CHECKING
+from typing import Self
 
 from flask_fullstack import UserRole, Identifiable
 from passlib.hash import pbkdf2_sha256
 from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import select, ForeignKey
-from sqlalchemy.orm import relationship, mapped_column
+from sqlalchemy.orm import Mapped, relationship, mapped_column
 from sqlalchemy.sql.sqltypes import String
 
 from common import Base, db
@@ -15,14 +15,6 @@ from common.abstract import SoftDeletable
 from communities.base.meta_db import Community, Participant
 from users.invites_db import Invite
 from vault.files_db import File
-
-if TYPE_CHECKING:
-    from typing import ClassVar, TypeVar
-
-    T = TypeVar("T")
-    Mapped = ClassVar[T]
-else:
-    from sqlalchemy.orm import Mapped
 
 
 class BlockedToken(Base):
