@@ -66,7 +66,7 @@ jobs:
           fi
 
       - name: Run pytest
-        run: pytest xieffect -p no:cacheprovider --cov=. ${{ inputs.coverage && '--cov-fail-under=0' || ''}}
+        run: pytest xieffect -p no:cacheprovider --cov=. ${{ !inputs.coverage && '--cov-fail-under=0' || ''}}
 
       - name: Run flake8
         if: success() || (failure() && steps.install.conclusion == 'success')
