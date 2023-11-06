@@ -62,13 +62,7 @@ jobs:
       && contains(github.event.pull_request.labels.*.name, 'ci:deployable')
 
     runs-on: ubuntu-latest
-    environment: >
-      ${{
-        needs.namer.outputs.branch == 'prod'
-        && github.actor == github.triggering_actor
-        && 'staging'
-        || 'manual-staging'
-      }}
+    environment: ${{ needs.namer.outputs.branch == 'prod' && github.actor == github.triggering_actor && 'staging' || 'manual-staging' }}
 
     env:
       pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ needs.namer.outputs.tag }}
