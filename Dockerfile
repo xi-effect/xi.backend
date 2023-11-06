@@ -18,10 +18,13 @@ RUN apk --no-cache add libpq
 WORKDIR /backend
 COPY ./static static
 COPY ./xieffect xieffect
-COPY ./*.sh xieffect
-RUN chmod +x xieffect/*.sh
 
 WORKDIR /backend/xieffect
 EXPOSE 5000
 
-ENTRYPOINT ["./server.sh"]
+ENTRYPOINT gunicorn \
+    --bind 0.0.0.0:5000 \
+    -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker \
+    --workers 1 \
+    --timeout 600 \
+    wsgi:application
