@@ -97,8 +97,9 @@ class InvitationJoin(Resource):
         if invitation is None:
             controller.abort(400, "User has already joined")
         participant = Participant.add(
-            community_id=community.id,
+            list_id=user.id,
             user_id=user.id,
+            community_id=community.id,
         )
         ParticipantRole.create_bulk(
             participant_id=participant.id,

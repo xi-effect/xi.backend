@@ -126,6 +126,9 @@ def create_assert_successful_join(assert_successful_get, client) -> Callable:
             code: str,
             *sio_clients: SocketIOTestClient,
         ) -> None:
+            user_id = joiner.get("/home/")["id"]
+            count_before = len(Participant.get_communities_list(user_id=user_id))
+
             invite = find_invite(client, community_id, invite_id)
             assert invite is not None, "Invitation not found"
             limit_before = invite.get("limit")
@@ -145,6 +148,10 @@ def create_assert_successful_join(assert_successful_get, client) -> Callable:
 
             for sio in sio_clients:
                 sio.assert_only_received("new_community", COMMUNITY_DATA)
+
+            communities_after = Participant.get_communities_list(user_id=user_id)
+            assert len(communities_after) == count_before + 1
+            assert community_id in {community.id for community in communities_after}
 
         return assert_successful_join_inner
 
