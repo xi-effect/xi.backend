@@ -10,7 +10,7 @@ from requests import HTTPError
 
 import communities.base.discussion_db  # noqa: F401 WPS301  # to create database models
 import pages.pages_db  # noqa: F401 WPS301  # to create database models
-from common import app, db, versions, open_file
+from common import app, db, versions, open_file, JSONEncoder
 from communities.base import (
     invitations_rst,
     invitations_sio,
@@ -159,4 +159,4 @@ app.after_request(db.with_autocommit)
 @app.cli.command("form-sio-docs")
 def form_sio_docs() -> None:  # TODO pragma: no coverage
     with open_file("files/async-api.json", "w") as f:
-        dump_json(socketio.docs(), f, ensure_ascii=False)
+        dump_json(socketio.docs(), f, ensure_ascii=False, cls=JSONEncoder)

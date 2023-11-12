@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from typing import Any
+
 from flask_mail import Message
 from pydantic import constr
+from pydantic_marshals.base import PatchDefault
 from pytest import mark, param
 from pytest_mock import MockerFixture
 
@@ -31,9 +34,21 @@ def test_rest_docs(base_client: FlaskTestClient):
     assert "text/html" in result.content_type
 
 
+def filter_patch_defaults(o: Any) -> Any:
+    if isinstance(o, dict):
+        return {key: filter_patch_defaults(value) for key, value in o.items()}
+    elif isinstance(o, list):
+        return [filter_patch_defaults(value) for value in o]
+    elif o is PatchDefault:
+        return None
+    return o
+
+
 @mark.order(1)
 def test_sio_docs(base_client: FlaskTestClient):
-    base_client.get("/asyncapi.json", expected_json=socketio.docs())
+    base_client.get(
+        "/asyncapi.json", expected_json=filter_patch_defaults(socketio.docs())
+    )
 
 
 @mark.order(10)

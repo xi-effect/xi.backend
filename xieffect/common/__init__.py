@@ -6,6 +6,7 @@ from ._core import (  # noqa: WPS436
     app,
     mail,
     mail_initialized,
+    JSONEncoder,
 )
 from ._eventor import EventController, EmptyBody  # noqa: WPS436
 from ._files import open_file, absolute_path  # noqa: WPS436

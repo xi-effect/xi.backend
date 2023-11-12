@@ -37,6 +37,7 @@ class Community(SoftDeletable, Identifiable):
     # TODO ondelete is temporary
 
     CreateModel = MappedModel.create(columns=[name, description])
+    UpdateModel = CreateModel.extend(columns=[avatar_id]).as_patch()
     IndexModel = CreateModel.extend(
         columns=[id],
         relationships=[(avatar, File.FullModel, True)],

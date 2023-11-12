@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from json import dumps as dump_json, load as load_json
+from json import dumps as dump_json, load as load_json, JSONEncoder as _JSONEncoder
 from os import getenv
 from sys import modules
+from typing import Any
 
 from dotenv import load_dotenv
 from flask import Response
@@ -10,6 +11,7 @@ from flask_fullstack import Flask as _Flask, SQLAlchemy
 from flask_fullstack.utils.sqlalchemy import ModBaseMeta, CustomModel
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
+from pydantic_marshals.base import PatchDefault
 from sqlalchemy import MetaData, Table
 from sqlalchemy.orm import declarative_base
 
@@ -50,6 +52,16 @@ app.config["RESTX_INCLUDE_ALL_MODELS"] = True
 app.secrets_from_env("hope it's local")
 # TODO DI to use secrets in `URLSafeSerializer`s
 app.configure_cors()
+
+
+class JSONEncoder(_JSONEncoder):  # pragma: no cover
+    def default(self, o: Any) -> Any:
+        if o is PatchDefault:
+            return None
+        return super().default(o)
+
+
+app.json_encoder = JSONEncoder
 
 
 class DeclaredBase(CustomModel):
