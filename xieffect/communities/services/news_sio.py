@@ -41,7 +41,9 @@ class PostEventSpace(EventSpace):  # pragma: no coverage
 
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(Post.IndexModel, use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_NEWS, use_user=True)
+    @check_permission(
+        controller, PermissionType.MANAGE_NEWS, use_user=True
+    )  # id only (replace with participant)
     @controller.marshal_ack(Post.IndexModel)
     def new_post(
         self,

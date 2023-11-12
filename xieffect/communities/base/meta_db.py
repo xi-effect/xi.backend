@@ -69,7 +69,9 @@ class Community(SoftDeletable, Identifiable):
         return cls.find_first_not_deleted(id=entry_id)
 
 
-class Participant(LinkedListNode, Identifiable):
+class Participant(
+    LinkedListNode, Identifiable
+):  # TODO save/retrieve username from user for displaying in messages
     __tablename__ = "community_participant"
 
     id = Column(Integer, primary_key=True)

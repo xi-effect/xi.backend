@@ -34,7 +34,7 @@ class VideochatEventSpace(EventSpace):  # pragma: no coverage
     @controller.doc_abort(413, "Too many participants")
     @controller.argument_parser(ChatParticipant.CreateModel)
     @controller.mark_duplex(ChatParticipant.IndexModel, use_event=True)
-    @check_participant(controller, use_user=True)
+    @check_participant(controller, use_user=True)  # id only (replace with participant)
     @controller.marshal_ack(ChatParticipant.IndexModel)
     def new_chat_participant(
         self,
@@ -78,7 +78,9 @@ class VideochatEventSpace(EventSpace):  # pragma: no coverage
 
     @controller.argument_parser(CreateModel)
     @controller.mark_duplex(ChatMessage.IndexModel, use_event=True)
-    @check_participant(controller, use_user=True)
+    @check_participant(
+        controller, use_user=True
+    )  # relation only (replace with participant)
     @controller.marshal_ack(ChatMessage.IndexModel)
     def send_message(
         self, event: DuplexEvent, content: str, user: User, community: Community
@@ -128,7 +130,7 @@ class VideochatEventSpace(EventSpace):  # pragma: no coverage
 
     @controller.argument_parser(StateModel)
     @controller.mark_duplex(ChatParticipant.IndexModel, use_event=True)
-    @check_participant(controller, use_user=True)
+    @check_participant(controller, use_user=True)  # id only (replace with participant)
     @controller.marshal_ack(ChatParticipant.IndexModel)
     def change_state(
         self,

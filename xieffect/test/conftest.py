@@ -13,7 +13,7 @@ from pydantic import constr
 from pydantic_marshals.contains import TypeChecker
 from pytest import fixture
 from pytest_mock import MockerFixture
-from werkzeug.datastructures import FileStorage
+from werkzeug.datastructures import FileStorage, Headers
 from werkzeug.test import TestResponse
 
 from common import mail, mail_initialized, Base, db, open_file
@@ -53,15 +53,24 @@ class FlaskTestClient(_FlaskTestClient):
     options: OpenProtocol
     trace: OpenProtocol
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.default_headers: Headers = Headers()
+
+    def set_auth(self, user_id: int) -> None:
+        self.default_headers["X-User-ID"] = str(user_id)
+
     def open(  # noqa: A003
         self,
         *args: Any,
         expected_a: TypeChecker = None,
         **kwargs: Any,
     ) -> None | dict | list | TestResponse:
+        headers = kwargs.pop("headers", Headers())
+        headers.extend(self.default_headers)
         if expected_a is not None:
             kwargs.setdefault("expected_json", {})["a"] = expected_a
-        return super().open(*args, **kwargs)
+        return super().open(*args, **kwargs, headers=headers)
 
 
 app.test_client_class = FlaskTestClient
@@ -92,6 +101,7 @@ def base_login(
     client.set_cookie(
         "test", "access_token_cookie", response.headers["Set-Cookie"].partition("=")[1]
     )
+    client.set_auth(response.json["id"])
 
 
 def login(account: str, password: str, mub: bool = False) -> FlaskTestClient:
@@ -128,7 +138,7 @@ def multi_client() -> Callable[[str], FlaskTestClient]:
 
 @fixture
 def socketio_client(client: FlaskTestClient) -> SocketIOTestClient:  # noqa: WPS442
-    return SocketIOTestClient(client)
+    return SocketIOTestClient(client)  # TODO pass `headers={"X-User-ID": 0}`
 
 
 @fixture
@@ -200,7 +210,7 @@ def file_maker(base_user_id: int) -> Callable[File]:
             contents: bytes = f.read()
         user: User = User.find_first_by_kwargs(id=base_user_id)
         file_storage: FileStorage = create_file(filename, contents)
-        file: File = File.create(user, file_storage.filename)
+        file: File = File.create(user.id, file_storage.filename)
         file_storage.save(FILES_PATH + file.filename)
         created[file.id] = file.filename
         return file

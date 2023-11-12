@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Self, ClassVar
+from typing import Self, ClassVar
 
 from pydantic_marshals.sqlalchemy import MappedModel
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.sqltypes import Text
 
 from common import db, absolute_path
@@ -22,14 +21,7 @@ class File(SoftDeletable):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(Text)
 
-    uploader_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE", use_alter=True)
-    )
-    uploader = relationship(
-        "User",
-        foreign_keys=[uploader_id],
-        passive_deletes=True,
-    )
+    uploader_id: Mapped[int] = mapped_column()
 
     @property
     def filename(self) -> str:
@@ -38,8 +30,8 @@ class File(SoftDeletable):
     FullModel = MappedModel.create(columns=[id], properties=[filename])
 
     @classmethod
-    def create(cls, uploader: Any, name: str) -> Self:
-        return super().create(name=name, uploader=uploader)
+    def create(cls, uploader_id: int, name: str) -> Self:
+        return super().create(uploader=uploader_id, name=name)
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:

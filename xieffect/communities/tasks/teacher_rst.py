@@ -30,7 +30,6 @@ class TeacherTasks(Resource):
         dest="task_order",
     )
 
-    @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
     @check_permission(controller, PermissionType.MANAGE_TASKS)
     @controller.lister(TASKS_PER_PAGE, Task.IndexModel)
@@ -54,7 +53,6 @@ class TeacherTasks(Resource):
 
 @controller.route("/<int:task_id>/")
 class TeacherTaskGet(Resource):
-    @controller.jwt_authorizer(User)
     @check_permission(controller, PermissionType.MANAGE_TASKS)
     @controller.database_searcher(Task)
     @controller.marshal_with(Task.FullModel)

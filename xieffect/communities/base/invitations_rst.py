@@ -79,26 +79,36 @@ class InvitePreview(PydanticModel):
 
 @controller.route("/join/<code>/")
 class InvitationJoin(Resource):
-    @controller.jwt_authorizer(User, optional=True)
+    @controller.proxy_authorizer(optional=True)
     @check_invitation()
     @controller.marshal_with(InvitePreview)
-    def get(self, user: User, invitation: Invitation | None, community: Community):
+    def get(
+        self,
+        user_id: int | None,
+        invitation: Invitation | None,
+        community: Community,
+    ) -> InvitePreview:
         return InvitePreview(
             joined=invitation is None,
-            authorized=user is not None,
+            authorized=user_id is not None,
             community=CommunityIndexModel.convert(community),
         )
 
     @controller.doc_abort(400, "User has already joined")
-    @controller.jwt_authorizer(User)
+    @controller.proxy_authorizer()
     @check_invitation()
     @controller.marshal_with(Community.IndexModel)
-    def post(self, user: User, invitation: Invitation | None, community: Community):
+    def post(
+        self,
+        user_id: int | None,
+        invitation: Invitation | None,
+        community: Community,
+    ) -> Community:
         if invitation is None:
             controller.abort(400, "User has already joined")
         participant = Participant.add(
             community_id=community.id,
-            user_id=user.id,
+            user_id=user_id,
         )
         ParticipantRole.create_bulk(
             participant_id=participant.id,
@@ -110,7 +120,7 @@ class InvitationJoin(Resource):
             invitation.limit -= 1
 
         CommunitiesEventSpace.new_community.emit_convert(
-            community, include_self=True, user_id=user.id
+            community, include_self=True, user_id=user_id
         )
 
         return community

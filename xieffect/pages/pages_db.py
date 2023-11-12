@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Self
 
-from flask_fullstack import PydanticModel, Identifiable
-from sqlalchemy import Column, ForeignKey
+from flask_fullstack import Identifiable
+from pydantic_marshals.sqlalchemy import MappedModel
+from sqlalchemy import Column
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.sqltypes import Integer, String, JSON
 
 from common.abstract import SoftDeletable
@@ -15,17 +16,14 @@ class Page(SoftDeletable, Identifiable):  # pragma: no coverage
     __tablename__ = "pages"
     not_found_text = "Page not found"
 
-    id = Column(Integer, primary_key=True)
-    title = Column(String(100), nullable=False)
-    content = Column(MutableDict.as_mutable(JSON), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(100), nullable=False)
+    content: Mapped[dict] = Column(MutableDict.as_mutable(JSON), nullable=False)
 
-    creator_id = Column(
-        Integer, ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE")
-    )
-    creator = relationship("User")
+    creator_id: Mapped[int] = mapped_column(Integer)
 
-    CreateModel = PydanticModel.column_model(title, content)
-    IndexModel = CreateModel.column_model(id, creator_id)
+    CreateModel = MappedModel.create(columns=[title, content])
+    IndexModel = CreateModel.extend(columns=[id, creator_id])
 
     @classmethod
     def create(cls, title: str, content: dict, creator_id: int) -> Self:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Self, ClassVar
 
-from sqlalchemy import Column, DateTime, delete, select, Integer, ForeignKey
+from sqlalchemy import delete, select, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import Select
@@ -16,7 +16,7 @@ class SoftDeletable(Base):  # TODO pragma: no coverage
     shelf_life: ClassVar[timedelta] = timedelta(days=2)
     # TODO: discuss timedelta for each table
 
-    deleted = Column(DateTime, nullable=True)
+    deleted: Mapped[datetime | None] = mapped_column(nullable=True)
 
     def soft_delete(self) -> None:
         self.deleted = datetime.utcnow() + self.shelf_life  # noqa: WPS601

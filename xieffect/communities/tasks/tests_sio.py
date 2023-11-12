@@ -26,7 +26,9 @@ class TestsEventSpace(TasksEventSpace):
 
     @controller.argument_parser(CreationModel)
     @controller.mark_duplex(Test.FullModel, use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_TASKS, use_user=True)
+    @check_permission(
+        controller, PermissionType.MANAGE_TASKS, use_user=True
+    )  # id only (replace with participant)
     @controller.marshal_ack(Test.FullModel)
     def new_test(
         self,

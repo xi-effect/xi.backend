@@ -3,6 +3,7 @@ from __future__ import annotations
 from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
 from pydantic import BaseModel, Field
+from pydantic_marshals.base.fields.base import PatchDefault, PatchDefaultType
 
 from common import EventController
 from communities.base.meta_db import Community, Participant
@@ -37,17 +38,17 @@ class CommunitiesEventSpace(EventSpace):
 
     @controller.argument_parser(Community.CreateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
-    @controller.jwt_authorizer(User)
+    @controller.proxy_authorizer()
     @controller.marshal_ack(Community.IndexModel, force_wrap=True)
     def new_community(
         self,
         event: DuplexEvent,
-        user: User,
+        user_id: int | None,
         name: str,
         description: str = None,
     ):
-        community = Community.create(name, user.id, description)
-        event.emit_convert(community, user_id=user.id)
+        community = Community.create(name, user_id, description)
+        event.emit_convert(community, user_id=user_id)
         return community
 
     @controller.argument_parser(CommunityIdModel)
@@ -81,8 +82,8 @@ class CommunitiesEventSpace(EventSpace):
             target_index=target_index,
         )
 
-    class UpdateModel(CommunityIdModel, Community.CreateModel):
-        avatar_id: int | None = -1  # TODO [nq] fix in ffs!
+    class UpdateModel(CommunityIdModel, Community.UpdateModel):
+        pass
 
     @controller.argument_parser(UpdateModel)
     @controller.mark_duplex(Community.IndexModel, use_event=True)
@@ -92,19 +93,19 @@ class CommunitiesEventSpace(EventSpace):
         self,
         event: DuplexEvent,
         community: Community,
-        avatar_id: int | None,
-        name: str = None,
-        description: str = None,
+        avatar_id: int | None | PatchDefaultType,
+        name: str | PatchDefaultType,
+        description: str | PatchDefaultType,
     ):
-        if name is not None:
+        if name is not PatchDefault:
             community.name = name
-        if description is not None:
+        if description is not PatchDefault:
             community.description = description
 
         if avatar_id is None:
             community.avatar.delete()
             community.avatar = None
-        elif avatar_id != -1:  # TODO [nq] fix in ffs!
+        elif avatar_id is not PatchDefault:
             new_file = File.find_by_id(avatar_id)
             if new_file is None:
                 controller.abort(404, File.not_found_text)
@@ -121,7 +122,9 @@ class CommunitiesEventSpace(EventSpace):
 
     @controller.argument_parser(CommunityIdModel)
     @controller.mark_duplex(use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_COMMUNITY, use_user=True)
+    @check_permission(
+        controller, PermissionType.MANAGE_COMMUNITY, use_user=True
+    )  # id only (replace with participant)
     @controller.force_ack()
     def delete_community(
         self,

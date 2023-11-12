@@ -10,6 +10,7 @@ from sqlalchemy.sql.sqltypes import Integer, JSON, Boolean
 
 from common import Base
 from common.abstract import FileEmbed
+from communities.base.meta_db import Participant
 from vault.files_db import File
 
 
@@ -31,12 +32,12 @@ class DiscussionMessage(Base, Identifiable):
     pinned = Column(Boolean, default=False, nullable=False)
     # system = Column(Enum(?), nullable=False)  # TODO: Type of system message
 
-    sender_id = Column(
+    sender_id = Column(  # TODO replace sender_id with Participant
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL", onupdate="CASCADE"),
+        ForeignKey(Participant.id, ondelete="SET NULL", onupdate="CASCADE"),
         nullable=True,
     )
-    sender = relationship("User")
+    sender = relationship(Participant)
 
     discussion_id = Column(
         Integer,

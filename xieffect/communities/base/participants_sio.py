@@ -73,16 +73,18 @@ class ParticipantsEventSpace(EventSpace):
     @controller.argument_parser(DeleteModel)
     @controller.mark_duplex(use_event=True)
     @controller.database_searcher(Participant)
-    @check_permission(controller, PermissionType.MANAGE_PARTICIPANTS, use_user=True)
+    @check_permission(
+        controller, PermissionType.MANAGE_PARTICIPANTS, use_participant_id=True
+    )
     @controller.force_ack()
     def delete_participant(
         self,
         event: DuplexEvent,
         participant: Participant,
-        user: User,
+        participant_id: int,
         community: Community,
     ):
-        if participant.user_id == user.id:
+        if participant.user_id == participant_id:
             controller.abort(400, "Target is the source")
         participant.delete()
         event.emit_convert(

@@ -125,8 +125,7 @@ def test_feedback_constraints(base_user_id: int):
     with open_file("xieffect/test/json/test-1.json", "rb") as f:
         contents: bytes = f.read()
     file_storage = create_file("test-1.json", contents)
-    user = User.find_by_id(base_user_id)
-    file_id = File.create(user, file_storage.filename).id
+    file_id = File.create(base_user_id, file_storage.filename).id
     feedback_id = Feedback.create(
         user_id=base_user_id, type=FeedbackType.GENERAL, data={"lol": "hey"}
     ).id

@@ -6,9 +6,10 @@ from flask_fullstack import ResourceController as _ResourceController
 from flask_restx import abort as default_abort
 
 from ._marshals import success_response, message_response, ResponseDoc  # noqa: WPS436
+from .authorization import ProxyAuthMixin
 
 
-class ResourceController(_ResourceController):
+class ResourceController(_ResourceController, ProxyAuthMixin):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         success_response.register_model(self)

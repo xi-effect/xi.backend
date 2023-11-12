@@ -67,7 +67,9 @@ class TasksEventSpace(EventSpace):
 
     @controller.argument_parser(CreationModel)
     @controller.mark_duplex(Task.FullModel, use_event=True)
-    @check_permission(controller, PermissionType.MANAGE_TASKS, use_user=True)
+    @check_permission(
+        controller, PermissionType.MANAGE_TASKS, use_user=True
+    )  # id only (replace with participant)
     @controller.marshal_ack(Task.FullModel)
     def new_task(
         self,

@@ -10,6 +10,7 @@ from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.sqltypes import Integer, Text
 
 from common import db, Base
+from communities.base.meta_db import Participant
 from users.users_db import User
 
 PARTICIPANT_LIMIT: int = 50
@@ -72,17 +73,17 @@ class ChatMessage(Base, Identifiable):  # pragma: no coverage
     )
     sender_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey(Participant.id, ondelete="SET NULL"),
         nullable=True,
     )
-    sender: User | relationship = relationship("User", passive_deletes=True)
+    sender: Participant | relationship = relationship(Participant, passive_deletes=True)
 
     CreateModel = PydanticModel.column_model(content)
     IndexModel = CreateModel.column_model(id).nest_model(User.MainData, "sender")
 
     @classmethod
-    def create(cls, sender: User, community_id: int, content: str) -> Self:
-        return super().create(
+    def create(cls, sender: Participant, community_id: int, content: str) -> Self:
+        return super().create(  # TODO replace sender with Participant
             sender=sender,
             community_id=community_id,
             content=content,

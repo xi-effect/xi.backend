@@ -32,7 +32,6 @@ class TeacherTests(Resource):
         dest="test_order",
     )
 
-    @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
     @check_permission(controller, PermissionType.MANAGE_TASKS)
     @controller.lister(TASKS_PER_PAGE, Test.IndexModel)
@@ -56,7 +55,6 @@ class TeacherTests(Resource):
 
 @controller.route("/<int:test_id>/")
 class TeacherTestGet(Resource):
-    @controller.jwt_authorizer(User)
     @check_permission(controller, PermissionType.MANAGE_TASKS)
     @test_finder(controller)
     @controller.marshal_with(Test.FullModel)

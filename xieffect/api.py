@@ -10,7 +10,7 @@ from requests import HTTPError
 
 import communities.base.discussion_db  # noqa: F401 WPS301  # to create database models
 import pages.pages_db  # noqa: F401 WPS301  # to create database models
-from common import app, db, versions, open_file
+from common import app, db, versions, open_file, Namespace
 from communities.base import (
     invitations_rst,
     invitations_sio,
@@ -133,6 +133,7 @@ socketio = SocketIO(
     engineio_logger=True,
     remove_ping_pong_logs=True,
     restx_models=api.models,
+    namespace_class=Namespace,
 )
 
 socketio.add_namespace(

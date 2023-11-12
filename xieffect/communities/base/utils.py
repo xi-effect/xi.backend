@@ -19,7 +19,7 @@ def check_participant(
 ):
     def check_participant_role_wrapper(function):
         @controller.doc_abort(403, "Permission Denied")
-        @controller.jwt_authorizer(User)
+        @controller.jwt_authorizer(User)  # id only
         @controller.database_searcher(Community)
         @wraps(function)
         def check_participant_role_inner(*args, **kwargs):
@@ -49,11 +49,12 @@ def check_permission(
     *,
     use_community: bool = True,
     use_participant: bool = False,
+    use_participant_id: bool = False,
     use_user: bool = False,
 ):
     @controller.doc_abort(403, "Permission Denied")
     def check_permission_wrapper(function):
-        @check_participant(
+        @check_participant(  # id only
             controller,
             use_participant=use_participant,
             use_participant_id=True,
@@ -63,7 +64,9 @@ def check_permission(
         def check_permission_inner(*args, **kwargs):
             user: User = get_or_pop(kwargs, "user", use_user)
             community: Community = get_or_pop(kwargs, "community", use_community)
-            participant_id: int = kwargs.pop("participant_id")
+            participant_id: int = get_or_pop(
+                kwargs, "participant_id", use_participant_id
+            )
 
             denied = community.owner_id != user.id and ParticipantRole.deny_permission(
                 participant_id, permission_type

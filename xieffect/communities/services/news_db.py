@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Text, DateTime
 
 from common.abstract import SoftDeletable
-from communities.base.meta_db import Community
+from communities.base.meta_db import Community, Participant
 from users.users_db import User
 
 
@@ -30,12 +30,12 @@ class Post(SoftDeletable, Identifiable):
     )
 
     # User-related
-    user_id = Column(
+    user_id = Column(  # TODO replace user_id with Participant
         Integer,
-        ForeignKey(User.id, ondelete="CASCADE"),
+        ForeignKey(Participant.id, ondelete="CASCADE"),
         nullable=False,
     )
-    user = relationship("User", passive_deletes=True)
+    user = relationship(Participant, passive_deletes=True)
 
     # Community-related
     community_id = Column(

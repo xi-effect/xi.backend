@@ -26,7 +26,6 @@ class StudentTasks(Resource):
         dest="task_filter",
     )
 
-    @controller.jwt_authorizer(User)
     @controller.argument_parser(parser)
     @check_participant(controller)
     @controller.lister(TASKS_PER_PAGE, Task.IndexModel)
@@ -49,7 +48,6 @@ class StudentTasks(Resource):
 
 @controller.route("/<int:task_id>/")
 class StudentTaskGet(Resource):
-    @controller.jwt_authorizer(User)
     @check_participant(controller)
     @controller.database_searcher(Task)
     @controller.marshal_with(Task.FullModel)

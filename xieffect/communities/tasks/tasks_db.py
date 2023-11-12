@@ -49,7 +49,7 @@ class Task(SoftDeletable, Identifiable):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    user = relationship("User", passive_deletes=True)
+    user = relationship("User", passive_deletes=True)  # TODO replace with user
 
     community_id = Column(
         Integer,
@@ -67,7 +67,7 @@ class Task(SoftDeletable, Identifiable):
     opened = Column(DateTime, nullable=True, index=True)
     closed = Column(DateTime, nullable=True, index=True)
 
-    files = relationship("File", secondary=TaskEmbed.__table__, passive_deletes=True)
+    files = relationship(File, secondary=TaskEmbed.__table__, passive_deletes=True)
 
     BaseModel = PydanticModel.column_model(id, created)
     CreateModel = PydanticModel.column_model(page_id, name, description, opened, closed)
