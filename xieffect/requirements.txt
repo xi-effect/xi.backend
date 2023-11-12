@@ -1,7 +1,7 @@
 flask==2.2.5
 werkzeug==2.2.3
 flask-fullstack==0.5.10
-pydantic_marshals[sqlalchemy]==0.3.2
+pydantic_marshals[sqlalchemy]==0.3.9
 
 # Misc
 discord-webhook~=0.14.0
