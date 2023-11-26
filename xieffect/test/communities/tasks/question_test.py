@@ -113,7 +113,7 @@ def test_validation_kind(
             "kind": kind,
         },
         expected_code=400,
-        expected_message=f"{kind} is not a valid QuestionKind",
+        expected_data=[{"msg": f"{kind} is not a valid QuestionKind"}],
     )
 
 
