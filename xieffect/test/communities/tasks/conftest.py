@@ -77,34 +77,26 @@ def test_ids(
 
 
 @fixture
-def base_client_test_id(
+def base_client_data(
     base_user_id: int,
     community_id: int,
+    task_data: dict[str, Any],
+) -> dict[str, Any]:
+    task_data.update(user_id=base_user_id, community_id=community_id)
+    return task_data
+
+
+@fixture
+def base_client_test_id(
+    base_client_data: dict[str, Any],
 ) -> int:
-    test: Test = Test.create(
-        user_id=base_user_id,
-        community_id=community_id,
-        page_id=1,
-        name="test",
-        description="description",
-        opened=None,
-        closed=None,
-    )
+    test: Test = Test.create(**base_client_data)
     yield test.id
 
 
 @fixture
 def base_client_task_id(
-    base_user_id: int,
-    community_id: int,
+    base_client_data: dict[str, Any],
 ) -> int:
-    task: Task = Task.create(
-        user_id=base_user_id,
-        community_id=community_id,
-        page_id=1,
-        name="task",
-        description="description",
-        opened=None,
-        closed=None,
-    )
+    task: Task = Test.create(**base_client_data)
     yield task.id

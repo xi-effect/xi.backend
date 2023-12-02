@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
-
 from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
 
 from common import EventController
-from communities.base.meta_db import PermissionType
+from communities.base.meta_db import PermissionType, Community
 from communities.base.utils import check_permission
 from communities.tasks.tests_db import Test, Question, QuestionKind
 from communities.tasks.tests_sio import TestsEventSpace
 from communities.tasks.utils import test_finder, question_finder
 
-controller = EventController()
+controller: EventController = EventController()
 
 
 @controller.route()
@@ -50,25 +48,19 @@ class QuestionsEventSpace(EventSpace):
         text: str,
         kind: QuestionKind,
     ) -> Question:
-        question = Question.create(text, kind, test.id)
+        question: Question = Question.create(text, kind, test.id)
         event.emit_convert(question, self.room_name(test.id))
         return question
 
     class QuestionIdModel(TestsEventSpace.TestIdModel):
         question_id: int
 
-    class UpdateModel(QuestionIdModel):
-        kind: str = None
-        text: str = None
-
-        # Override dict method of BaseModel to set "exclude_none" argument on True
-        def dict(self, *args, **kwargs) -> dict[str, Any]:  # noqa: A003
-            kwargs["exclude_none"] = True
-            return super().dict(*args, **kwargs)
+    class UpdateModel(QuestionIdModel, Question.UpdateModel):
+        pass
 
     @controller.doc_abort(400, "Is not a valid QuestionKind")
     @controller.argument_parser(UpdateModel)
-    @controller.mark_duplex(Question.BaseModel, use_event=True)
+    @controller.mark_duplex(Question.FullModel, use_event=True)
     @check_permission(controller, PermissionType.MANAGE_TASKS)
     @question_finder(controller)
     @controller.marshal_ack(Question.FullModel)
@@ -78,27 +70,22 @@ class QuestionsEventSpace(EventSpace):
         question: Question,
         **kwargs,
     ) -> Question:
-        raw_kind: str | None = kwargs.get("kind")
-
-        if raw_kind is not None:
-            kind: QuestionKind = QuestionKind.from_string(raw_kind)
-            if kind is None:
-                controller.abort(400, f"{raw_kind} is not a valid QuestionKind")
-            kwargs["kind"] = kind
-
         question.update(**kwargs)
         event.emit_convert(question, room=self.room_name(question.id))
         return question
 
     @controller.argument_parser(QuestionIdModel)
-    @controller.mark_duplex(Question.BaseModel, use_event=True)
+    @controller.mark_duplex(QuestionIdModel, use_event=True)
     @check_permission(controller, PermissionType.MANAGE_TASKS)
-    @question_finder(controller)
+    @question_finder(controller, use_community=True)
     @controller.force_ack()
-    def delete_question(self, event: DuplexEvent, question: Question) -> None:
+    def delete_question(
+        self, event: DuplexEvent, question: Question, community: Community
+    ) -> None:
         question.delete()
         event.emit_convert(
             room=self.room_name(question.test_id),
             test_id=question.test_id,
             question_id=question.id,
+            community_id=community.id,
         )

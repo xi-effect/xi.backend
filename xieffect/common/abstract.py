@@ -133,6 +133,12 @@ class FileEmbed(Base):
         db.session.bulk_insert_mappings(cls, values)
 
     @classmethod
+    def update_files(cls, file_ids: set[int], **kwargs) -> None:
+        old_files: set[int] = set(cls.get_file_ids(**kwargs))
+        cls.delete_files(old_files - file_ids, **kwargs)
+        cls.add_files(file_ids - old_files, **kwargs)
+
+    @classmethod
     def delete_files(cls, file_ids: set[int], **kwargs) -> None:
         db.session.execute(
             delete(cls).filter(

@@ -74,10 +74,7 @@ class DiscussionMessage(Base, Identifiable):
         if content is not None:
             self.content = content
         if file_ids is not None:
-            old_files: set[int] = set(MessageFile.get_file_ids(message_id=self.id))
-            new_files: set[int] = set(file_ids)
-            MessageFile.delete_files(old_files - new_files, message_id=self.id)
-            MessageFile.add_files(new_files - old_files, message_id=self.id)
+            MessageFile.update_files(set(file_ids), message_id=self.id)
 
     @classmethod
     def get_paginated_messages(
