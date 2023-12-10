@@ -10,8 +10,9 @@ from flask_mail import Message
 from flask_restx import Resource
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import mail, app, User, mail_initialized, open_file
-from .discorder import send_message as send_discord_message, WebhookURLs
+from common import mail, app, mail_initialized, open_file
+from other.discorder import send_message as send_discord_message, WebhookURLs
+from users.users_db import User
 
 safe_random = SystemRandom()
 EMAIL_FOLDER: str = "static/emails/"

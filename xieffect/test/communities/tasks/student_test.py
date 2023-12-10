@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from pytest import mark, fixture, param
 
 from common import db
-from communities.base import Participant
-from communities.tasks.main_db import Task
+from communities.base.meta_db import Participant
+from communities.tasks.tasks_db import Task
 from test.conftest import FlaskTestClient
 
 
@@ -64,26 +64,18 @@ def test_student_tasks_pagination(
 )
 def test_student_task_getting(
     student: FlaskTestClient,
+    task_maker: Callable[[], Task],
     test_community: int,
-    test_user_id: int,
     expected_status: int,
     expected_a: str,
     expected_json: dict[str, str],
     delta: int,
 ):
-    task: Task = Task.create(
-        user_id=test_user_id,
-        community_id=test_community,
-        name="test",
-        page_id=1,  # TODO remove hardcoding
-    )
+    task: Task = task_maker()
     task.opened = datetime.utcnow() + timedelta(days=delta)
-
     student.get(
         f"/communities/{test_community}/tasks/student/{task.id}/",
         expected_status=expected_status,
         expected_a=expected_a,
         expected_json=expected_json,
     )
-
-    task.delete()

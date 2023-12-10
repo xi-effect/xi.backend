@@ -9,9 +9,10 @@ from flask_restx import Resource
 from flask_restx.fields import String as StringField
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from common import User, ResourceController, ResponseDoc
-from vault import File
-from .feedback_db import Feedback, FeedbackType
+from common import ResourceController, ResponseDoc
+from users.feedback_db import Feedback, FeedbackType
+from users.users_db import User
+from vault.files_db import File
 
 controller = ResourceController("feedback")
 feedback_serializer: URLSafeSerializer = URLSafeSerializer(

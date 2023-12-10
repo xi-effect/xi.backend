@@ -4,9 +4,10 @@ from flask_fullstack import password_parser, counter_parser, Undefined, RequestP
 from flask_restx import Resource
 from itsdangerous import BadSignature
 
-from common import User, TEST_INVITE_ID
+from common import TEST_INVITE_ID
 from moderation import MUBController, permission_index
 from users.invites_db import Invite
+from users.users_db import User
 
 user_section = permission_index.add_section("users")
 manage_users = permission_index.add_permission(user_section, "manage")

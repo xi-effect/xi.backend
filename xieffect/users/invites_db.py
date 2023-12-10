@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from os import getenv
-from typing import Self
+from typing import Self, ClassVar
 
-from flask_fullstack import PydanticModel
 from itsdangerous.url_safe import URLSafeSerializer
-from sqlalchemy import Column, select
-from sqlalchemy.orm import relationship
+from pydantic_marshals.sqlalchemy import MappedModel
+from sqlalchemy import select
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 from sqlalchemy.sql.sqltypes import Integer, String
 
 from common import Base, db
@@ -15,19 +15,23 @@ from common import Base, db
 class Invite(Base):
     __tablename__ = "invites"
     not_found_text = "Invite not found"
-    serializer: URLSafeSerializer = URLSafeSerializer(
+    serializer: ClassVar[URLSafeSerializer] = URLSafeSerializer(
         getenv("SECRET_KEY", "local")
     )  # TODO redo
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    code = Column(String(100), nullable=False, default="")
-    limit = Column(Integer, nullable=False, default=-1)
-    accepted = Column(Integer, nullable=False, default=0)
-    invited = relationship("User", back_populates="invite", passive_deletes=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+    code: Mapped[str] = mapped_column(String(100), default="")
+    limit: Mapped[int] = mapped_column(Integer, default=-1)
+    accepted: Mapped[int] = mapped_column(Integer, default=0)
+    invited = relationship(
+        "User",
+        back_populates="invite",
+        passive_deletes=True,
+    )
 
-    IDModel = PydanticModel.column_model(id)
-    IndexModel = PydanticModel.column_model(name, code, limit, accepted)
+    IDModel = MappedModel.create(columns=[id])
+    IndexModel = MappedModel.create(columns=[name, code, limit, accepted])
 
     @classmethod
     def create(cls, **kwargs) -> Self:

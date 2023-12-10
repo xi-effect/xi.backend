@@ -8,7 +8,8 @@ from sqlalchemy import Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Integer, String, Boolean, JSON, DateTime, Text, Enum
 
-from common import Base, User, db
+from common import Base, db
+from users.users_db import User
 
 
 class TABLE(Base):

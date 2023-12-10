@@ -34,9 +34,10 @@ def question_finder(
     *,
     use_test: bool = False,
     use_question: bool = True,
+    use_community: bool = False,
 ):
     def question_finder_wrapper(function):
-        @test_finder(controller, use_test=True, use_community=False)
+        @test_finder(controller, use_test=True, use_community=use_community)
         @controller.database_searcher(Question)
         @wraps(function)
         def question_finder_inner(*args, **kwargs):

@@ -15,3 +15,6 @@ TEST_INVITE_ID: int = 0
 DISABLE_WEBHOOKS: bool = getenv("ENABLE_WEBHOOKS", "0") != "1"
 PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
 DATABASE_RESET: bool = getenv("DATABASE_RESET", "0") == "1"
+
+# File limit for the embed tables
+FILES_LIMIT: int = 10

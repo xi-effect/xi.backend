@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from flask_fullstack import SocketIOTestClient, dict_cut, assert_contains
+from flask_fullstack import SocketIOTestClient, dict_cut
+from pydantic_marshals.contains import assert_contains
 from pytest import mark
 
-from common import User
-from communities.base import Community
+from communities.base.meta_db import Community
 from communities.services.news_db import Post
 from test.conftest import delete_by_id, FlaskTestClient
+from users.users_db import User
 
 
 def get_posts_list(client, community_id: int) -> list[dict]:

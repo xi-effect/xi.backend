@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from flask_fullstack import assert_contains
+from pydantic_marshals.contains import assert_contains
 
 from pages.pages_db import Page
 

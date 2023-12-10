@@ -6,21 +6,25 @@ from flask_jwt_extended import get_jwt
 from flask_restx import Resource
 from itsdangerous import BadSignature
 
-from common import BlockedToken, ResourceController, User
-from communities import CommunitiesUser
-from other import create_email_confirmer, EmailType, send_code_email
-from .invites_db import Invite
+from common import ResourceController
+from other.emailer import create_email_confirmer, EmailType, send_code_email
+from users.invites_db import Invite
+from users.users_db import BlockedToken, User
 
 controller = ResourceController("reglog", path="/")
+
+
+class AuthModel(User.CommunityModel):
+    a: str = "Success"
 
 
 @controller.route("/main/")
 @controller.route("/home/")
 class UserHome(Resource):
     @controller.jwt_authorizer(User)
-    @controller.marshal_with(CommunitiesUser.FullModel)
-    def get(self, user: User):
-        return CommunitiesUser.find_or_create(user.id)
+    @controller.marshal_with(User.CommunityModel)
+    def get(self, user: User) -> User:
+        return user
 
 
 @controller.route("/signup/")
@@ -47,7 +51,7 @@ class UserRegistration(Resource):
     @controller.doc_abort(400, "Malformed code (BadSignature)")
     @controller.doc_abort(404, "Invite not found")
     @controller.argument_parser(parser)
-    @controller.marshal_with_authorization(CommunitiesUser.TempModel)
+    @controller.marshal_with_authorization(AuthModel)
     def post(self, email: str, username: str, password: str, code: str):
         """Creates a new user if email is not used already, logs in automatically"""
         try:
@@ -70,8 +74,7 @@ class UserRegistration(Resource):
             return {"a": "Email already in use"}
         invite.accepted += 1
         send_code_email(email, EmailType.CONFIRM)
-        cu = CommunitiesUser.find_or_create(user.id)
-        return cu, user
+        return user, user
 
 
 EmailConfirmer = create_email_confirmer(
@@ -87,29 +90,27 @@ class UserLogin(Resource):
     @controller.doc_abort("200 ", "User doesn't exist")
     @controller.doc_abort(" 200", "Wrong password")
     @controller.argument_parser(parser)
-    @controller.marshal_with_authorization(CommunitiesUser.TempModel)
-    def post(self, email: str, password: str) -> tuple[CommunitiesUser, User] | dict:
+    @controller.marshal_with_authorization(AuthModel)
+    def post(self, email: str, password: str) -> tuple[User, User] | dict:
         """Tries to log in with credentials given"""
         user = User.find_by_email_address(email)
         if user is None:
             return {"a": "User doesn't exist"}
 
         if User.verify_hash(password, user.password):
-            cu = CommunitiesUser.find_or_create(user.id)
-            return cu, user
+            return user, user
         return {"a": "Wrong password"}
 
 
 @controller.route("/go/")
 class Test(Resource):
-    @controller.marshal_with_authorization(CommunitiesUser.TempModel)
-    def get(self) -> tuple[CommunitiesUser, User] | dict:
+    @controller.marshal_with_authorization(AuthModel)
+    def get(self) -> tuple[User, User] | dict:
         """Localhost-only endpoint for logging in from the docs"""
         if not current_app.debug:
             return {"a": False}
         user = User.find_by_id(1)
-        cu = CommunitiesUser.find_or_create(1)
-        return cu, user
+        return user, user
 
 
 @controller.route("/signout/")

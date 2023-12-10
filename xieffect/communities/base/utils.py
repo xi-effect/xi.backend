@@ -4,9 +4,9 @@ from functools import wraps
 
 from flask_fullstack import ResourceController, EventController, get_or_pop
 
-from common import User
-from .meta_db import Community, Participant
-from .roles_db import PermissionType, ParticipantRole
+from communities.base.meta_db import Community, Participant
+from communities.base.roles_db import PermissionType, ParticipantRole
+from users.users_db import User
 
 
 def check_participant(
@@ -57,16 +57,16 @@ def check_permission(
             controller,
             use_participant=use_participant,
             use_participant_id=True,
-            use_user=True,
+            use_user=use_user,
         )
         @wraps(function)
         def check_permission_inner(*args, **kwargs):
-            user: User = get_or_pop(kwargs, "user", use_user)
             community: Community = get_or_pop(kwargs, "community", use_community)
             participant_id: int = kwargs.pop("participant_id")
 
-            denied = community.owner_id != user.id and ParticipantRole.deny_permission(
-                participant_id, permission_type
+            denied = (
+                community.owner_id != participant_id
+                and ParticipantRole.deny_permission(participant_id, permission_type)
             )
             if denied:
                 controller.abort(403, "Permission Denied: Not sufficient permissions")

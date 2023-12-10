@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from typing import Any
+
 from flask_mail import Message
 from pydantic import constr
+from pydantic_marshals.base import PatchDefault
 from pytest import mark, param
 from pytest_mock import MockerFixture
 
-from common import User
-from communities import CommunitiesUser
-from other import EmailType
+from other.emailer import EmailType
 from test.conftest import (
     BASIC_PASS,
     TEST_EMAIL,
@@ -15,6 +16,7 @@ from test.conftest import (
     SocketIOTestClient,
     delete_by_id,
 )
+from users.users_db import User
 from wsgi import Invite, TEST_INVITE_ID, socketio
 
 TEST_CREDENTIALS = {"email": TEST_EMAIL, "password": BASIC_PASS}  # noqa: WPS407
@@ -32,9 +34,21 @@ def test_rest_docs(base_client: FlaskTestClient):
     assert "text/html" in result.content_type
 
 
+def filter_patch_defaults(o: Any) -> Any:
+    if isinstance(o, dict):
+        return {key: filter_patch_defaults(value) for key, value in o.items()}
+    elif isinstance(o, list):
+        return [filter_patch_defaults(value) for value in o]
+    elif o is PatchDefault:
+        return None
+    return o
+
+
 @mark.order(1)
 def test_sio_docs(base_client: FlaskTestClient):
-    base_client.get("/asyncapi.json", expected_json=socketio.docs())
+    base_client.get(
+        "/asyncapi.json", expected_json=filter_patch_defaults(socketio.docs())
+    )
 
 
 @mark.order(10)
@@ -43,7 +57,7 @@ def test_login(base_client: FlaskTestClient):
         "/signin/",
         json=TEST_CREDENTIALS,
         expected_json={"a": "Success", "communities": list, "id": int, "username": str},
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )
     base_client.post("/signout/")
 
@@ -100,7 +114,7 @@ def test_signup(base_client: FlaskTestClient, mock_mail):
             "username": BASE_CREDENTIALS["username"],
             "id": int,
         },
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )
 
     # Check the email
@@ -140,7 +154,6 @@ def test_signup(base_client: FlaskTestClient, mock_mail):
 
     # Clearing database after test
     delete_by_id(result["id"], User)
-    assert CommunitiesUser.find_by_id(result["id"]) is None
     assert len(mock_mail) == 0
 
 
@@ -163,7 +176,7 @@ def test_signup_invites(
         "/signup/",
         json=sign_up_data,
         expected_json={"a": "Success", "id": int},
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
     )["id"]
     base_client.post(
         "/signup/",
@@ -182,7 +195,6 @@ def test_signup_invites(
 
     # Clearing database after test
     delete_by_id(user_id, User)
-    assert CommunitiesUser.find_by_id(user_id) is None
 
 
 @mark.order(20)

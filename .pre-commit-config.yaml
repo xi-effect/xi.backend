@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 
 default_language_version:
-  python: python3.9
+  python: python3.11
 
 files: ^xieffect/
 exclude: ^xieffect/(alembic|flask_fullstack)/
@@ -28,7 +28,7 @@ repos:
       - id: autoflake
 
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.9.0
     hooks:
       - id: black
 

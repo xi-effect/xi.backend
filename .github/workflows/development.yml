@@ -62,13 +62,7 @@ jobs:
       && contains(github.event.pull_request.labels.*.name, 'ci:deployable')
 
     runs-on: ubuntu-latest
-    environment: >
-      ${{
-        needs.namer.outputs.branch == 'prod'
-        && github.actor == github.triggering_actor
-        && 'staging'
-        || 'manual-staging'
-      }}
+    environment: ${{ needs.namer.outputs.branch == 'prod' && github.actor == github.triggering_actor && 'staging' || 'manual-staging' }}
 
     env:
       pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ needs.namer.outputs.tag }}
@@ -113,8 +107,8 @@ jobs:
           rm: true
 
       - name: Upload docs via SCP
-        uses: appleboy/scp-action@v0.1.4
         if: ${{ needs.namer.outputs.branch == 'prod' }}
+        uses: appleboy/scp-action@v0.1.4
         with:
           username: ${{ secrets.SSH_USER }}
           host: ${{ secrets.SSH_HOST }}
@@ -137,8 +131,8 @@ jobs:
             Issuer: `${{ github.triggering_actor }}`
 
       - name: Report failure to discord
-        uses: tsickert/discord-webhook@v5.3.0
         if: failure()
+        uses: tsickert/discord-webhook@v5.3.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
           content: |-

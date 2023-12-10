@@ -10,7 +10,7 @@ from sqlalchemy.sql import Delete
 from common import Base, db
 from vault.files_db import FILES_PATH
 
-remove_stale_blueprint = Blueprint("database", __name__)
+blueprint = Blueprint("database", __name__)
 
 
 def remove_stale() -> None:
@@ -26,6 +26,6 @@ def remove_stale() -> None:
             db.session.commit()
 
 
-@remove_stale_blueprint.cli.command("remove_stale")
+@blueprint.cli.command("remove_stale")
 def remove_stale_cli() -> None:  # TODO pragma: no coverage
     remove_stale()
