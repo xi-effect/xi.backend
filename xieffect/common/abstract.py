@@ -64,17 +64,22 @@ class LinkedListNode(Base):
             next_node.prev_id = cls.get_node_id(node) or cls.get_node_id(prev_node)
 
     @classmethod
-    def find_last(cls) -> Self | None:
-        return cls.find_first_by_kwargs(user_id=cls.user_id, next=None)
+    def find_by_list_id(cls, list_id: int, **kwargs) -> Self | None:
+        raise NotImplementedError
+
+    @classmethod
+    def find_last(cls, list_id: int) -> Self | None:
+        return cls.find_by_list_id(list_id, next=None)
 
     @classmethod
     def find_prev(
         cls,
         entry_id: int | None,
+        list_id: int,
     ) -> tuple[Self, Self]:
         next_node = cls.find_first_by_kwargs(id=entry_id)
         if next_node is None:
-            prev_node = cls.find_last()
+            prev_node = cls.find_last(list_id=list_id)
         else:
             prev_node = next_node.prev
         return prev_node, next_node
@@ -82,21 +87,26 @@ class LinkedListNode(Base):
     @classmethod
     def add(
         cls,
+        list_id: int,
         next_id: int = None,
         **kwargs,
     ) -> Self:
-        prev_node, next_node = cls.find_prev(next_id)
+        prev_node, next_node = cls.find_prev(next_id, list_id=list_id)
         added_node = cls.create(**kwargs)
         added_node.prev_id = cls.get_node_id(prev_node)
         added_node.next_id = cls.get_node_id(next_node)
         cls.stitch(prev_node, next_node, added_node)
         return added_node
 
+    @property
+    def list_id(self) -> int:  # noqa: FNE002  # false positive (list is a noun)
+        raise NotImplementedError
+
     def insert(
         self,
         next_id: int | None,
     ) -> LinkedListNode:
-        prev_node, next_node = self.find_prev(next_id)
+        prev_node, next_node = self.find_prev(next_id, list_id=self.list_id)
         self.next_id = self.get_node_id(next_node)
         self.prev_id = self.get_node_id(prev_node)
         self.stitch(prev_node, next_node, self)

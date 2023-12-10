@@ -84,6 +84,8 @@ class ParticipantsEventSpace(EventSpace):
     ):
         if participant.user_id == user.id:
             controller.abort(400, "Target is the source")
+        elif community.owner_id == participant.id:
+            controller.abort(409, "Target is the owner")
         participant.delete()
         event.emit_convert(
             room=self.room_name(community.id),
