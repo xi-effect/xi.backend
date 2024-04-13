@@ -4,17 +4,12 @@ from typing import Any
 
 import pytest
 from flask_fullstack import SocketIOTestClient, dict_cut
-from pydantic import conlist
+from pydantic_marshals.contains import UnorderedLiteralCollection
 from pytest_mock import MockerFixture
 
-from communities.base import Community
+from communities.base.meta_db import Community
 from communities.base.roles_db import PermissionType, Role, RolePermission
 from test.conftest import delete_by_id, FlaskTestClient
-
-
-def permission_conlist(length: int) -> dict[str, Any]:
-    # TODO upgrade list-via-set check
-    return {"permissions": conlist(str, min_items=length, max_items=length)}
 
 
 def create_role(
@@ -25,7 +20,7 @@ def create_role(
 ) -> int:
     expected: dict[str, Any] = {
         **role_data,
-        **permission_conlist(len(role_data["permissions"])),
+        "permissions": UnorderedLiteralCollection(role_data["permissions"]),
         "id": int,
     }
     role_id = socketio_client.assert_emit_ack(
@@ -73,7 +68,7 @@ def test_create_role(
         expected_json=[
             {
                 **role_data,
-                **permission_conlist(len(role_data["permissions"])),
+                "permissions": UnorderedLiteralCollection(role_data["permissions"]),
                 "id": role_id,
             }
         ],
@@ -174,8 +169,13 @@ def test_update_role(
     role_ids: dict[str, int],
     data: dict[str, Any],
 ) -> None:
-    expected_data: dict[str, Any] = {**role_data, **data}
-    expected_data.update(permission_conlist(len(expected_data["permissions"])))
+    expected_data: dict[str, Any] = {
+        **role_data,
+        **data,
+        "permissions": UnorderedLiteralCollection(
+            data.get("permissions", PermissionType.get_all_field_names())
+        ),
+    }
     socketio_client.assert_emit_ack(
         event_name="update_role",
         data={**data, **role_ids},

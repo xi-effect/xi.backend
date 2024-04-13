@@ -2,12 +2,22 @@ from __future__ import annotations
 
 from flask_fullstack import DuplexEvent, EventSpace
 from flask_socketio import join_room, leave_room
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
-from common import EventController, User
-from .videochat_db import ChatMessage, ChatParticipant, PARTICIPANT_LIMIT
-from ..base import Community, PermissionType, ParticipantRole, Participant
-from ..base.utils import check_participant
+from common import EventController
+from communities.base.meta_db import (
+    Community,
+    PermissionType,
+    ParticipantRole,
+    Participant,
+)
+from communities.base.utils import check_participant
+from communities.services.videochat_db import (
+    ChatMessage,
+    ChatParticipant,
+    PARTICIPANT_LIMIT,
+)
+from users.users_db import User
 
 controller = EventController()
 

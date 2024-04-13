@@ -3,9 +3,9 @@ from __future__ import annotations
 from flask_fullstack import RequestParser
 from flask_restx import Resource
 
-from common import User
 from moderation import MUBController, permission_index
-from other import EmailType, send_code_email
+from other.emailer import EmailType, send_code_email
+from users.users_db import User
 
 qa_section = permission_index.add_section("quality assurance")
 emailing = permission_index.add_permission(qa_section, "emailing")

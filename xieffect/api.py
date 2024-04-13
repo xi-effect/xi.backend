@@ -8,47 +8,45 @@ from sys import stderr
 from flask_fullstack import SocketIO
 from requests import HTTPError
 
-import communities.base.discussion_db  # TODO (use in api) # noqa: F401 WPS301
-from common import app, db, versions, open_file
-from communities import (
-    communities_meta_events,
-    communities_namespace,
-    participants_events,
-    invitation_events,
-    invitation_namespace,
-    news_namespace,
-    news_events,
-    role_namespace,
-    role_events,
-    teacher_tasks_namespace,
-    student_tasks_namespace,
-    tasks_events,
-    videochat_events,
-    videochat_namespace,
-    teacher_tests_namespace,
-    tests_events,
-    questions_events,
+import communities.base.discussion_db  # noqa: F401 WPS301  # to create database models
+import pages.pages_db  # noqa: F401 WPS301  # to create database models
+from common import app, db, versions, open_file, JSONEncoder
+from communities.base import (
+    invitations_rst,
+    invitations_sio,
+    meta_rst,
+    meta_sio,
+    participants_sio,
+    roles_rst,
+    roles_sio,
+)
+from communities.services import news_rst, news_sio, videochat_rst, videochat_sio
+from communities.tasks import (
+    tasks_sio,
+    teacher_rst,
+    tests_sio,
+    tests_teacher_rst,
+    questions_sio,
+    student_rst,
 )
 from moderation import mub_base_namespace, mub_cli_blueprint, mub_super_namespace
-from other import (
-    remove_stale_blueprint,
-    send_discord_message,
-    send_file_discord_message,
-    webhook_namespace,
+from other import updater_rst, database_cli
+from other.discorder import (
+    send_message as send_discord_message,
+    send_file_message as send_file_discord_message,
     WebhookURLs,
 )
-from pages.pages_db import Page  # noqa: F401 # to create database models
 from users import (
-    emailer_qa_namespace,
-    feedback_namespace,
-    invites_mub_namespace,
-    mub_feedback_namespace,
-    mub_users_namespace,
-    reglog_namespace,
-    settings_namespace,
-    users_namespace,
+    emailer_mub,
+    feedback_mub,
+    feedback_rst,
+    invites_mub,
+    profiles_rst,
+    reglog_rst,
+    settings_rst,
+    users_mub,
 )
-from vault import files_namespace, mub_files_namespace
+from vault import files_mub, files_rst
 
 logger = Logger("flask-fullstack", "WARN")
 
@@ -86,36 +84,44 @@ jwt = app.configure_jwt_with_loaders(
 )
 api = app.configure_restx()
 
-api.add_namespace(files_namespace)
-api.add_namespace(mub_files_namespace)
+# Files
+api.add_namespace(files_rst.controller)
+api.add_namespace(files_mub.controller)
 
-api.add_namespace(reglog_namespace)
-api.add_namespace(users_namespace)
+# Users
+api.add_namespace(reglog_rst.controller)
+api.add_namespace(profiles_rst.controller)
+api.add_namespace(settings_rst.controller)
+api.add_namespace(users_mub.controller)
 
-api.add_namespace(feedback_namespace)
-api.add_namespace(mub_feedback_namespace)
-api.add_namespace(settings_namespace)
+# Feedback
+api.add_namespace(feedback_rst.controller)
+api.add_namespace(feedback_mub.controller)
 
-api.add_namespace(communities_namespace)
-api.add_namespace(invitation_namespace)
-api.add_namespace(news_namespace)
-api.add_namespace(teacher_tasks_namespace)
-api.add_namespace(student_tasks_namespace)
-api.add_namespace(videochat_namespace)
-api.add_namespace(teacher_tests_namespace)
+# Communities base
+api.add_namespace(meta_rst.controller)
+api.add_namespace(roles_rst.controller)
+api.add_namespace(invitations_rst.controller)
 
-app.register_blueprint(remove_stale_blueprint)
-api.add_namespace(webhook_namespace)
+# Communities services
+api.add_namespace(news_rst.controller)
+api.add_namespace(videochat_rst.controller)
 
+# Communities tasks & tests
+api.add_namespace(teacher_rst.controller)
+api.add_namespace(tests_teacher_rst.controller)
+api.add_namespace(student_rst.controller)
+
+# Other
+app.register_blueprint(database_cli.blueprint)
+api.add_namespace(updater_rst.controller)
+
+# MUB + QA
 app.register_blueprint(mub_cli_blueprint)
 api.add_namespace(mub_base_namespace)
 api.add_namespace(mub_super_namespace)
-
-api.add_namespace(emailer_qa_namespace)
-api.add_namespace(mub_users_namespace)
-api.add_namespace(invites_mub_namespace)
-
-api.add_namespace(role_namespace)
+api.add_namespace(emailer_mub.controller)
+api.add_namespace(invites_mub.controller)
 
 socketio = SocketIO(
     app,
@@ -131,15 +137,18 @@ socketio = SocketIO(
 
 socketio.add_namespace(
     "/",
-    communities_meta_events,
-    participants_events,
-    invitation_events,
-    news_events,
-    tasks_events,
-    tests_events,
-    questions_events,
-    videochat_events,
-    role_events,
+    # Communities base
+    meta_sio.controller,
+    roles_sio.controller,
+    invitations_sio.controller,
+    participants_sio.controller,
+    # Communities services
+    news_sio.controller,
+    videochat_sio.controller,
+    # Communities tasks & tests
+    tasks_sio.controller,
+    tests_sio.controller,
+    questions_sio.controller,
     protected=True,
 )
 
@@ -150,4 +159,4 @@ app.after_request(db.with_autocommit)
 @app.cli.command("form-sio-docs")
 def form_sio_docs() -> None:  # TODO pragma: no coverage
     with open_file("files/async-api.json", "w") as f:
-        dump_json(socketio.docs(), f, ensure_ascii=False)
+        dump_json(socketio.docs(), f, ensure_ascii=False, cls=JSONEncoder)

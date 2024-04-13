@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Self
+from typing import Self, ClassVar
 
 from sqlalchemy import Column, DateTime, delete, select, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import Select
 
 from common._core import Base, db  # noqa: WPS436
@@ -12,9 +13,10 @@ from common._core import Base, db  # noqa: WPS436
 
 class SoftDeletable(Base):  # TODO pragma: no coverage
     __abstract__ = True
+    shelf_life: ClassVar[timedelta] = timedelta(days=2)
+    # TODO: discuss timedelta for each table
 
     deleted = Column(DateTime, nullable=True)
-    shelf_life: timedelta = timedelta(days=2)  # TODO: discuss timedelta for each table
 
     def soft_delete(self) -> None:
         self.deleted = datetime.utcnow() + self.shelf_life  # noqa: WPS601
@@ -62,17 +64,22 @@ class LinkedListNode(Base):
             next_node.prev_id = cls.get_node_id(node) or cls.get_node_id(prev_node)
 
     @classmethod
-    def find_last(cls) -> Self | None:
-        return cls.find_first_by_kwargs(user_id=cls.user_id, next=None)
+    def find_by_list_id(cls, list_id: int, **kwargs) -> Self | None:
+        raise NotImplementedError
+
+    @classmethod
+    def find_last(cls, list_id: int) -> Self | None:
+        return cls.find_by_list_id(list_id, next=None)
 
     @classmethod
     def find_prev(
         cls,
         entry_id: int | None,
+        list_id: int,
     ) -> tuple[Self, Self]:
         next_node = cls.find_first_by_kwargs(id=entry_id)
         if next_node is None:
-            prev_node = cls.find_last()
+            prev_node = cls.find_last(list_id=list_id)
         else:
             prev_node = next_node.prev
         return prev_node, next_node
@@ -80,21 +87,26 @@ class LinkedListNode(Base):
     @classmethod
     def add(
         cls,
+        list_id: int,
         next_id: int = None,
         **kwargs,
     ) -> Self:
-        prev_node, next_node = cls.find_prev(next_id)
+        prev_node, next_node = cls.find_prev(next_id, list_id=list_id)
         added_node = cls.create(**kwargs)
         added_node.prev_id = cls.get_node_id(prev_node)
         added_node.next_id = cls.get_node_id(next_node)
         cls.stitch(prev_node, next_node, added_node)
         return added_node
 
+    @property
+    def list_id(self) -> int:  # noqa: FNE002  # false positive (list is a noun)
+        raise NotImplementedError
+
     def insert(
         self,
         next_id: int | None,
     ) -> LinkedListNode:
-        prev_node, next_node = self.find_prev(next_id)
+        prev_node, next_node = self.find_prev(next_id, list_id=self.list_id)
         self.next_id = self.get_node_id(next_node)
         self.prev_id = self.get_node_id(prev_node)
         self.stitch(prev_node, next_node, self)
@@ -118,10 +130,10 @@ class FileEmbed(Base):
     __abstract__ = True
 
     @declared_attr
-    def file_id(self) -> Column:
-        return Column(
+    def file_id(self) -> Mapped[int]:
+        return mapped_column(
             Integer,
-            ForeignKey("files.id", ondelete="CASCADE", onupdate="CASCADE"),
+            ForeignKey("files.id", ondelete="CASCADE"),
             primary_key=True,
         )
 
@@ -129,6 +141,12 @@ class FileEmbed(Base):
     def add_files(cls, file_ids: set[int], **kwargs) -> None:
         values: list[dict] = [dict(kwargs, file_id=file) for file in file_ids]
         db.session.bulk_insert_mappings(cls, values)
+
+    @classmethod
+    def update_files(cls, file_ids: set[int], **kwargs) -> None:
+        old_files: set[int] = set(cls.get_file_ids(**kwargs))
+        cls.delete_files(old_files - file_ids, **kwargs)
+        cls.add_files(file_ids - old_files, **kwargs)
 
     @classmethod
     def delete_files(cls, file_ids: set[int], **kwargs) -> None:

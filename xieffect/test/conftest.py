@@ -7,23 +7,19 @@ from os import remove
 from os.path import exists
 from typing import Protocol, Any
 
-from flask_fullstack import (
-    FlaskTestClient as _FlaskTestClient,
-    SocketIOTestClient,
-    TypeChecker,
-)
+from flask_fullstack import FlaskTestClient as _FlaskTestClient, SocketIOTestClient
 from flask_fullstack.restx.testing import HeaderChecker
 from pydantic import constr
+from pydantic_marshals.contains import TypeChecker
 from pytest import fixture
 from pytest_mock import MockerFixture
 from werkzeug.datastructures import FileStorage
 from werkzeug.test import TestResponse
 
 from common import mail, mail_initialized, Base, db, open_file
-from common.users_db import User
 from communities.base.discussion_db import Discussion
-from communities.base.users_ext_db import CommunitiesUser
 from pages.pages_db import Page
+from users.users_db import User
 from vault.files_db import File, FILES_PATH
 from wsgi import application as app, BASIC_PASS, TEST_EMAIL, TEST_MOD_NAME, TEST_PASS
 
@@ -38,7 +34,7 @@ class OpenProtocol(Protocol):
         expected_status: int = 200,
         expected_data: Any | None = None,
         expected_text: str | None = None,
-        expected_json: TypeChecker | None = None,
+        expected_json: TypeChecker = None,
         expected_a: int | str | type | re.Pattern | None = None,
         expected_headers: HeaderChecker | None = None,
         get_json: bool = True,
@@ -60,7 +56,7 @@ class FlaskTestClient(_FlaskTestClient):
     def open(  # noqa: A003
         self,
         *args: Any,
-        expected_a: TypeChecker | None = None,
+        expected_a: TypeChecker = None,
         **kwargs: Any,
     ) -> None | dict | list | TestResponse:
         if expected_a is not None:
@@ -90,7 +86,7 @@ def base_login(
     response: TestResponse = client.post(
         "/mub/sign-in/" if mub else "/signin/",
         data={"username" if mub else "email": account, "password": password},
-        expected_headers={"Set-Cookie": constr(regex="access_token_cookie=.*")},
+        expected_headers={"Set-Cookie": constr(pattern="access_token_cookie=.*")},
         get_json=False,
     )
     client.set_cookie(
@@ -167,8 +163,6 @@ def base_user_id(base_user_data: tuple[str, str]) -> int:
         password=base_user_data[1],
         username="hey",
     ).id
-    CommunitiesUser.find_or_create(user_id)  # TODO remove after CU removal
-    db.session.commit()
     yield user_id
     delete_by_id(user_id, User)
 
@@ -187,7 +181,7 @@ def test_page_data() -> dict[str, str | dict]:
 
 @fixture
 def test_page_id(base_user_id: int, test_page_data: dict[str, str | dict]) -> int:
-    page_id: Page = Page.create(**test_page_data, creator_id=base_user_id).id
+    page_id: int = Page.create(**test_page_data, creator_id=base_user_id).id
     db.session.commit()
     yield page_id
     delete_by_id(page_id, Page)
@@ -220,7 +214,12 @@ def file_maker(base_user_id: int) -> Callable[File]:
 
 
 @fixture
-def test_file_id(file_maker: Callable[File]) -> int:
+def file(file_maker: Callable[[str], File]) -> File:
+    return file_maker("test-1.json")
+
+
+@fixture
+def test_file_id(file_maker: Callable[[str], File]) -> int:
     return file_maker("test-1.json").id
 
 

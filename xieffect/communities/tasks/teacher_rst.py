@@ -3,9 +3,11 @@ from __future__ import annotations
 from flask_fullstack import counter_parser, RequestParser
 from flask_restx import Resource
 
-from common import ResourceController, User
-from .main_db import Task, TaskFilter, TaskOrder, TASKS_PER_PAGE
-from ..base import Community, PermissionType, check_permission
+from common import ResourceController
+from communities.base.meta_db import Community, PermissionType
+from communities.base.utils import check_permission
+from communities.tasks.tasks_db import Task, TaskFilter, TaskOrder, TASKS_PER_PAGE
+from users.users_db import User
 
 controller = ResourceController(
     "cs-teacher-tasks", path="/communities/<int:community_id>/tasks/"

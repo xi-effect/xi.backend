@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from typing import Self, ClassVar
 
-from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, select, distinct
-from sqlalchemy.orm import relationship
+from flask_fullstack import Identifiable, TypeEnum
+from pydantic_marshals.sqlalchemy import MappedModel
+from sqlalchemy import ForeignKey, select, distinct
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql.expression import and_
 from sqlalchemy.sql.functions import count
-from sqlalchemy.sql.sqltypes import Integer, String, Enum
+from sqlalchemy.sql.sqltypes import String
 
 from common import Base, db
 
@@ -28,31 +29,24 @@ class Role(Base, Identifiable):
     max_count: ClassVar[int] = 50
     not_found_text = "Role not found"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False)
-    color = Column(String(6), nullable=True)
-    community_id = Column(
-        Integer,
-        ForeignKey("community.id", ondelete="CASCADE"),
-        nullable=False,
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(32))
+    color: Mapped[str | None] = mapped_column(String(6))
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("community.id", ondelete="CASCADE")
     )
 
-    permissions = relationship("RolePermission", passive_deletes=True)
+    permissions_r: Mapped[list[RolePermission]] = relationship(passive_deletes=True)
 
-    CreateModel = PydanticModel.column_model(name, color)
-    IndexModel = CreateModel.column_model(id)
+    @property
+    def permissions(self) -> list[str]:
+        return [
+            permission.permission_type.to_string() for permission in self.permissions_r
+        ]
 
-    class FullModel(IndexModel):
-        permissions: list[str]
-
-        @classmethod
-        def callback_convert(cls, callback: Callable, orm_object: Role, **_) -> None:
-            callback(
-                permissions=[
-                    permission.permission_type.to_string()
-                    for permission in orm_object.permissions
-                ]
-            )
+    CreateModel = MappedModel.create(columns=[name, color])
+    IndexModel = CreateModel.extend(columns=[id])
+    FullModel = IndexModel.extend(properties=[permissions])
 
     @classmethod
     def create(
@@ -83,12 +77,11 @@ class Role(Base, Identifiable):
 class RolePermission(Base):
     __tablename__ = "cs_role_permissions"
 
-    role_id = Column(
-        Integer,
+    role_id: Mapped[int] = mapped_column(
         ForeignKey(Role.id, ondelete="CASCADE"),
         primary_key=True,
     )
-    permission_type = Column(Enum(PermissionType), primary_key=True)
+    permission_type: Mapped[PermissionType] = mapped_column(primary_key=True)
 
     @classmethod
     def create_bulk(cls, role_id: int, permissions: list[PermissionType]) -> None:
@@ -114,13 +107,11 @@ class RolePermission(Base):
 class ParticipantRole(Base):
     __tablename__ = "cs_participant_roles"
 
-    participant_id = Column(
-        Integer,
+    participant_id: Mapped[int] = mapped_column(
         ForeignKey("community_participant.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    role_id = Column(
-        Integer,
+    role_id: Mapped[int] = mapped_column(
         ForeignKey(Role.id, ondelete="CASCADE"),
         primary_key=True,
     )

@@ -6,17 +6,17 @@ from flask_fullstack import SocketIOTestClient, FlaskTestClient, dict_reduce
 from pytest import fixture
 
 from common import db
-from common.users_db import User
-from communities.base import (
+from communities.base.discussion_db import DiscussionMessage
+from communities.base.meta_db import (
     Participant,
     PermissionType,
     ParticipantRole,
     Role,
     RolePermission,
+    Community,
 )
-from communities.base.discussion_db import DiscussionMessage
-from communities.base.meta_db import Community
 from test.conftest import delete_by_id
+from users.users_db import User
 
 COMMUNITY_DATA: dict = {"name": "test"}
 
@@ -42,8 +42,18 @@ def find_invite(
 
 @fixture
 def test_community(socketio_client: SocketIOTestClient) -> int:
-    # TODO use yield & delete the community after
-    return assert_create_community(socketio_client, COMMUNITY_DATA)
+    community_id = assert_create_community(socketio_client, COMMUNITY_DATA)
+    yield community_id
+    delete_by_id(community_id, Community)
+
+
+@fixture
+def community(socketio_client: SocketIOTestClient) -> Community:
+    community = Community.find_by_id(
+        assert_create_community(socketio_client, COMMUNITY_DATA)
+    )
+    yield community
+    delete_by_id(community.id, Community)
 
 
 @fixture
@@ -116,6 +126,9 @@ def create_assert_successful_join(assert_successful_get, client) -> Callable:
             code: str,
             *sio_clients: SocketIOTestClient,
         ) -> None:
+            user_id = joiner.get("/home/")["id"]
+            count_before = len(Participant.get_communities_list(user_id=user_id))
+
             invite = find_invite(client, community_id, invite_id)
             assert invite is not None, "Invitation not found"
             limit_before = invite.get("limit")
@@ -135,6 +148,10 @@ def create_assert_successful_join(assert_successful_get, client) -> Callable:
 
             for sio in sio_clients:
                 sio.assert_only_received("new_community", COMMUNITY_DATA)
+
+            communities_after = Participant.get_communities_list(user_id=user_id)
+            assert len(communities_after) == count_before + 1
+            assert community_id in {community.id for community in communities_after}
 
         return assert_successful_join_inner
 

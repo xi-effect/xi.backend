@@ -4,15 +4,17 @@ from datetime import datetime
 
 from flask_fullstack import DuplexEvent
 
-from common import EventController, User
-from communities.base import check_permission, PermissionType
-from communities.base.meta_db import Community
-from communities.tasks.main_db import TaskEmbed
-from communities.tasks.main_sio import check_files, TasksEventSpace
+from common import EventController
+from common.utils import check_files
+from communities.base.meta_db import Community, PermissionType
+from communities.base.utils import check_permission
+from communities.tasks.tasks_db import TaskEmbed
+from communities.tasks.tasks_sio import TasksEventSpace
 from communities.tasks.tests_db import Test
 from communities.tasks.utils import test_finder
+from users.users_db import User
 
-controller = EventController()
+controller: EventController = EventController()
 
 
 @controller.route()
@@ -39,7 +41,7 @@ class TestsEventSpace(TasksEventSpace):
         opened: datetime | None,
         closed: datetime | None,
     ) -> Test:
-        checked_files: set[int] = check_files(files)
+        checked_files: set[int] = check_files(controller, files)
 
         test: Test = Test.create(
             user.id, community.id, page_id, name, description, opened, closed
@@ -65,10 +67,7 @@ class TestsEventSpace(TasksEventSpace):
     ) -> Test:
         files: list[int] | None = kwargs.pop("files", None)
         if files is not None:
-            new_files: set[int] = check_files(files)
-            old_files: set[int] = set(TaskEmbed.get_file_ids(task_id=test.id))
-            TaskEmbed.delete_files(old_files - new_files, task_id=test.id)
-            TaskEmbed.add_files(new_files - old_files, task_id=test.id)
+            TaskEmbed.update_files(check_files(controller, files), task_id=test.id)
 
         test.update(**kwargs)
         event.emit_convert(test, room=TasksEventSpace.room_name(test.community_id))

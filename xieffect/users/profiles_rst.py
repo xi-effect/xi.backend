@@ -3,7 +3,8 @@ from __future__ import annotations
 from flask_fullstack import counter_parser, RequestParser
 from flask_restx import Resource
 
-from common import ResourceController, User
+from common import ResourceController
+from users.users_db import User
 
 controller = ResourceController("profiles", path="/users/")
 

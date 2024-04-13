@@ -3,10 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Self
 
-from flask_fullstack import Identifiable, PydanticModel, TypeEnum
-from sqlalchemy import Column, ForeignKey, select, or_
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import DateTime, Integer, String, Text
+from flask_fullstack import Identifiable, TypeEnum
+from pydantic_marshals.base import PatchDefault
+from pydantic_marshals.sqlalchemy import MappedModel
+from sqlalchemy import ForeignKey, select, or_
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql.sqltypes import String, Text
 
 from common import db
 from common.abstract import FileEmbed, SoftDeletable
@@ -18,9 +20,8 @@ TASKS_PER_PAGE: int = 48
 class TaskEmbed(FileEmbed):
     __tablename__ = "cs_embeds"
 
-    task_id = Column(
-        Integer,
-        ForeignKey("cs_tasks.id", ondelete="CASCADE", onupdate="CASCADE"),
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey("cs_tasks.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -40,44 +41,42 @@ class Task(SoftDeletable, Identifiable):
     __tablename__ = "cs_tasks"
     not_found_text = "Task not found"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
 
-    user_id = Column(
-        Integer,
-        ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
-        nullable=False,
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
     )
-    user = relationship("User")
+    user = relationship("User", passive_deletes=True)
 
-    community_id = Column(
-        Integer,
-        ForeignKey("community.id", ondelete="CASCADE", onupdate="CASCADE"),
-        nullable=False,
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("community.id", ondelete="CASCADE"),
     )
-    community = relationship("Community")
+    community = relationship("Community", passive_deletes=True)
 
     # TODO recheck the argument name after information pages will be added
-    page_id = Column(Integer, nullable=False)
-    name = Column(String(100), nullable=False)
-    description = Column(Text, nullable=True)
+    page_id: Mapped[int] = mapped_column()
+    name: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(Text)
 
-    created = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    opened = Column(DateTime, nullable=True, index=True)
-    closed = Column(DateTime, nullable=True, index=True)
+    created: Mapped[datetime] = mapped_column(default=datetime.utcnow, index=True)
+    opened: Mapped[datetime | None] = mapped_column(index=True)
+    closed: Mapped[datetime | None] = mapped_column(index=True)
 
-    files = relationship("File", secondary=TaskEmbed.__table__, passive_deletes=True)
+    files: Mapped[list[File]] = relationship(
+        secondary=TaskEmbed.__table__,
+        passive_deletes=True,
+    )
 
-    BaseModel = PydanticModel.column_model(id, created)
-    CreateModel = PydanticModel.column_model(page_id, name, description, opened, closed)
+    @property
+    def username(self) -> str:
+        return self.user.username
 
-    class IndexModel(BaseModel, CreateModel):
-        username: str
-
-        @classmethod
-        def callback_convert(cls, callback, orm_object: Task, **_) -> None:
-            callback(username=orm_object.user.username)
-
-    FullModel = IndexModel.nest_model(File.FullModel, "files", as_list=True)
+    CreateModel = MappedModel.create(
+        columns=[page_id, name, description, opened, closed],
+    )
+    UpdateModel = CreateModel.as_patch()
+    IndexModel = CreateModel.extend(columns=[id, created], properties=[username])
+    FullModel = IndexModel.extend(relationships=[(files, File.FullModel)])
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
@@ -106,7 +105,7 @@ class Task(SoftDeletable, Identifiable):
 
     def update(self, **kwargs) -> None:
         for key, value in kwargs.items():
-            if hasattr(self, key):
+            if value is not PatchDefault and hasattr(self, key):
                 setattr(self, key, value)
 
     @classmethod

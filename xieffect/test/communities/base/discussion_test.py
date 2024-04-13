@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from flask_fullstack import assert_contains
+from pydantic_marshals.contains import assert_contains
 
 from common import db
 from communities.base.discussion_db import DiscussionMessage, Discussion
@@ -13,8 +13,8 @@ def assert_message(
     message: DiscussionMessage, content: dict[str, str], file_id: int
 ) -> None:
     assert_contains(
-        {"content": message.content, "files": message.files},
-        {"content": content, "files": [File.find_by_id(file_id)]},
+        {"content": message.content, "files": [file.id for file in message.files]},
+        {"content": content, "files": [file_id]},
     )
 
 
@@ -23,7 +23,7 @@ def test_discussion_messages(
     message_content: dict[str, str],
     message_id: int,
     test_file_id: int,
-    file_maker: Callable[File],
+    file_maker: Callable[[str], File],
 ):
     message: DiscussionMessage = DiscussionMessage.find_by_id(message_id)
     assert Discussion.find_by_id(test_discussion_id) is not None

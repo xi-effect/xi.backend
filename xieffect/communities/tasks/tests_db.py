@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from typing import Self
 
-from flask_fullstack import PydanticModel, Identifiable, TypeEnum
-from sqlalchemy import Column, ForeignKey, Enum
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, Text
+from flask_fullstack import Identifiable, TypeEnum
+from pydantic_marshals.base.fields.base import PatchDefault
+from pydantic_marshals.sqlalchemy import MappedModel
+from sqlalchemy import ForeignKey, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from common import Base
-from communities.tasks.main_db import Task
+from communities.tasks.tasks_db import Task
 
 
 class QuestionKind(TypeEnum):
@@ -21,18 +22,16 @@ class Question(Base, Identifiable):
     __tablename__ = "cs_questions"
     not_found_text = "Question not found"
 
-    id = Column(Integer, primary_key=True)
-    text = Column(Text, nullable=False)
-    kind = Column(Enum(QuestionKind), nullable=False)
-    test_id = Column(
-        Integer,
+    id: Mapped[int] = mapped_column(primary_key=True)
+    text: Mapped[str] = mapped_column(Text)
+    kind: Mapped[QuestionKind] = mapped_column()
+    test_id: Mapped[int] = mapped_column(
         ForeignKey("cs_tests.id", ondelete="CASCADE"),
-        nullable=False,
     )
 
-    BaseModel = PydanticModel.column_model(text, kind)
-    CreateModel = BaseModel.column_model(test_id)
-    FullModel = BaseModel.column_model(id)
+    BaseModel = MappedModel.create(columns=[text, kind])
+    UpdateModel = BaseModel.as_patch()
+    FullModel = BaseModel.extend(columns=[id])
 
     @classmethod
     def create(cls, text: str, kind: QuestionKind, test_id: int) -> Self:
@@ -44,7 +43,7 @@ class Question(Base, Identifiable):
 
     def update(self, **kwargs) -> None:
         for key, value in kwargs.items():
-            if hasattr(self, key):
+            if value is not PatchDefault and hasattr(self, key):
                 setattr(self, key, value)
 
     @classmethod
@@ -56,9 +55,15 @@ class Test(Task):
     __test__ = False
     __tablename__ = "cs_tests"
     not_found_text = "Test not found"
-    id = Column(
-        Integer, ForeignKey("cs_tasks.id", ondelete="CASCADE"), primary_key=True
-    )
-    questions = relationship("Question", passive_deletes=True)
 
-    FullModel = Task.FullModel.nest_model(Question.BaseModel, "questions", as_list=True)
+    id: Mapped[int] = mapped_column(
+        ForeignKey("cs_tasks.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    questions: Mapped[list[Question]] = relationship(
+        passive_deletes=True,
+    )
+
+    FullModel = Task.__dict__["FullModel"].extend(
+        relationships=[(questions, Question.BaseModel)],
+    )

@@ -18,7 +18,7 @@ class MessageFile(FileEmbed):
 
     message_id = Column(
         Integer,
-        ForeignKey("ds_messages.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("ds_messages.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -40,10 +40,10 @@ class DiscussionMessage(Base, Identifiable):
 
     discussion_id = Column(
         Integer,
-        ForeignKey("discussions.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("discussions.id", ondelete="CASCADE"),
         nullable=False,
     )
-    discussion = relationship("Discussion")
+    discussion = relationship("Discussion", back_populates="messages")
 
     files = relationship("File", secondary=MessageFile.__table__, passive_deletes=True)
 
@@ -74,10 +74,7 @@ class DiscussionMessage(Base, Identifiable):
         if content is not None:
             self.content = content
         if file_ids is not None:
-            old_files: set[int] = set(MessageFile.get_file_ids(message_id=self.id))
-            new_files: set[int] = set(file_ids)
-            MessageFile.delete_files(old_files - new_files, message_id=self.id)
-            MessageFile.add_files(new_files - old_files, message_id=self.id)
+            MessageFile.update_files(set(file_ids), message_id=self.id)
 
     @classmethod
     def get_paginated_messages(
@@ -90,7 +87,12 @@ class Discussion(Base, Identifiable):
     __tablename__ = "discussions"
 
     id = Column(Integer, primary_key=True)
-    messages = relationship("DiscussionMessage", passive_deletes=True)
+    messages = relationship(
+        "DiscussionMessage",
+        passive_deletes=True,
+        back_populates="discussion",
+        cascade="all, delete",
+    )
 
     @classmethod
     def find_by_id(cls, entry_id: int) -> Self | None:
