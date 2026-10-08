@@ -1,5 +1,20 @@
 # xi.backend
 
+## Archivation note
+This was the first backend service (monolith) for xi.effect. Started in 2020-21, with version control introduced only on June 13th 2021. This was the very start of everything the backend (both the code and the team) stands on today. The project was not only the backbone of xi.effect, but also a learning experience with lots of questionable decisions (like adding a custom framework as a git submodule). It's now superseded by [xi.back-2](https://github.com/xi-effect/xi.back-2) with some parts fully removed, because of a product pivot for xi.effect in general, so it's no longer active since April 13th 2024 and will be archived on October 9th 2026
+
+### Contributors (thank you)
+- [porebrikk](https://github.com/porebrikk)
+- [sipmine](https://github.com/sipmine)
+- [Exllent](https://github.com/Exllent)
+- [alina-vorontsova](https://github.com/alina-vorontsova)
+- [LordOfPhys](https://github.com/LordOfPhys)
+- [mikeGot](https://github.com/mikeGot)
+- [Noboribetsu](https://github.com/Noboribetsu)
+
+### Solution Lead
+[niqzart](https://github.com/niqzart)
+
 ## Начало работы
 1. Скачать репозиторий (через `git clone` или PyCharm)
 2. Перейти в папку, куда склонирован репозиторий
